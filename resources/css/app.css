@@ -1,0 +1,23 @@
+@tailwind utilities;
+
+
+
+
+/* 💡 2. FIX: Target the actual inner column text container wrapper */
+.custom-styled-table .v-data-table-col-header__contents {
+    color: #ffffff !important;           
+    font-weight: 700 !important;          
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important; 
+    letter-spacing: 0.5px !important;
+}
+
+/* Header Sorting Icons Color Alignment */
+.custom-styled-table .v-data-table-col-header__icon {
+    color: #ffffff !important;           
+}
+
+/* 💡 3. FIX: Apply row borders directly to the data cells (td), not the row (tr) */
+.custom-styled-table .v-data-table__td {
+    border-bottom: 1px solid #dfdfdf !important; 
+}
