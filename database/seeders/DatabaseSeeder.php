@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
         foreach($provices as $p)
             Province::create([
                 'name' => $p['name'],
+                'category' => $p['category'],
                 'num_plantilla_employees' => fake()->randomNumber(1, 20),
                 'num_municipalities' => fake()->randomNumber(1),
                 'num_cities' => fake()->randomNumber(1, 20),
@@ -114,20 +115,16 @@ class DatabaseSeeder extends Seeder
         $kpi_outcome = CSVToDFHelper::get_df('kpi-outcome.csv');
 
         foreach($kpi as $k) {
-            $subRow = [];
-            $j = 1;
+            $kpi = KPI::create([
+                        'id' => $k['id'],
+                        'outcome_title' => $k['outcome'],
+                    ]);
             foreach($kpi_outcome as $outcome) {
-                $subRow[] = [
-                    'id' => $j,
+                DB::table('kpi_subrows')->insert([
+                    'kpi_id' => $kpi->id,
                     'description' => $outcome['description']
-                ];
-                $j++;
+                ]);
             }
-            KPI::create([
-                'id' => $k['id'],
-                'outcome_title' => $k['outcome'],
-                'sub_rows' => json_encode($subRow)
-            ]);
         }
     }
 }

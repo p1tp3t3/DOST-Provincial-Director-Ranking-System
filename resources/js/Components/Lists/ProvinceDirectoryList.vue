@@ -1,16 +1,30 @@
 <template>
     <!-- Toolbar -->
     <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-2">
-        <v-text-field
-            v-model="search"
-            placeholder="Search by province or director..."
-            variant="solo-filled"
-            density="compact"
-            hide-details
-            clearable
-            prepend-inner-icon="mdi-magnify"
-            style="max-width: 300px;"
-        />
+        <div class="d-flex align-center gap-3 flex-wrap">
+            <v-text-field
+                v-model="search"
+                placeholder="Search by province or director..."
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+                prepend-inner-icon="mdi-magnify"
+                style="min-width: 240px; max-width: 300px;"
+            />
+            <v-select
+                v-model="selectedCategory"
+                :items="categoryOptions"
+                item-title="label"
+                item-value="value"
+                placeholder="All Categories"
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+                style="min-width: 160px; max-width: 180px;"
+            />
+        </div>
         <span class="text-caption text-medium-emphasis">
             {{ filtered.length }} of {{ list.length }} provinces
         </span>
@@ -38,7 +52,7 @@
                     <!-- Province name + employee count -->
                     <div class="d-flex align-start justify-space-between gap-2 mb-4">
                         <div class="text-subtitle-1 font-weight-bold line-height-tight">
-                            {{ item.name }}
+                            {{ item.name + ` (${item.category_label})` }}
                         </div>
                         <div class="d-flex align-center gap-1 flex-shrink-0 text-medium-emphasis">
                             <v-icon size="14">mdi-account-group-outline</v-icon>
@@ -93,6 +107,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { router } from '@inertiajs/vue3';
 
 const defPic = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
 
@@ -104,18 +119,32 @@ const props = defineProps({
 });
 
 const search = ref('');
+const selectedCategory = ref(null)
 
 const filtered = computed(() => {
+    let data = props.list;
     const q = search.value.toLowerCase().trim();
-    if (!q) return props.list;
-    return props.list.filter(item =>
-        item.name?.toLowerCase().includes(q) ||
-        item.provincial_director?.name?.toLowerCase().includes(q)
-    );
+    if (q) {
+        data = data.filter(item =>
+            item.name?.toLowerCase().includes(q) ||
+            item.provincial_director?.name?.toLowerCase().includes(q)
+        );
+    }
+    if (selectedCategory.value) {
+        data = data.filter(item => item.category === selectedCategory.value);
+    }
+    return data;
 });
 
+const categoryOptions = [
+    { label: 'Micro',  value: 'mic'  },
+    { label: 'Small',  value: 's'  },
+    { label: 'Medium', value: 'm' },
+    { label: 'Large',  value: 'l'  },
+];
+
 const viewOfficeDetails = (item) => {
-    console.log('Navigating to:', item.name);
+    router.visit(`/province-directories/${item.id}`)
 };
 </script>
 
