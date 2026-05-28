@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Helpers\CSVToDFHelper;
+use App\Helpers\PexelProfilePictureGeneratorHelper;
 use App\Models\KPI;
 use App\Models\Profile;
 use App\Models\Province;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class DatabaseSeeder extends Seeder
 {
@@ -41,6 +43,7 @@ class DatabaseSeeder extends Seeder
     {
         $provinces = Province::all();
 
+        File::deleteDirectory(storage_path('app/public/profile-pictures'));
         User::factory()->create(['role' => 'super_admin']);
         User::factory()->create(['role' => 'sub_admin']);
         foreach ($provinces as $p) {
@@ -66,6 +69,7 @@ class DatabaseSeeder extends Seeder
 
             // 3. Create Admins per province
             User::factory()->create(['role' => 'provincial_admin', 'province_id' => $p->id]);
+            User::factory()->create(['role' => 'provincial_sub_admin', 'province_id' => $p->id]);
         }
     }
 
@@ -80,9 +84,11 @@ class DatabaseSeeder extends Seeder
 
 
     private function generate_profile($d) {
+        //$profile_picture = PexelProfilePictureGeneratorHelper::generate('random people profile picture');
         $profile = Profile::create([
             'user_id' => $d->id,
             'first_name' => fake()->firstName(),
+            //'profile_picture' => $profile_picture,
             'last_name' => fake()->lastName(),
             'middle_name' => fake()->lastName(),
             'length_of_service' => fake()->numberBetween(1, 3),

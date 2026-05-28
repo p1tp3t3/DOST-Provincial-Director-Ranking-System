@@ -31,11 +31,13 @@ class UserController extends Controller
     }
 
     public function manual_registration_index() {
-        return inertia("Admin/Users/Register/Manual");
+        $role = self::get_role();
+        return inertia("$role/Users/Register/Manual");
     }
 
     public function auto_registration_index() {
-        return inertia("Admin/Users/Register/AutoGenerator", [
+        $role = self::get_role();
+        return inertia("$role/Users/Register/AutoGenerator", [
             'provincial_admin_requests' => []
         ]);
     }
@@ -89,35 +91,11 @@ class UserController extends Controller
                        'message' => 'status must only be approved or rejected. please try again'
                    ]);
 
-        if($status == 'approved') {
-            return self::auto_generate_provincial_members($request);
-        }
-        else if($status == 'rejected') {
-            return self::reject_auto_registration_request($request);
-        }
+        
     }
 
 
-    //  function for the auto registration
-    private function auto_generate_provincial_members($data) {
-        /*  if approve
-            - validate the request like the csv file
-            - validate the content of the csv file
-            - put it in a job batch
-            - notify the provincial admin request status
-            - return success and wait for the accounts to be generated
-        */ 
-        return;
-    }
-
-    //  function for the rejection of the registration request
-    private function reject_auto_registration_request($data) {
-        /*  if reject
-            - notify the provincial admin request status
-            - return success
-        */ 
-        return;
-    }
+    
 
 
     public function get_users()
@@ -128,5 +106,15 @@ class UserController extends Controller
                     ->paginate(20);
 
          return UserResource::collection($data);
+    }
+
+    private function get_role() {
+        $role = auth()->user()->role;
+        $dir = [
+            'super_admin' => 'Admin',
+            'provincial_admin' => 'ProvincialAdmin'
+        ];
+
+        return $dir[$role];
     }
 }

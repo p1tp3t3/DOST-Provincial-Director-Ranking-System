@@ -23,7 +23,14 @@ return new class extends Migration
         
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->enum('role', ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_director', 'employee']);
+            $table->enum('role', [
+                'super_admin', 
+                'sub_admin', 
+                'provincial_admin', 
+                'provincial_sub_admin', 
+                'provincial_director', 
+                'employee'
+            ]);
             $table->foreignId('province_id')->nullable()->constrained('provinces');
             $table->string('dost_employee_id')->nullable()->unique();
             $table->string('username')->unique();
