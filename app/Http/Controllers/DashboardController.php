@@ -17,6 +17,8 @@ class DashboardController extends Controller
                 return self::sub_admin_dashboard();
             case 'provincial_admin':
                 return self::provincial_admin_dashboard();
+            case 'provincial_sub_admin':
+                return self::provincial_sub_admin_dashboard();
             case 'provincial_director':
                 return self::director_dashboard();
             case 'employee':
@@ -47,6 +49,15 @@ class DashboardController extends Controller
     private function provincial_admin_dashboard() 
     {
         return inertia('ProvincialAdmin/Dashboard/Main', [
+            'total_employees' => User::where('role', 'employee')
+                                     ->where('province_id', auth()->user()->province_id)
+                                     ->count(),
+        ]);
+    }
+
+    private function provincial_sub_admin_dashboard() 
+    {
+        return inertia('ProvincialSubAdmin/Dashboard/Main', [
             'total_employees' => User::where('role', 'employee')
                                      ->where('province_id', auth()->user()->province_id)
                                      ->count(),
