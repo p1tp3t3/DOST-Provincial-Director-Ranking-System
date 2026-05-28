@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         self::generate_provinces();
-        self::generate_users();
+        // self::generate_users();
         self::generate_kpi();
     }
 
@@ -176,21 +176,17 @@ class DatabaseSeeder extends Seeder
         $kpi         = CSVToDFHelper::get_df('kpi.csv');
         $kpi_outcome = CSVToDFHelper::get_df('kpi-outcome.csv');
 
-        foreach ($kpi as $k) {
-            $subRow = [];
-            $j = 1;
-            foreach ($kpi_outcome as $outcome) {
-                $subRow[] = [
-                    'id'          => $j,
-                    'description' => $outcome['description'],
-                ];
-                $j++;
-            }
-            KPI::create([
+        foreach($kpi as $k) {
+            $kpiRecord = KPI::create([
                 'id'            => $k['id'],
                 'outcome_title' => $k['outcome'],
-                'sub_rows'      => json_encode($subRow),
             ]);
+            foreach($kpi_outcome as $outcome) {
+                DB::table('kpi_subrows')->insert([
+                    'kpi_id'      => $kpiRecord->id,
+                    'description' => $outcome['description'],
+                ]);
+            }
         }
     }
 }

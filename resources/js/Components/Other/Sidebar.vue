@@ -1,6 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { usePage, router } from '@inertiajs/vue3'; // 💡 1. Imported router to drive button click navigation safely
+import { ref, computed, watchEffect } from 'vue';import { usePage, router } from '@inertiajs/vue3';
 
 import {
     RiDashboard2Fill,
@@ -10,103 +9,160 @@ import {
     RiFileChartFill,
     RiFileList3Fill,
     RiGlobalFill,
-    RiMenuFoldLine,
-    RiMenuUnfoldLine,
     RiLogoutBoxRLine,
-    RiFolder2Fill
+    RiFolder2Fill,
+    RiUserAddLine,
+    RiListCheck3,
+    RiAdminFill,
+    RiListView,
+    RiFile2Fill,
+    RiBarChart2Fill,
+    RiRoadMapFill,
+    RiFolder2Line,
 } from '@remixicon/vue';
 
 const props = defineProps({
-    role: {
-        type: String,
-        required: true,
-    },
+    role: { type: String, required: true },
 });
 
 const isOpen = ref(true);
+const openGroups = ref([]);
 const page = usePage();
-const authUser = computed(() => page.props.auth.user);
+const authUser  = computed(() => page.props.auth.user);
 const currentUrl = computed(() => page.url);
-
-const getRoleColor = () => {
-    const colors = {
-        'super_admin': 'bg-red-100 text-red-800',
-        'sub_admin': 'bg-orange-100 text-orange-800',
-        'provincial_admin': 'bg-blue-100 text-blue-800',
-        'provincial_director': 'bg-blue-100 text-blue-800',
-        'employee': 'bg-green-100 text-green-800',
-    };
-    return colors[authUser.value?.role];
-};
 
 const getRoleLabel = () => {
     const label = {
-        'super_admin': 'System Administrator',
-        'sub_admin': 'Sub Administrator',
-        'provincial_admin': 'Provincial Administrator',
-        'provincial_director': 'Provincial Director',
-        'employee': 'Employee',
+        'super_admin':        'System Administrator',
+        'sub_admin':          'Sub Administrator',
+        'provincial_admin':   `Provincial Administrator (${authUser.value?.province?.name})`,
+        'provincial_director':'Provincial Director',
+        'employee':           'Employee',
     };
     return label[authUser.value?.role] || '';
 };
 
+const getRoleColor = () => {
+    const colors = {
+        'super_admin':        'bg-red-100 text-red-800',
+        'sub_admin':          'bg-orange-100 text-orange-800',
+        'provincial_admin':   'bg-blue-100 text-blue-800',
+        'provincial_director':'bg-blue-100 text-blue-800',
+        'employee':           'bg-green-100 text-green-800',
+    };
+    return colors[authUser.value?.role];
+};
+
 const tabs = computed(() => {
     if (!authUser.value) return [];
-    
-    switch(authUser.value.role) {
+
+    switch (authUser.value.role) {
         case 'super_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Users', href: '/users', icon: RiUser2Fill },
-                { name: 'Settings', href: '/settings', icon: RiSettings2Fill },
+                { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
+                {
+                    name: 'User Management', icon: RiUser2Fill,
+                    children: [
+                        { name: 'User List',         href: '/users',          icon: RiTeamFill    },
+                        { name: 'Admin List',         href: '/admins',          icon: RiAdminFill    },
+                        { name: 'User Registration', href: '/users/create',   icon: RiUserAddLine },
+                        { name: 'Auto User Generator', href: '/users/auto-generator',   icon: RiFile2Fill },
+                    ]
+                },
+                { name: 'Maintenance', href: '/maintenance', icon: RiSettings2Fill },
+                { name: 'Activity Logs', href: '/activity-logs', icon: RiListView },
+                { name: 'Reports', href: '/super-admin-report', icon: RiBarChart2Fill },
             ];
         case 'sub_admin':
             return [
-                { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill },
-                { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill },
-                { name: 'Employees', href: '/employees', icon: RiTeamFill },
-                { name: 'Reports', href: '/reports', icon: RiFileChartFill },
+                { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
+                { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
+                { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
+                { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
+                { name: 'Reports',              href: '/reports',              icon: RiFileChartFill  },
             ];
         case 'provincial_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Employees', href: '/employees', icon: RiTeamFill },
-                { name: 'Provincial Directors', href: '/provincial-directors', icon: RiUser2Fill },
-                { name: 'Reports', href: '/report', icon: RiFileList3Fill },
+                {
+                    name: 'KPI Management', icon: RiListCheck3,
+                    children: [
+                        { name: 'KPI Overview',    href: '/kpi',        icon: RiFileList3Fill },
+                        { name: 'KPI Reports',     href: '/kpi/reports',icon: RiFileChartFill },
+                    ]
+                },
+                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
+                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         case 'provincial_director':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'My Profile', href:'/profile', icon: RiUser2Fill },
-                { name: 'Reports', href: '/report', icon: RiFileList3Fill },
+                { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
+                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         case 'regional_director':
             return [
-                { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'My Profile', href: '/profile', icon: RiUser2Fill },
-                { name: 'Regional Reports', href: '/regional-reports', icon: RiGlobalFill },
+                { name: 'Dashboard',       href: '/dashboard',        icon: RiDashboard2Fill },
+                { name: 'My Profile',      href: '/profile',          icon: RiUser2Fill      },
+                { name: 'Regional Reports',href: '/regional-reports', icon: RiGlobalFill     },
             ];
         default:
             return [];
     }
 });
 
-const isActive = (href) => {
-    return currentUrl.value === href;
+const isActive = (href) => currentUrl.value === href;
+
+const isGroupActive = (tab) =>
+    tab.children?.some(child => currentUrl.value === child.href);
+
+const toggleGroup = (name) => {
+    if (openGroups.value.includes(name)) {
+        openGroups.value = openGroups.value.filter(g => g !== name);
+    } else {
+        openGroups.value.push(name);
+    }
 };
 
-// 💡 2. Navigation Handler to intercept button clicks and maintain SPA routing rules
-const navigateTo = (href) => {
-    router.visit(href);
+const isGroupOpen = (name) => openGroups.value.includes(name);
+
+// Auto-open groups that have an active child on load or URL change
+watchEffect(() => {
+    tabs.value.forEach(tab => {
+        if (tab.children?.some(child => currentUrl.value === child.href)) {
+            if (!openGroups.value.includes(tab.name)) {
+                openGroups.value.push(tab.name);
+            }
+        }
+    });
+});
+
+const navigateTo = (href) => router.visit(href);
+const handleLogout = () => router.post('/logout');
+
+const onSubNavEnter = (el) => {
+    el.style.height = '0';
+    el.style.opacity = '0';
+    el.offsetHeight; // force reflow
+    el.style.transition = 'height 0.25s ease, opacity 0.2s ease';
+    el.style.height = el.scrollHeight + 'px';
+    el.style.opacity = '1';
+};
+const onSubNavAfterEnter = (el) => {
+    el.style.height = 'auto';
+    el.style.transition = '';
+};
+const onSubNavLeave = (el) => {
+    el.style.height = el.scrollHeight + 'px';
+    el.style.opacity = '1';
+    el.offsetHeight; // force reflow
+    el.style.transition = 'height 0.25s ease, opacity 0.2s ease';
+    el.style.height = '0';
+    el.style.opacity = '0';
 };
 
-// 💡 3. Logout action handler using explicit routing methods
-const handleLogout = () => {
-    router.post('/logout');
-};
-
-const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822'
+const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
 </script>
 
 <template>
@@ -151,28 +207,71 @@ const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/56940949
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-1">
+        <nav class="flex-1 overflow-y-auto px-2 py-3">
             <p v-if="isOpen" class="nav-section-label">Menu</p>
 
-            <v-tooltip
-                v-for="tab in tabs"
-                :key="tab.href"
-                :disabled="isOpen"
-                location="right"
-                :text="tab.name"
-            >
-                <template #activator="{ props: tp }">
-                    <button
-                        v-bind="tp"
-                        :class="['nav-item', isActive(tab.href) ? 'nav-item--active' : '', !isOpen ? 'nav-item--collapsed' : '']"
-                        @click="navigateTo(tab.href)"
+            <template v-for="tab in tabs" :key="tab.name">
+
+                <!-- Parent with children -->
+                <template v-if="tab.children">
+                    <v-tooltip :disabled="isOpen" location="right" :text="tab.name">
+                        <template #activator="{ props: tp }">
+                            <button
+                                v-bind="tp"
+                                :class="['nav-item', isGroupActive(tab) ? 'nav-item--group-active' : '', !isOpen ? 'nav-item--collapsed' : '']"
+                                @click="isOpen ? toggleGroup(tab.name) : null"
+                            >
+                                <component :is="tab.icon" class="nav-icon" />
+                                <span v-if="isOpen" class="nav-label">{{ tab.name }}</span>
+                                <v-icon
+                                    v-if="isOpen"
+                                    size="14"
+                                    class="chevron"
+                                    :class="{ 'chevron--open': isGroupOpen(tab.name) }"
+                                >
+                                    mdi-chevron-down
+                                </v-icon>
+                            </button>
+                        </template>
+                    </v-tooltip>
+
+                    <!-- Sub-nav items -->
+                    <Transition
+                        @enter="onSubNavEnter"
+                        @after-enter="onSubNavAfterEnter"
+                        @leave="onSubNavLeave"
                     >
-                        <component :is="tab.icon" class="nav-icon" />
-                        <span v-if="isOpen" class="nav-label">{{ tab.name }}</span>
-                        <span v-if="isOpen && isActive(tab.href)" class="active-dot"></span>
-                    </button>
+                        <div v-if="isOpen && isGroupOpen(tab.name)" class="sub-nav">
+                            <button
+                                v-for="child in tab.children"
+                                :key="child.href"
+                                :class="['sub-nav-item', isActive(child.href) ? 'sub-nav-item--active' : '']"
+                                @click="navigateTo(child.href)"
+                            >
+                                <component :is="child.icon" class="sub-nav-icon" />
+                                <span class="nav-label">{{ child.name }}</span>
+                                <span v-if="isActive(child.href)" class="active-dot"></span>
+                            </button>
+                        </div>
+                    </Transition>
                 </template>
-            </v-tooltip>
+
+                <!-- Regular nav item -->
+                <v-tooltip v-else :disabled="isOpen" location="right" :text="tab.name">
+                    <template #activator="{ props: tp }">
+                        <button
+                            v-bind="tp"
+                            :class="['nav-item', isActive(tab.href) ? 'nav-item--active' : '', !isOpen ? 'nav-item--collapsed' : '']"
+                            @click="navigateTo(tab.href)"
+                        >
+                            <component :is="tab.icon" class="nav-icon" />
+                            <span v-if="isOpen" class="nav-label">{{ tab.name }}</span>
+                            <span v-if="isOpen && isActive(tab.href)" class="active-dot"></span>
+                        </button>
+                    </template>
+                </v-tooltip>
+
+            </template>
         </nav>
 
         <!-- Logout -->
@@ -207,21 +306,6 @@ const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/56940949
     padding: 5px;
     display: grid;
     place-items: center;
-}
-
-.toggle-btn {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    color: rgba(255,255,255,0.6);
-    transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
-}
-.toggle-btn:hover {
-    background: rgba(255,255,255,0.1);
-    color: #fff;
 }
 
 .role-badge {
@@ -268,6 +352,9 @@ const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/56940949
     color: #fff;
     padding-left: 7px;
 }
+.nav-item--group-active {
+    color: #fff;
+}
 .nav-item--collapsed {
     justify-content: center;
     padding: 9px 0;
@@ -297,5 +384,84 @@ const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/56940949
     border-radius: 50%;
     background: #818cf8;
     flex-shrink: 0;
+}
+
+.chevron {
+    transition: transform 0.2s;
+    color: rgba(255,255,255,0.4);
+    flex-shrink: 0;
+}
+.chevron--open {
+    transform: rotate(180deg);
+}
+
+/* Sub-nav */
+.sub-nav {
+    margin: 2px 0 4px 0;
+    padding-left: 16px;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    margin-left: 18px;
+}
+.sub-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.55);
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+.sub-nav-item:hover {
+    background: rgba(255,255,255,0.07);
+    color: #fff;
+}
+.sub-nav-item--active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #c7d2fe;
+    font-weight: 600;
+    padding-left: 8px;
+}
+.sub-nav-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+.nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.active-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #818cf8;
+    flex-shrink: 0;
+}
+
+/* Sub-nav slide transition */
+.subnav-enter-active,
+.subnav-leave-active {
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+    overflow: hidden;
+    max-height: 200px;
+}
+.subnav-enter-from,
+.subnav-leave-to {
+    max-height: 0;
+    opacity: 0;
 }
 </style>

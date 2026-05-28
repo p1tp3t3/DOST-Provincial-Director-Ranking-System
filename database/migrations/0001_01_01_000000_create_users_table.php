@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('provinces', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->enum('category', ['mic', 's', 'm', 'l']);
             $table->integer('num_plantilla_employees');
             $table->integer('num_municipalities');
             $table->integer('num_cities');
@@ -54,6 +55,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('middle_name');
             $table->string('last_name');
+            $table->string('profile_picture')->nullable();
             $table->string('length_of_service');
             $table->json('education_attainment');
             $table->string('suffix')->nullable();

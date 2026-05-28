@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Modules\EmployeeController;
+use App\Http\Controllers\Modules\MaintenanceController;
+use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
-use App\Http\Controllers\Modules\ProvincialDirectorController;
-use App\Http\Controllers\Modules\UserController;
+use App\Http\Controllers\Modules\Report\SuperAdminReportController;
+use App\Http\Controllers\Modules\User\ActivityLogController;
+use App\Http\Controllers\Modules\User\ProvincialDirectorController;
+use App\Http\Controllers\Modules\User\UserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +26,14 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['au
 
 Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
+    Route::get('/admins', [UserController::class, 'admin_index']);
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+    Route::get('/maintenance', [MaintenanceController::class, 'index']);
+
+    Route::get('/users/create', [UserController::class, 'manual_registration_index']);
+    Route::get('/users/auto-generator', [UserController::class, 'auto_registration_index']);
+    Route::get('/super-admin-report', [SuperAdminReportController::class, 'index']);
+
 
     Route::get('/profile/{id}', [ProfileController::class, 'index']);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -31,6 +42,7 @@ Route::middleware('auth')->group(function () {
     
 
     Route::get('/province-directories', [ProvinceController::class, 'index']);
+    Route::get('/province-directories/{id}', [ProvinceController::class, 'province_profile_index']);
     Route::get('/employees', [EmployeeController::class, 'index']);
     Route::get('/provincial-directors', [ProvincialDirectorController::class, 'index']);
 });

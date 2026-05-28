@@ -14,6 +14,11 @@ class ProvinceProfileResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'name'                => $this->name,
+            'category'            => $this->category,
+            'provincial_director' => $this->provincialDirector,
+            'employees'           => $this->user->where('role', 'employee')->values(),
+        ];
     }
 }

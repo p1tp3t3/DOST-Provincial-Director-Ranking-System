@@ -6,11 +6,7 @@
             <div class="d-flex align-center justify-space-between">
                 <div>
                     <h2 class="text-h6 font-weight-bold mb-1">User Management</h2>
-                    <p class="text-body-2 text-medium-emphasis mb-0">Manage all system accounts and their roles.</p>
                 </div>
-                <v-btn color="primary" variant="flat" size="small" prepend-icon="mdi-plus">
-                    Add User
-                </v-btn>
             </div>
 
             <UserList :list="users" />

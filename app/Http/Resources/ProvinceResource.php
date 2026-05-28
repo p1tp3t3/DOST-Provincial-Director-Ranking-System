@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Crypt;
 
 class ProvinceResource extends JsonResource
 {
@@ -14,15 +15,29 @@ class ProvinceResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $profile = $this->provincialDirector->profile;
-        $name = "{$profile->first_name} {$profile->middle_name} {$profile->last_name}";
+        $director = $this->provincialDirector;
+        $directorData = null;
+
+        if ($director && $director->profile) {
+            $p = $director->profile;
+            $middle = $p->middle_name ? " {$p->middle_name}" : '';
+            $directorData = ['name' => "{$p->first_name}{$middle} {$p->last_name}"];
+        }
 
         return [
-            'name' => $this->name,
-            'provincial_director' => [
-                'name' => $name,
-            ],
-            'employee_member_count' => sizeOf($this->user)
+            'id'                   => Crypt::encrypt($this->id),
+            'name'                 => $this->name,
+            'category_label'       => self::category($this->category),
+            'category'             => $this->category,
+            'provincial_director'  => $directorData,
+            'employee_member_count' => $this->user->where('role', 'employee')->count(),
         ];
+    }
+
+    private function category($c) {
+        if($c == 'mic') return 'Micro';
+        if($c == 's') return 'Small';
+        if($c == 'm') return 'Medium';
+        if($c == 'l') return 'Large';
     }
 }
