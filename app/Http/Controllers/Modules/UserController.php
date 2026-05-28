@@ -21,6 +21,7 @@ class UserController extends Controller
     {
         $data = User::has('profile')
                     ->with('profile')
+                    ->where('role', '!=', 'super_admin')
                     ->latest('created_at')
                     ->paginate(20);
 
