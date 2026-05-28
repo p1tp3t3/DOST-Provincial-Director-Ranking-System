@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Helpers\CSVToDFHelper;
+use App\Helpers\PexelProfilePictureGeneratorHelper;
 use App\Models\KPI;
 use App\Models\Profile;
 use App\Models\Province;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class DatabaseSeeder extends Seeder
 {

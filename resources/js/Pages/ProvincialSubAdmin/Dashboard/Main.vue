@@ -11,10 +11,16 @@
                 <v-col cols="12" md="8">
                     <v-row>
                         <v-col cols="12" sm="6">
-                            <QuantityCard title="Total Users" :quantity="1" :icon="RiGroup2Line" color="indigo" />
+                            <QuantityCard title="Outcomes Met" :quantity="kpiStats.outcomes_met" :icon="RiCheckDoubleLine" color="success" />
                         </v-col>
                         <v-col cols="12" sm="6">
-                            <QuantityCard title="Active Users" :quantity="2" :icon="RiUserFollowFill" color="success" />
+                            <QuantityCard title="Outcomes Not Met" :quantity="kpiStats.outcomes_not_met" :icon="RiAlertLine" color="danger" />
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                            <QuantityCard title="Total Indicators" :quantity="kpiStats.total_indicators" :icon="RiListCheck3" color="indigo" />
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                            <QuantityCard title="Outcomes Met (%)" :quantity="kpiStats.met_rate" :icon="RiMedalLine" color="success" />
                         </v-col>
                     </v-row>
                 </v-col>
@@ -22,15 +28,28 @@
 
             <!-- Charts Row -->
             <v-row dense>
-                <v-col cols="12" md="15" class="d-flex">
+                <v-col cols="12" md="8" class="d-flex">
                     <LineGraphCard
                         class="flex-grow-1"
-                        title="Monthly User Logins"
+                        title="Monthly KPI Performance Trend"
                         :labelX="trendChart.labels"
                         :data="trendChart.series"
                     />
                 </v-col>
+                <v-col cols="12" md="4" class="d-flex">
+                    <PieChartCard
+                        class="flex-grow-1"
+                        title="KPI Outcome Results"
+                        :series="outcomePie.series"
+                        :labels="outcomePie.labels"
+                        :colors="outcomePie.colors"
+                    />
+                </v-col>
             </v-row>
+
+            <!-- KPI Outcomes — Manageable -->
+            <KpiOutcomeList :outcomes="kpiOutcomes" @edit="onEditOutcome" />
+
             <!-- Employees -->
             <v-card class="elevation-1 border-0 rounded-md">
                 <div class="d-flex align-center justify-space-between px-5 pt-4 pb-3">
@@ -65,9 +84,6 @@ import {
     RiAlertLine,
     RiListCheck3,
     RiMedalLine,
-    RiGroup2Line,
-    RiUserFollowFill,
-    RiUserStarFill,
 } from '@remixicon/vue';
 
 defineProps({

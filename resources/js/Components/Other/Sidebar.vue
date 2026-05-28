@@ -36,22 +36,13 @@ const getRoleLabel = () => {
         'super_admin':        'System Administrator',
         'sub_admin':          'Sub Administrator',
         'provincial_admin':   `Provincial Administrator (${authUser.value?.province?.name})`,
+        'provincial_sub_admin':   `Provincial Sub Administrator (${authUser.value?.province?.name})`,
         'provincial_director':'Provincial Director',
         'employee':           'Employee',
     };
     return label[authUser.value?.role] || '';
 };
 
-const getRoleColor = () => {
-    const colors = {
-        'super_admin':        'bg-red-100 text-red-800',
-        'sub_admin':          'bg-orange-100 text-orange-800',
-        'provincial_admin':   'bg-blue-100 text-blue-800',
-        'provincial_director':'bg-blue-100 text-blue-800',
-        'employee':           'bg-green-100 text-green-800',
-    };
-    return colors[authUser.value?.role];
-};
 
 const tabs = computed(() => {
     if (!authUser.value) return [];
@@ -83,6 +74,20 @@ const tabs = computed(() => {
                 { name: 'Reports',              href: '/reports',              icon: RiFileChartFill  },
             ];
         case 'provincial_admin':
+            return [
+                { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
+                {
+                    name: 'User Management', icon: RiUser2Fill,
+                    children: [
+                        { name: 'User List',         href: '/users',          icon: RiTeamFill    },
+                        { name: 'User Registration', href: '/users/create',   icon: RiUserAddLine },
+                        { name: 'Auto User Generator', href: '/users/auto-generator',   icon: RiFile2Fill },
+                    ]
+                },
+                { name: 'Activity Logs', href: '/activity-logs', icon: RiListView },
+                { name: 'Reports', href: '/provincial-admin-report', icon: RiBarChart2Fill },
+            ];
+        case 'provincial_sub_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
                 {
