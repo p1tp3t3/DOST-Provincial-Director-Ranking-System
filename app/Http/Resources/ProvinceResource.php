@@ -34,10 +34,8 @@ class ProvinceResource extends JsonResource
         ];
     }
 
-    private function category($c) {
-        if($c == 'mic') return 'Micro';
-        if($c == 's') return 'Small';
-        if($c == 'm') return 'Medium';
-        if($c == 'l') return 'Large';
+    private function category(?string $c): string
+    {
+        return ucfirst((string) $c);
     }
 }

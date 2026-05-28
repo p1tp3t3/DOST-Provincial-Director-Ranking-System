@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Province;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -26,18 +27,81 @@ class DashboardController extends Controller
         }
     }
 
-
-    private function super_admin_dashboard() 
+    private function super_admin_dashboard()
     {
+        $availableYears = DB::table('provincial_director_kpis')
+            ->distinct()->orderByDesc('year')->pluck('year')->values()->toArray();
+
+        $kpiScoresByYear = [];
+        foreach ($availableYears as $year) {
+            $kpiScoresByYear[$year] = self::compute_province_scores($year);
+        }
+
         return inertia('Admin/Dashboard/Main', [
-            'total_provinces' => Province::count(),
-            'total_users' => User::count(),
-            'total_directors' => User::where('role', 'provincial_director')->count(),
-            'total_employees' => User::where('role', 'employee')->count()
+            'total_provinces'    => Province::count(),
+            'total_users'        => User::count(),
+            'total_directors'    => User::where('role', 'provincial_director')->count(),
+            'total_employees'    => User::where('role', 'employee')->count(),
+            'total_sub_admins'   => User::where('role', 'sub_admin')->count(),
+            'kpi_scores_by_year' => $kpiScoresByYear,
+            'available_years'    => $availableYears,
         ]);
     }
 
-    private function sub_admin_dashboard() 
+    private static function compute_province_scores(int $year): array
+    {
+        $rows = DB::table('provincial_director_kpis as pk')
+            ->join('users as u',    'u.id',  '=', 'pk.provincial_director_id')
+            ->join('provinces as p', 'p.id', '=', 'u.province_id')
+            ->join('profiles as pr', 'pr.user_id', '=', 'u.id')
+            ->where('pk.year', $year)
+            ->whereNotNull('pk.target')
+            ->whereNotNull('pk.accomplished')
+            ->whereRaw("pk.target       REGEXP '^-?[0-9]+(\\.[0-9]+)?$'")
+            ->whereRaw("pk.accomplished REGEXP '^-?[0-9]+(\\.[0-9]+)?$'")
+            ->whereRaw("CAST(pk.target AS DECIMAL(20,4)) > 0")
+            ->select(
+                'p.name as province',
+                'p.category',
+                DB::raw("CONCAT(pr.first_name, ' ', pr.last_name) as director"),
+                DB::raw("CAST(pk.accomplished AS DECIMAL(20,4)) as accomplished"),
+                DB::raw("CAST(pk.target       AS DECIMAL(20,4)) as target")
+            )
+            ->get();
+
+        $byProvince = [];
+        foreach ($rows as $row) {
+            $key = $row->province;
+            if (!isset($byProvince[$key])) {
+                $byProvince[$key] = [
+                    'province' => $row->province,
+                    'category' => $row->category,
+                    'director' => $row->director,
+                    'ratios'   => [],
+                ];
+            }
+            if ($row->target > 0) {
+                $byProvince[$key]['ratios'][] = min(($row->accomplished / $row->target) * 100, 200);
+            }
+        }
+
+        $scores = [];
+        foreach ($byProvince as $data) {
+            if (!$data['ratios']) continue;
+            $scores[] = [
+                'province' => $data['province'],
+                'category' => $data['category'],
+                'director' => $data['director'],
+                'score'    => round(array_sum($data['ratios']) / count($data['ratios']), 1),
+                'count'    => count($data['ratios']),
+            ];
+        }
+
+        usort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
+        return array_values($scores);
+    }
+
+    private function sub_admin_dashboard()
     {
         return inertia('SubAdmin/Dashboard/Main', [
             'total_directors' => User::where('role', 'provincial_director')->count(),
@@ -46,7 +110,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function provincial_admin_dashboard() 
+    private function provincial_admin_dashboard()
     {
         return inertia('ProvincialAdmin/Dashboard/Main', [
             'total_employees' => User::where('role', 'employee')
@@ -55,7 +119,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function provincial_sub_admin_dashboard() 
+    private function provincial_sub_admin_dashboard()
     {
         return inertia('ProvincialSubAdmin/Dashboard/Main', [
             'total_employees' => User::where('role', 'employee')
@@ -64,7 +128,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function director_dashboard() 
+    private function director_dashboard()
     {
         return inertia('Director/Dashboard/Main', [
             'total_employees' => User::where('role', 'employee')

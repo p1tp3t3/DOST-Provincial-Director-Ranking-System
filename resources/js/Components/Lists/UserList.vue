@@ -54,7 +54,7 @@
                             <span class="text-body-2 font-weight-medium">{{ user.name }}</span>
                         </div>
                     </td>
-                    <td class="text-body-2 text-medium-emphasis">{{ user.id }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ user.employee_id ?? '—' }}</td>
                     <td class="text-body-2">{{ user.email }}</td>
                     <td class="text-center">
                         <v-chip
@@ -199,11 +199,8 @@ const filtered = computed(() => {
     let data = props.list.data;
     const q = search.value.toLowerCase().trim();
     if (q) {
-        data = data.filter(u =>
-            u.name?.toLowerCase().includes(q)  ||
-            u.email?.toLowerCase().includes(q) ||
-            u.id?.toLowerCase().includes(q)
-        );
+        const match = (val) => (val ?? '').toLowerCase().includes(q);
+        data = data.filter(u => match(u.name) || match(u.email) || match(u.employee_id));
     }
     if (selectedRole.value) {
         data = data.filter(u => u.role?.toLowerCase() === selectedRole.value);

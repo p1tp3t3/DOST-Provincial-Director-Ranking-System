@@ -25,110 +25,213 @@ class DatabaseSeeder extends Seeder
         self::generate_provinces();
         self::generate_users();
         self::generate_kpi();
+        $this->call(KPIScoreSeeder::class);
     }
 
-    private function generate_provinces() { 
-        $provices = CSVToDFHelper::get_df('provinces.csv');
-        foreach($provices as $p)
-            Province::create([
-                'name' => $p['name'],
-                'category' => $p['category'],
-                'num_plantilla_employees' => fake()->randomNumber(1, 20),
-                'num_municipalities' => fake()->randomNumber(1),
-                'num_cities' => fake()->randomNumber(1, 20),
-            ]);
-    }
+    // Classification per Excel "Province Directory" sheet (criterion: number of municipalities)
+    private const CLASSIFICATION = [
+        'micro' => [
+            'Agusan del Norte', 'Apayao', 'Aurora', 'Batanes', 'Biliran',
+            'Camiguin', 'Davao del Norte', 'Davao del Sur', 'Davao Occidental',
+            'Davao Oriental', 'Dinagat Island', 'Guimaras', 'Kalinga',
+            'Marinduque', 'Mountain Province', 'Quirino', 'Sarangani', 'Siquijor',
+        ],
+        'small' => [
+            'Agusan del Sur', 'Aklan', 'Albay', 'Antique', 'Bataan', 'Benguet',
+            'Bukidnon', 'Bulacan', 'Camarines Norte', 'Capiz', 'Catanduanes',
+            'Cotabato (North)', 'Davao de Oro', 'Ifugao', 'La Union', 'Masbate',
+            'Misamis Occidental', 'Negros Oriental', 'Nueva Vizcaya',
+            'Occidental Mindoro', 'Oriental Mindoro', 'Pampanga', 'Rizal',
+            'Romblon', 'Sorsogon', 'South Cotabato', 'Southern Leyte',
+            'Sultan Kudarat', 'Sulu', 'Surigao del Norte', 'Surigao del Sur',
+            'Tarlac', 'Zambales', 'Zamboanga Sibugay',
+        ],
+        'medium' => [
+            'Abra', 'Batangas', 'Cagayan', 'Cavite', 'Eastern Samar',
+            'Ilocos Norte', 'Laguna', 'Lanao del Norte', 'Misamis Oriental',
+            'Northern Samar', 'Nueva Ecija', 'Palawan', 'Samar (Western Samar)',
+            'Zamboanga del Norte', 'Zamboanga del Sur',
+        ],
+        'large' => [
+            'Bohol', 'Camarines Sur', 'Cebu Province', 'Ilocos Sur', 'Iloilo',
+            'Isabela', 'Leyte', 'Negros Occidental', 'Pangasinan', 'Quezon',
+        ],
+    ];
 
-    private function generate_users() 
+    private static function get_category(string $name): string
     {
-        $provinces = Province::all();
+        foreach (self::CLASSIFICATION as $category => $list) {
+            if (in_array($name, $list, true)) return $category;
+        }
+        return 'micro';
+    }
 
-        File::deleteDirectory(storage_path('app/public/profile-pictures'));
-        User::factory()->create(['role' => 'super_admin']);
-        User::factory()->create(['role' => 'sub_admin']);
+    private function generate_provinces()
+    {
+        $provinces = CSVToDFHelper::get_df('provinces.csv');
         foreach ($provinces as $p) {
-
-            // 1. Create exactly 1 Provincial Director per province
-            $director = User::factory()->create([
-                                        'role' => 'provincial_director', 
-                                        'dost_employee_id' => self::generate_emp_id(), 
-                                        'province_id' => $p->id
-                                    ]);
-            self::generate_profile($director);
-
-            // 2. Create 10 Employees per province with GUARANTEED unique IDs
-            for ($i = 1; $i <= 10; $i++) {
-                $employee = User::factory()->create([
-                    'role' => 'employee', 
-                    'province_id' => $p->id, 
-                    // Generates format like: emp-p12-05 (Province ID + Iterator index)
-                    'dost_employee_id' => "emp-p{$p->id}-" . sprintf('%02d', $i)
-                ]);
-                self::generate_profile($employee);
-            }
-
-            // 3. Create Admins per province
-            User::factory()->create(['role' => 'provincial_admin', 'province_id' => $p->id]);
-            User::factory()->create(['role' => 'provincial_sub_admin', 'province_id' => $p->id]);
+            Province::create([
+                'name'                    => $p['name'],
+                'category'                => self::get_category($p['name']),
+                'num_plantilla_employees' => (int) ($p['num_plantilla_employees'] ?? 0),
+                'num_municipalities'      => (int) ($p['num_municipalities']      ?? 0),
+                'num_cities'              => (int) ($p['num_cities']              ?? 0),
+            ]);
         }
     }
 
-    private function generate_emp_id() {
-        // Generates a wide-span format like: dir-xyz-742
+    private function generate_users()
+    {
+        $provinces    = Province::all()->keyBy('name');
+        $directorRows = CSVToDFHelper::get_df('provincial-directors.csv');
+        $employeeRows = CSVToDFHelper::get_df('provincial-employees.csv');
+
+        // Group employees by province name
+        $employeesByProvince = [];
+        foreach ($employeeRows as $emp) {
+            $employeesByProvince[$emp['province']][] = $emp;
+        }
+
+        $superAdmin = User::factory()->create([
+            'role'     => 'super_admin',
+            'email'    => 'vinzmuloc@gmail.com',
+            'username' => 'vinzmuloc',
+        ]);
+        Profile::create([
+            'user_id'              => $superAdmin->id,
+            'first_name'           => 'Vince',
+            'middle_name'          => '',
+            'last_name'            => '',
+            'length_of_service'    => '',
+            'education_attainment' => ['data' => []],
+        ]);
+
+        User::factory()->create(['role' => 'sub_admin']);
+
+        foreach ($directorRows as $dir) {
+            $province = $provinces[$dir['province']] ?? null;
+            if (!$province) continue;
+
+            // Create Provincial Director
+            $director = User::factory()->create([
+                'role'             => 'provincial_director',
+                'dost_employee_id' => self::generate_emp_id(),
+                'province_id'      => $province->id,
+            ]);
+            self::generate_profile_from_data($director, [
+                'full_name'           => $dir['full_name'],
+                'length_of_service'   => $dir['length_of_service_dost'],
+                'education_bachelor'  => $dir['education_bachelor'],
+                'education_master'    => $dir['education_master'],
+                'education_doctorate' => $dir['education_doctorate'],
+            ]);
+
+            // Create Employees from real data
+            $provEmployees = $employeesByProvince[$dir['province']] ?? [];
+            foreach ($provEmployees as $i => $emp) {
+                $employee = User::factory()->create([
+                    'role'             => 'employee',
+                    'province_id'      => $province->id,
+                    'dost_employee_id' => "emp-p{$province->id}-" . sprintf('%02d', $i + 1),
+                ]);
+                self::generate_profile_from_data($employee, [
+                    'full_name'           => $emp['full_name'],
+                    'length_of_service'   => $emp['length_of_service'],
+                    'education_bachelor'  => $emp['education_bachelor'],
+                    'education_master'    => $emp['education_master'],
+                    'education_doctorate' => $emp['education_doctorate'],
+                    'position'            => $emp['position'],
+                    'status'              => $emp['status'],
+                    'work_specification'  => $emp['work_specification'],
+                ]);
+            }
+
+            // Create Provincial Admin (no real data available)
+            User::factory()->create(['role' => 'provincial_admin', 'province_id' => $province->id]);
+        }
+    }
+
+    private function generate_emp_id()
+    {
         return sprintf(
-            'dir-%s-%d', 
-            strtolower(fake()->lexify('???')), 
+            'dir-%s-%d',
+            strtolower(fake()->lexify('???')),
             fake()->numberBetween(100, 999)
         );
     }
 
+    private function generate_profile_from_data(User $user, array $data): void
+    {
+        [$firstName, $middleName, $lastName] = self::parse_name($data['full_name'] ?? '');
 
-    private function generate_profile($d) {
-        //$profile_picture = PexelProfilePictureGeneratorHelper::generate('random people profile picture');
         $profile = Profile::create([
-            'user_id' => $d->id,
-            'first_name' => fake()->firstName(),
-            //'profile_picture' => $profile_picture,
-            'last_name' => fake()->lastName(),
-            'middle_name' => fake()->lastName(),
-            'length_of_service' => fake()->numberBetween(1, 3),
+            'user_id'              => $user->id,
+            'first_name'           => $firstName  ?: fake()->firstName(),
+            'last_name'            => $lastName   ?: fake()->lastName(),
+            'middle_name'          => $middleName ?: fake()->lastName(),
+            'length_of_service'    => $data['length_of_service'] ?: (string) fake()->numberBetween(1, 3),
             'education_attainment' => [
                 'data' => [
-                    fake()->sentences(3, true),
-                    fake()->sentences(3, true),
-                    fake()->sentences(3, true),
-                ]
+                    $data['education_bachelor']  ?? '',
+                    $data['education_master']    ?? '',
+                    $data['education_doctorate'] ?? '',
+                ],
             ],
         ]);
-        if($d->role == 'employee') {
+
+        if ($user->role === 'employee') {
+            $rawStatus = strtolower(trim($data['status'] ?? ''));
             DB::table('employee_profiles')->insert([
-                'profile_id' => $profile->id,
-                'status' => fake()->randomElement(['permanent', 'cos']),
-                'position' => fake()->word(),
+                'profile_id'         => $profile->id,
+                'status'             => $rawStatus === 'cos' ? 'cos' : 'permanent',
+                'position'           => $data['position'] ?: fake()->word(),
                 'work_specification' => json_encode([
-                    'data' => [
-                        fake()->sentences(3, true),
-                        fake()->sentences(3, true),
-                        fake()->sentences(3, true),
-                    ]
+                    'data' => [$data['work_specification'] ?? '', '', ''],
                 ]),
             ]);
         }
     }
 
-    private function generate_kpi() {
-        $kpi = CSVToDFHelper::get_df('kpi.csv');
+    private static function parse_name(string $fullName): array
+    {
+        $fullName = trim($fullName);
+        if ($fullName === '') return ['', '', ''];
+
+        $parts = array_values(array_filter(explode(' ', $fullName)));
+        $count = count($parts);
+
+        if ($count === 1) {
+            return [ucwords(strtolower($parts[0])), '', ''];
+        }
+
+        $first  = ucwords(strtolower($parts[0]));
+        $last   = ucwords(strtolower($parts[$count - 1]));
+        $middle = $count > 2
+            ? ucwords(strtolower(implode(' ', array_slice($parts, 1, -1))))
+            : '';
+
+        return [$first, $middle, $last];
+    }
+
+    private function generate_kpi()
+    {
+        $kpi         = CSVToDFHelper::get_df('kpi.csv');
         $kpi_outcome = CSVToDFHelper::get_df('kpi-outcome.csv');
 
-        foreach($kpi as $k) {
-            $kpi = KPI::create([
-                        'id' => $k['id'],
-                        'outcome_title' => $k['outcome'],
-                    ]);
-            foreach($kpi_outcome as $outcome) {
+        $outcomesByKpi = [];
+        foreach ($kpi_outcome as $outcome) {
+            $outcomesByKpi[(int) $outcome['kpi_id']][] = $outcome['description'];
+        }
+
+        foreach ($kpi as $k) {
+            $kpiRecord = KPI::create([
+                'id'            => $k['id'],
+                'outcome_title' => $k['outcome'],
+            ]);
+            foreach ($outcomesByKpi[(int) $k['id']] ?? [] as $description) {
                 DB::table('kpi_subrows')->insert([
-                    'kpi_id' => $kpi->id,
-                    'description' => $outcome['description']
+                    'kpi_id'      => $kpiRecord->id,
+                    'description' => $description,
                 ]);
             }
         }

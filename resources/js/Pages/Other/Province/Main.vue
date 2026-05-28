@@ -3,11 +3,8 @@
         <AddProvinceModal v-if="user?.role == 'super_admin'" v-model:open="open" />
 
         <div>
-            <!-- Page Header -->
-            <div class="d-flex align-center justify-space-between mb-5">
-                <div>
-                    <h2 class="text-h6 font-weight-bold mb-1">Province Directories</h2>
-                </div>
+            <div class="d-flex align-center justify-space-between mb-3">
+                <h2 class="text-h6 font-weight-bold">Province Directories</h2>
                 <v-btn
                     v-if="user?.role === 'super_admin'"
                     color="primary"

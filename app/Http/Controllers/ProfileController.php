@@ -9,13 +9,12 @@ use Illuminate\Http\Request;
 class ProfileController extends Controller
 {
     public function index($id) {
-        $data = User::has('profile')
-                    ->with(['profile.employeeProfile', 'province'])
-                    ->where('dost_employee_id', $id)
-                    ->get();
+        $user = User::with(['profile.employeeProfile', 'province'])->find($id);
+
+        if (!$user) abort(404);
 
         return inertia('Other/Profile/Main', [
-            'user_profile' => UserProfileResource::collection($data)[0]
+            'user_profile' => new UserProfileResource($user),
         ]);
     }
     public function director_kpi_index() {

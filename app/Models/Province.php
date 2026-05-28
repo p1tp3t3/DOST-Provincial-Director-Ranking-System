@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Province extends Model
 {
-    public $table = 'provinces';
+    public $table    = 'provinces';
+    protected $fillable = ['name', 'category', 'num_plantilla_employees', 'num_municipalities', 'num_cities'];
 
     public function user() {
         return $this->hasMany(User::class, 'province_id', 'id');

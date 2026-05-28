@@ -45,7 +45,7 @@
                             {{ director.name }}
                         </div>
                         <div class="text-caption text-medium-emphasis">
-                            {{ director.id }}
+                            {{ director.employee_id }}
                         </div>
                     </div>
                 </div>
@@ -117,9 +117,9 @@ const filteredDirectors = computed(() => {
     const query = search.value.toLowerCase().trim();
     if (!query) return props.list.data;
     return props.list.data.filter(d =>
-        d.name?.toLowerCase().includes(query) ||
-        d.province?.toLowerCase().includes(query) ||
-        d.id?.toLowerCase().includes(query)
+        d.name?.toLowerCase().includes(query)        ||
+        d.province?.toLowerCase().includes(query)   ||
+        d.employee_id?.toLowerCase().includes(query)
     );
 });
 

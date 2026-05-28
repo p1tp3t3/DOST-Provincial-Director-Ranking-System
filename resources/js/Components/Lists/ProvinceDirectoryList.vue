@@ -1,16 +1,16 @@
 <template>
     <!-- Toolbar -->
-    <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-2">
-        <div class="d-flex align-center gap-3 flex-wrap">
+    <div class="d-flex align-center justify-space-between mb-3 flex-wrap gap-2">
+        <div class="d-flex align-center gap-2 flex-wrap">
             <v-text-field
                 v-model="search"
-                placeholder="Search by province or director..."
+                placeholder="Search province or director..."
                 variant="solo-filled"
                 density="compact"
                 hide-details
                 clearable
                 prepend-inner-icon="mdi-magnify"
-                style="min-width: 240px; max-width: 300px;"
+                style="min-width: 220px; max-width: 280px;"
             />
             <v-select
                 v-model="selectedCategory"
@@ -22,104 +22,183 @@
                 density="compact"
                 hide-details
                 clearable
-                style="min-width: 160px; max-width: 180px;"
+                style="min-width: 150px; max-width: 170px;"
             />
         </div>
-        <span class="text-caption text-medium-emphasis">
-            {{ filtered.length }} of {{ list.length }} provinces
-        </span>
+
+        <div class="d-flex align-center gap-3">
+            <span class="text-caption text-medium-emphasis">
+                {{ filtered.length }} of {{ list.length }} provinces
+            </span>
+            <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
+                <v-btn value="table" icon size="small">
+                    <v-icon size="16">mdi-table</v-icon>
+                    <v-tooltip activator="parent" location="bottom">Table View</v-tooltip>
+                </v-btn>
+                <v-btn value="cards" icon size="small">
+                    <v-icon size="16">mdi-view-grid</v-icon>
+                    <v-tooltip activator="parent" location="bottom">Card View</v-tooltip>
+                </v-btn>
+            </v-btn-toggle>
+        </div>
     </div>
 
-    <!-- Province Cards -->
-    <v-row>
+    <!-- Cards View -->
+    <v-row v-if="viewMode === 'cards'" dense>
         <v-col
             v-for="(item, i) in filtered"
             :key="i"
             cols="12"
             sm="6"
             md="4"
+            lg="3"
             class="d-flex"
         >
             <v-card
                 width="100%"
-                elevation="1"
+                elevation="0"
                 rounded="lg"
                 class="province-card d-flex flex-column"
+                border
                 @click="viewOfficeDetails(item)"
             >
-                <v-card-item class="pt-5 pb-3 px-4 flex-grow-1">
-
-                    <!-- Province name + employee count -->
-                    <div class="d-flex align-start justify-space-between gap-2 mb-4">
-                        <div class="text-subtitle-1 font-weight-bold line-height-tight">
-                            {{ item.name + ` (${item.category_label})` }}
+                <v-card-item class="pt-4 pb-2 px-4 flex-grow-1">
+                    <div class="d-flex align-start justify-space-between gap-2 mb-3">
+                        <div class="text-subtitle-2 font-weight-bold line-height-tight">
+                            {{ item.name }}
                         </div>
-                        <div class="d-flex align-center gap-1 flex-shrink-0 text-medium-emphasis">
-                            <v-icon size="14">mdi-account-group-outline</v-icon>
-                            <span class="text-caption">{{ item.employee_member_count }}</span>
+                        <div class="d-flex align-center gap-1 flex-shrink-0">
+                            <v-chip
+                                :color="categoryColor(item.category)"
+                                size="x-small"
+                                variant="tonal"
+                                class="font-weight-medium"
+                            >{{ item.category_label }}</v-chip>
                         </div>
                     </div>
 
-                    <v-divider></v-divider>
+                    <v-divider />
 
-                    <!-- Director info -->
-                    <div class="mt-3">
-                        <div class="text-caption text-medium-emphasis mb-1 font-weight-medium" style="letter-spacing:0.04em; text-transform:uppercase; font-size:0.6rem;">
-                            Provincial Director
-                        </div>
-
+                    <div class="mt-2 d-flex align-center justify-space-between">
                         <div v-if="item.provincial_director" class="d-flex align-center gap-2">
-                            <v-avatar size="28">
-                                <v-img :src="defPic" cover></v-img>
+                            <v-avatar :color="nameColor(item.provincial_director.name)" size="24">
+                                <span class="text-caption font-weight-bold" style="font-size:0.6rem; color:white;">
+                                    {{ initials(item.provincial_director.name) }}
+                                </span>
                             </v-avatar>
-                            <span class="text-body-2 font-weight-medium text-truncate">
+                            <span class="text-body-2 text-truncate" style="max-width:130px;">
                                 {{ item.provincial_director.name }}
                             </span>
                         </div>
-
-                        <div v-else class="d-flex align-center gap-2">
-                            <v-icon size="16" color="warning">mdi-account-alert-outline</v-icon>
-                            <span class="text-body-2 text-warning font-weight-medium">Vacant</span>
+                        <div v-else class="d-flex align-center gap-1">
+                            <v-icon size="14" color="warning">mdi-account-alert-outline</v-icon>
+                            <span class="text-caption text-warning font-weight-medium">Vacant</span>
+                        </div>
+                        <div class="d-flex align-center gap-1 text-medium-emphasis">
+                            <v-icon size="13">mdi-account-group-outline</v-icon>
+                            <span class="text-caption">{{ item.employee_member_count }}</span>
                         </div>
                     </div>
-
                 </v-card-item>
-
-                <!-- View footer -->
-                <div class="view-footer px-4 py-2 d-flex align-center justify-space-between">
-                    <span class="text-caption text-primary font-weight-medium">View Directory</span>
-                    <v-icon size="14" color="primary">mdi-arrow-right</v-icon>
-                </div>
             </v-card>
         </v-col>
 
-        <!-- Empty state -->
         <v-col v-if="filtered.length === 0" cols="12">
-            <div class="text-center py-12">
-                <v-icon size="40" color="grey-lighten-2" class="mb-3">mdi-map-search-outline</v-icon>
-                <div class="text-body-2 text-medium-emphasis">
-                    No provinces found matching "<strong>{{ search }}</strong>"
-                </div>
+            <div class="text-center py-10">
+                <v-icon size="36" color="grey-lighten-2" class="mb-2">mdi-map-search-outline</v-icon>
+                <div class="text-body-2 text-medium-emphasis">No provinces found matching "<strong>{{ search }}</strong>"</div>
             </div>
         </v-col>
     </v-row>
+
+    <!-- Table View -->
+    <v-card v-else elevation="0" border rounded="lg">
+        <v-data-table
+            :headers="tableHeaders"
+            :items="filtered"
+            :search="search"
+            density="compact"
+            hover
+            hide-default-footer
+            :items-per-page="-1"
+            @click:row="(_, { item }) => viewOfficeDetails(item)"
+            class="province-table"
+        >
+            <template #item.name="{ item }">
+                <span class="text-body-2 font-weight-medium">{{ item.name }}</span>
+            </template>
+
+            <template #item.category_label="{ item }">
+                <v-chip
+                    :color="categoryColor(item.category)"
+                    size="x-small"
+                    variant="tonal"
+                    class="font-weight-medium"
+                >{{ item.category_label }}</v-chip>
+            </template>
+
+            <template #item.provincial_director="{ item }">
+                <div v-if="item.provincial_director" class="d-flex align-center gap-2 py-1">
+                    <v-avatar :color="nameColor(item.provincial_director.name)" size="24">
+                        <span style="font-size:0.6rem; font-weight:700; color:white;">
+                            {{ initials(item.provincial_director.name) }}
+                        </span>
+                    </v-avatar>
+                    <span class="text-body-2">{{ item.provincial_director.name }}</span>
+                </div>
+                <div v-else class="d-flex align-center gap-1">
+                    <v-icon size="14" color="warning">mdi-account-alert-outline</v-icon>
+                    <span class="text-caption text-warning font-weight-medium">Vacant</span>
+                </div>
+            </template>
+
+            <template #item.employee_member_count="{ item }">
+                <div class="d-flex align-center gap-1 text-medium-emphasis">
+                    <v-icon size="13">mdi-account-group-outline</v-icon>
+                    <span class="text-body-2">{{ item.employee_member_count }}</span>
+                </div>
+            </template>
+
+            <template #item.actions>
+                <v-icon size="14" color="primary">mdi-arrow-right</v-icon>
+            </template>
+
+            <template #no-data>
+                <div class="text-center py-8">
+                    <v-icon size="32" color="grey-lighten-2" class="mb-2">mdi-map-search-outline</v-icon>
+                    <div class="text-body-2 text-medium-emphasis">No provinces found</div>
+                </div>
+            </template>
+        </v-data-table>
+    </v-card>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 
-const defPic = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
-
 const props = defineProps({
-    list: {
-        type: Array,
-        default: () => []
-    }
+    list: { type: Array, default: () => [] }
 });
 
 const search = ref('');
-const selectedCategory = ref(null)
+const selectedCategory = ref(null);
+const viewMode = ref('table');
+
+const categoryOptions = [
+    { label: 'Micro',  value: 'micro'  },
+    { label: 'Small',  value: 'small'  },
+    { label: 'Medium', value: 'medium' },
+    { label: 'Large',  value: 'large'  },
+];
+
+const tableHeaders = [
+    { title: 'Province',          key: 'name',                 sortable: true  },
+    { title: 'Category',          key: 'category_label',       sortable: true  },
+    { title: 'Provincial Director', key: 'provincial_director', sortable: false },
+    { title: 'Staff',             key: 'employee_member_count', sortable: true, align: 'center' },
+    { title: '',                  key: 'actions',               sortable: false, align: 'end', width: '40px' },
+];
 
 const filtered = computed(() => {
     let data = props.list;
@@ -136,38 +215,32 @@ const filtered = computed(() => {
     return data;
 });
 
-const categoryOptions = [
-    { label: 'Micro',  value: 'mic'  },
-    { label: 'Small',  value: 's'  },
-    { label: 'Medium', value: 'm' },
-    { label: 'Large',  value: 'l'  },
-];
+const palette = ['#5C6BC0','#42A5F5','#26A69A','#66BB6A','#FFA726','#EC407A','#AB47BC','#78909C'];
 
-const viewOfficeDetails = (item) => {
-    router.visit(`/province-directories/${item.id}`)
+const nameColor = (name = '') => {
+    const idx = [...name].reduce((a, c) => a + c.charCodeAt(0), 0) % palette.length;
+    return palette[idx];
 };
+
+const initials = (name = '') =>
+    name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
+
+const categoryColor = (cat) => ({
+    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple'
+}[cat] ?? 'grey');
+
+const viewOfficeDetails = (item) => router.visit(`/province-directories/${item.id}`);
 </script>
 
 <style scoped>
 .province-card {
     cursor: pointer;
-    transition: box-shadow 0.2s, transform 0.2s;
-    border: 1px solid transparent;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 .province-card:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
-    transform: translateY(-2px);
-    border-color: rgba(var(--v-theme-primary), 0.2);
+    border-color: rgba(var(--v-theme-primary), 0.5) !important;
+    box-shadow: 0 2px 10px rgba(var(--v-theme-primary), 0.08) !important;
 }
-.line-height-tight {
-    line-height: 1.3 !important;
-}
-.view-footer {
-    border-top: 1px solid rgba(0,0,0,0.06);
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-.province-card:hover .view-footer {
-    opacity: 1;
-}
+.line-height-tight { line-height: 1.3 !important; }
+.province-table :deep(tr) { cursor: pointer; }
 </style>
