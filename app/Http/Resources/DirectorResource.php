@@ -22,10 +22,11 @@ class DirectorResource extends JsonResource
         $lastName = $profile?->last_name ?? '';
 
         return [
-            'id' => $this->dost_employee_id,
-            'name' => trim($firstName . ' ' . $middleName . $lastName),
-            'province' => $this->province?->name,
-            'length_of_service' => $profile->length_of_service
+            'id'                => $this->id,
+            'employee_id'       => $this->dost_employee_id,
+            'name'              => trim($firstName . ' ' . $middleName . $lastName),
+            'province'          => $this->province?->name,
+            'length_of_service' => $profile->length_of_service,
         ];
     }
 }

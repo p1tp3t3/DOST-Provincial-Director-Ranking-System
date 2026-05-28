@@ -90,6 +90,7 @@ const tabs = computed(() => {
         case 'provincial_sub_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
+                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 {
                     name: 'KPI Management', icon: RiListCheck3,
                     children: [
@@ -97,7 +98,6 @@ const tabs = computed(() => {
                         { name: 'KPI Reports',     href: '/kpi/reports',icon: RiFileChartFill },
                     ]
                 },
-                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         case 'provincial_director':

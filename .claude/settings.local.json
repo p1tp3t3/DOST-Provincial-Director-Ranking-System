@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find app/Http/Controllers -name \"UserController.php\")",
+      "Bash(ls app/Http/Controllers/Modules/User/)",
+      "Bash(git rm *)",
+      "Bash(git add *)"
+    ]
+  }
+}

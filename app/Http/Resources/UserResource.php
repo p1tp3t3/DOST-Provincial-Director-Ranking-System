@@ -23,10 +23,11 @@ class UserResource extends JsonResource
         $lastName = $profile?->last_name ?? '';
 
         return [
-            'id' => $this->dost_employee_id,
-            'role' => $this->role,
-            'name' => trim($firstName . ' ' . $middleName . $lastName),
-            'email' => $this->email,             // 💡 Changed from $request
+            'id'          => $this->id,
+            'employee_id' => $this->dost_employee_id,
+            'role'        => $this->role,
+            'name'        => trim($firstName . ' ' . $middleName . $lastName),
+            'email'       => $this->email,
         ];
     }
 }
