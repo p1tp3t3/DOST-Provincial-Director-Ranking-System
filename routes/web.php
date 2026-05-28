@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
     
 
     Route::get('/province-directories', [ProvinceController::class, 'index']);
+    Route::post('/province-directories/add', [ProvinceController::class, 'store']);
     Route::get('/province-directories/{id}', [ProvinceController::class, 'province_profile_index']);
     Route::get('/employees', [EmployeeController::class, 'index']);
     Route::get('/provincial-directors', [ProvincialDirectorController::class, 'index']);

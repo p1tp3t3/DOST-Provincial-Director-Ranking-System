@@ -23,8 +23,47 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         self::generate_provinces();
-        // self::generate_users();
+        self::generate_users();
         self::generate_kpi();
+        $this->call(KPIScoreSeeder::class);
+    }
+
+    // Classification per Excel "Province Directory" sheet (criterion: number of municipalities)
+    private const CLASSIFICATION = [
+        'micro' => [
+            'Agusan del Norte', 'Apayao', 'Aurora', 'Batanes', 'Biliran',
+            'Camiguin', 'Davao del Norte', 'Davao del Sur', 'Davao Occidental',
+            'Davao Oriental', 'Dinagat Island', 'Guimaras', 'Kalinga',
+            'Marinduque', 'Mountain Province', 'Quirino', 'Sarangani', 'Siquijor',
+        ],
+        'small' => [
+            'Agusan del Sur', 'Aklan', 'Albay', 'Antique', 'Bataan', 'Benguet',
+            'Bukidnon', 'Bulacan', 'Camarines Norte', 'Capiz', 'Catanduanes',
+            'Cotabato (North)', 'Davao de Oro', 'Ifugao', 'La Union', 'Masbate',
+            'Misamis Occidental', 'Negros Oriental', 'Nueva Vizcaya',
+            'Occidental Mindoro', 'Oriental Mindoro', 'Pampanga', 'Rizal',
+            'Romblon', 'Sorsogon', 'South Cotabato', 'Southern Leyte',
+            'Sultan Kudarat', 'Sulu', 'Surigao del Norte', 'Surigao del Sur',
+            'Tarlac', 'Zambales', 'Zamboanga Sibugay',
+        ],
+        'medium' => [
+            'Abra', 'Batangas', 'Cagayan', 'Cavite', 'Eastern Samar',
+            'Ilocos Norte', 'Laguna', 'Lanao del Norte', 'Misamis Oriental',
+            'Northern Samar', 'Nueva Ecija', 'Palawan', 'Samar (Western Samar)',
+            'Zamboanga del Norte', 'Zamboanga del Sur',
+        ],
+        'large' => [
+            'Bohol', 'Camarines Sur', 'Cebu Province', 'Ilocos Sur', 'Iloilo',
+            'Isabela', 'Leyte', 'Negros Occidental', 'Pangasinan', 'Quezon',
+        ],
+    ];
+
+    private static function get_category(string $name): string
+    {
+        foreach (self::CLASSIFICATION as $category => $list) {
+            if (in_array($name, $list, true)) return $category;
+        }
+        return 'micro';
     }
 
     private function generate_provinces()
@@ -32,7 +71,8 @@ class DatabaseSeeder extends Seeder
         $provinces = CSVToDFHelper::get_df('provinces.csv');
         foreach ($provinces as $p) {
             Province::create([
-                'name'                   => $p['name'],
+                'name'                    => $p['name'],
+                'category'                => self::get_category($p['name']),
                 'num_plantilla_employees' => (int) ($p['num_plantilla_employees'] ?? 0),
                 'num_municipalities'      => (int) ($p['num_municipalities']      ?? 0),
                 'num_cities'              => (int) ($p['num_cities']              ?? 0),
@@ -178,15 +218,20 @@ class DatabaseSeeder extends Seeder
         $kpi         = CSVToDFHelper::get_df('kpi.csv');
         $kpi_outcome = CSVToDFHelper::get_df('kpi-outcome.csv');
 
-        foreach($kpi as $k) {
+        $outcomesByKpi = [];
+        foreach ($kpi_outcome as $outcome) {
+            $outcomesByKpi[(int) $outcome['kpi_id']][] = $outcome['description'];
+        }
+
+        foreach ($kpi as $k) {
             $kpiRecord = KPI::create([
                 'id'            => $k['id'],
                 'outcome_title' => $k['outcome'],
             ]);
-            foreach($kpi_outcome as $outcome) {
+            foreach ($outcomesByKpi[(int) $k['id']] ?? [] as $description) {
                 DB::table('kpi_subrows')->insert([
                     'kpi_id'      => $kpiRecord->id,
-                    'description' => $outcome['description'],
+                    'description' => $description,
                 ]);
             }
         }

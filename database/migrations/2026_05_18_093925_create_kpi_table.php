@@ -27,8 +27,8 @@ return new class extends Migration
             $table->foreignId('provincial_director_id')->constrained('users');
             $table->foreignId('kpi_id')->constrained('kpis');
             $table->foreignId('kpi_subrow_id')->constrained('kpi_subrows');
-            $table->decimal('target')->nullable();
-            $table->decimal('accomplished')->nullable();
+            $table->text('target')->nullable();
+            $table->text('accomplished')->nullable();
             $table->year('year');
         });
     }
