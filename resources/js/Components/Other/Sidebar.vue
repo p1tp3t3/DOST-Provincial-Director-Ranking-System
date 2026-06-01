@@ -58,8 +58,6 @@ const tabs = computed(() => {
                     children: [
                         { name: 'User List',         href: '/users',          icon: RiTeamFill    },
                         { name: 'Admin List',         href: '/admins',          icon: RiAdminFill    },
-                        { name: 'User Registration', href: '/users/create',   icon: RiUserAddLine },
-                        { name: 'Auto User Generator', href: '/users/auto-generator',   icon: RiFile2Fill },
                     ]
                 },
                 { name: 'Maintenance', href: '/maintenance', icon: RiSettings2Fill },
@@ -72,7 +70,7 @@ const tabs = computed(() => {
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
-                { name: 'Reports',              href: '/reports',              icon: RiFileChartFill  },
+                { name: 'Reports',              href: '/sub-admin-report',              icon: RiFileChartFill  },
             ];
         case 'provincial_admin':
             return [
@@ -91,6 +89,7 @@ const tabs = computed(() => {
         case 'provincial_sub_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
+                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 {
                     name: 'KPI Management', icon: RiListCheck3,
                     children: [
@@ -98,7 +97,6 @@ const tabs = computed(() => {
                         { name: 'KPI Reports',     href: '/kpi/reports',icon: RiFileChartFill },
                     ]
                 },
-                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         case 'provincial_director':

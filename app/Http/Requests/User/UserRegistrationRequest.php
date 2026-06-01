@@ -4,71 +4,46 @@ namespace App\Http\Requests\User;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\ValidationException;
 
 class UserRegistrationRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        $role = auth()->user()->role;
+        $role = auth()->user()?->role;
 
-        return auth()->check()
-               ?
-               $role == 'super_admin'
-               :
-               false;
+        return in_array($role, ['super_admin', 'provincial_admin']);
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $type = $this->registration_type;
+        $actorRole  = auth()->user()?->role;
+        $allowedRoles = $actorRole === 'provincial_admin'
+            ? 'employee,provincial_director'
+            : 'employee,provincial_director,sub_admin,super_admin';
 
-        if(!in_array($type, ['manual', 'auto']))
-            throw ValidationException::withMessages([
-                'registration_type' => 'the user registration type must be manual and auto'
-            ]);
-        
-        $fields = [
-            'manual' => [
-                'role' => 'required|in:employee,provincial_director,sub_admin,super_admin',
-                'dost_employee_id' => "required|unique:users,dost_employee_id",
-                'province' => 'nullable|exists:provinces,id',
-                'prefix' => 'required',
-                'first_name' => 'required',
-                'middle_name' => 'required',
-                'last_name' => 'required',
-                'suffix' => 'required',
-                'username' => "required|unique:users,username",
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|confirmed',
-                'password_confirmation' => 'required',
-            ],
-            'auto' => [
-                'province' => 'required|exists:provinces,id',
-                'status' => 'required|in:approved,rejected',
-                'role' => 'required|in:employee,provincial_director',
-                'csv_file' => 'nullable|file|mimes:csv',
-                'provincial_director_details' => 'nullable|json',
-                'description' => 'nullable|string'
-            ]
+        $manual = [
+            'registration_type'    => 'required|in:manual',
+            'role'                 => "required|in:{$allowedRoles}",
+            'dost_employee_id'     => 'required|unique:users,dost_employee_id',
+            'prefix'               => 'required|string',
+            'first_name'           => 'required|string',
+            'middle_name'          => 'required|string',
+            'last_name'            => 'required|string',
+            'suffix'               => 'nullable|string',
+            'username'             => 'required|unique:users,username',
+            'email'                => 'required|email|unique:users,email',
+            'password'             => 'required|confirmed|min:8',
+            'password_confirmation' => 'required',
         ];
 
-        $fields = $this->role == 'employee'
-                  ?
-                  array_merge($fields['manual'], [
-                    'position' => 'required|string',
-                    'status' => 'required|in:cos,permanent,jo',
-                  ])
-                  : $fields;
+        if ($this->role === 'employee') {
+            $manual['position'] = 'required|string';
+            $manual['status']   = 'required|in:cos,permanent,jo';
+        }
 
-        return $fields[$type];
+        return $manual;
     }
 }

@@ -9,7 +9,7 @@
                     color="primary"
                     prepend-icon="mdi-arrow-left"
                     size="small"
-                    @click="() => history.back()"
+                    @click="goBack"
                 >
                     Back
                 </v-btn>
@@ -160,6 +160,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
+
+const goBack = () => window.history.back();
 
 const roleLabels = {
     super_admin:         'Super Admin',

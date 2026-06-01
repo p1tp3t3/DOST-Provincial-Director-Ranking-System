@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Helpers\CSVToDFHelper;
-use App\Helpers\PexelProfilePictureGeneratorHelper;
+use App\Models\ActivityLog;
 use App\Models\KPI;
 use App\Models\Profile;
 use App\Models\Province;
@@ -11,7 +11,6 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 
 class DatabaseSeeder extends Seeder
 {
@@ -27,6 +26,7 @@ class DatabaseSeeder extends Seeder
         self::generate_kpi();
         $this->call(KPIScoreSeeder::class);
         $this->call(CSTCSeeder::class);
+        ActivityLog::factory(100)->create();
     }
 
     // Classification per Excel "Province Directory" sheet (criterion: number of municipalities)
@@ -152,6 +152,7 @@ class DatabaseSeeder extends Seeder
 
             // Create Provincial Admin (no real data available)
             User::factory()->create(['role' => 'provincial_admin', 'province_id' => $province->id]);
+            User::factory()->create(['role' => 'provincial_sub_admin', 'province_id' => $province->id]);
         }
     }
 

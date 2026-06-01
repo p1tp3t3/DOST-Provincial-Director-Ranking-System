@@ -1,8 +1,6 @@
 <template>
     <AuthenticatedLayout>
-        <div>
-            activity logs
-        </div>
+        reports
     </AuthenticatedLayout>
 </template>
 <script setup>

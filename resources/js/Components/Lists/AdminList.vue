@@ -1,0 +1,241 @@
+<template>
+    <!-- Toolbar -->
+    <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-3">
+        <div class="d-flex align-center gap-3 flex-wrap">
+            <v-text-field
+                v-model="search"
+                placeholder="Search by name, email, or username..."
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+                prepend-inner-icon="mdi-magnify"
+                style="min-width: 260px; max-width: 320px;"
+            />
+            <v-select
+                v-model="selectedRole"
+                :items="roleOptions"
+                item-title="label"
+                item-value="value"
+                placeholder="All Roles"
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+                style="min-width: 180px; max-width: 210px;"
+            />
+        </div>
+        <span class="text-caption text-medium-emphasis">
+            {{ filtered.length }} of {{ list.data.length }} admins
+        </span>
+    </div>
+
+    <!-- Table -->
+    <v-card class="elevation-1 border-0 rounded-md">
+        <v-table density="comfortable" hover>
+            <thead>
+                <tr>
+                    <th class="text-caption text-medium-emphasis" width="50">#</th>
+                    <th class="text-caption text-medium-emphasis">Name</th>
+                    <th class="text-caption text-medium-emphasis">Username</th>
+                    <th class="text-caption text-medium-emphasis">Email</th>
+                    <th class="text-caption text-medium-emphasis">Province</th>
+                    <th class="text-caption text-medium-emphasis text-center" width="140">Role</th>
+                    <th class="text-caption text-medium-emphasis text-center" width="100">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(admin, i) in filtered" :key="admin.id">
+                    <td class="text-body-2 text-medium-emphasis">{{ i + 1 }}</td>
+                    <td>
+                        <div class="d-flex align-center gap-3 py-2">
+                            <v-avatar :color="roleColor(admin.role) + '-lighten-5'" size="34" rounded="lg">
+                                <v-icon :color="roleColor(admin.role)" size="16">{{ roleIcon(admin.role) }}</v-icon>
+                            </v-avatar>
+                            <span class="text-body-2 font-weight-medium">{{ admin.name }}</span>
+                        </div>
+                    </td>
+                    <td class="text-body-2 text-medium-emphasis">{{ admin.username ?? '—' }}</td>
+                    <td class="text-body-2">{{ admin.email }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ admin.province ?? '—' }}</td>
+                    <td class="text-center">
+                        <v-chip
+                            size="small"
+                            variant="tonal"
+                            :color="roleColor(admin.role)"
+                        >{{ roleLabel(admin.role) }}</v-chip>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex align-center justify-center gap-1">
+                            <v-tooltip text="View Profile" location="top">
+                                <template #activator="{ props: tip }">
+                                    <v-btn
+                                        v-bind="tip"
+                                        icon size="x-small" variant="text" color="primary"
+                                        @click="router.visit(`/profile/${admin.id}`)"
+                                    >
+                                        <v-icon size="16">mdi-eye-outline</v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+                            <v-tooltip text="Delete" location="top">
+                                <template #activator="{ props: tip }">
+                                    <v-btn
+                                        v-bind="tip"
+                                        icon size="x-small" variant="text" color="error"
+                                        @click="confirmDelete(admin)"
+                                    >
+                                        <v-icon size="16">mdi-trash-can-outline</v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr v-if="filtered.length === 0">
+                    <td colspan="7">
+                        <div class="text-center py-12">
+                            <v-icon size="40" color="grey-lighten-2" class="mb-3">mdi-account-search-outline</v-icon>
+                            <div class="text-body-2 text-medium-emphasis">No admins found</div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </v-table>
+    </v-card>
+
+    <!-- Delete Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="420" persistent>
+        <v-card rounded="lg">
+            <v-card-item class="pt-5 pb-2 px-5">
+                <div class="d-flex align-center gap-3">
+                    <v-avatar color="error-lighten-5" size="40" rounded="lg">
+                        <v-icon color="error" size="20">mdi-trash-can-outline</v-icon>
+                    </v-avatar>
+                    <div>
+                        <div class="text-subtitle-2 font-weight-bold">Delete Admin</div>
+                        <div class="text-caption text-medium-emphasis">This action cannot be undone</div>
+                    </div>
+                </div>
+            </v-card-item>
+            <v-card-text class="px-5 pb-3">
+                <p class="text-body-2">
+                    Are you sure you want to delete
+                    <strong>{{ targetAdmin?.name }}</strong>?
+                    Their account and all associated data will be permanently removed.
+                </p>
+            </v-card-text>
+            <v-divider></v-divider>
+            <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                <v-btn variant="text" size="small" @click="deleteDialog = false">Cancel</v-btn>
+                <v-btn variant="flat" color="error" size="small" :loading="deleting" @click="deleteAdmin">
+                    Delete
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <!-- Pagination -->
+    <div v-if="list.meta.last_page > 1" class="d-flex justify-end mt-6">
+        <v-pagination
+            v-model="currentPage"
+            :length="list.meta.last_page"
+            :total-visible="5"
+            @update:model-value="changePage"
+            color="primary"
+            rounded="circle"
+            variant="text"
+            density="comfortable"
+        />
+    </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue';
+import { router } from '@inertiajs/vue3';
+
+const props = defineProps({
+    list: { type: Object, required: true },
+});
+
+const currentPage = computed({
+    get: () => props.list.meta.current_page,
+    set: (val) => val,
+});
+
+const changePage = (page) => {
+    search.value = '';
+    router.get(window.location.pathname, { page }, { preserveScroll: true, preserveState: true });
+};
+
+const search       = ref('');
+const selectedRole = ref(null);
+const deleteDialog = ref(false);
+const deleting     = ref(false);
+const targetAdmin  = ref(null);
+
+const roleOptions = [
+    { label: 'Sub Admin',              value: 'sub_admin'              },
+    { label: 'Provincial Admin',       value: 'provincial_admin'       },
+    { label: 'Provincial Sub Admin',   value: 'provincial_sub_admin'   },
+];
+
+const filtered = computed(() => {
+    let data = props.list.data;
+    const q = search.value.toLowerCase().trim();
+    if (q) {
+        const m = (v) => (v ?? '').toLowerCase().includes(q);
+        data = data.filter(u => m(u.name) || m(u.email) || m(u.username));
+    }
+    if (selectedRole.value) {
+        data = data.filter(u => u.role === selectedRole.value);
+    }
+    return data;
+});
+
+const roleLabel = (role) => {
+    const map = {
+        sub_admin:            'Sub Admin',
+        provincial_admin:     'Provincial Admin',
+        provincial_sub_admin: 'Provincial Sub Admin',
+    };
+    return map[role] ?? role;
+};
+
+const roleColor = (role) => {
+    const map = {
+        sub_admin:            'indigo',
+        provincial_admin:     'teal',
+        provincial_sub_admin: 'cyan',
+    };
+    return map[role] ?? 'grey';
+};
+
+const roleIcon = (role) => {
+    const map = {
+        sub_admin:            'mdi-shield-account-outline',
+        provincial_admin:     'mdi-account-cog-outline',
+        provincial_sub_admin: 'mdi-account-settings-outline',
+    };
+    return map[role] ?? 'mdi-account-outline';
+};
+
+const confirmDelete = (admin) => {
+    targetAdmin.value = admin;
+    deleteDialog.value = true;
+};
+
+const deleteAdmin = () => {
+    if (!targetAdmin.value) return;
+    deleting.value = true;
+    router.delete(`/admins/${targetAdmin.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleting.value     = false;
+            deleteDialog.value = false;
+            targetAdmin.value  = null;
+        },
+    });
+};
+</script>

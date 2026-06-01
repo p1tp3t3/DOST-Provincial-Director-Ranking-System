@@ -3,11 +3,7 @@
 
     <v-spacer></v-spacer>
 
-    <v-btn icon class="mr-2">
-      <v-badge color="error" content="4" dot>
-        <v-icon>mdi-bell-outline</v-icon>
-      </v-badge>
-    </v-btn>
+    <NotificationPanel />
 
     <v-menu min-width="200px" rounded>
       <template #activator="{ props }">
@@ -50,6 +46,7 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { getAuth } from '@/helper-functions';
+import NotificationPanel from '@/Components/Other/NotificationPanel.vue';
 
 const show = (getAuth().role == 'provincial_director' && getAuth().role != 'employee')
 
