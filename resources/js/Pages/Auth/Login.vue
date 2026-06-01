@@ -1,109 +1,352 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import LoginForm from '@/Components/Form/LoginForm.vue';
 
 defineProps({
-    canResetPassword: {
-        type: Boolean,
-    },
-    status: {
-        type: String,
-    },
+    canResetPassword: { type: Boolean },
+    status:           { type: String  },
 });
+
+const stats = [
+    { value: '81',  label: 'Provinces'  },
+    { value: '100+', label: 'Directors' },
+    { value: '500+', label: 'Employees' },
+];
+
+const features = [
+    { icon: 'mdi-chart-bar',           label: 'KPI Tracking'         },
+    { icon: 'mdi-podium',              label: 'Province Ranking'      },
+    { icon: 'mdi-file-chart-outline',  label: 'Report Generation'     },
+    { icon: 'mdi-account-group',       label: 'Staff Management'      },
+];
 </script>
 
 <template>
-    <Head title="Sign In - PDRIS" />
+    <Head title="Sign In — PDRIS" />
 
-    <div class="min-h-screen flex bg-gray-50">
-        <!-- Left Side - DOST Branding -->
-        <div class="hidden md:flex md:w-1/2 bg-indigo flex-col justify-between p-12">
-            <!-- Top Logo/Branding -->
-            <div class="flex gap-5 item-center">
-                <div class="bg-white rounded-lg p-4 w-20 h-20 flex items-center justify-center mb-8 shadow-lg">
-                    <svg class="w-12 h-12 text-indigo-900" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h3V5a2 2 0 00-2-2 1 1 0 00-1 1v2H4zm11 0a2 2 0 012 2v2h1a1 1 0 110 2h-1a2 2 0 100-4h-3V5a2 2 0 00-2-2 1 1 0 000 2h1a1 1 0 100-2h-1z" clip-rule="evenodd"></path>
-                    </svg>
+    <div class="login-root">
+
+        <!-- ── Left panel ───────────────────────────────────────── -->
+        <div class="left-panel d-none d-md-flex flex-column">
+
+            <!-- Decorative blobs -->
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+
+            <!-- Top: Logo bar -->
+            <div class="d-flex align-center gap-3 left-section" style="position:relative;">
+                <div class="logo-box">
+                    <img src="/assets/logo.png" alt="DOST" class="logo-img" />
                 </div>
                 <div>
-                    <h1 class="text-white text-4xl font-bold mb-2">PDRIS</h1>
-                    <p class="text-indigo-200 text-sm font-semibold">Provincial Director Ranking</p>
-                    <p class="text-indigo-200 text-sm font-semibold">Information System</p>
+                    <div class="text-h6 font-weight-black text-white" style="letter-spacing:0.05em;">PDRIS</div>
+                    <div class="text-white" style="font-size:0.65rem; opacity:0.65; line-height:1.5; text-transform:uppercase; letter-spacing:0.06em;">
+                        Provincial Director Ranking Information System
+                    </div>
                 </div>
             </div>
 
-            <!-- Center Content -->
-            <div class="text-center text-white">
-                <div class="mb-8">
-                    <svg class="w-32 h-32 mx-auto mb-8 text-indigo-200 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v4h8v-4zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
-                    </svg>
+            <!-- Center: Main content -->
+            <div class="left-section flex-grow-1 d-flex flex-column justify-center" style="position:relative;">
+
+                <!-- Badge -->
+                <div class="dost-badge mb-6">
+                    <v-icon size="13" color="white" class="mr-1">mdi-shield-star-outline</v-icon>
+                    <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">Department of Science and Technology</span>
                 </div>
-                <h2 class="text-2xl font-bold mb-4">Excellence in Leadership</h2>
-                <p class="text-indigo-200 text-lg leading-relaxed">
-                    Empowering provincial directors through transparent, evidence-based evaluation and recognition
-                </p>
+
+                <!-- Headline -->
+                <div class="text-white font-weight-black mb-4" style="font-size:2.6rem; line-height:1.1; letter-spacing:-0.02em;">
+                    Excellence<br>in Leadership.
+                </div>
+                <div class="text-white mb-10" style="opacity:0.65; font-size:0.9rem; line-height:1.8; max-width:340px;">
+                    Empowering provincial directors through transparent, evidence-based performance evaluation and recognition.
+                </div>
+
+                <!-- Features — 2 column grid -->
+                <div class="feat-grid">
+                    <div
+                        v-for="feat in features"
+                        :key="feat.label"
+                        class="feat-card"
+                    >
+                        <div class="feat-icon-wrap mb-2">
+                            <v-icon size="18" color="white">{{ feat.icon }}</v-icon>
+                        </div>
+                        <div class="text-white font-weight-medium" style="font-size:0.8rem;">{{ feat.label }}</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bottom Info -->
-            <div class="border-t border-indigo-700 pt-8">
-                <p class="text-indigo-200 text-sm mb-2">
-                    <span class="font-semibold">Department of Science and Technology</span>
-                </p>
-                <p class="text-indigo-300 text-xs">
-                    Advancing provincial development through science and technology leadership
-                </p>
+        </div>
+
+        <!-- ── Right panel ──────────────────────────────────────── -->
+        <div class="right-panel d-flex flex-column">
+
+            <!-- Top bar -->
+            <!-- Centered form area -->
+            <div class="right-body d-flex align-center justify-center flex-grow-1">
+                <div class="form-box">
+
+                    <!-- Mobile logo -->
+                    <div class="d-flex d-md-none align-center justify-center gap-3 mb-8">
+                        <img src="/assets/logo.png" alt="DOST" style="width:44px;height:44px;object-fit:contain;" />
+                        <div>
+                            <div class="text-h6 font-weight-black" style="color:#0047ab;">PDRIS</div>
+                            <div class="text-caption text-medium-emphasis">Provincial Director Ranking IS</div>
+                        </div>
+                    </div>
+
+                    <!-- Heading -->
+                    <div class="mb-8">
+                        <div class="form-title mb-1">Sign in to your account</div>
+                        <div class="text-body-2 text-medium-emphasis">Enter your credentials to access the dashboard</div>
+                    </div>
+
+                    <!-- Status alert -->
+                    <v-alert
+                        v-if="status"
+                        type="success"
+                        variant="tonal"
+                        density="compact"
+                        rounded="lg"
+                        class="mb-6"
+                    >{{ status }}</v-alert>
+
+                    <!-- Form -->
+                    <div class="form-card pa-7 mb-7">
+                        <LoginForm :can-reset-password="canResetPassword" :status="status" />
+                    </div>
+
+                    <!-- Footer text -->
+                    <div class="text-center">
+                        <div class="d-flex align-center justify-center gap-1 mb-1">
+                            <v-icon size="12" color="grey">mdi-shield-check-outline</v-icon>
+                            <span class="text-caption text-medium-emphasis">Protected by enterprise-grade security</span>
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                            © {{ new Date().getFullYear() }} PDRIS · Department of Science and Technology
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
 
-        <!-- Right Side - Login Form -->
-        <div class="w-full md:w-1/2 flex flex-col justify-center px-8 py-12 md:px-16">
-            <div class="max-w-md mx-auto w-full">
-                <!-- Mobile Header -->
-                <div class="md:hidden mb-8 text-center">
-                    <div class="bg-indigo-100 rounded-lg p-3 w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-10 h-10 text-indigo-900" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h3V5a2 2 0 00-2-2 1 1 0 00-1 1v2H4zm11 0a2 2 0 012 2v2h1a1 1 0 110 2h-1a2 2 0 100-4h-3V5a2 2 0 00-2-2 1 1 0 000 2h1a1 1 0 100-2h-1z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <h1 class="text-2xl font-bold text-indigo-900">PDRIS</h1>
-                    <p class="text-gray-600 text-sm">Provincial Director Ranking Information System</p>
-                </div>
-
-                <!-- Login Header -->
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-                    <p class="text-gray-600">Sign in to your account to continue</p>
-
-                    <!-- Status Message -->
-                    <div v-if="status" class="mt-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
-                        {{ status }}
-                    </div>
-                </div>
-
-                <!-- Login Form -->
-                <LoginForm :can-reset-password="canResetPassword" :status="status" />
-
-                <!-- Register Link -->
-                <div class="mt-8 text-center border-t border-gray-200 pt-6">
-                    <p class="text-gray-600">Don't have an account? 
-                        <Link 
-                            :href="route('register')"
-                            class="font-semibold text-indigo-900 hover:text-indigo-700 transition"
-                        >
-                            Create one
-                        </Link>
-                    </p>
-                </div>
-
-                <!-- Footer -->
-                <div class="mt-8 text-center text-xs text-gray-500">
-                    <p>Secure Login • Provincial Department of Science and Technology</p>
-                    <p class="mt-2">© 2026 PDRIS. All rights reserved.</p>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
+
+<style scoped>
+/* ── Root ───────────────────────────────────── */
+.login-root {
+    min-height: 100vh;
+    display: flex;
+}
+
+/* ── Left panel ─────────────────────────────── */
+.left-panel {
+    width: 50%;
+    background: linear-gradient(160deg, #002d72 0%, #0047ab 50%, #1565c0 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.left-section {
+    padding: 20px 52px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.left-section:last-child {
+    border-bottom: none;
+}
+
+/* Decorative blobs */
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.blob-1 {
+    width: 400px; height: 400px;
+    background: rgba(255,255,255,0.03);
+    top: -120px; right: -120px;
+}
+.blob-2 {
+    width: 250px; height: 250px;
+    background: rgba(255,255,255,0.025);
+    bottom: 60px; left: -80px;
+}
+.blob-3 {
+    width: 180px; height: 180px;
+    background: rgba(100,181,246,0.15);
+    top: 45%; right: -40px;
+}
+
+/* Logo */
+.logo-box {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.logo-img {
+    width: 36px; height: 36px;
+    object-fit: contain;
+}
+
+/* DOST badge pill */
+.dost-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 20px;
+    padding: 5px 12px;
+}
+
+/* Feature grid */
+.feat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.feat-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    transition: background 0.2s;
+}
+.feat-card:hover {
+    background: rgba(255,255,255,0.1);
+}
+.feat-icon-wrap {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Stats */
+.stat-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.12);
+}
+.stat-row {
+    display: flex;
+    gap: 40px;
+}
+.stat-item { text-align: left; }
+
+/* ── Right panel ────────────────────────────── */
+.right-panel {
+    width: 50%;
+    flex: none;
+    background: #f8fafc;
+}
+
+.right-topbar {
+    padding: 14px 40px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: #fff;
+}
+
+.right-body {
+    padding: 40px 24px;
+}
+
+.form-box {
+    width: 100%;
+    max-width: 460px;
+}
+
+.greeting-tag {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 71, 171, 0.07);
+    border: 1px solid rgba(0, 71, 171, 0.15);
+    border-radius: 20px;
+    padding: 5px 12px;
+}
+
+.form-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0d1b3e;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.form-card {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+}
+
+/* ── Responsive ─────────────────────────────── */
+
+/* Tablet landscape: shrink left section padding */
+@media (max-width: 1280px) {
+    .left-section { padding: 32px 36px; }
+    .feat-grid { gap: 10px; }
+    .feat-card { padding: 12px; }
+    .form-box { max-width: 400px; }
+}
+
+/* Tablet portrait: collapse to single column */
+@media (max-width: 959px) {
+    .login-root {
+        flex-direction: column;
+    }
+
+    /* Left panel becomes a compact branded header */
+    .left-panel {
+        width: 100%;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0;
+        min-height: unset;
+    }
+    .left-section {
+        padding: 20px 24px;
+        border-bottom: none;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        flex-grow: 0;
+    }
+    .left-section:last-child {
+        border-right: none;
+    }
+    /* Hide center & bottom sections on tablet — show only logo bar */
+    .left-section.flex-grow-1,
+    .left-section:not(:first-child) {
+        display: none !important;
+    }
+    .left-panel .d-flex.align-center.gap-3.left-section {
+        display: flex !important;
+        width: 100%;
+        border-right: none;
+        padding: 18px 24px;
+    }
+    .blob { display: none; }
+
+    /* Right panel fills the rest */
+    .right-panel {
+        width: 100%;
+        flex: 1;
+        min-height: calc(100vh - 74px);
+    }
+    .right-body { padding: 32px 20px; }
+}
+
+/* Mobile: tighten form card padding */
+@media (max-width: 599px) {
+    .right-body { padding: 24px 16px; }
+    .form-card  { padding: 20px !important; }
+    .form-title { font-size: 1.4rem; }
+    .greeting-tag { margin-bottom: 14px; }
+}
+</style>

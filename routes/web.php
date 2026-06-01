@@ -5,6 +5,7 @@ use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
 use App\Http\Controllers\Modules\Report\SuperAdminReportController;
+use App\Http\Controllers\Modules\Report\SubAdminReportController;
 use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\User\ProvincialDirectorController;
 use App\Http\Controllers\Modules\User\UserController;
@@ -38,9 +39,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/maintenance/reset', [MaintenanceController::class, 'reset']);
 
     Route::get('/users/create', [UserController::class, 'manual_registration_index']);
+    Route::post('/users/store', [UserController::class, 'store']);
     Route::get('/users/auto-generator', [UserController::class, 'auto_registration_index']);
+    Route::post('/provincial-admin/auto-generator/generate', [UserController::class, 'upload_user_csv_file']);
+    Route::get('/auto-generator/batch/{batchId}', [UserController::class, 'batch_status']);
     Route::get('/super-admin-report', [SuperAdminReportController::class, 'index']);
+    Route::get('/super-admin-report/export', [SuperAdminReportController::class, 'export']);
 
+    Route::get('/sub-admin-report', [SubAdminReportController::class, 'index']);
 
     Route::get('/profile/{id}', [ProfileController::class, 'index']);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

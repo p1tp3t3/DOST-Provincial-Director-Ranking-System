@@ -139,10 +139,56 @@
                                 color="primary"
                                 variant="tonal"
                                 prepend-icon="mdi-account-multiple-plus-outline"
-                                :disabled="!canSubmit"
+                                :disabled="!canSubmit || submitting"
+                                :loading="submitting"
                                 @click="generateAccounts"
                             >Generate Accounts</v-btn>
                         </div>
+
+                        <!-- Batch Progress -->
+                        <v-card v-if="batch" class="elevation-1 border-0 rounded-md">
+                            <div class="pa-5">
+                                <div class="d-flex align-center justify-space-between mb-3">
+                                    <div class="d-flex align-center gap-2">
+                                        <v-avatar
+                                            :color="batch.finished ? 'success-lighten-5' : 'indigo-lighten-5'"
+                                            rounded="lg" size="36"
+                                        >
+                                            <v-icon
+                                                :color="batch.finished ? 'success' : 'indigo'"
+                                                size="18"
+                                            >{{ batch.finished ? 'mdi-check-circle' : 'mdi-cog-sync-outline' }}</v-icon>
+                                        </v-avatar>
+                                        <div>
+                                            <div class="text-subtitle-2 font-weight-bold">
+                                                {{ batch.finished ? 'Generation Complete' : 'Generating Accounts...' }}
+                                            </div>
+                                            <div class="text-caption text-medium-emphasis">
+                                                {{ batch.processed }} / {{ batch.total }} accounts processed
+                                                <span v-if="batch.failed > 0" class="text-error ml-1">· {{ batch.failed }} failed</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-h6 font-weight-bold" :class="batch.finished ? 'text-success' : 'text-primary'">
+                                        {{ batch.progress }}%
+                                    </span>
+                                </div>
+
+                                <v-progress-linear
+                                    :model-value="batch.progress"
+                                    :color="batch.failed > 0 ? 'warning' : batch.finished ? 'success' : 'primary'"
+                                    height="10"
+                                    rounded
+                                    bg-color="grey-lighten-3"
+                                    :indeterminate="!batch.finished && batch.progress === 0"
+                                />
+
+                                <div v-if="batch.finished" class="mt-3 d-flex align-center gap-2">
+                                    <v-icon size="14" color="success">mdi-check-circle-outline</v-icon>
+                                    <span class="text-caption text-medium-emphasis">Finished at {{ batch.finished_at }}</span>
+                                </div>
+                            </div>
+                        </v-card>
 
                     </div>
                 </v-col>
@@ -243,17 +289,12 @@ const guidelinesRead  = ref(false);
 const fileInput       = ref(null);
 const isDragging      = ref(false);
 
-const defaultForm = () => ({
-    csv_file:             null,
-});
-
+const defaultForm = () => ({ csv_file: null });
 const form = ref(defaultForm());
 
-const canSubmit = computed(() =>
-    guidelinesRead.value &&
-    form.value.csv_file
-);
+const canSubmit = computed(() => guidelinesRead.value && form.value.csv_file);
 
+// ── File handling ──────────────────────────────────────────────
 const triggerFileInput = () => fileInput.value?.click();
 
 const onFileChange = (e) => {
@@ -278,14 +319,83 @@ const resetForm = () => {
     if (fileInput.value) fileInput.value.value = '';
 };
 
-const generateAccounts = () => {
+// ── Batch progress ─────────────────────────────────────────────
+const submitting  = ref(false);
+const batch       = ref(null);
+let   pollTimer   = null;
+
+const xsrfToken = () => {
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+};
+
+const generateAccounts = async () => {
+    submitting.value = true;
+    batch.value      = null;
+
     const data = new FormData();
-    Object.entries(form.value).forEach(([k, v]) => { if (v !== null) data.append(k, v); });
-    router.post('/provincial-admin/auto-generator/generate', data, { onSuccess: resetForm });
+    data.append('csv_file', form.value.csv_file);
+
+    try {
+        const res = await fetch('/provincial-admin/auto-generator/generate', {
+            method:  'POST',
+            headers: { 'X-XSRF-TOKEN': xsrfToken() },
+            body:    data,
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message ?? 'Failed to start generation. Please try again.');
+            submitting.value = false;
+            return;
+        }
+
+        const json = await res.json();
+        batch.value = {
+            id:         json.batch_id,
+            total:      json.total_jobs,
+            processed:  0,
+            failed:     0,
+            progress:   0,
+            finished:   false,
+            finished_at: null,
+        };
+
+        resetForm();
+        startPolling(json.batch_id);
+    } catch {
+        alert('Network error. Please try again.');
+    } finally {
+        submitting.value = false;
+    }
+};
+
+const startPolling = (batchId) => {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+        try {
+            const res  = await fetch(`/auto-generator/batch/${batchId}`);
+            const data = await res.json();
+
+            batch.value = {
+                id:          data.id,
+                total:       data.total_jobs,
+                processed:   data.processed_jobs,
+                failed:      data.failed_jobs,
+                progress:    data.progress,
+                finished:    data.finished,
+                finished_at: data.finished_at,
+            };
+
+            if (data.finished) clearInterval(pollTimer);
+        } catch {
+            clearInterval(pollTimer);
+        }
+    }, 1500);
 };
 
 const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024)    return bytes + ' B';
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1048576).toFixed(1) + ' MB';
 };

@@ -69,7 +69,7 @@ const tabs = computed(() => {
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
-                { name: 'Reports',              href: '/reports',              icon: RiFileChartFill  },
+                { name: 'Reports',              href: '/sub-admin-report',              icon: RiFileChartFill  },
             ];
         case 'provincial_admin':
             return [

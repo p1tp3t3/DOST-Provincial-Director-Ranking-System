@@ -7,5 +7,7 @@ use Illuminate\Http\Request;
 
 class SubAdminReportController extends Controller
 {
-    //
+    public function index() {
+        return inertia("SubAdmin/Report/Main");
+    }
 }
