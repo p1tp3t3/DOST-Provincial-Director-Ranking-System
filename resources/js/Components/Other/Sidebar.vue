@@ -51,6 +51,7 @@ const tabs = computed(() => {
         case 'super_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
+                { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
                 {
                     name: 'User Management', icon: RiUser2Fill,
