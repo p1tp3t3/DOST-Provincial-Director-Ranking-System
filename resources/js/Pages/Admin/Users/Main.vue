@@ -9,7 +9,7 @@
                 </div>
             </div>
 
-            <UserList :list="users" />
+            <UserList :list="users" :initial-search="search" :initial-role="role" />
 
         </div>
     </AuthenticatedLayout>
@@ -21,6 +21,8 @@ import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 defineProps({
-    users: { type: Object, required: true },
+    users:  { type: Object, required: true },
+    search: { type: String, default: '' },
+    role:   { type: String, default: '' },
 });
 </script>
