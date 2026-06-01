@@ -22,10 +22,12 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         return inertia('Admin/Users/Main', [
-            'users' => self::get_users(),
+            'users'  => self::get_users($request->input('search'), $request->input('role')),
+            'search' => $request->input('search', ''),
+            'role'   => $request->input('role', ''),
         ]);
     }
 
@@ -175,11 +177,25 @@ class UserController extends Controller
 
     // ── Helpers ───────────────────────────────────────────────────
 
-    public function get_users()
+    public function get_users(?string $search = null, ?string $role = null)
     {
-        return UserResource::collection(
-            User::has('profile')->with('profile')->latest('created_at')->paginate(20)
-        );
+        $data = User::has('profile')
+                    ->with('profile')
+                    ->when($search, function ($q, $search) {
+                        $q->where(function ($q) use ($search) {
+                            $q->whereHas('profile', fn($p) =>
+                                $p->whereRaw("CONCAT(first_name, ' ', COALESCE(middle_name,''), ' ', last_name) LIKE ?", ["%{$search}%"])
+                            )
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('dost_employee_id', 'like', "%{$search}%");
+                        });
+                    })
+                    ->when($role, fn($q, $role) => $q->where('role', $role))
+                    ->latest('created_at')
+                    ->paginate(20)
+                    ->withQueryString();
+
+        return UserResource::collection($data);
     }
 
     private function parse_csv(UploadedFile $file): array
