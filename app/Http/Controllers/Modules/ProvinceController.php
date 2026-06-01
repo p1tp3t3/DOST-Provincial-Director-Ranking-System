@@ -25,11 +25,10 @@ class ProvinceController extends Controller
     public function province_profile_index($id) {
         $decryptedId = Crypt::decrypt($id);
 
-        $data = Province::with(['provincialDirector.profile', 'user.profile.employeeProfile'])
-                        ->has('user.profile.employeeProfile')
-                        ->whereHas('user', function ($q) {
-                            $q->where('role', 'employee');
-                        })
+        $data = Province::with([
+                            'provincialDirector.profile',
+                            'user' => fn($q) => $q->where('role', 'employee')->with('profile.employeeProfile'),
+                        ])
                         ->where('id', $decryptedId)
                         ->get();
 

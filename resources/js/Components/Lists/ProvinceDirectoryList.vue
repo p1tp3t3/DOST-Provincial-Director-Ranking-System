@@ -190,6 +190,7 @@ const categoryOptions = [
     { label: 'Small',  value: 'small'  },
     { label: 'Medium', value: 'medium' },
     { label: 'Large',  value: 'large'  },
+    { label: 'CSTC',   value: 'cstc'   },
 ];
 
 const tableHeaders = [
@@ -226,7 +227,7 @@ const initials = (name = '') =>
     name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
 
 const categoryColor = (cat) => ({
-    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple'
+    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink'
 }[cat] ?? 'grey');
 
 const viewOfficeDetails = (item) => router.visit(`/province-directories/${item.id}`);

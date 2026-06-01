@@ -89,9 +89,24 @@
             <v-card elevation="0" border rounded="lg">
                 <!-- KPI Header -->
                 <div class="d-flex align-center justify-space-between gap-3 px-4 pt-3 pb-3 flex-wrap">
-                    <div class="d-flex align-center gap-2">
+                    <div class="d-flex align-center gap-2 flex-wrap">
                         <div class="text-subtitle-2 font-weight-bold">Key Performance Indicators</div>
                         <v-chip size="x-small" variant="tonal" color="indigo">{{ kpis.length }} Outcomes</v-chip>
+                        <v-tooltip location="bottom" max-width="320">
+                            <template #activator="{ props: tip }">
+                                <v-chip v-bind="tip" size="x-small" variant="tonal" color="blue-grey" prepend-icon="mdi-scale-balance" class="cursor-pointer">
+                                    RA 11914
+                                </v-chip>
+                            </template>
+                            <div class="pa-1">
+                                <div class="font-weight-bold mb-1">Republic Act 11914 (PSTO Act)</div>
+                                <div class="text-caption mb-2 opacity-80">Each KPI outcome below is grounded in the functional mandates of Section 6 of the Act, which defines the duties of the Provincial Science and Technology Office.</div>
+                                <div v-for="(sections, id) in RA11914" :key="id" class="text-caption d-flex gap-2 mb-1">
+                                    <span class="font-weight-medium text-indigo-lighten-2">{{ sections.map(s => s.ref).join(', ') }}</span>
+                                    <span class="opacity-70">{{ sections[0].label }}</span>
+                                </div>
+                            </div>
+                        </v-tooltip>
                     </div>
 
                     <div class="d-flex align-center gap-2">
@@ -139,8 +154,20 @@
                                     <v-icon size="15" color="white">{{ kpiIcon(i) }}</v-icon>
                                 </v-avatar>
                                 <div>
-                                    <span class="text-caption text-medium-emphasis me-1">Outcome {{ kpi.id }}</span>
-                                    <span class="text-body-2 font-weight-medium">{{ kpi.outcome_title }}</span>
+                                    <div>
+                                        <span class="text-caption text-medium-emphasis me-1">Outcome {{ kpi.id }}</span>
+                                        <span class="text-body-2 font-weight-medium">{{ kpi.outcome_title }}</span>
+                                    </div>
+                                    <div v-if="legalBasis(kpi.id).length" class="d-flex align-center gap-1 flex-wrap mt-1">
+                                        <v-chip
+                                            v-for="sec in legalBasis(kpi.id)"
+                                            :key="sec.ref"
+                                            size="x-small"
+                                            variant="tonal"
+                                            color="indigo"
+                                            class="font-weight-medium"
+                                        >RA 11914 {{ sec.ref }}</v-chip>
+                                    </div>
                                 </div>
                             </div>
                             <template #actions>
@@ -294,6 +321,22 @@ const kpiColors = ['indigo','teal','deep-purple','blue','green','orange','blue-g
 const kpiIcon   = (i) => kpiIcons[i % kpiIcons.length];
 const kpiColor  = (i) => kpiColors[i % kpiColors.length];
 
+// RA 11914 (PSTO Act) Section 6 — functional mandate per KPI outcome
+const RA11914 = {
+    1: [{ ref: '§6(a)', label: 'Stimulate and accelerate innovation' }],
+    2: [{ ref: '§6(c)', label: 'Promote technology adoption and diffusion' }],
+    3: [{ ref: '§6(h)', label: 'Foster a culture of science and technology' }],
+    4: [{ ref: '§6(c)', label: 'Improve productivity and efficiency of MSMEs' }],
+    5: [{ ref: '§6(b)', label: 'STI interventions for DRRM and climate change' }],
+    6: [{ ref: '§6(k)', label: 'Perform STI governance functions' }],
+    7: [
+        { ref: '§6(e)', label: 'Implement SETUP' },
+        { ref: '§6(f)', label: 'Implement CEST' },
+        { ref: '§6(g)', label: 'Manage GIA programs and linkages' },
+    ],
+};
+const legalBasis = (kpiId) => RA11914[kpiId] ?? [];
+
 const headers = [
     { title: 'Employee', key: 'name',     sortable: true  },
     { title: 'Position', key: 'position', sortable: true  },
@@ -337,7 +380,7 @@ const buildName = (p) => {
 const palette    = ['#5C6BC0','#42A5F5','#26A69A','#66BB6A','#FFA726','#EC407A','#AB47BC','#78909C'];
 const nameColor  = (name = '') => palette[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % palette.length];
 const initials   = (name = '') => name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
-const categoryColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
+const categoryColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink' }[cat] ?? 'grey');
 </script>
 
 <style scoped>

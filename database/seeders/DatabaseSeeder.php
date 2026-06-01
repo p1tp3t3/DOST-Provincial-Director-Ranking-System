@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         self::generate_users();
         self::generate_kpi();
         $this->call(KPIScoreSeeder::class);
+        $this->call(CSTCSeeder::class);
     }
 
     // Classification per Excel "Province Directory" sheet (criterion: number of municipalities)
@@ -55,6 +56,9 @@ class DatabaseSeeder extends Seeder
         'large' => [
             'Bohol', 'Camarines Sur', 'Cebu Province', 'Ilocos Sur', 'Iloilo',
             'Isabela', 'Leyte', 'Negros Occidental', 'Pangasinan', 'Quezon',
+        ],
+        'cstc' => [
+            'CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'ZCIC', 'Davao City',
         ],
     ];
 
