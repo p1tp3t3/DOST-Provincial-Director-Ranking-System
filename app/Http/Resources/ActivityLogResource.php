@@ -14,7 +14,7 @@ class ActivityLogResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $profile = $this->profile;
+        $profile = $this->user->profile;
 
         $firstName = $profile?->first_name ?? '';
         $middleName = $profile?->middle_name ? $profile->middle_name . ' ' : '';
@@ -23,9 +23,9 @@ class ActivityLogResource extends JsonResource
         return [
             'id'          => $this->id,
             'employee_id' => $this->dost_employee_id,
-            'role'        => $this->role,
+            'role'        => $this->user->role,
             'name'        => trim($firstName . ' ' . $middleName . $lastName),
-            'profile_picture'    => $profile->profile_picture,
+            'profile_picture'    => $profile?->profile_picture,
             'type'        => $this->type,
             'description'       => $this->description,
             'created_at'    => $this->created_at,

@@ -28,7 +28,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/admins', [UserController::class, 'admin_index']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+    Route::get('/activity-logs/report', [ActivityLogController::class, 'generate_logs_report']);
     Route::get('/maintenance', [MaintenanceController::class, 'index']);
+    Route::post('/maintenance/backup', [MaintenanceController::class, 'create_backup']);
+    Route::get('/maintenance/backup/{filename}', [MaintenanceController::class, 'download_backup']);
+    Route::delete('/maintenance/backup/{filename}', [MaintenanceController::class, 'delete_backup']);
+    Route::post('/maintenance/cache/clear/{key}', [MaintenanceController::class, 'clear_cache']);
+    Route::post('/maintenance/optimize', [MaintenanceController::class, 'optimize']);
+    Route::post('/maintenance/reset', [MaintenanceController::class, 'reset']);
 
     Route::get('/users/create', [UserController::class, 'manual_registration_index']);
     Route::get('/users/auto-generator', [UserController::class, 'auto_registration_index']);

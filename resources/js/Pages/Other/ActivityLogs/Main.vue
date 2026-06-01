@@ -109,7 +109,17 @@
                         </div>
                     </v-card-text>
                     <v-divider></v-divider>
-                    <v-card-actions class="pa-4 gap-2 justify-end">
+                    <!-- Generating progress -->
+                    <div v-if="generating" class="px-5 pb-4 pt-2">
+                        <div class="d-flex align-center gap-3 mb-2">
+                            <v-icon size="16" color="primary">mdi-file-chart-outline</v-icon>
+                            <span class="text-body-2 font-weight-medium">Generating PDF report...</span>
+                        </div>
+                        <v-progress-linear indeterminate color="primary" rounded height="6" />
+                        <div class="text-caption text-medium-emphasis mt-2">Your download will start automatically.</div>
+                    </div>
+
+                    <v-card-actions v-if="!generating" class="pa-4 gap-2 justify-end">
                         <v-btn variant="text" color="medium-emphasis" size="small" @click="reportDialog = false">Cancel</v-btn>
                         <v-btn
                             color="primary"
@@ -129,7 +139,6 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ActivityLogList from '@/Components/Lists/ActivityLogList.vue';
 
@@ -167,6 +176,7 @@ const listData = computed(() => props.logs?.data?.length ? props.logs : testData
 
 // Report dialog
 const reportDialog = ref(false);
+const generating   = ref(false);
 
 const defaultReport = () => ({
     date_from: '',
@@ -194,12 +204,26 @@ const formatOptions = [
 ];
 
 const generateReport = () => {
-    router.post('/activity-logs/report', report.value, {
-        onSuccess: () => {
-            reportDialog.value = false;
-            report.value = defaultReport();
-        },
-    });
+    generating.value = true;
+
+    const params = new URLSearchParams();
+    params.set('date_from', report.value.date_from);
+    params.set('date_to',   report.value.date_to);
+    if (report.value.type) params.set('type', report.value.type);
+
+    // Use a hidden iframe so the page doesn't navigate away
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = `/activity-logs/report?${params.toString()}`;
+    document.body.appendChild(iframe);
+
+    // Give the server time to generate and stream the file, then clean up
+    setTimeout(() => {
+        generating.value   = false;
+        reportDialog.value = false;
+        report.value       = defaultReport();
+        document.body.removeChild(iframe);
+    }, 3500);
 };
 </script>
 

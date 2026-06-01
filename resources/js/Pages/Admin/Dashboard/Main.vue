@@ -50,6 +50,20 @@
                                 <div class="d-flex align-center gap-2">
                                     <v-icon size="15" color="indigo">mdi-trophy-outline</v-icon>
                                     <span class="text-body-2 font-weight-bold">Province Performance Race</span>
+                                    <v-tooltip location="bottom" max-width="340">
+                                        <template #activator="{ props: tip }">
+                                            <v-chip v-bind="tip" size="x-small" variant="tonal" color="blue-grey" prepend-icon="mdi-scale-balance" class="cursor-pointer">
+                                                RA 11914
+                                            </v-chip>
+                                        </template>
+                                        <div class="pa-1">
+                                            <div class="font-weight-bold mb-1">Republic Act 11914 (PSTO Act)</div>
+                                            <div class="text-caption mb-2 opacity-80">
+                                                Rankings are based on KPI accomplishment rates derived from the 7 functional mandates of Section 6 of RA 11914. Province classification (Micro/Small/Medium/Large) follows Section 7 of the same Act.
+                                            </div>
+                                            <div class="text-caption opacity-70">Score = average of (accomplished ÷ target × 100%) across all tracked indicators, capped at 200% per indicator to reward over-achievement.</div>
+                                        </div>
+                                    </v-tooltip>
                                 </div>
                                 <div class="text-caption text-medium-emphasis mb-2">
                                     Ranked by classification · KPI Accomplishment Rate · {{ selectedYear }}
@@ -241,6 +255,7 @@ const categories = [
     { value: 'small',  label: 'Small',  color: 'teal'        },
     { value: 'medium', label: 'Medium', color: 'indigo'      },
     { value: 'large',  label: 'Large',  color: 'deep-purple' },
+    { value: 'cstc',   label: 'CSTC',   color: 'pink'        },
 ];
 
 const categoryLabel = computed(() =>
@@ -288,7 +303,7 @@ const tierColor = score =>
     score >= 50  ? '#f59e0b' : '#ef4444';
 
 const categoryColor = cat => ({
-    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple'
+    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink'
 }[cat] ?? 'grey');
 
 // Top 10 from filtered category

@@ -130,7 +130,7 @@ class DashboardController extends Controller
 
     private function director_dashboard()
     {
-        return inertia('Director/Dashboard/Main', [
+        return inertia('ProvincialDirector/Dasbboard/Main', [
             'total_employees' => User::where('role', 'employee')
                                      ->where('province_id', auth()->user()->province_id)
                                      ->count(),

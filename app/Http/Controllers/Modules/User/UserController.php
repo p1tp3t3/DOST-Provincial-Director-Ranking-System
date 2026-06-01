@@ -8,8 +8,6 @@ use App\Http\Resources\UserResource;
 use App\Models\EmployeeProfile;
 use App\Models\Profile;
 use App\Models\User;
-use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 

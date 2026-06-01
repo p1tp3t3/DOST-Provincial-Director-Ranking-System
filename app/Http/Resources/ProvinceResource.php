@@ -36,6 +36,9 @@ class ProvinceResource extends JsonResource
 
     private function category(?string $c): string
     {
-        return ucfirst((string) $c);
+        return match($c) {
+            'cstc'   => 'CSTC',
+            default  => ucfirst((string) $c),
+        };
     }
 }

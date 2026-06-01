@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Helpers\ActivityLogHelper;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -33,6 +34,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        ActivityLogHelper::login();
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -47,6 +50,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
+        ActivityLogHelper::logout();
+        
         return redirect('/');
     }
 }

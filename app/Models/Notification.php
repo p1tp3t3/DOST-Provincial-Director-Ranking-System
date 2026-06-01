@@ -3,22 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class ActivityLog extends Model
+class Notification extends Model
 {
-    use HasFactory;
-
-    protected $table = 'activity_logs';
+    protected $table = 'notifications';
 
     protected $fillable = [
         'user_id',
-        'type',
-        'description'
+        'message',
+        'read'
      ];
 
      public function user() {
         return $this->belongsTo(User::class);
      }
-    //
+     //
 }
