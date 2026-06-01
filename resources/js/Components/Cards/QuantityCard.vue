@@ -12,7 +12,7 @@ defineProps({
 <template>
     <v-card class="w-full border-0 elevation-1 rounded-md">
         <div :class="[`border-left-thick-${color}`]">
-            <v-card-item class="py-5 px-5">
+            <v-card-item class="py-4 px-4">
                 <div class="d-flex align-center justify-space-between w-100">
                     <div>
                         <v-card-subtitle class="text-caption font-weight-bold text-uppercase tracking-wider text-grey mb-1 text-black">
@@ -22,8 +22,8 @@ defineProps({
                             {{ quantity }}
                         </v-card-title>
                     </div>
-                    <v-avatar :color="`${color}-lighten-5`" size="48" rounded="lg">
-                        <component :is="icon" :class="[`text-${color}-darken-1`, 'w-6 h-6']" />
+                    <v-avatar :color="`${color}-lighten-5`" size="40" rounded="lg">
+                        <component :is="icon" :class="[`text-${color}-darken-1`, 'w-5 h-5']" />
                     </v-avatar>
                 </div>
             </v-card-item>

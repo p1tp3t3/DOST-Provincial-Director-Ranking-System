@@ -1,6 +1,6 @@
 <template>
     <v-card class="elevation-1 border-0 rounded-md h-100">
-        <div class="d-flex align-center justify-space-between px-5 pt-4 pb-3">
+        <div class="d-flex align-center justify-space-between px-4 pt-3 pb-2">
             <div>
                 <div class="text-subtitle-2 font-weight-bold">Active Users</div>
                 <div class="text-caption text-medium-emphasis">Currently online in the system</div>
@@ -14,7 +14,7 @@
                 v-for="(user, i) in users"
                 :key="i"
                 :border="i < users.length - 1 ? 'b' : false"
-                class="px-5 py-2"
+                class="px-4 py-1"
             >
                 <template #prepend>
                     <div class="position-relative mr-3">

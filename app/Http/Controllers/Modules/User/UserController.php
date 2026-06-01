@@ -23,10 +23,13 @@ class UserController extends Controller
     }
 
     public function admin_index() {
+        $admins = User::with(['profile', 'province'])
+                      ->whereIn('role', ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_sub_admin'])
+                      ->latest('created_at')
+                      ->paginate(20);
+
         return inertia('Admin/Users/Admins', [
-            'super_admins' => [],
-            'sub_admins' => [],
-            'provincial_admins' => []
+            'admins' => UserResource::collection($admins),
         ]);
     }
 

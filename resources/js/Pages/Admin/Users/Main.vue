@@ -17,6 +17,7 @@
 
 <script setup>
 import UserList from '@/Components/Lists/UserList.vue';
+import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 defineProps({

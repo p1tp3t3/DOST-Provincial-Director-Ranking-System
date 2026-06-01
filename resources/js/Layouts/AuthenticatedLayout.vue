@@ -13,7 +13,7 @@ import AuthHeader from '@/Components/Other/AuthHeader.vue';
                 <div class="sticky top-0 z-10">
                     <AuthHeader />
                 </div>
-                <div class="px-10">
+                <div class="px-8 py-5">
                     <slot />
                 </div>
             </main>

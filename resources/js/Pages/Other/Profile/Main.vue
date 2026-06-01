@@ -9,7 +9,7 @@
                     color="primary"
                     prepend-icon="mdi-arrow-left"
                     size="small"
-                    @click="() => router.visit('/users')"
+                    @click="() => history.back()"
                 >
                     Back
                 </v-btn>
