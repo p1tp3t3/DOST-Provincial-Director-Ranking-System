@@ -26,7 +26,7 @@
             />
         </div>
         <span class="text-caption text-medium-emphasis">
-            {{ filtered.length }} of {{ list.data.length }} users
+            {{ list.meta.total }} users
         </span>
     </div>
 
@@ -161,52 +161,64 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const defPic = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
 
 const props = defineProps({
-    list: { type: Object, required: true },
+    list:         { type: Object, required: true },
+    initialSearch: { type: String, default: '' },
+    initialRole:   { type: String, default: '' },
 });
+
 const currentPage = computed({
     get: () => props.list.meta.current_page,
-    set: (val) => val
+    set: (val) => val,
 });
-const changePage = (page) => {
-    search.value = '';
-    router.get(
-        window.location.pathname,
-        { page },
-        { preserveScroll: true, preserveState: true }
-    );
-};
 
-const search       = ref('');
-const selectedRole = ref(null);
+const search       = ref(props.initialSearch);
+const selectedRole = ref(props.initialRole || null);
 const deleteDialog = ref(false);
 const deleting     = ref(false);
 const targetUser   = ref(null);
 
+let debounceTimer = null;
+const sendSearch = () => {
+    router.get(
+        window.location.pathname,
+        { search: search.value || undefined, role: selectedRole.value || undefined },
+        { preserveScroll: true, preserveState: true, replace: true }
+    );
+};
+
+watch(search, () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(sendSearch, 350);
+});
+
+watch(selectedRole, () => {
+    clearTimeout(debounceTimer);
+    sendSearch();
+});
+
+const changePage = (page) => {
+    router.get(
+        window.location.pathname,
+        { page, search: search.value || undefined, role: selectedRole.value || undefined },
+        { preserveScroll: true, preserveState: true }
+    );
+};
+
 const roleOptions = [
-    { label: 'Admin',         value: 'admin'     },
-    { label: 'Sub-Admin',     value: 'sub-admin' },
-    { label: 'Director',      value: 'director'  },
-    { label: 'Employee',      value: 'employee'  },
+    { label: 'Super Admin',        value: 'super_admin'         },
+    { label: 'Sub Admin',          value: 'sub_admin'           },
+    { label: 'Provincial Admin',   value: 'provincial_admin'    },
+    { label: 'Provincial Director', value: 'provincial_director' },
+    { label: 'Employee',           value: 'employee'            },
 ];
 
-const filtered = computed(() => {
-    let data = props.list.data;
-    const q = search.value.toLowerCase().trim();
-    if (q) {
-        const match = (val) => (val ?? '').toLowerCase().includes(q);
-        data = data.filter(u => match(u.name) || match(u.email) || match(u.employee_id));
-    }
-    if (selectedRole.value) {
-        data = data.filter(u => u.role?.toLowerCase() === selectedRole.value);
-    }
-    return data;
-});
+const filtered = computed(() => props.list.data);
 
 const roleColor = (role) => {
     const map = { admin: 'indigo', 'sub-admin': 'purple', director: 'blue', employee: 'teal' };

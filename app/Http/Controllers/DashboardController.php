@@ -29,13 +29,7 @@ class DashboardController extends Controller
 
     private function super_admin_dashboard()
     {
-        $availableYears = DB::table('provincial_director_kpis')
-            ->distinct()->orderByDesc('year')->pluck('year')->values()->toArray();
-
-        $kpiScoresByYear = [];
-        foreach ($availableYears as $year) {
-            $kpiScoresByYear[$year] = self::compute_province_scores($year);
-        }
+        $kpiData = self::build_kpi_data();
 
         return inertia('Admin/Dashboard/Main', [
             'total_provinces'    => Province::count(),
@@ -43,24 +37,38 @@ class DashboardController extends Controller
             'total_directors'    => User::where('role', 'provincial_director')->count(),
             'total_employees'    => User::where('role', 'employee')->count(),
             'total_sub_admins'   => User::where('role', 'sub_admin')->count(),
-            'kpi_scores_by_year' => $kpiScoresByYear,
-            'available_years'    => $availableYears,
+            ...$kpiData,
         ]);
     }
 
-    private static function compute_province_scores(int $year): array
+    public function map_index()
     {
-        $rows = DB::table('provincial_director_kpis as pk')
-            ->join('users as u',    'u.id',  '=', 'pk.provincial_director_id')
-            ->join('provinces as p', 'p.id', '=', 'u.province_id')
-            ->join('profiles as pr', 'pr.user_id', '=', 'u.id')
-            ->where('pk.year', $year)
+        return inertia('Admin/Map/Main', self::build_kpi_data());
+    }
+
+    private static function build_kpi_data(): array
+    {
+        $availableYears = DB::table('provincial_director_kpis')
+            ->distinct()->orderByDesc('year')->pluck('year')->values()->toArray();
+
+        $kpiOutcomes = DB::table('kpis')->orderBy('id')->get(['id', 'outcome_title'])
+            ->map(fn($k) => ['id' => $k->id, 'title' => $k->outcome_title])
+            ->values()->toArray();
+
+        $allRows = DB::table('provincial_director_kpis as pk')
+            ->join('users as u',        'u.id',   '=', 'pk.provincial_director_id')
+            ->join('provinces as p',    'p.id',   '=', 'u.province_id')
+            ->join('profiles as pr',    'pr.user_id', '=', 'u.id')
+            ->join('kpi_subrows as ks', 'ks.id',  '=', 'pk.kpi_subrow_id')
+            ->whereIn('pk.year', $availableYears)
             ->whereNotNull('pk.target')
             ->whereNotNull('pk.accomplished')
             ->whereRaw("pk.target       REGEXP '^-?[0-9]+(\\.[0-9]+)?$'")
             ->whereRaw("pk.accomplished REGEXP '^-?[0-9]+(\\.[0-9]+)?$'")
             ->whereRaw("CAST(pk.target AS DECIMAL(20,4)) > 0")
             ->select(
+                'pk.year',
+                'ks.kpi_id',
                 'p.name as province',
                 'p.category',
                 DB::raw("CONCAT(pr.first_name, ' ', pr.last_name) as director"),
@@ -69,34 +77,68 @@ class DashboardController extends Controller
             )
             ->get();
 
-        $byProvince = [];
-        foreach ($rows as $row) {
-            $key = $row->province;
-            if (!isset($byProvince[$key])) {
-                $byProvince[$key] = [
-                    'province' => $row->province,
-                    'category' => $row->category,
-                    'director' => $row->director,
-                    'ratios'   => [],
+        $grouped = [];
+        foreach ($allRows as $row) {
+            $y = $row->year; $prov = $row->province;
+            if (!isset($grouped[$y][$prov])) {
+                $grouped[$y][$prov] = [
+                    'province'       => $prov,
+                    'category'       => $row->category,
+                    'director'       => $row->director,
+                    'overall_ratios' => [],
+                    'kpi_ratios'     => [],
                 ];
             }
-            if ($row->target > 0) {
-                $byProvince[$key]['ratios'][] = min(($row->accomplished / $row->target) * 100, 200);
-            }
+            $ratio = min(($row->accomplished / $row->target) * 100, 200);
+            $grouped[$y][$prov]['overall_ratios'][] = $ratio;
+            $grouped[$y][$prov]['kpi_ratios'][$row->kpi_id][] = $ratio;
         }
 
+        $kpiScoresByYear = [];
+        foreach ($availableYears as $year) {
+            $yearData = $grouped[$year] ?? [];
+            $overall  = self::build_scores($yearData, 'overall_ratios');
+            $perKpi   = [];
+            foreach ($kpiOutcomes as $kpi) {
+                $kpiId = $kpi['id']; $kpiScores = [];
+                foreach ($yearData as $data) {
+                    $ratios = $data['kpi_ratios'][$kpiId] ?? [];
+                    if (!$ratios) continue;
+                    $kpiScores[] = [
+                        'province' => $data['province'],
+                        'category' => $data['category'],
+                        'director' => $data['director'],
+                        'score'    => round(array_sum($ratios) / count($ratios), 1),
+                        'count'    => count($ratios),
+                    ];
+                }
+                usort($kpiScores, fn($a, $b) => $b['score'] <=> $a['score']);
+                $perKpi[$kpiId] = array_values($kpiScores);
+            }
+            $kpiScoresByYear[$year] = ['overall' => $overall, 'kpi' => $perKpi];
+        }
+
+        return [
+            'kpi_scores_by_year' => $kpiScoresByYear,
+            'kpi_outcomes'       => $kpiOutcomes,
+            'available_years'    => $availableYears,
+        ];
+    }
+
+    private static function build_scores(array $yearData, string $ratioKey): array
+    {
         $scores = [];
-        foreach ($byProvince as $data) {
-            if (!$data['ratios']) continue;
+        foreach ($yearData as $data) {
+            $ratios = $data[$ratioKey] ?? [];
+            if (!$ratios) continue;
             $scores[] = [
                 'province' => $data['province'],
                 'category' => $data['category'],
                 'director' => $data['director'],
-                'score'    => round(array_sum($data['ratios']) / count($data['ratios']), 1),
-                'count'    => count($data['ratios']),
+                'score'    => round(array_sum($ratios) / count($ratios), 1),
+                'count'    => count($ratios),
             ];
         }
-
         usort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
         return array_values($scores);
     }

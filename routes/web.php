@@ -23,6 +23,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/performance-map', [DashboardController::class, 'map_index'])->middleware(['auth', 'verified'])->name('performance-map');
 
 Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index']);

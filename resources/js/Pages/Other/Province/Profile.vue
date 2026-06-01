@@ -192,20 +192,20 @@
                                         <td class="text-caption text-medium-emphasis text-center">{{ j + 1 }}</td>
                                         <td class="text-body-2 py-2" style="line-height:1.45;">{{ row.description }}</td>
                                         <td class="text-center">
-                                            <span v-if="scoreFor(row, 'target') != null" class="text-body-2 font-weight-medium" style="white-space:pre-line;">
-                                                {{ scoreFor(row, 'target') }}
+                                            <span v-if="displayValue(row, 'target') != null" class="text-body-2 font-weight-medium" style="white-space:pre-line;">
+                                                {{ displayValue(row, 'target') }}
                                             </span>
                                             <span v-else class="text-caption text-disabled">—</span>
                                         </td>
                                         <td class="text-center">
-                                            <template v-if="scoreFor(row, 'accomplished') != null">
+                                            <template v-if="displayValue(row, 'accomplished') != null">
                                                 <v-chip
                                                     size="x-small"
                                                     variant="tonal"
                                                     :color="accomplishedColor(row)"
                                                     class="font-weight-medium"
                                                     style="height:auto; white-space:pre-line;"
-                                                >{{ scoreFor(row, 'accomplished') }}</v-chip>
+                                                >{{ displayValue(row, 'accomplished') }}</v-chip>
                                             </template>
                                             <span v-else class="text-caption text-disabled">—</span>
                                         </td>
@@ -307,6 +307,20 @@ const selectedYear = ref(availableYears[0] ?? null);
 const scoreFor = (row, field) => {
     if (!selectedYear.value) return null;
     return row.scores?.[String(selectedYear.value)]?.[field] ?? null;
+};
+
+const MONEY_PATTERN = /value\s+of|refunded\s+amount|gross\s+sales|external\s+funds/i;
+const isMoneyIndicator = (desc) => MONEY_PATTERN.test(desc ?? '');
+const phpFormat = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+
+const displayValue = (row, field) => {
+    const val = scoreFor(row, field);
+    if (val == null) return null;
+    if (isMoneyIndicator(row.description)) {
+        const num = parseFloat(String(val).replace(/,/g, ''));
+        if (!isNaN(num)) return phpFormat.format(num);
+    }
+    return val;
 };
 
 const accomplishedColor = (row) => {

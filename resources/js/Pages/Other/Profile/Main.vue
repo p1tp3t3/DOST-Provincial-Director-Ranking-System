@@ -152,110 +152,6 @@
                 </v-col>
             </v-row>
 
-            <!-- KPI Section -->
-            <v-card class="rounded-xl elevation-2 mb-4">
-                <v-card-title class="section-header pa-4 pb-3 d-flex align-center gap-2">
-                    <v-icon color="primary" size="20">mdi-chart-bar</v-icon>
-                    <span class="text-subtitle-2 font-weight-bold">KPI Overview</span>
-                </v-card-title>
-                <v-divider></v-divider>
-
-                <template v-if="profile.kpi?.length">
-                    <template v-for="(kpi, i) in profile.kpi" :key="i">
-                        <div class="kpi-group-header px-5 py-2 d-flex align-center gap-2">
-                            <span class="text-caption font-weight-bold">
-                                {{ i + 1 }}. {{ kpi.outcome_title }}
-                            </span>
-                        </div>
-                        <v-list density="compact" class="py-0">
-                            <v-list-item
-                                v-for="(row, j) in kpi.sub_rows"
-                                :key="j"
-                                class="px-5"
-                                min-height="40"
-                            >
-                                <v-list-item-title class="text-caption text-medium-emphasis text-wrap">
-                                    {{ row.indicator }}
-                                </v-list-item-title>
-                                <template #append>
-                                    <div class="d-flex align-center gap-2 ms-4">
-                                        <span
-                                            class="text-caption font-weight-medium"
-                                            :class="row.actual >= row.target ? 'text-success' : 'text-warning'"
-                                        >
-                                            {{ row.actual }}
-                                        </span>
-                                        <span class="text-caption text-disabled">/ {{ row.target }}</span>
-                                        <v-icon
-                                            size="14"
-                                            :color="row.actual >= row.target ? 'success' : 'warning'"
-                                        >
-                                            {{ row.actual >= row.target ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline' }}
-                                        </v-icon>
-                                    </div>
-                                </template>
-                            </v-list-item>
-                        </v-list>
-                        <v-divider v-if="i < profile.kpi.length - 1"></v-divider>
-                    </template>
-                </template>
-
-                <v-card-text v-else class="text-center py-10">
-                    <v-icon size="44" color="grey-lighten-1" class="mb-2">mdi-chart-bar</v-icon>
-                    <div class="text-body-2 text-medium-emphasis">No KPI data available for this director.</div>
-                </v-card-text>
-            </v-card>
-
-            <!-- Projects Section -->
-            <v-card class="rounded-xl elevation-2">
-                <v-card-title class="section-header pa-4 pb-3 d-flex align-center gap-2">
-                    <v-icon color="primary" size="20">mdi-folder-multiple-outline</v-icon>
-                    <span class="text-subtitle-2 font-weight-bold">Projects</span>
-                </v-card-title>
-                <v-divider></v-divider>
-                <v-card-text v-if="profile.projects?.length" class="pa-4">
-                    <v-row>
-                        <v-col
-                            v-for="(project, i) in profile.projects"
-                            :key="i"
-                            cols="12"
-                            md="6"
-                        >
-                            <v-card variant="elevated" rounded="lg" class="h-100">
-                                <v-sheet :color="project.status_color" height="3" width="100%" rounded="t-lg"></v-sheet>
-                                <v-card-item class="pt-3 pb-1">
-                                    <v-card-title class="text-body-2 font-weight-bold text-wrap">
-                                        {{ project.title }}
-                                    </v-card-title>
-                                    <template #append>
-                                        <v-chip size="x-small" :color="project.status_color" variant="tonal" class="font-weight-bold">
-                                            {{ project.status }}
-                                        </v-chip>
-                                    </template>
-                                </v-card-item>
-                                <v-card-text class="pt-1">
-                                    <div class="text-caption text-medium-emphasis mb-2">{{ project.description }}</div>
-                                    <div class="d-flex flex-wrap gap-3 mt-2">
-                                        <div class="d-flex align-center gap-1 text-caption text-medium-emphasis">
-                                            <v-icon size="14">mdi-calendar-range</v-icon>
-                                            {{ project.duration }}
-                                        </div>
-                                        <div class="d-flex align-center gap-1 text-caption text-medium-emphasis">
-                                            <v-icon size="14">mdi-currency-php</v-icon>
-                                            Budget: {{ project.budget }}
-                                        </div>
-                                    </div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                </v-card-text>
-                <v-card-text v-else class="text-center py-10">
-                    <v-icon size="44" color="grey-lighten-1" class="mb-2">mdi-folder-open-outline</v-icon>
-                    <div class="text-body-2 text-medium-emphasis">No projects assigned yet.</div>
-                </v-card-text>
-            </v-card>
-
         </div>
     </AuthenticatedLayout>
 </template>
@@ -347,9 +243,5 @@ const formatService = (val) => {
 }
 .edu-item:hover {
     background-color: rgba(var(--v-theme-primary), 0.08);
-}
-.kpi-group-header {
-    background-color: rgba(0, 0, 0, 0.03);
-    border-left: 3px solid rgb(var(--v-theme-primary));
 }
 </style>

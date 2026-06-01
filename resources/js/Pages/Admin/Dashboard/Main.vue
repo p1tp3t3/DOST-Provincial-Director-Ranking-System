@@ -27,11 +27,10 @@
                         <v-btn v-for="y in available_years" :key="y" :value="y" size="small" class="px-3 text-caption">{{ y }}</v-btn>
                     </v-btn-toggle>
                 </div>
-                <div class="d-flex align-center gap-2">
-                    <span class="legend-dot" style="background:#22c55e;"></span><span class="text-caption text-medium-emphasis">≥100%</span>
-                    <span class="legend-dot" style="background:#3b82f6;"></span><span class="text-caption text-medium-emphasis">70–99%</span>
-                    <span class="legend-dot" style="background:#f59e0b;"></span><span class="text-caption text-medium-emphasis">50–69%</span>
-                    <span class="legend-dot" style="background:#ef4444;"></span><span class="text-caption text-medium-emphasis">&lt;50%</span>
+                <div class="d-flex align-center gap-2 flex-wrap">
+                    <span class="legend-dot" style="background:#15803d;"></span><span class="text-caption text-medium-emphasis">Top Performing (≥100%)</span>
+                    <span class="legend-dot" style="background:#ca8a04;"></span><span class="text-caption text-medium-emphasis">Average Performers (70–99%)</span>
+                    <span class="legend-dot" style="background:#b91c1c;"></span><span class="text-caption text-medium-emphasis">Low Performers (&lt;70%)</span>
                 </div>
                 <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium ml-auto">
                     {{ filteredScores.length }} provinces
@@ -66,7 +65,7 @@
                                     </v-tooltip>
                                 </div>
                                 <div class="text-caption text-medium-emphasis mb-2">
-                                    Ranked by classification · KPI Accomplishment Rate · {{ selectedYear }}
+                                    Ranked by classification · {{ kpiFilterLabel }} · {{ selectedYear }}
                                 </div>
                             </div>
                             <v-text-field
@@ -107,6 +106,38 @@
 
                         <v-divider />
 
+                        <!-- KPI Filter -->
+                        <div class="d-flex align-center gap-2 px-4 py-2 flex-wrap kpi-filter-bar">
+                            <span class="text-caption font-weight-medium text-medium-emphasis" style="white-space:nowrap;">View by KPI:</span>
+                            <v-chip-group v-model="selectedKpi" mandatory selected-class="kpi-chip-active" @update:modelValue="raceSearch = ''">
+                                <v-chip value="overall" size="small" variant="tonal" color="indigo" class="font-weight-medium">
+                                    Overall
+                                </v-chip>
+                                <v-tooltip
+                                    v-for="kpi in kpi_outcomes"
+                                    :key="kpi.id"
+                                    :text="kpi.title"
+                                    location="bottom"
+                                    max-width="260"
+                                >
+                                    <template #activator="{ props: tip }">
+                                        <v-chip
+                                            v-bind="tip"
+                                            :value="kpi.id"
+                                            size="small"
+                                            variant="tonal"
+                                            color="blue-grey"
+                                            class="font-weight-medium"
+                                        >
+                                            KPI {{ kpi.id }}
+                                        </v-chip>
+                                    </template>
+                                </v-tooltip>
+                            </v-chip-group>
+                        </div>
+
+                        <v-divider />
+
                         <v-data-table
                             :headers="raceHeaders"
                             :items="rankedScores"
@@ -140,18 +171,22 @@
                             </template>
 
                             <template #item.score="{ item }">
-                                <div class="d-flex align-center gap-2 py-1" style="min-width:200px;">
-                                    <div class="score-track">
-                                        <div
-                                            class="score-fill"
-                                            :style="{
-                                                width: `${Math.min(item.score, 200) / 200 * 100}%`,
-                                                background: tierColor(item.score),
-                                            }"
-                                        />
-                                    </div>
-                                    <span class="text-body-2 font-weight-bold" style="min-width:46px;" :style="{ color: tierColor(item.score) }">
-                                        {{ item.score }}%
+                                <div class="d-flex align-center gap-2 py-1" style="min-width:220px;">
+                                    <v-tooltip :text="`${item.score}% accomplishment rate`" location="top">
+                                        <template #activator="{ props: tip }">
+                                            <div v-bind="tip" class="score-track" style="cursor:default;">
+                                                <div
+                                                    class="score-fill"
+                                                    :style="{
+                                                        width: `${Math.min(item.score, 200) / 200 * 100}%`,
+                                                        background: tierColor(item.score),
+                                                    }"
+                                                />
+                                            </div>
+                                        </template>
+                                    </v-tooltip>
+                                    <span class="text-caption font-weight-bold" :style="{ color: tierColor(item.score) }">
+                                        {{ tierLabel(item.score) }}
                                     </span>
                                 </div>
                             </template>
@@ -195,10 +230,10 @@
                         <div class="chart-header px-4 pt-3 pb-2">
                             <div class="d-flex align-center gap-2">
                                 <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
-                                <span class="text-body-2 font-weight-bold">Failing / Lacking Provinces</span>
+                                <span class="text-body-2 font-weight-bold">Low Performers</span>
                             </div>
                             <div class="text-caption text-medium-emphasis">
-                                Below 70% threshold · {{ categoryLabel }} · {{ selectedYear }}
+                                Below 70% · {{ categoryLabel }} · {{ selectedYear }}
                             </div>
                         </div>
                         <VueApexCharts
@@ -211,8 +246,8 @@
                         />
                         <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
                             <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
-                            <div class="text-body-2 font-weight-medium">All provinces on track!</div>
-                            <div class="text-caption text-medium-emphasis">No provinces below the 70% threshold</div>
+                            <div class="text-body-2 font-weight-medium">No Low Performers!</div>
+                            <div class="text-caption text-medium-emphasis">All provinces are Average Performers or Top Performing</div>
                         </div>
                     </v-card>
                 </v-col>
@@ -243,11 +278,13 @@ const props = defineProps({
     total_employees:     { type: Number, default: 0 },
     total_provinces:     { type: Number, default: 0 },
     kpi_scores_by_year:  { type: Object, default: () => ({}) },
+    kpi_outcomes:        { type: Array,  default: () => [] },
     available_years:     { type: Array,  default: () => [] },
 });
 
 const selectedYear     = ref(props.available_years[0] ?? 2025);
 const selectedCategory = ref('all');
+const selectedKpi      = ref('overall');
 const raceSearch       = ref('');
 
 const categories = [
@@ -264,9 +301,18 @@ const categoryLabel = computed(() =>
         : (categories.find(c => c.value === selectedCategory.value)?.label ?? '')
 );
 
-const currentScores = computed(() =>
-    props.kpi_scores_by_year[selectedYear.value] ?? []
-);
+const currentScores = computed(() => {
+    const yearData = props.kpi_scores_by_year[selectedYear.value];
+    if (!yearData) return [];
+    if (selectedKpi.value === 'overall') return yearData.overall ?? [];
+    return yearData.kpi?.[selectedKpi.value] ?? [];
+});
+
+const kpiFilterLabel = computed(() => {
+    if (selectedKpi.value === 'overall') return 'Overall KPI Score';
+    const found = props.kpi_outcomes.find(k => k.id === selectedKpi.value);
+    return found ? `KPI ${found.id}: ${found.title}` : `KPI ${selectedKpi.value}`;
+});
 
 const categoryCounts = computed(() => {
     const counts = { all: currentScores.value.length };
@@ -298,9 +344,12 @@ const raceHeaders = [
 ];
 
 const tierColor = score =>
-    score >= 100 ? '#22c55e' :
-    score >= 70  ? '#3b82f6' :
-    score >= 50  ? '#f59e0b' : '#ef4444';
+    score >= 100 ? '#15803d' :
+    score >= 70  ? '#ca8a04' : '#b91c1c';
+
+const tierLabel = score =>
+    score >= 100 ? 'Top Performing'    :
+    score >= 70  ? 'Average Performers' : 'Low Performers';
 
 const categoryColor = cat => ({
     micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink'
@@ -411,7 +460,7 @@ const failingOptions = computed(() => makeHorizOptions(failingData.value, 75, {
             borderColor: '#f59e0b',
             strokeDashArray: 5,
             label: {
-                text: '70% target',
+                text: '70% threshold',
                 offsetY: 6,
                 style: {
                     fontSize: '10px',
@@ -438,6 +487,9 @@ const failingSeries = computed(() => [{ name: 'KPI Score', data: failingData.val
     border-radius: 50%;
     flex-shrink: 0;
 }
+
+.kpi-filter-bar { background: rgba(var(--v-theme-surface-variant), 0.3); }
+:deep(.kpi-chip-active) { font-weight: 700 !important; opacity: 1 !important; }
 
 .leaderboard-table :deep(tr) { cursor: default; }
 .leaderboard-table :deep(thead th) { font-size: 11px !important; font-weight: 600 !important; }
