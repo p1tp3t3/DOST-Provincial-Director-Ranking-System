@@ -48,9 +48,11 @@ class GenerateEmployeeAccount implements ShouldQueue
 
             $profile = Profile::insertGetId([
                 'user_id'              => $user->id,
-                'first_name'           => $this->row['first_name']  ?? '',
-                'middle_name'          => $this->row['middle_name'] ?? '',
-                'last_name'            => $this->row['last_name']   ?? '',
+                'prefix'               => $this->row['prefix']       ?? '',
+                'first_name'           => $this->row['first_name']   ?? '',
+                'middle_name'          => $this->row['middle_name']  ?? '',
+                'last_name'            => $this->row['last_name']    ?? '',
+                'suffix'               => $this->row['suffix']       ?? '',
                 'length_of_service'    => $this->row['length_of_service'] ?? '0',
                 'education_attainment' => json_encode($this->row['education_attainment'] ?? ['data' => []]),
             ]);

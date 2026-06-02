@@ -4,9 +4,9 @@ import { useForm } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 
 const form = useForm({
-    email: '',
-    password: '',
-    remember: false,
+    identifier: '',
+    password:   '',
+    remember:   false,
 });
 
 const submit = () => {
@@ -20,18 +20,16 @@ const submit = () => {
     <form @submit.prevent="submit" class="space-y-6">
         <div>
             <v-text-field
-                id="email"
-                type="email"
-                label="Email"
-                v-model="form.email"
-                :readonly="loading"
+                id="identifier"
+                label="Email, Username, or Employee ID"
+                v-model="form.identifier"
                 variant="outlined"
-                :rules="[required]"
                 clearable
                 autofocus
                 autocomplete="username"
-                :error-messages="form.errors.email"
-                placeholder="juandelacruz@gmail.com"
+                :error-messages="form.errors.identifier"
+                placeholder="Enter your email, username, or DOST ID"
+                prepend-inner-icon="mdi-account-search-outline"
             />
         </div>
 

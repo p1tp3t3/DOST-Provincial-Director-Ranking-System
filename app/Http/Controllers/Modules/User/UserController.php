@@ -8,6 +8,9 @@ use App\Http\Requests\User\AdminRegistrationRequest;
 use App\Http\Requests\User\UserRegistrationRequest;
 use App\Http\Resources\UserResource;
 use App\Jobs\GenerateEmployeeAccount;
+use App\Jobs\VerifyCSVJob;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Models\EmployeeProfile;
 use App\Models\Profile;
 use App\Models\User;
@@ -116,7 +119,147 @@ class UserController extends Controller
         return response()->json(['message' => 'New admin registered successfully.']);
     }
 
-    // ── CSV bulk account generation ────────────────────────────────
+    // ── CSV Verify → Review → Commit ──────────────────────────────
+
+    public function verify_csv(Request $request)
+    {
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+        ]);
+
+        $rows = $this->parse_csv($request->file('csv_file'));
+
+        if (empty($rows)) {
+            return response()->json(['message' => 'The CSV file is empty or could not be parsed.'], 422);
+        }
+
+        // Run verification synchronously — fast enough (just DB lookups, no heavy I/O)
+        $existingEmails  = User::pluck('email')->flip();
+        $existingDostIds = User::pluck('dost_employee_id')->filter()->flip();
+        $seenEmails  = [];
+        $seenDostIds = [];
+        $results     = [];
+
+        foreach ($rows as $i => $row) {
+            $firstName       = trim($row['first_name']        ?? '');
+            $middleName      = trim($row['middle_name']       ?? '');
+            $prefix          = trim($row['prefix']            ?? '');
+            $firstName       = trim($row['first_name']        ?? '');
+            $middleName      = trim($row['middle_name']       ?? '');
+            $lastName        = trim($row['last_name']         ?? '');
+            $suffix          = trim($row['suffix']            ?? '');
+            $email           = trim($row['email']             ?? '');
+            $dostId          = trim($row['dost_id_number']    ?? $row['dost_employee_id'] ?? '');
+            $position        = trim($row['position']          ?? '');
+            $lengthOfService = trim($row['length_of_service'] ?? '');
+
+            $errors = [];
+
+            if ($firstName === '') $errors['first_name'] = 'First name is required.';
+            if ($lastName  === '') $errors['last_name']  = 'Last name is required.';
+
+            if ($email === '') {
+                $errors['email'] = 'Email is required.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors['email'] = 'Invalid email format.';
+            } elseif (isset($existingEmails[$email])) {
+                $errors['email'] = 'Email already exists in the system.';
+            } elseif (isset($seenEmails[$email])) {
+                $errors['email'] = 'Duplicate email in this CSV.';
+            } else {
+                $seenEmails[$email] = true;
+            }
+
+            if ($dostId === '') {
+                $errors['dost_id'] = 'DOST ID is required.';
+            } elseif (isset($existingDostIds[$dostId])) {
+                $errors['dost_id'] = 'DOST ID already exists in the system.';
+            } elseif (isset($seenDostIds[$dostId])) {
+                $errors['dost_id'] = 'Duplicate DOST ID in this CSV.';
+            } else {
+                $seenDostIds[$dostId] = true;
+            }
+
+            $results[] = [
+                'row_index' => $i,
+                'status'    => empty($errors) ? 'valid' : 'invalid',
+                'errors'    => $errors,
+                'include'   => empty($errors),
+                'data'      => [
+                    'prefix'            => $prefix,
+                    'first_name'        => $firstName,
+                    'middle_name'       => $middleName,
+                    'last_name'         => $lastName,
+                    'suffix'            => $suffix,
+                    'email'             => $email,
+                    'dost_id'           => $dostId,
+                    'position'          => $position,
+                    'length_of_service' => $lengthOfService,
+                ],
+            ];
+        }
+
+        return response()->json([
+            'status'  => 'done',
+            'results' => $results,
+            'total'   => count($results),
+        ]);
+    }
+
+    public function verify_status(string $key)
+    {
+        $data = Cache::get($key);
+        abort_if(!$data, 404, 'Verification session expired or not found.');
+        return response()->json($data);
+    }
+
+    public function commit_csv(Request $request)
+    {
+        $request->validate([
+            'rows'                     => ['required', 'array', 'min:1'],
+            'rows.*.first_name'        => ['required', 'string'],
+            'rows.*.last_name'         => ['required', 'string'],
+            'rows.*.email'             => ['required', 'email'],
+            'rows.*.dost_id'           => ['required', 'string'],
+            'rows.*.prefix'            => ['nullable', 'string'],
+            'rows.*.suffix'            => ['nullable', 'string'],
+            'rows.*.position'          => ['nullable', 'string'],
+            'rows.*.length_of_service' => ['nullable', 'string'],
+        ]);
+
+        $actor        = Auth::user();
+        $actor->loadMissing('province');
+        $provinceId   = $actor->province_id;
+        $provinceName = $actor->province?->name ?? 'Province';
+
+        $jobs = array_map(fn($row) => new GenerateEmployeeAccount([
+            'prefix'            => $row['prefix']            ?? '',
+            'first_name'        => $row['first_name'],
+            'middle_name'       => $row['middle_name']       ?? '',
+            'last_name'         => $row['last_name'],
+            'suffix'            => $row['suffix']            ?? '',
+            'email'             => $row['email'],
+            'dost_employee_id'  => $row['dost_id'],
+            'position'          => $row['position']          ?? '',
+            'length_of_service' => $row['length_of_service'] ?? '0',
+        ], $provinceId), $request->rows);
+
+        $batch = Bus::batch($jobs)
+            ->name("Commit accounts — {$provinceName}")
+            ->allowFailures()
+            ->finally(function (Batch $batch) use ($provinceName) {
+                $processed = $batch->totalJobs - $batch->failedJobs;
+                ActivityLogHelper::generateAccounts($processed, $provinceName);
+            })
+            ->dispatch();
+
+        return response()->json([
+            'batch_id'   => $batch->id,
+            'total_jobs' => $batch->totalJobs,
+        ]);
+    }
+
+    // ── CSV bulk account generation (legacy direct) ────────────────
 
     public function upload_user_csv_file(Request $request)
     {

@@ -1,7 +1,7 @@
 <template>
     <AuthenticatedLayout>
         <div>
-            
+            employee dashboard
         </div>
     </AuthenticatedLayout>
 </template>

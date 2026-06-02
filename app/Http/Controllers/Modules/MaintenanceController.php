@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MaintenanceController extends Controller
@@ -12,10 +13,30 @@ class MaintenanceController extends Controller
     public function index()
     {
         return inertia('Admin/Maintenance/Main', [
-            'backups'      => $this->get_backups(),
-            'system_info'  => $this->get_system_info(),
-            'storage_info' => $this->get_storage_info(),
+            'backups'           => $this->get_backups(),
+            'storage_backups'   => $this->get_storage_backups(),
+            'system_backups'    => $this->get_system_backups(),
+            'system_info'       => $this->get_system_info(),
+            'storage_info'      => $this->get_storage_info(),
+            'maintenance_mode'  => (bool) Cache::get('app_maintenance_mode', false),
         ]);
+    }
+
+    // ── Maintenance Mode Toggle ────────────────────────────────────
+
+    public function toggle_maintenance()
+    {
+        $current = (bool) Cache::get('app_maintenance_mode', false);
+
+        if ($current) {
+            Cache::forget('app_maintenance_mode');
+            $msg = 'Maintenance mode disabled. The system is now live.';
+        } else {
+            Cache::put('app_maintenance_mode', true, now()->addYear());
+            $msg = 'Maintenance mode enabled. Only super admins can access the system.';
+        }
+
+        return back()->with('success', $msg);
     }
 
     // ── Backup ─────────────────────────────────────────────────────
@@ -111,11 +132,11 @@ class MaintenanceController extends Controller
             $dbBytes = (int) ($rows[0]->size ?? 0);
         } catch (\Throwable) {}
 
-        $uploadsBytes = $this->dir_size(storage_path('app/public'));
-        $logsBytes    = $this->dir_size(storage_path('logs'));
-        $backupBytes  = $this->dir_size(storage_path('app/backups'));
-
-        $totalDisk = disk_total_space(storage_path()) ?: 1;
+        $uploadsBytes        = $this->dir_size(storage_path('app/public'));
+        $logsBytes           = $this->dir_size(storage_path('logs'));
+        $dbBackupBytes       = $this->dir_size(storage_path('app/backups'));
+        $storageBackupBytes  = $this->dir_size(storage_path('app/storage-backups'));
+        $systemBackupBytes   = $this->dir_size(storage_path('app/system-backups'));
 
         $make = function (string $label, int $used, int $total) {
             return [
@@ -127,10 +148,12 @@ class MaintenanceController extends Controller
         };
 
         return [
-            $make('Database', $dbBytes,      500 * 1024 * 1024),
-            $make('Uploads',  $uploadsBytes,  2   * 1024 * 1024 * 1024),
-            $make('Logs',     $logsBytes,     200 * 1024 * 1024),
-            $make('Backups',  $backupBytes,   500 * 1024 * 1024),
+            $make('Database',        $dbBytes,             500 * 1024 * 1024),
+            $make('Uploads',         $uploadsBytes,          2 * 1024 * 1024 * 1024),
+            $make('Logs',            $logsBytes,           200 * 1024 * 1024),
+            $make('DB Backups',      $dbBackupBytes,       500 * 1024 * 1024),
+            $make('Storage Backups', $storageBackupBytes,  500 * 1024 * 1024),
+            $make('System Backups',  $systemBackupBytes,     2 * 1024 * 1024 * 1024),
         ];
     }
 
@@ -142,6 +165,249 @@ class MaintenanceController extends Controller
             $size += $file->getSize();
         }
         return $size;
+    }
+
+    // ── System Backup (DB + Storage + .env) ───────────────────────
+
+    public function create_system_backup()
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
+        $timestamp = now()->format('Y-m-d_H-i-s');
+        $filename  = "system_export_{$timestamp}.zip";
+        $dir       = storage_path('app/system-backups');
+        $path      = "{$dir}/{$filename}";
+        $tempSql   = "{$dir}/temp_db_{$timestamp}.sql";
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        // Step 1: PHP-native DB dump (no mysqldump PATH dependency)
+        try {
+            file_put_contents($tempSql, $this->dump_database_php());
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Export failed: ' . $e->getMessage());
+        }
+
+        if (!file_exists($tempSql) || filesize($tempSql) === 0) {
+            return back()->with('error', 'Export failed: database dump was empty.');
+        }
+
+        // Step 2: Build ZIP
+        $zip = new \ZipArchive();
+        if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            @unlink($tempSql);
+            return back()->with('error', 'Could not create ZIP archive.');
+        }
+
+        $zip->addFile($tempSql, 'database.sql');
+
+        // Normalize all paths to forward-slashes for cross-platform comparison
+        $norm        = fn(string $p) => rtrim(str_replace('\\', '/', $p), '/');
+        $projectRoot = $norm(realpath(base_path()));
+
+        $skipDirs = array_values(array_filter(array_map(fn($p) => $p ? $norm($p) : null, [
+            realpath($projectRoot . '/vendor'),
+            realpath($projectRoot . '/node_modules'),
+            realpath($projectRoot . '/.git'),
+            realpath($dir),
+            realpath(storage_path('app/backups')),
+            realpath(storage_path('app/storage-backups')),
+        ])));
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($projectRoot, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $real = $norm($item->getRealPath());
+            if (!$real) continue;
+
+            foreach ($skipDirs as $skipDir) {
+                if ($real === $skipDir || str_starts_with($real, $skipDir . '/')) {
+                    continue 2;
+                }
+            }
+
+            $relative = 'project/' . substr($real, strlen($projectRoot) + 1);
+
+            if ($item->isDir()) {
+                $zip->addEmptyDir($relative);
+            } elseif ($item->isFile() && $item->isReadable()) {
+                $zip->addFile($item->getRealPath(), $relative);
+            }
+        }
+
+        $zip->close();
+        @unlink($tempSql);
+
+        return back()->with('success', "System export {$filename} created successfully.");
+    }
+
+    private function dump_database_php(): string
+    {
+        $lines   = [];
+        $lines[] = '-- PDRIS System Export | Generated: ' . now()->toDateTimeString();
+        $lines[] = '-- Database: ' . DB::getDatabaseName();
+        $lines[] = '';
+        $lines[] = 'SET FOREIGN_KEY_CHECKS=0;';
+        $lines[] = 'SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";';
+        $lines[] = '';
+
+        $tables = DB::select('SHOW TABLES');
+
+        foreach ($tables as $tableRow) {
+            $table = current((array) $tableRow);
+
+            $createResult = DB::select("SHOW CREATE TABLE `{$table}`");
+            $createSql    = $createResult[0]->{'Create Table'};
+
+            $lines[] = "-- Table: `{$table}`";
+            $lines[] = "DROP TABLE IF EXISTS `{$table}`;";
+            $lines[] = $createSql . ';';
+            $lines[] = '';
+
+            $rows = DB::table($table)->get();
+
+            if ($rows->isEmpty()) continue;
+
+            $columns = array_map(fn($c) => "`{$c}`", array_keys((array) $rows->first()));
+            $colStr  = implode(', ', $columns);
+
+            foreach ($rows as $row) {
+                $values = array_map(function ($val) {
+                    if ($val === null) return 'NULL';
+                    return "'" . str_replace(["\\", "'", "\n", "\r"], ["\\\\", "\\'", "\\n", "\\r"], (string) $val) . "'";
+                }, (array) $row);
+
+                $lines[] = "INSERT INTO `{$table}` ({$colStr}) VALUES (" . implode(', ', $values) . ');';
+            }
+
+            $lines[] = '';
+        }
+
+        $lines[] = 'SET FOREIGN_KEY_CHECKS=1;';
+
+        return implode("\n", $lines);
+    }
+
+    public function download_system_backup(string $filename)
+    {
+        $path = storage_path("app/system-backups/{$filename}");
+
+        abort_unless(file_exists($path), 404, 'Backup file not found.');
+
+        return response()->download($path);
+    }
+
+    public function delete_system_backup(string $filename)
+    {
+        $path = storage_path("app/system-backups/{$filename}");
+
+        if (file_exists($path)) {
+            unlink($path);
+        }
+
+        return back()->with('success', 'System backup deleted.');
+    }
+
+    private function get_system_backups(): array
+    {
+        $dir = storage_path('app/system-backups');
+
+        if (!is_dir($dir)) return [];
+
+        $files = glob("{$dir}/system_export_*.zip") ?: [];
+
+        usort($files, fn($a, $b) => filemtime($b) - filemtime($a));
+
+        return array_map(fn($file) => [
+            'filename'   => basename($file),
+            'size'       => $this->format_bytes(filesize($file)),
+            'created_at' => date('M d, Y g:i A', filemtime($file)),
+        ], $files);
+    }
+
+    // ── Storage Backup ─────────────────────────────────────────────
+
+    public function create_storage_backup()
+    {
+        $filename = 'storage_backup_' . now()->format('Y-m-d_H-i') . '.zip';
+        $dir      = storage_path('app/storage-backups');
+        $path     = "{$dir}/{$filename}";
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $source = storage_path('app/public');
+
+        if (!is_dir($source)) {
+            return back()->with('error', 'Storage directory does not exist.');
+        }
+
+        $zip = new \ZipArchive();
+
+        if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Could not create ZIP archive.');
+        }
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $file) {
+            if (!$file->isReadable()) continue;
+            $relative = substr($file->getRealPath(), strlen($source) + 1);
+            $zip->addFile($file->getRealPath(), $relative);
+        }
+
+        $zip->close();
+
+        return back()->with('success', "Storage backup {$filename} created successfully.");
+    }
+
+    public function download_storage_backup(string $filename)
+    {
+        $path = storage_path("app/storage-backups/{$filename}");
+
+        abort_unless(file_exists($path), 404, 'Backup file not found.');
+
+        return response()->download($path);
+    }
+
+    public function delete_storage_backup(string $filename)
+    {
+        $path = storage_path("app/storage-backups/{$filename}");
+
+        if (file_exists($path)) {
+            unlink($path);
+        }
+
+        return back()->with('success', 'Storage backup deleted.');
+    }
+
+    private function get_storage_backups(): array
+    {
+        $dir = storage_path('app/storage-backups');
+
+        if (!is_dir($dir)) return [];
+
+        $files = glob("{$dir}/*.zip") ?: [];
+
+        usort($files, fn($a, $b) => filemtime($b) - filemtime($a));
+
+        return array_map(function ($file) {
+            return [
+                'filename'   => basename($file),
+                'size'       => $this->format_bytes(filesize($file)),
+                'created_at' => date('M d, Y g:i A', filemtime($file)),
+            ];
+        }, $files);
     }
 
     private function get_backups(): array

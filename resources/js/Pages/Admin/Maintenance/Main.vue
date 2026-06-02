@@ -13,6 +13,83 @@
                 <v-col cols="12" md="8">
                     <div class="d-flex flex-column gap-4">
 
+                        <!-- System Export -->
+                        <v-card class="elevation-1 border-0 rounded-md" style="border-left: 3px solid rgb(var(--v-theme-deep-purple)) !important;">
+                            <div class="pa-5 pb-3 d-flex align-center gap-3">
+                                <v-avatar color="deep-purple-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="deep-purple" size="20">mdi-archive-arrow-down-outline</v-icon>
+                                </v-avatar>
+                                <div class="flex-1-1">
+                                    <div class="text-subtitle-2 font-weight-bold">Full System Export</div>
+                                    <div class="text-caption text-medium-emphasis">Export the entire project — source code, database, and configuration — as a ZIP archive</div>
+                                </div>
+                            </div>
+                            <v-divider></v-divider>
+                            <div class="pa-5 d-flex flex-column gap-4">
+
+                                <!-- What's included -->
+                                <div>
+                                    <div class="section-label mb-2">What's included</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <v-chip size="x-small" color="deep-purple" variant="tonal" prepend-icon="mdi-code-braces">Source Code</v-chip>
+                                        <v-chip size="x-small" color="indigo" variant="tonal" prepend-icon="mdi-database-outline">Database Dump</v-chip>
+                                        <v-chip size="x-small" color="teal" variant="tonal" prepend-icon="mdi-folder-outline">Uploaded Files</v-chip>
+                                        <v-chip size="x-small" color="orange" variant="tonal" prepend-icon="mdi-cog-outline">Config (.env)</v-chip>
+                                    </div>
+                                </div>
+
+                                <v-alert type="info" variant="tonal" density="compact" icon="mdi-information-outline">
+                                    <span class="text-caption">Excludes <strong>vendor/</strong>, <strong>node_modules/</strong>, and <strong>.git/</strong>. This may take a minute depending on project size.</span>
+                                </v-alert>
+
+                                <!-- Export history -->
+                                <div v-if="systemBackups.length" class="d-flex flex-column gap-2">
+                                    <div class="section-label mb-1">Recent Exports</div>
+                                    <div
+                                        v-for="b in systemBackups"
+                                        :key="b.filename"
+                                        class="d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5"
+                                    >
+                                        <div class="d-flex align-center gap-3">
+                                            <v-icon size="18" color="deep-purple">mdi-archive-outline</v-icon>
+                                            <div>
+                                                <div class="text-body-2 font-weight-medium">{{ b.filename }}</div>
+                                                <div class="text-caption text-medium-emphasis">{{ b.size }} · {{ b.created_at }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <v-tooltip text="Download" location="top">
+                                                <template #activator="{ props: tip }">
+                                                    <v-btn v-bind="tip" icon size="x-small" variant="text" color="primary" :href="`/maintenance/system-backup/${b.filename}`">
+                                                        <v-icon size="16">mdi-download-outline</v-icon>
+                                                    </v-btn>
+                                                </template>
+                                            </v-tooltip>
+                                            <v-tooltip text="Delete" location="top">
+                                                <template #activator="{ props: tip }">
+                                                    <v-btn v-bind="tip" icon size="x-small" variant="text" color="error" @click="confirmDeleteSystemBackup(b)">
+                                                        <v-icon size="16">mdi-trash-can-outline</v-icon>
+                                                    </v-btn>
+                                                </template>
+                                            </v-tooltip>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-else class="text-caption text-medium-emphasis">No system exports yet.</div>
+
+                                <div class="d-flex justify-end">
+                                    <v-btn
+                                        color="deep-purple"
+                                        variant="flat"
+                                        size="small"
+                                        prepend-icon="mdi-archive-arrow-down-outline"
+                                        :loading="exportingSystem"
+                                        @click="createSystemBackup"
+                                    >Export Full System</v-btn>
+                                </div>
+                            </div>
+                        </v-card>
+
                         <!-- Database Backup -->
                         <v-card class="elevation-1 border-0 rounded-md">
                             <div class="pa-5 pb-3 d-flex align-center gap-3">
@@ -70,6 +147,67 @@
                                             :loading="backingUp"
                                             @click="createBackup"
                                         >Create Backup Now</v-btn>
+                                    </div>
+                                </div>
+                            </div>
+                        </v-card>
+
+                        <!-- Storage Backup -->
+                        <v-card class="elevation-1 border-0 rounded-md">
+                            <div class="pa-5 pb-3 d-flex align-center gap-3">
+                                <v-avatar color="teal-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="teal" size="20">mdi-folder-zip-outline</v-icon>
+                                </v-avatar>
+                                <div>
+                                    <div class="text-subtitle-2 font-weight-bold">Storage Backup</div>
+                                    <div class="text-caption text-medium-emphasis">Create and download a ZIP archive of all uploaded files</div>
+                                </div>
+                            </div>
+                            <v-divider></v-divider>
+                            <div class="pa-5">
+                                <div class="d-flex flex-column gap-3">
+                                    <div v-if="storageBackups.length" class="d-flex flex-column gap-2">
+                                        <div class="section-label mb-1">Recent Storage Backups</div>
+                                        <div
+                                            v-for="b in storageBackups"
+                                            :key="b.filename"
+                                            class="d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5"
+                                        >
+                                            <div class="d-flex align-center gap-3">
+                                                <v-icon size="18" color="teal">mdi-folder-zip-outline</v-icon>
+                                                <div>
+                                                    <div class="text-body-2 font-weight-medium">{{ b.filename }}</div>
+                                                    <div class="text-caption text-medium-emphasis">{{ b.size }} · {{ b.created_at }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-1">
+                                                <v-tooltip text="Download" location="top">
+                                                    <template #activator="{ props: tip }">
+                                                        <v-btn v-bind="tip" icon size="x-small" variant="text" color="primary" :href="`/maintenance/storage-backup/${b.filename}`">
+                                                            <v-icon size="16">mdi-download-outline</v-icon>
+                                                        </v-btn>
+                                                    </template>
+                                                </v-tooltip>
+                                                <v-tooltip text="Delete" location="top">
+                                                    <template #activator="{ props: tip }">
+                                                        <v-btn v-bind="tip" icon size="x-small" variant="text" color="error" @click="confirmDeleteStorageBackup(b)">
+                                                            <v-icon size="16">mdi-trash-can-outline</v-icon>
+                                                        </v-btn>
+                                                    </template>
+                                                </v-tooltip>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-caption text-medium-emphasis">No storage backups found.</div>
+                                    <div class="d-flex justify-end">
+                                        <v-btn
+                                            color="teal"
+                                            variant="tonal"
+                                            size="small"
+                                            prepend-icon="mdi-folder-zip-outline"
+                                            :loading="backingUpStorage"
+                                            @click="createStorageBackup"
+                                        >Backup Storage Now</v-btn>
                                     </div>
                                 </div>
                             </div>
@@ -145,6 +283,43 @@
                 <!-- Right Column -->
                 <v-col cols="12" md="4">
                     <div class="d-flex flex-column gap-4">
+
+                        <!-- Maintenance Mode Toggle -->
+                        <v-card
+                            class="elevation-1 border-0 rounded-md overflow-hidden"
+                            :style="maintenanceMode ? 'border-left: 3px solid rgb(var(--v-theme-error)) !important;' : 'border-left: 3px solid rgb(var(--v-theme-success)) !important;'"
+                        >
+                            <div class="pa-4 d-flex align-center gap-3">
+                                <v-avatar :color="maintenanceMode ? 'error-lighten-5' : 'success-lighten-5'" rounded="lg" size="38">
+                                    <v-icon :color="maintenanceMode ? 'error' : 'success'" size="20">
+                                        {{ maintenanceMode ? 'mdi-wrench-clock' : 'mdi-check-circle-outline' }}
+                                    </v-icon>
+                                </v-avatar>
+                                <div class="flex-1-1">
+                                    <div class="text-subtitle-2 font-weight-bold">Maintenance Mode</div>
+                                    <div class="text-caption text-medium-emphasis">
+                                        {{ maintenanceMode ? 'System is in maintenance. Only super admins can log in.' : 'System is live. All users can access normally.' }}
+                                    </div>
+                                </div>
+                                <v-switch
+                                    :model-value="maintenanceMode"
+                                    :color="maintenanceMode ? 'error' : 'success'"
+                                    :loading="togglingMode"
+                                    hide-details
+                                    density="compact"
+                                    @update:model-value="toggleMaintenanceMode"
+                                />
+                            </div>
+                            <template v-if="maintenanceMode">
+                                <v-divider></v-divider>
+                                <div class="px-4 py-3">
+                                    <v-alert type="warning" variant="tonal" density="compact" icon="mdi-account-lock-outline" class="text-caption">
+                                        Regular users are redirected to the maintenance notice.
+                                        Super admins can log in at <strong>/console/login</strong>.
+                                    </v-alert>
+                                </div>
+                            </template>
+                        </v-card>
 
                         <!-- System Info -->
                         <v-card class="elevation-1 border-0 rounded-md">
@@ -234,6 +409,60 @@
                 </v-card>
             </v-dialog>
 
+            <!-- Delete System Export Confirm Dialog -->
+            <v-dialog v-model="deleteSystemBackupDialog" max-width="400" persistent>
+                <v-card rounded="lg">
+                    <v-card-item class="pt-5 pb-2 px-5">
+                        <div class="d-flex align-center gap-3">
+                            <v-avatar color="error-lighten-5" size="40" rounded="lg">
+                                <v-icon color="error" size="20">mdi-trash-can-outline</v-icon>
+                            </v-avatar>
+                            <div>
+                                <div class="text-subtitle-2 font-weight-bold">Delete System Export</div>
+                                <div class="text-caption text-medium-emphasis">This cannot be undone</div>
+                            </div>
+                        </div>
+                    </v-card-item>
+                    <v-card-text class="px-5 pb-3">
+                        <p class="text-body-2">
+                            Are you sure you want to delete <strong>{{ targetSystemBackup?.filename }}</strong>?
+                        </p>
+                    </v-card-text>
+                    <v-divider></v-divider>
+                    <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                        <v-btn variant="text" size="small" @click="deleteSystemBackupDialog = false">Cancel</v-btn>
+                        <v-btn variant="flat" color="error" size="small" @click="deleteSystemBackup">Delete</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <!-- Delete Storage Backup Confirm Dialog -->
+            <v-dialog v-model="deleteStorageBackupDialog" max-width="400" persistent>
+                <v-card rounded="lg">
+                    <v-card-item class="pt-5 pb-2 px-5">
+                        <div class="d-flex align-center gap-3">
+                            <v-avatar color="error-lighten-5" size="40" rounded="lg">
+                                <v-icon color="error" size="20">mdi-trash-can-outline</v-icon>
+                            </v-avatar>
+                            <div>
+                                <div class="text-subtitle-2 font-weight-bold">Delete Storage Backup</div>
+                                <div class="text-caption text-medium-emphasis">This cannot be undone</div>
+                            </div>
+                        </div>
+                    </v-card-item>
+                    <v-card-text class="px-5 pb-3">
+                        <p class="text-body-2">
+                            Are you sure you want to delete <strong>{{ targetStorageBackup?.filename }}</strong>?
+                        </p>
+                    </v-card-text>
+                    <v-divider></v-divider>
+                    <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                        <v-btn variant="text" size="small" @click="deleteStorageBackupDialog = false">Cancel</v-btn>
+                        <v-btn variant="flat" color="error" size="small" @click="deleteStorageBackup">Delete</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
             <!-- Reset Confirm Dialog -->
             <v-dialog v-model="resetDialog" max-width="440" persistent>
                 <v-card rounded="lg">
@@ -285,17 +514,32 @@ import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const props = defineProps({
-    backups:      { type: Array, default: () => [] },
-    system_info:  { type: Array, default: () => [] },
-    storage_info: { type: Array, default: () => [] },
+    backups:           { type: Array,   default: () => [] },
+    storage_backups:   { type: Array,   default: () => [] },
+    system_backups:    { type: Array,   default: () => [] },
+    system_info:       { type: Array,   default: () => [] },
+    storage_info:      { type: Array,   default: () => [] },
+    maintenance_mode:  { type: Boolean, default: false },
 });
 
-// ── Backups ────────────────────────────────────────────────────
+// ── Maintenance Mode ───────────────────────────────────────────
+const maintenanceMode  = ref(props.maintenance_mode);
+const togglingMode     = ref(false);
+
+const toggleMaintenanceMode = () => {
+    togglingMode.value = true;
+    router.post('/maintenance/toggle-mode', {}, {
+        onSuccess: () => { maintenanceMode.value = !maintenanceMode.value; },
+        onFinish:  () => { togglingMode.value = false; },
+    });
+};
+
+// ── DB Backups ─────────────────────────────────────────────────
 const backups = computed(() => props.backups);
 
-const backingUp         = ref(false);
+const backingUp          = ref(false);
 const deleteBackupDialog = ref(false);
-const targetBackup      = ref(null);
+const targetBackup       = ref(null);
 
 const createBackup = () => {
     backingUp.value = true;
@@ -314,6 +558,62 @@ const deleteBackup = () => {
         onSuccess: () => {
             deleteBackupDialog.value = false;
             targetBackup.value = null;
+        },
+    });
+};
+
+// ── System Export ──────────────────────────────────────────────
+const systemBackups             = computed(() => props.system_backups);
+
+const exportingSystem           = ref(false);
+const deleteSystemBackupDialog  = ref(false);
+const targetSystemBackup        = ref(null);
+
+const createSystemBackup = () => {
+    exportingSystem.value = true;
+    router.post('/maintenance/system-backup', {}, {
+        onFinish: () => { exportingSystem.value = false; },
+    });
+};
+
+const confirmDeleteSystemBackup = (b) => {
+    targetSystemBackup.value = b;
+    deleteSystemBackupDialog.value = true;
+};
+
+const deleteSystemBackup = () => {
+    router.delete(`/maintenance/system-backup/${targetSystemBackup.value.filename}`, {
+        onSuccess: () => {
+            deleteSystemBackupDialog.value = false;
+            targetSystemBackup.value = null;
+        },
+    });
+};
+
+// ── Storage Backups ────────────────────────────────────────────
+const storageBackups              = computed(() => props.storage_backups);
+
+const backingUpStorage            = ref(false);
+const deleteStorageBackupDialog   = ref(false);
+const targetStorageBackup         = ref(null);
+
+const createStorageBackup = () => {
+    backingUpStorage.value = true;
+    router.post('/maintenance/storage-backup', {}, {
+        onFinish: () => { backingUpStorage.value = false; },
+    });
+};
+
+const confirmDeleteStorageBackup = (b) => {
+    targetStorageBackup.value = b;
+    deleteStorageBackupDialog.value = true;
+};
+
+const deleteStorageBackup = () => {
+    router.delete(`/maintenance/storage-backup/${targetStorageBackup.value.filename}`, {
+        onSuccess: () => {
+            deleteStorageBackupDialog.value = false;
+            targetStorageBackup.value = null;
         },
     });
 };

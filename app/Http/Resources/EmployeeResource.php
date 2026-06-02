@@ -23,7 +23,8 @@ class EmployeeResource extends JsonResource
         $lastName = $profile?->last_name ?? '';
 
         return [
-            'id' => $this->dost_employee_id,
+            'id' => $this->id,
+            'dost_employee_id' => $this->dost_employee_id,
             'name' => trim($firstName . ' ' . $middleName . $lastName),
             'email' => $this->email,             // 💡 Changed from $request
             'province' => $this->province?->name,

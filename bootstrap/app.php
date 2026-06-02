@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Middleware\CheckMaintenanceMode;
+use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\User\EmployeeMiddleware;
 use App\Http\Middleware\User\ProvincialAdminMiddleware;
+use App\Http\Middleware\User\ProvincialSubAdminMiddleware;
 use App\Http\Middleware\User\ProvincialDirectorMiddleware;
 use App\Http\Middleware\User\SubAdminMiddleware;
 use App\Http\Middleware\User\SuperAdminMiddleware;
@@ -19,13 +22,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            CheckMaintenanceMode::class,
         ]);
         $middleware->alias([
-            'super-admin' => SuperAdminMiddleware::class,
-            'sub-admin' => SubAdminMiddleware::class,
-            'provincial-admin' => ProvincialAdminMiddleware::class,
-            'provincial-director' => ProvincialDirectorMiddleware::class,
-            'employee' => EmployeeMiddleware::class
+            'role'                 => RoleMiddleware::class,
+            'super-admin'          => SuperAdminMiddleware::class,
+            'sub-admin'            => SubAdminMiddleware::class,
+            'provincial-admin'     => ProvincialAdminMiddleware::class,
+            'provincial-sub-admin' => ProvincialSubAdminMiddleware::class,
+            'provincial-director'  => ProvincialDirectorMiddleware::class,
+            'employee'             => EmployeeMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
