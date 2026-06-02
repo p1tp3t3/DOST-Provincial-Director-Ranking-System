@@ -1,6 +1,5 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
-    <AuthenticatedLayout>
         <div class="grid gap-4 w-full">
 
             <!-- Director Info + KPI Stats -->
@@ -47,7 +46,6 @@
             </v-card>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
@@ -59,7 +57,6 @@ import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import DirectorInfoCard from '@/Components/Cards/DirectorInfoCard.vue';
 import KpiOutcomeList from '@/Components/Lists/KpiOutcomeList.vue';
 import NewEmployeeList from '@/Components/Lists/NewEmployeeList.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     RiCheckDoubleLine,
     RiAlertLine,

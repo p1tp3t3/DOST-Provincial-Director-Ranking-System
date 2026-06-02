@@ -1,6 +1,5 @@
-<script setup>
+﻿<script setup>
 import ProvincialDirectorList from '@/Components/Lists/ProvincialDirectorList.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 defineProps({
     directors: {
@@ -10,7 +9,6 @@ defineProps({
 </script>
 
 <template>
-    <AuthenticatedLayout>
         <div class="">
             <!-- Page Header -->
             <div class="d-flex align-center justify-space-between mb-5">
@@ -20,5 +18,4 @@ defineProps({
             </div>
             <ProvincialDirectorList :list="directors" />
         </div>
-    </AuthenticatedLayout>
 </template>

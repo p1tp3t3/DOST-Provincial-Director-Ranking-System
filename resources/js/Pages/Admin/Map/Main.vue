@@ -1,6 +1,5 @@
-<template>
+﻿<template>
     <Head title="Performance Map" />
-    <AuthenticatedLayout>
         <v-card border elevation="0" rounded="lg" class="overflow-hidden">
 
             <!-- Page header -->
@@ -111,14 +110,12 @@
             />
 
         </v-card>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import PhilippinesMap      from '@/Components/Map/PhilippinesMap.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const props = defineProps({
     kpi_scores_by_year: { type: Object, default: () => ({}) },

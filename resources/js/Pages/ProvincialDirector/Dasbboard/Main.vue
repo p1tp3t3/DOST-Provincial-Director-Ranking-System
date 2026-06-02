@@ -1,6 +1,5 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
-    <AuthenticatedLayout>
         <div class="grid gap-4 w-full">
 
             <!-- Row 1: Director info + KPI stat cards -->
@@ -111,13 +110,11 @@
             </v-card>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DirectorInfoCard from '@/Components/Cards/DirectorInfoCard.vue';
 import LineGraphCard from '@/Components/Cards/LineGraphCard.vue';
 import PieChartCard from '@/Components/Cards/PieChartCard.vue';

@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div class="py-5">
 
             <!-- Back Button -->
@@ -153,11 +152,9 @@
             </v-row>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 
