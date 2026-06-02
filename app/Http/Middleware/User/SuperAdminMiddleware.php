@@ -8,18 +8,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SuperAdminMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth()->user()->role != 'super_admin')
-            return response()->json([
-                        'success' => false,
-                        'message' => 'super admin is authorized to access here'
-                    ], 403);
+        if (auth()->user()?->role !== 'super_admin') {
+            return $request->header('X-Inertia')
+                ? redirect('/dashboard')
+                : abort(403);
+        }
+
         return $next($request);
     }
 }

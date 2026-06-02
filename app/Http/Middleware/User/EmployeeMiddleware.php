@@ -8,18 +8,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EmployeeMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth()->user()->role != 'employee')
-            return response()->json([
-                        'success' => false,
-                        'message' => 'employee is authorized to access here'
-                    ], 403);
+        if (auth()->user()?->role !== 'employee') {
+            return $request->header('X-Inertia')
+                ? redirect('/dashboard')
+                : abort(403);
+        }
+
         return $next($request);
     }
 }

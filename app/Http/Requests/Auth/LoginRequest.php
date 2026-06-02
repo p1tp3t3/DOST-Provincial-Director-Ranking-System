@@ -2,65 +2,77 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'identifier' => ['required', 'string', 'max:255'],
+            'password'   => ['required', 'string'],
         ];
     }
 
-    /**
-     * Attempt to authenticate the request's credentials.
-     *
-     * @throws ValidationException
-     */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $identifier = trim($this->string('identifier'));
+        $password   = $this->string('password');
+
+        // Admin roles may only log in via email or username
+        $adminRoles = ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_sub_admin'];
+
+        // Step 1: try email or username (all roles)
+        /** @var User|null $user */
+        $user = User::query()
+            ->where('email', $identifier)
+            ->orWhere('username', $identifier)
+            ->first();
+
+        // Step 2: if still not found, try DOST employee ID (non-admin roles only)
+        if (!$user) {
+            /** @var User|null $candidate */
+            $candidate = User::query()->where('dost_employee_id', $identifier)->first();
+
+            if ($candidate && !in_array($candidate->role, $adminRoles)) {
+                $user = $candidate;
+            }
+        }
+
+        // Step 3: verify password and login
+        if (!$user || !Hash::check($password, $user->password)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'identifier' => trans('auth.failed'),
             ]);
         }
 
+        Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());
     }
 
-    /**
-     * Ensure the login request is not rate limited.
-     *
-     * @throws ValidationException
-     */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (!RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
             return;
         }
 
@@ -69,18 +81,15 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
+            'identifier' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
         ]);
     }
 
-    /**
-     * Get the rate limiting throttle key for the request.
-     */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('identifier')) . '|' . $this->ip());
     }
 }

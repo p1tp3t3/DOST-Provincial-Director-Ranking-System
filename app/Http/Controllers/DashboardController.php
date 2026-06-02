@@ -180,6 +180,8 @@ class DashboardController extends Controller
     }
 
     private function employee_dashboard() {
-        return inertia('Employee/Profile');
+        return inertia('Employee/Dashboard/Main', [
+            // any employee-specific data can go here
+        ]);
     }
 }

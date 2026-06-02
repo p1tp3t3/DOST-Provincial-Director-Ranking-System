@@ -37,7 +37,7 @@ const getRoleLabel = () => {
         'sub_admin':          'Sub Administrator',
         'provincial_admin':   `Provincial Administrator (${authUser.value?.province?.name})`,
         'provincial_sub_admin':   `Provincial Sub Administrator (${authUser.value?.province?.name})`,
-        'provincial_director':'Provincial Director',
+        'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
         'employee':           'Employee',
     };
     return label[authUser.value?.role] || '';
@@ -57,6 +57,7 @@ const tabs = computed(() => {
                     name: 'User Management', icon: RiUser2Fill,
                     children: [
                         { name: 'User List',         href: '/users',          icon: RiTeamFill    },
+                        { name: 'User Registration', href: '/users/create',   icon: RiUserAddLine },
                         { name: 'Admin List',         href: '/admins',          icon: RiAdminFill    },
                     ]
                 },
@@ -67,6 +68,7 @@ const tabs = computed(() => {
         case 'sub_admin':
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
+                { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
@@ -97,12 +99,13 @@ const tabs = computed(() => {
                         { name: 'KPI Reports',     href: '/kpi/reports',icon: RiFileChartFill },
                     ]
                 },
-                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
+                { name: 'Reports',   href: '/provincial-sub-admin-report',    icon: RiFileList3Fill  },
             ];
         case 'provincial_director':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
                 { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
+                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         case 'regional_director':
@@ -110,6 +113,13 @@ const tabs = computed(() => {
                 { name: 'Dashboard',       href: '/dashboard',        icon: RiDashboard2Fill },
                 { name: 'My Profile',      href: '/profile',          icon: RiUser2Fill      },
                 { name: 'Regional Reports',href: '/regional-reports', icon: RiGlobalFill     },
+            ];
+        case 'employee':
+            return [
+                { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
+                { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
+                { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
+                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         default:
             return [];
