@@ -1,6 +1,5 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
-    <AuthenticatedLayout>
         <div class="grid gap-4 w-full">
 
             <!-- Filter Toolbar -->
@@ -158,7 +157,6 @@
             </v-card>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
@@ -167,7 +165,6 @@ import { Head, router } from '@inertiajs/vue3';
 import LineGraphCard from '@/Components/Cards/LineGraphCard.vue';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import PieChartCard from '@/Components/Cards/PieChartCard.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     RiMapPin2Line,
     RiUserStarLine,

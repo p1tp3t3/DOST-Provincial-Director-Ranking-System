@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -456,12 +455,10 @@
             </template>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 defineProps({ requests: { type: Array, default: () => [] } });
 

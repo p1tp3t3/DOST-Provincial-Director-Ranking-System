@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -249,12 +248,10 @@
             </v-card>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const props = defineProps({
     province:      { type: Object, default: null },

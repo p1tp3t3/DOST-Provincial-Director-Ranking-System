@@ -1,6 +1,5 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
-    <AuthenticatedLayout>
         <div class="d-flex flex-column gap-3">
 
             <!-- Stat Cards -->
@@ -255,7 +254,6 @@
             </v-row>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
@@ -263,7 +261,6 @@ import { ref, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import QuantityCard        from '@/Components/Cards/QuantityCard.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     RiGroupLine,
     RiUserStarLine,

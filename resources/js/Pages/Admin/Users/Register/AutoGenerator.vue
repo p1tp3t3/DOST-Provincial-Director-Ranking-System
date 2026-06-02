@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div class="grid gap-4 w-full">
 
             <!-- ── SUPER ADMIN VIEW ───────────────────────────────── -->
@@ -394,13 +393,11 @@
             </template>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const page = usePage();
 const role = computed(() => page.props.auth?.user?.role);

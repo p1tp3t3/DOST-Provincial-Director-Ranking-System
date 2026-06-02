@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -134,12 +133,10 @@
             </v-dialog>
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ActivityLogList from '@/Components/Lists/ActivityLogList.vue';
 
 const props = defineProps({

@@ -1,12 +1,9 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div>
             provincial admin report
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 </script>

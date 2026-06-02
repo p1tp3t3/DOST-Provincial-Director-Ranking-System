@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <div class="grid gap-4 w-full">
 
             <!-- Page Header -->
@@ -12,13 +11,11 @@
             <UserList :list="users" :initial-search="search" :initial-role="role" />
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import UserList from '@/Components/Lists/UserList.vue';
 import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 defineProps({
     users:  { type: Object, required: true },

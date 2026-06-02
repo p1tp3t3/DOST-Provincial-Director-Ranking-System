@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <AddAdminModal v-model:open="open" />
 
         <div class="grid gap-4 w-full">
@@ -25,12 +24,10 @@
             <AdminList :list="props.admins" />
 
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AdminList from '@/Components/Lists/AdminList.vue';
 import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
 

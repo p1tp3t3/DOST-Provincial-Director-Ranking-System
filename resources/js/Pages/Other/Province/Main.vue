@@ -1,5 +1,4 @@
-<template>
-    <AuthenticatedLayout>
+﻿<template>
         <AddProvinceModal v-if="user?.role == 'super_admin'" v-model:open="open" />
 
         <div>
@@ -19,14 +18,12 @@
 
             <ProvinceDirectoryList :list="provinces.data" />
         </div>
-    </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import ProvinceDirectoryList from '@/Components/Lists/ProvinceDirectoryList.vue';
 import AddProvinceModal from '@/Components/Modals/Add/AddProvinceModal.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { getAuth } from '@/helper-functions';
 
 defineProps({

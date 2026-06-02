@@ -26,4 +26,22 @@ class ProfileController extends Controller
     public function update_director_kpi(Request $request) {
 
     }
+
+    public function get_profile_picture(Request $request) {
+        $request->validate([
+            'filename' => 'required|string',
+        ]);
+        
+        // Extract only the base name to strip out any directory paths or slashes
+        $filename = basename($request->query('filename'));
+
+        $path = storage_path('app/public/profile-pictures/' . $filename);
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
+    }
+
 }

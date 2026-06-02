@@ -25,7 +25,7 @@ const props = defineProps({
     role: { type: String, required: true },
 });
 
-const isOpen = ref(true);
+const isOpen = ref(false);
 const openGroups = ref([]);
 const page = usePage();
 const authUser  = computed(() => page.props.auth.user);
@@ -176,11 +176,15 @@ const onSubNavLeave = (el) => {
     el.style.opacity = '0';
 };
 
-const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
+const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
 </script>
 
 <template>
-    <aside :class="['sidebar sticky flex-shrink-0 left-0 top-0 h-screen text-white shadow-xl transition-all duration-300 flex flex-column', isOpen ? 'w-64' : 'w-16']">
+    <aside
+        :class="['sidebar sticky flex-shrink-0 left-0 top-0 h-screen text-white shadow-xl flex flex-column', isOpen ? 'w-64' : 'w-16']"
+        @mouseenter="isOpen = true"
+        @mouseleave="isOpen = false"
+    >
 
         <!-- Header -->
         <div class="sidebar-header flex items-center px-3 h-16 border-b border-white/10 flex-shrink-0"
@@ -312,6 +316,8 @@ const defAvatar = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/56940949
     background-color: #0f2044;
     display: flex;
     flex-direction: column;
+    transition: width 0.22s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
 }
 
 .logo-box {
