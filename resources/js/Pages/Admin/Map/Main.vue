@@ -2,28 +2,34 @@
     <Head title="Performance Map" />
         <v-card border elevation="0" rounded="lg" class="overflow-hidden">
 
-            <!-- Page header -->
-            <div class="px-5 pt-4 pb-3 d-flex align-center justify-space-between flex-wrap gap-3">
-                <div>
-                    <div class="d-flex align-center gap-2">
-                        <v-icon size="16" color="indigo">mdi-map-outline</v-icon>
-                        <span class="text-body-1 font-weight-bold">Performance Map</span>
-                    </div>
-                    <div class="text-caption text-medium-emphasis mt-1">
-                        Province rankings visualized across all regions · Click a province for details
-                    </div>
-                </div>
-
-                <!-- Year toggle -->
+            <!-- Header -->
+            <div class="px-5 pt-3 pb-0 d-flex align-center justify-space-between flex-wrap gap-3">
                 <div class="d-flex align-center gap-2">
-                    <span class="text-caption font-weight-medium text-medium-emphasis">Year</span>
-                    <v-btn-toggle v-model="selectedYear" mandatory density="compact" variant="outlined" divided>
-                        <v-btn v-for="y in available_years" :key="y" :value="y" size="small" class="px-3 text-caption">{{ y }}</v-btn>
-                    </v-btn-toggle>
+                    <v-icon size="15" color="indigo">mdi-map-outline</v-icon>
+                    <span class="text-body-2 font-weight-bold">Performance Map</span>
+                    <span class="text-caption text-medium-emphasis">· Click any area for details</span>
+                </div>
+                <div class="d-flex align-center gap-3">
+                    <div class="d-flex align-center gap-2">
+                        <span class="text-caption text-medium-emphasis">Method</span>
+                        <v-btn-toggle v-model="selectedEvaluation" mandatory density="compact" variant="outlined" divided>
+                            <v-btn value="strict"      size="small" class="px-2 text-caption">Strict</v-btn>
+                            <v-btn value="operational" size="small" class="px-2 text-caption">Operational</v-btn>
+                            <v-btn value="absolute"    size="small" class="px-2 text-caption">Absolute</v-btn>
+                            <v-btn value="excellence"  size="small" class="px-2 text-caption">Excellence</v-btn>
+                        </v-btn-toggle>
+                    </div>
+                    <v-divider vertical style="height:20px;" />
+                    <div class="d-flex align-center gap-2">
+                        <span class="text-caption text-medium-emphasis">Year</span>
+                        <v-btn-toggle v-model="selectedYear" mandatory density="compact" variant="outlined" divided>
+                            <v-btn v-for="y in available_years" :key="y" :value="y" size="small" class="px-3 text-caption">{{ y }}</v-btn>
+                        </v-btn-toggle>
+                    </div>
                 </div>
             </div>
 
-            <v-divider />
+            <v-divider class="mt-3" />
 
             <!-- Category tabs -->
             <v-tabs
@@ -45,11 +51,9 @@
                 </v-tab>
             </v-tabs>
 
-            <v-divider />
-
-            <!-- KPI filter -->
-            <div class="d-flex align-center gap-2 px-4 py-2 flex-wrap kpi-filter-bar">
-                <span class="text-caption font-weight-medium text-medium-emphasis" style="white-space:nowrap;">View by KPI:</span>
+            <!-- KPI filter + legend -->
+            <div class="d-flex align-center gap-2 px-4 py-1 flex-wrap">
+                <span class="text-caption text-medium-emphasis" style="white-space:nowrap;">KPI:</span>
                 <v-chip-group v-model="selectedKpi" mandatory selected-class="kpi-chip-active">
                     <v-chip value="overall" size="small" variant="tonal" color="indigo" class="font-weight-medium">
                         Overall
@@ -75,8 +79,6 @@
                         </template>
                     </v-tooltip>
                 </v-chip-group>
-
-                <!-- Stats summary -->
                 <div class="d-flex align-center gap-3 ml-auto flex-wrap">
                     <div class="d-flex align-center gap-1">
                         <span class="legend-dot" style="background:#15803d;"></span>
@@ -84,7 +86,7 @@
                     </div>
                     <div class="d-flex align-center gap-1">
                         <span class="legend-dot" style="background:#ca8a04;"></span>
-                        <span class="text-caption text-medium-emphasis">Average ({{ tierCounts.avg }})</span>
+                        <span class="text-caption text-medium-emphasis">Avg ({{ tierCounts.avg }})</span>
                     </div>
                     <div class="d-flex align-center gap-1">
                         <span class="legend-dot" style="background:#b91c1c;"></span>
@@ -106,6 +108,7 @@
                 :year-data="kpi_scores_by_year[selectedYear]"
                 :kpi-outcomes="kpi_outcomes"
                 :selected-year="selectedYear"
+                :selected-category="selectedCategory"
                 height="calc(100vh - 260px)"
             />
 
@@ -123,9 +126,17 @@ const props = defineProps({
     available_years:    { type: Array,  default: () => [] },
 });
 
-const selectedYear     = ref(props.available_years[0] ?? 2025);
-const selectedCategory = ref('all');
-const selectedKpi      = ref('overall');
+const selectedYear       = ref(props.available_years[0] ?? 2025);
+const selectedCategory   = ref('all');
+const selectedKpi        = ref('overall');
+const selectedEvaluation = ref('operational');
+
+const SCORE_FIELD = {
+    strict:      'strict_score',
+    operational: 'operational_score',
+    absolute:    'absolute_score',
+    excellence:  'excellence_score',
+};
 
 const categories = [
     { value: 'micro',  label: 'Micro',  color: 'blue-grey'   },
@@ -138,8 +149,13 @@ const categories = [
 const currentScores = computed(() => {
     const yearData = props.kpi_scores_by_year[selectedYear.value];
     if (!yearData) return [];
-    if (selectedKpi.value === 'overall') return yearData.overall ?? [];
-    return yearData.kpi?.[selectedKpi.value] ?? [];
+    const raw = selectedKpi.value === 'overall'
+        ? (yearData.overall ?? [])
+        : (yearData.kpi?.[selectedKpi.value] ?? []);
+    const field = SCORE_FIELD[selectedEvaluation.value];
+    return raw
+        .map(r => ({ ...r, score: r[field] ?? 0 }))
+        .sort((a, b) => b.score - a.score);
 });
 
 const filteredScores = computed(() =>
@@ -161,14 +177,13 @@ const categoryCounts = computed(() => {
 });
 
 const tierCounts = computed(() => ({
-    top: filteredScores.value.filter(s => s.score >= 100).length,
-    avg: filteredScores.value.filter(s => s.score >= 70 && s.score < 100).length,
-    low: filteredScores.value.filter(s => s.score < 70).length,
+    top: filteredScores.value.filter(s => s.score >= 70).length,
+    avg: filteredScores.value.filter(s => s.score >= 40 && s.score < 70).length,
+    low: filteredScores.value.filter(s => s.score < 40).length,
 }));
 </script>
 
 <style scoped>
-.kpi-filter-bar { background: rgba(var(--v-theme-surface-variant), 0.3); }
 :deep(.kpi-chip-active) { font-weight: 700 !important; opacity: 1 !important; }
 
 .legend-dot {

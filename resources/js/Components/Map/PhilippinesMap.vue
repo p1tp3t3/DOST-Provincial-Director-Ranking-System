@@ -4,14 +4,22 @@
 
         <!-- Navigation panel -->
         <div class="map-nav" v-if="ready">
-            <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
-                <option value="">All Regions</option>
-                <option v-for="r in regionList" :key="r.code" :value="r.code">{{ r.label }}</option>
-            </select>
-            <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
-                <option value="">— Select Province —</option>
-                <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
-            </select>
+            <template v-if="props.selectedCategory === 'cstc'">
+                <select v-model="selCstc" class="map-nav-sel" @change="onCstcChange">
+                    <option value="">— Select CSTC —</option>
+                    <option v-for="c in cstcList" :key="c" :value="c">{{ c }}</option>
+                </select>
+            </template>
+            <template v-else>
+                <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
+                    <option value="">All Regions</option>
+                    <option v-for="r in regionList" :key="r.code" :value="r.code">{{ r.label }}</option>
+                </select>
+                <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
+                    <option value="">— Select Province —</option>
+                    <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
+                </select>
+            </template>
             <button class="map-nav-reset" @click="resetView" title="Reset view">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
@@ -22,8 +30,8 @@
         <!-- Info Panel -->
         <transition name="panel-slide">
             <div v-if="panel" class="map-info-panel">
-                <!-- Province panel -->
-                <template v-if="panel.type === 'province'">
+                <!-- Province / CSTC panel (same structure) -->
+                <template v-if="panel.type === 'province' || panel.type === 'cstc'">
                     <div class="panel-header" :style="{ borderLeftColor: panel.tierColor }">
                         <div class="panel-header-main">
                             <div class="panel-title">{{ panel.name }}</div>
@@ -40,7 +48,7 @@
                         <div class="panel-score-block">
                             <div class="panel-score-num" :style="{ color: panel.tierColor }">{{ panel.score }}%</div>
                             <div class="panel-score-bar-wrap">
-                                <div class="panel-score-bar" :style="{ width: `${Math.min(panel.score, 200) / 200 * 100}%`, background: panel.tierColor }"></div>
+                                <div class="panel-score-bar" :style="{ width: `${Math.min(panel.score, 100)}%`, background: panel.tierColor }"></div>
                             </div>
                             <div class="d-flex align-items-center gap-2" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <div class="panel-tier-label" :style="{ color: panel.tierColor }">{{ panel.tier }}</div>
@@ -101,7 +109,7 @@
                             <div class="panel-score-block">
                                 <div class="panel-score-num" :style="{ color: tierColor(panel.avgScore) }">{{ panel.avgScore }}%</div>
                                 <div class="panel-score-bar-wrap">
-                                    <div class="panel-score-bar" :style="{ width: `${Math.min(panel.avgScore, 200) / 200 * 100}%`, background: tierColor(panel.avgScore) }"></div>
+                                    <div class="panel-score-bar" :style="{ width: `${Math.min(panel.avgScore, 100)}%`, background: tierColor(panel.avgScore) }"></div>
                                 </div>
                                 <div class="panel-tier-label" :style="{ color: tierColor(panel.avgScore) }">Regional Average</div>
                             </div>
@@ -161,11 +169,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const props = defineProps({
-    scores:       { type: Array,  default: () => [] },
-    yearData:     { type: Object, default: () => ({}) },
-    kpiOutcomes:  { type: Array,  default: () => [] },
-    selectedYear: { type: Number, default: null },
-    height:       { type: String, default: '460px' },
+    scores:           { type: Array,  default: () => [] },
+    yearData:         { type: Object, default: () => ({}) },
+    kpiOutcomes:      { type: Array,  default: () => [] },
+    selectedYear:     { type: Number, default: null },
+    selectedCategory: { type: String, default: 'all' },
+    height:           { type: String, default: '460px' },
 });
 
 const GEO_TO_DB = {
@@ -197,9 +206,9 @@ const REGION_LABELS = {
 };
 
 const tierInfo = (score) => {
-    if (score >= 100) return { color: '#15803d', label: 'Top Performing'    };
-    if (score >= 70)  return { color: '#ca8a04', label: 'Average Performers' };
-    return              { color: '#b91c1c', label: 'Low Performers'       };
+    if (score >= 70) return { color: '#15803d', label: 'Top Performers'    };
+    if (score >= 40) return { color: '#ca8a04', label: 'Average Performers' };
+    return             { color: '#b91c1c', label: 'Low Performers'       };
 };
 const tierColor = (score) => tierInfo(score).color;
 
@@ -213,14 +222,18 @@ const isFullscreen = ref(false);
 const ready        = ref(false);
 const selRegion    = ref('');
 const selProvince  = ref('');
+const selCstc      = ref('');
 const panel        = ref(null);
 
 let map       = null;
 let geoLayer  = null;
+let cstcLayer = null;
 let pendingFly = false;
 
 const provinces  = [];
 const regionList = ref([]);
+const cstcList   = ref([]);
+let   cstcData   = {};
 
 // ── Score helpers ─────────────────────────────────────────────────────────────
 const scoreMap = () => {
@@ -301,16 +314,73 @@ const buildRegionPanel = (regionCode) => {
         provinceCount: regionScores.length,
         avgScore:      avg,
         tierCounts: {
-            top: regionScores.filter(s => s.score >= 100).length,
-            avg: regionScores.filter(s => s.score >= 70 && s.score < 100).length,
-            low: regionScores.filter(s => s.score < 70).length,
+            top: regionScores.filter(s => s.score >= 70).length,
+            avg: regionScores.filter(s => s.score >= 40 && s.score < 70).length,
+            low: regionScores.filter(s => s.score < 40).length,
         },
         topProv: { name: sorted[0].province,                       score: sorted[0].score },
         lowProv: { name: sorted[sorted.length - 1].province,       score: sorted[sorted.length - 1].score },
     };
 };
 
+const buildCstcPanel = (cstcName) => {
+    const sm    = scoreMap();
+    const entry = sm[cstcName] ?? null;
+
+    let bestKpi = null, worstKpi = null;
+    if (props.yearData?.kpi && props.kpiOutcomes.length) {
+        const kpiScores = [];
+        for (const kpi of props.kpiOutcomes) {
+            const kpiEntry = (props.yearData.kpi[kpi.id] ?? []).find(s => s.province === cstcName);
+            if (kpiEntry) kpiScores.push({ id: kpi.id, title: kpi.title, score: kpiEntry.score });
+        }
+        if (kpiScores.length) {
+            kpiScores.sort((a, b) => b.score - a.score);
+            bestKpi  = kpiScores[0];
+            worstKpi = kpiScores[kpiScores.length - 1];
+            if (bestKpi.id === worstKpi.id) worstKpi = null;
+        }
+    }
+
+    if (!entry) return {
+        type: 'cstc', name: cstcName, score: null, tier: 'No data',
+        tierColor: '#94a3b8', director: '—', count: 0, category: 'cstc',
+        rank: null, year: props.selectedYear, bestKpi, worstKpi,
+    };
+
+    const info = tierInfo(entry.score);
+    return {
+        type:      'cstc',
+        name:      cstcName,
+        category:  'cstc',
+        director:  entry.director,
+        score:     entry.score,
+        count:     entry.count,
+        tier:      info.label,
+        tierColor: info.color,
+        rank:      entry.rank ?? null,
+        year:      props.selectedYear,
+        bestKpi,
+        worstKpi,
+    };
+};
+
 // ── Style ─────────────────────────────────────────────────────────────────────
+const styleForCstc = (feature, sm) => {
+    const cstcName  = feature.properties.cstc;
+    const entry     = sm[cstcName] ?? null;
+    const baseColor = entry ? tierColor(entry.score) : '#94a3b8';
+    if (selCstc.value === cstcName)
+        return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
+    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
+};
+
+const refreshCstcStyle = () => {
+    if (!cstcLayer) return;
+    const sm = scoreMap();
+    cstcLayer.setStyle(f => styleForCstc(f, sm));
+};
+
 const styleFor = (feature, sm, selReg, selProv) => {
     const name       = feature.properties.adm2_en;
     const regionCode = feature.properties.adm1_psgc;
@@ -400,12 +470,22 @@ const onProvinceChange = () => {
     if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
 };
 
+const onCstcChange = () => {
+    pendingFly = false;
+    refreshCstcStyle();
+    if (!selCstc.value) { panel.value = null; return; }
+    panel.value = buildCstcPanel(selCstc.value);
+    const bounds = cstcData[selCstc.value];
+    if (bounds) smartFlyTo(bounds, { maxZoom: 13, padding: [50, 50] });
+};
+
 const resetView = () => {
-    selRegion.value = selProvince.value = '';
+    selRegion.value = selProvince.value = selCstc.value = '';
     panel.value = null;
     pendingFly  = false;
     map?.stop();
     refreshStyle();
+    refreshCstcStyle();
     map?.flyTo(HOME.center, HOME.zoom, { duration: 1.0, easeLinearity: 0.3 });
 };
 
@@ -464,20 +544,21 @@ onMounted(async () => {
 
             layer.on('mouseover', (e) => {
                 const entry = scoreMap()[dbName] ?? null;
-                const info  = entry ? tierInfo(entry.score) : null;
+                if (!entry) return;
+                const info = tierInfo(entry.score);
                 layer.bindTooltip(
                     `<div class="map-tip">
                         <strong>${name}</strong>
-                        ${info
-                            ? `<span style="color:${info.color};font-weight:600;">${info.label}</span>
-                               <span class="map-tip-score">${entry.score}%</span>`
-                            : `<span class="map-tip-nodata">No data</span>`}
+                        <span style="color:${info.color};font-weight:600;">${info.label}</span>
+                        <span class="map-tip-score">${entry.score}%</span>
                     </div>`,
                     { sticky: true, className: 'map-tooltip' }
                 ).openTooltip(e.latlng);
                 e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
             });
-            layer.on('mouseout', (e) => { geoLayer.resetStyle(e.target); });
+            layer.on('mouseout', () => {
+                layer.setStyle(styleFor(layer.feature, scoreMap(), selRegion.value, selProvince.value));
+            });
 
             layer.on('click', () => {
                 // Sync dropdowns
@@ -497,17 +578,86 @@ onMounted(async () => {
         },
     }).addTo(map);
 
+    // ── CSTC city layer ───────────────────────────────────────────────────────
+    map.createPane('cstcPane');
+    map.getPane('cstcPane').style.zIndex = 450;
+
+    const cstcRes     = await fetch('/geo/cstc-cities.geojson');
+    const cstcGeojson = await cstcRes.json();
+    const csm         = scoreMap();
+
+    // Build per-CSTC bounds for zooming
+    for (const feature of cstcGeojson.features) {
+        const cstcName   = feature.properties.cstc;
+        const featBounds = L.geoJSON(feature).getBounds();
+        if (cstcData[cstcName]) cstcData[cstcName].extend(featBounds);
+        else                    cstcData[cstcName] = featBounds;
+    }
+    cstcList.value = Object.keys(cstcData).sort();
+
+    cstcLayer = L.geoJSON(cstcGeojson, {
+        pane:  'cstcPane',
+        style: f => styleForCstc(f, csm),
+        onEachFeature: (feature, layer) => {
+            const cstcName = feature.properties.cstc;
+            const cityName = feature.properties.name;
+
+            layer.on('mouseover', (e) => {
+                const entry = scoreMap()[cstcName] ?? null;
+                if (!entry) return;
+                const info = tierInfo(entry.score);
+                layer.bindTooltip(
+                    `<div class="map-tip">
+                        <strong>${cstcName}</strong>
+                        <span style="color:#94a3b8;font-size:10px;margin-top:-1px;">${cityName}</span>
+                        <span style="color:${info.color};font-weight:600;">${info.label}</span>
+                        <span class="map-tip-score">${entry.score}%</span>
+                    </div>`,
+                    { sticky: true, className: 'map-tooltip' }
+                ).openTooltip(e.latlng);
+                e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
+            });
+            layer.on('mouseout', () => {
+                layer.setStyle(styleForCstc(layer.feature, scoreMap()));
+            });
+
+            layer.on('click', () => {
+                selRegion.value = selProvince.value = '';
+                selCstc.value = cstcName;
+                refreshCstcStyle();
+                panel.value = buildCstcPanel(cstcName);
+                const bounds = cstcData[cstcName];
+                if (bounds) smartFlyTo(bounds, { maxZoom: 13, padding: [50, 50] });
+            });
+        },
+    });
+
+    if (props.selectedCategory === 'cstc') cstcLayer.addTo(map);
+
     ready.value = true;
 });
 
 const rebuildPanel = () => {
     if (!panel.value) return;
     if (panel.value.type === 'province') panel.value = buildProvincePanel(panel.value.name);
+    else if (panel.value.type === 'cstc')   panel.value = buildCstcPanel(panel.value.name);
     else if (panel.value.type === 'region') panel.value = buildRegionPanel(Number(selRegion.value));
 };
 
-watch(() => props.scores,   () => { refreshStyle(); rebuildPanel(); }, { deep: true });
-watch(() => props.yearData, () => { rebuildPanel(); },                  { deep: true });
+watch(() => props.selectedCategory, (cat) => {
+    if (!map || !cstcLayer) return;
+    if (cat === 'cstc') {
+        if (!map.hasLayer(cstcLayer)) cstcLayer.addTo(map);
+    } else {
+        if (map.hasLayer(cstcLayer)) map.removeLayer(cstcLayer);
+        selCstc.value = '';
+        if (panel.value?.type === 'cstc') panel.value = null;
+    }
+    refreshCstcStyle();
+});
+
+watch(() => props.scores,   () => { refreshStyle(); refreshCstcStyle(); rebuildPanel(); }, { deep: true });
+watch(() => props.yearData, () => { rebuildPanel(); },                                      { deep: true });
 
 onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', onFullscreenChange);

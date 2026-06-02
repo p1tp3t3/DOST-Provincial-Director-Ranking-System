@@ -18,33 +18,16 @@
                 </v-col>
             </v-row>
 
-            <!-- Year Selector + Legend -->
-            <div class="d-flex align-center flex-wrap gap-3">
-                <div class="d-flex align-center gap-2">
-                    <span class="text-caption font-weight-medium text-medium-emphasis">KPI Year</span>
-                    <v-btn-toggle v-model="selectedYear" mandatory density="compact" variant="outlined" divided>
-                        <v-btn v-for="y in available_years" :key="y" :value="y" size="small" class="px-3 text-caption">{{ y }}</v-btn>
-                    </v-btn-toggle>
-                </div>
-                <div class="d-flex align-center gap-2 flex-wrap">
-                    <span class="legend-dot" style="background:#15803d;"></span><span class="text-caption text-medium-emphasis">Top Performing (≥100%)</span>
-                    <span class="legend-dot" style="background:#ca8a04;"></span><span class="text-caption text-medium-emphasis">Average Performers (70–99%)</span>
-                    <span class="legend-dot" style="background:#b91c1c;"></span><span class="text-caption text-medium-emphasis">Low Performers (&lt;70%)</span>
-                </div>
-                <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium ml-auto">
-                    {{ filteredScores.length }} provinces
-                    <template v-if="selectedCategory !== 'all'"> · {{ categoryLabel }}</template>
-                </v-chip>
-            </div>
-
-            <!-- Leaderboard Table -->
+            <!-- Leaderboard Card -->
             <v-row dense>
                 <v-col cols="12">
                     <v-card border elevation="0" rounded="lg">
 
-                        <!-- Header -->
-                        <div class="chart-header px-4 pt-3 pb-0 d-flex align-center justify-space-between flex-wrap gap-2">
-                            <div>
+                        <!-- Unified Header -->
+                        <div class="px-4 pt-3 pb-0">
+
+                            <!-- Row 1: Title + Year + View controls -->
+                            <div class="d-flex align-center justify-space-between flex-wrap gap-3 mb-2">
                                 <div class="d-flex align-center gap-2">
                                     <v-icon size="15" color="indigo">mdi-trophy-outline</v-icon>
                                     <span class="text-body-2 font-weight-bold">Province Performance Race</span>
@@ -59,26 +42,52 @@
                                             <div class="text-caption mb-2 opacity-80">
                                                 Rankings are based on KPI accomplishment rates derived from the 7 functional mandates of Section 6 of RA 11914. Province classification (Micro/Small/Medium/Large) follows Section 7 of the same Act.
                                             </div>
-                                            <div class="text-caption opacity-70">Score = average of (accomplished ÷ target × 100%) across all tracked indicators, capped at 200% per indicator to reward over-achievement.</div>
+                                            <div class="text-caption opacity-70">Choose an evaluation method: <strong>Strict</strong> (met ÷ active), <strong>Operational</strong> (active ÷ 54), <strong>Absolute</strong> (met ÷ 54), or <strong>Excellence</strong> (exceeded ÷ active — bonus credit for over-delivering).</div>
                                         </div>
                                     </v-tooltip>
+                                    <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
+                                        {{ filteredScores.length }}
+                                        <template v-if="selectedCategory !== 'all'"> · {{ categoryLabel }}</template>
+                                    </v-chip>
                                 </div>
-                                <div class="text-caption text-medium-emphasis mb-2">
-                                    Ranked by classification · {{ kpiFilterLabel }} · {{ selectedYear }}
+                                <div class="d-flex align-center gap-3 flex-wrap">
+                                    <div class="d-flex align-center gap-2">
+                                        <span class="text-caption font-weight-medium text-medium-emphasis">Method</span>
+                                        <v-tooltip :text="evaluationMeta[selectedEvaluation].hint" location="bottom" max-width="280">
+                                            <template #activator="{ props: tip }">
+                                                <v-btn-toggle v-bind="tip" v-model="selectedEvaluation" mandatory density="compact" variant="outlined" divided>
+                                                    <v-btn value="strict"      size="small" class="px-2 text-caption">Strict</v-btn>
+                                                    <v-btn value="operational" size="small" class="px-2 text-caption">Operational</v-btn>
+                                                    <v-btn value="absolute"    size="small" class="px-2 text-caption">Absolute</v-btn>
+                                                    <v-btn value="excellence"  size="small" class="px-2 text-caption">Excellence</v-btn>
+                                                </v-btn-toggle>
+                                            </template>
+                                        </v-tooltip>
+                                    </div>
+                                    <v-divider vertical style="height:24px;" />
+                                    <div class="d-flex align-center gap-2">
+                                        <span class="text-caption font-weight-medium text-medium-emphasis">Year</span>
+                                        <v-btn-toggle v-model="selectedYear" mandatory density="compact" variant="outlined" divided>
+                                            <v-btn v-for="y in available_years" :key="y" :value="y" size="small" class="px-3 text-caption">{{ y }}</v-btn>
+                                        </v-btn-toggle>
+                                    </div>
+                                    <v-divider vertical style="height:24px;" />
+                                    <div class="d-flex align-center gap-2">
+                                        <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
+                                            <v-btn value="table" size="small" title="Table view">
+                                                <v-icon size="15">mdi-table-large</v-icon>
+                                            </v-btn>
+                                            <v-btn value="podium" size="small" title="Podium view">
+                                                <v-icon size="15">mdi-podium-gold</v-icon>
+                                            </v-btn>
+                                        </v-btn-toggle>
+                                    </div>
                                 </div>
                             </div>
-                            <v-text-field
-                                v-model="raceSearch"
-                                placeholder="Search province or director…"
-                                variant="solo-filled"
-                                density="compact"
-                                hide-details
-                                clearable
-                                prepend-inner-icon="mdi-magnify"
-                                style="max-width:240px;"
-                                class="mb-1"
-                            />
+
                         </div>
+
+                        <v-divider />
 
                         <!-- Category Tabs -->
                         <v-tabs
@@ -103,11 +112,8 @@
                             </v-tab>
                         </v-tabs>
 
-                        <v-divider />
-
-                        <!-- KPI Filter -->
-                        <div class="d-flex align-center gap-2 px-4 py-2 flex-wrap kpi-filter-bar">
-                            <span class="text-caption font-weight-medium text-medium-emphasis" style="white-space:nowrap;">View by KPI:</span>
+                        <!-- KPI Filter + Legend -->
+                        <div class="d-flex align-center gap-2 px-4 py-1 flex-wrap">
                             <v-chip-group v-model="selectedKpi" mandatory selected-class="kpi-chip-active" @update:modelValue="raceSearch = ''">
                                 <v-chip value="overall" size="small" variant="tonal" color="indigo" class="font-weight-medium">
                                     Overall
@@ -133,11 +139,41 @@
                                     </template>
                                 </v-tooltip>
                             </v-chip-group>
+                            <div class="ml-auto d-flex align-center gap-3">
+                                <div class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#15803d;"></span>
+                                    <span class="text-caption text-medium-emphasis">Top</span>
+                                </div>
+                                <div class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#ca8a04;"></span>
+                                    <span class="text-caption text-medium-emphasis">Avg</span>
+                                </div>
+                                <div class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#b91c1c;"></span>
+                                    <span class="text-caption text-medium-emphasis">Low</span>
+                                </div>
+                            </div>
                         </div>
 
                         <v-divider />
 
+                        <!-- Search row (table view only) -->
+                        <div v-if="viewMode === 'table'" class="px-4 py-2 d-flex justify-end">
+                            <v-text-field
+                                v-model="raceSearch"
+                                placeholder="Search province or director…"
+                                variant="solo-filled"
+                                density="compact"
+                                hide-details
+                                clearable
+                                prepend-inner-icon="mdi-magnify"
+                                style="max-width:280px;"
+                            />
+                        </div>
+
+                        <!-- Table View -->
                         <v-data-table
+                            v-if="viewMode === 'table'"
                             :headers="raceHeaders"
                             :items="rankedScores"
                             :search="raceSearch"
@@ -171,22 +207,23 @@
 
                             <template #item.score="{ item }">
                                 <div class="d-flex align-center gap-2 py-1" style="min-width:220px;">
-                                    <v-tooltip :text="`${item.score}% accomplishment rate`" location="top">
-                                        <template #activator="{ props: tip }">
-                                            <div v-bind="tip" class="score-track" style="cursor:default;">
-                                                <div
-                                                    class="score-fill"
-                                                    :style="{
-                                                        width: `${Math.min(item.score, 200) / 200 * 100}%`,
-                                                        background: tierColor(item.score),
-                                                    }"
-                                                />
-                                            </div>
-                                        </template>
-                                    </v-tooltip>
-                                    <span class="text-caption font-weight-bold" :style="{ color: tierColor(item.score) }">
-                                        {{ tierLabel(item.score) }}
-                                    </span>
+                                    <div class="score-track" style="cursor:default;">
+                                        <div
+                                            class="score-fill"
+                                            :style="{
+                                                width: `${Math.min(item.score, 100)}%`,
+                                                background: tierColor(item.score),
+                                            }"
+                                        />
+                                    </div>
+                                    <div class="d-flex flex-column" style="min-width:0;">
+                                        <span class="text-caption font-weight-bold" :style="{ color: tierColor(item.score) }">
+                                            {{ item.score }}%
+                                        </span>
+                                        <span class="text-medium-emphasis" style="font-size:10px; line-height:1.3; white-space:nowrap;">
+                                            {{ item.met }} met · {{ item.exceeded }} exceeded · {{ item.active }}/{{ item.total }} active
+                                        </span>
+                                    </div>
                                 </div>
                             </template>
 
@@ -196,6 +233,103 @@
                                 </div>
                             </template>
                         </v-data-table>
+
+                        <!-- Podium View -->
+                        <div v-else class="px-5 pt-3 pb-5">
+
+                            <!-- Leader banner -->
+                            <div v-if="top3[0]" class="podium-banner mb-4">
+                                <v-icon size="16" color="amber-darken-2">mdi-trophy</v-icon>
+                                <span class="text-body-2 ml-2">
+                                    <strong>{{ top3[0].province }}</strong> leads {{ selectedYear }} with
+                                    <span class="font-weight-bold" :style="{ color: tierColor(top3[0].score) }">{{ top3[0].score }}%</span>
+                                    &nbsp;·&nbsp; Dir. {{ top3[0].director }}
+                                </span>
+                            </div>
+
+                            <div class="d-flex gap-5">
+
+                                <!-- Podium stage -->
+                                <div class="podium-stage">
+                                    <div class="podium-items">
+
+                                        <!-- 2nd place -->
+                                        <div v-if="top3[1]" class="podium-item">
+                                            <div class="podium-info">
+                                                <div class="podium-province">{{ top3[1].province }}</div>
+                                                <div class="podium-director">{{ top3[1].director }}</div>
+                                                <div class="podium-score" :style="{ color: tierColor(top3[1].score) }">{{ top3[1].score }}%</div>
+                                                <div class="podium-raw">{{ top3[1].met }} met · {{ top3[1].exceeded }} exceeded · {{ top3[1].active }}/{{ top3[1].total }}</div>
+                                            </div>
+                                            <div class="podium-block podium-silver">
+                                                <v-icon color="white" size="22">mdi-medal</v-icon>
+                                                <span class="podium-rank-num">2nd</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- 1st place -->
+                                        <div v-if="top3[0]" class="podium-item">
+                                            <div class="podium-info">
+                                                <v-icon color="amber-darken-1" size="26" class="mb-1">mdi-trophy</v-icon>
+                                                <div class="podium-province">{{ top3[0].province }}</div>
+                                                <div class="podium-director">{{ top3[0].director }}</div>
+                                                <div class="podium-score" :style="{ color: tierColor(top3[0].score) }">{{ top3[0].score }}%</div>
+                                                <div class="podium-raw">{{ top3[0].met }} met · {{ top3[0].exceeded }} exceeded · {{ top3[0].active }}/{{ top3[0].total }}</div>
+                                            </div>
+                                            <div class="podium-block podium-gold">
+                                                <span class="podium-rank-num">1st</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- 3rd place -->
+                                        <div v-if="top3[2]" class="podium-item">
+                                            <div class="podium-info">
+                                                <div class="podium-province">{{ top3[2].province }}</div>
+                                                <div class="podium-director">{{ top3[2].director }}</div>
+                                                <div class="podium-score" :style="{ color: tierColor(top3[2].score) }">{{ top3[2].score }}%</div>
+                                                <div class="podium-raw">{{ top3[2].met }} met · {{ top3[2].exceeded }} exceeded · {{ top3[2].active }}/{{ top3[2].total }}</div>
+                                            </div>
+                                            <div class="podium-block podium-bronze">
+                                                <v-icon color="white" size="22">mdi-medal-outline</v-icon>
+                                                <span class="podium-rank-num">3rd</span>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <v-divider vertical class="mx-1" />
+
+                                <!-- Ranks 4+ -->
+                                <div class="flex-1 overflow-y-auto" style="max-height:460px;">
+                                    <div
+                                        v-for="item in restList"
+                                        :key="item.province"
+                                        class="podium-rest-row"
+                                    >
+                                        <span class="podium-rest-rank">#{{ item.rank }}</span>
+                                        <div class="flex-1" style="min-width:0;">
+                                            <div class="text-body-2 font-weight-medium text-truncate">{{ item.province }}</div>
+                                            <div class="text-caption text-medium-emphasis text-truncate">{{ item.director }}</div>
+                                        </div>
+                                        <v-chip :color="categoryColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-capitalize flex-shrink-0">
+                                            {{ item.category }}
+                                        </v-chip>
+                                        <div class="podium-rest-score">
+                                            <div class="score-track">
+                                                <div class="score-fill" :style="{ width: `${Math.min(item.score, 100)}%`, background: tierColor(item.score) }" />
+                                            </div>
+                                            <span class="text-caption font-weight-bold" :style="{ color: tierColor(item.score) }">{{ item.score }}%</span>
+                                            <span class="text-medium-emphasis" style="font-size:10px; line-height:1;">{{ item.met }} met · {{ item.exceeded }} exceeded</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="!restList.length" class="text-center py-8 text-caption text-medium-emphasis">
+                                        Only {{ top3.length }} province(s) in this filter
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
                     </v-card>
                 </v-col>
             </v-row>
@@ -246,7 +380,7 @@
                         <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
                             <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
                             <div class="text-body-2 font-weight-medium">No Low Performers!</div>
-                            <div class="text-caption text-medium-emphasis">All provinces are Average Performers or Top Performing</div>
+                            <div class="text-caption text-medium-emphasis">All provinces are Average Performers or Top Performers</div>
                         </div>
                     </v-card>
                 </v-col>
@@ -279,10 +413,27 @@ const props = defineProps({
     available_years:     { type: Array,  default: () => [] },
 });
 
-const selectedYear     = ref(props.available_years[0] ?? 2025);
-const selectedCategory = ref('all');
-const selectedKpi      = ref('overall');
-const raceSearch       = ref('');
+const selectedYear       = ref(props.available_years[0] ?? 2025);
+const selectedCategory   = ref('all');
+const selectedKpi        = ref('overall');
+const raceSearch         = ref('');
+const viewMode           = ref('table');
+const selectedEvaluation = ref('operational'); // 'strict' | 'operational' | 'absolute' | 'excellence'
+
+// Each ranking record from the controller carries all four scores; the active
+// one is selected here so the rest of the template only sees `item.score`.
+const SCORE_FIELD = {
+    strict:      'strict_score',
+    operational: 'operational_score',
+    absolute:    'absolute_score',
+    excellence:  'excellence_score',
+};
+const evaluationMeta = {
+    strict:      { label: 'Strict',      desc: 'Met ÷ Active Targets',  hint: 'Skill rate: of the targets you set, how many you hit.' },
+    operational: { label: 'Operational', desc: '(Met + Monitored) ÷ 54', hint: 'Board coverage: how many of the 54 indicators you engaged with.' },
+    absolute:    { label: 'Absolute',    desc: 'Met ÷ 54',               hint: 'Hardest line: blanks and misses both count as zero.' },
+    excellence:  { label: 'Excellence',  desc: 'Exceeded ÷ Active Targets', hint: 'Bonus credit: of the targets you set, how many you actually beat.' },
+};
 
 const categories = [
     { value: 'micro',  label: 'Micro',  color: 'blue-grey'   },
@@ -298,18 +449,20 @@ const categoryLabel = computed(() =>
         : (categories.find(c => c.value === selectedCategory.value)?.label ?? '')
 );
 
+// Project the active evaluation score onto each record as `score`, then re-sort.
+// The controller pre-sorts by operational so other order is recomputed here.
 const currentScores = computed(() => {
     const yearData = props.kpi_scores_by_year[selectedYear.value];
     if (!yearData) return [];
-    if (selectedKpi.value === 'overall') return yearData.overall ?? [];
-    return yearData.kpi?.[selectedKpi.value] ?? [];
+    const raw = selectedKpi.value === 'overall'
+        ? (yearData.overall ?? [])
+        : (yearData.kpi?.[selectedKpi.value] ?? []);
+    const field = SCORE_FIELD[selectedEvaluation.value];
+    return raw
+        .map(r => ({ ...r, score: r[field] ?? 0 }))
+        .sort((a, b) => b.score - a.score);
 });
 
-const kpiFilterLabel = computed(() => {
-    if (selectedKpi.value === 'overall') return 'Overall KPI Score';
-    const found = props.kpi_outcomes.find(k => k.id === selectedKpi.value);
-    return found ? `KPI ${found.id}: ${found.title}` : `KPI ${selectedKpi.value}`;
-});
 
 const categoryCounts = computed(() => {
     const counts = { all: currentScores.value.length };
@@ -331,22 +484,30 @@ const rankedScores = computed(() =>
     filteredScores.value.map((s, i) => ({ ...s, rank: i + 1 }))
 );
 
-const raceHeaders = [
-    { title: 'Rank',      key: 'rank',     width: '64px',  sortable: false },
-    { title: 'Province',  key: 'province', sortable: true  },
-    { title: 'Director',  key: 'director', sortable: false },
-    { title: 'Category',  key: 'category', width: '100px', sortable: true  },
-    { title: 'Tracked',   key: 'count',    width: '80px',  align: 'center', sortable: true },
-    { title: 'KPI Score', key: 'score',    width: '260px', sortable: true  },
-];
+const top3     = computed(() => rankedScores.value.slice(0, 3));
+const restList = computed(() => rankedScores.value.slice(3));
 
+const raceHeaders = computed(() => [
+    { title: 'Rank',     key: 'rank',     width: '64px',  sortable: false },
+    { title: 'Province', key: 'province', sortable: true  },
+    { title: 'Director', key: 'director', sortable: false },
+    { title: 'Category', key: 'category', width: '100px', sortable: true  },
+    { title: 'Active',   key: 'active',   width: '70px',  align: 'center', sortable: true },
+    { title: 'Met',      key: 'met',      width: '60px',  align: 'center', sortable: true },
+    { title: 'Exceeded', key: 'exceeded', width: '80px',  align: 'center', sortable: true },
+    { title: `${evaluationMeta[selectedEvaluation.value].label} Score`,
+        key: 'score', width: '240px', sortable: true },
+]);
+
+// Scores are 0-100 binary-counting percentages. Tiers calibrated so a
+// reasonable Operational/Absolute score lands in the middle band.
 const tierColor = score =>
-    score >= 100 ? '#15803d' :
-    score >= 70  ? '#ca8a04' : '#b91c1c';
+    score >= 70 ? '#15803d' :
+    score >= 40 ? '#ca8a04' : '#b91c1c';
 
 const tierLabel = score =>
-    score >= 100 ? 'Top Performing'    :
-    score >= 70  ? 'Average Performers' : 'Low Performers';
+    score >= 70 ? 'Top Performers'    :
+    score >= 40 ? 'Average Performers' : 'Low Performers';
 
 const categoryColor = cat => ({
     micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink'
@@ -359,14 +520,14 @@ const top10Data = computed(() => {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => s.score),
         directors: slice.map(s => s.director),
-        counts:    slice.map(s => s.count),
+        counts:    slice.map(s => s.active ?? 0),
     };
 });
 
 // Failing from filtered category, sorted desc (least-failing at top)
 const failingData = computed(() => {
     const slice = filteredScores.value
-        .filter(s => s.score < 70)
+        .filter(s => s.score < 40)
         .slice()
         .sort((a, b) => b.score - a.score)
         .slice(0, 15);
@@ -374,7 +535,7 @@ const failingData = computed(() => {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => s.score),
         directors: slice.map(s => s.director),
-        counts:    slice.map(s => s.count),
+        counts:    slice.map(s => s.active ?? 0),
     };
 });
 
@@ -485,7 +646,6 @@ const failingSeries = computed(() => [{ name: 'KPI Score', data: failingData.val
     flex-shrink: 0;
 }
 
-.kpi-filter-bar { background: rgba(var(--v-theme-surface-variant), 0.3); }
 :deep(.kpi-chip-active) { font-weight: 700 !important; opacity: 1 !important; }
 
 .leaderboard-table :deep(tr) { cursor: default; }
@@ -514,4 +674,120 @@ const failingSeries = computed(() => [{ name: 'KPI Score', data: failingData.val
     border-radius: 4px;
     transition: width 0.6s ease;
 }
+
+/* ── Podium view ─────────────────────────────────────── */
+.podium-banner {
+    display: flex;
+    align-items: center;
+    background: rgba(var(--v-theme-surface-variant), 0.4);
+    border-left: 3px solid rgb(var(--v-theme-primary));
+    border-radius: 0 6px 6px 0;
+    padding: 8px 14px;
+}
+
+.podium-stage {
+    width: 42%;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+}
+
+.podium-items {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.podium-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.podium-info {
+    text-align: center;
+    padding-bottom: 10px;
+}
+
+.podium-province {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.podium-director {
+    font-size: 12px;
+    color: #64748b;
+    margin: 3px 0 6px;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.podium-score {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.podium-raw {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.podium-block {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 8px 8px 0 0;
+    color: white;
+}
+
+.podium-rank-num {
+    font-size: 18px;
+    font-weight: 800;
+    color: white;
+}
+
+.podium-gold   { height: 210px; background: linear-gradient(160deg, #3730a3, #6366f1); }
+.podium-silver { height: 160px; background: linear-gradient(160deg, #334155, #64748b); }
+.podium-bronze { height: 120px; background: linear-gradient(160deg, #92400e, #d97706); }
+
+.podium-rest-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.podium-rest-rank {
+    width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.podium-rest-score {
+    width: 130px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.podium-rest-score .score-track { flex: unset; }
 </style>

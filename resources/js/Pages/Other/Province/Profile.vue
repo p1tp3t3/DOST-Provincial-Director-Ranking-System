@@ -187,8 +187,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(row, j) in kpi.subrows" :key="row.id" class="kpi-row">
-                                        <td class="text-caption text-medium-emphasis text-center">{{ j + 1 }}</td>
+                                    <tr v-for="row in kpi.subrows" :key="row.id" class="kpi-row">
+                                        <td class="text-caption text-medium-emphasis text-center">{{ row.id }}</td>
                                         <td class="text-body-2 py-2" style="line-height:1.45;">{{ row.description }}</td>
                                         <td class="text-center">
                                             <span v-if="displayValue(row, 'target') != null" class="text-body-2 font-weight-medium" style="white-space:pre-line;">
