@@ -6,6 +6,7 @@ use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
 use App\Http\Controllers\Modules\Report\SuperAdminReportController;
+use App\Http\Controllers\Modules\Report\ProvincialAdminReportController;
 use App\Http\Controllers\Modules\Report\SubAdminReportController;
 use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\Report\ProvincialSubAdminReportController;
@@ -97,6 +98,12 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware('role:super_admin,sub_admin')->group(function () {
         Route::get('/performance-map', [DashboardController::class, 'map_index'])->name('performance-map');
+    });
+
+    // ── Provincial Admin only ─────────────────────────────────
+    Route::middleware('role:provincial_admin')->group(function () {
+        Route::get('/provincial-admin-report',        [ProvincialAdminReportController::class, 'index']);
+        Route::get('/provincial-admin-report/export', [ProvincialAdminReportController::class, 'export']);
     });
 
     // ── Provincial Sub Admin + Provincial Admin ────────────────
