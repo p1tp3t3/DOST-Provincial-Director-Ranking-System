@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, watchEffect } from 'vue';import { usePage, router } from '@inertiajs/vue3';
+import { ref, computed, watchEffect } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 
 import {
     RiDashboard2Fill,
@@ -152,6 +153,7 @@ watchEffect(() => {
 });
 
 const navigateTo = (href) => router.visit(href);
+const navigateProfile = () => router.visit(`/profile/${authUser.value.id}`);
 const handleLogout = () => router.post('/logout');
 
 const onSubNavEnter = (el) => {
@@ -175,7 +177,17 @@ const onSubNavLeave = (el) => {
     el.style.opacity = '0';
 };
 
-const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
+const avatarSrc = computed(() => {
+    const pic = authUser.value?.profile?.profile_picture;
+    return pic ? `/profile-picture?filename=${encodeURIComponent(pic)}` : null;
+});
+
+const sidebarInitials = computed(() => {
+    const u = authUser.value;
+    const first = u?.profile?.first_name?.[0] ?? '';
+    const last  = u?.profile?.last_name?.[0]  ?? '';
+    return (first + last).toUpperCase() || u?.username?.[0]?.toUpperCase() || '?';
+});
 </script>
 
 <template>
@@ -203,25 +215,28 @@ const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
         </div>
 
         <!-- User Section -->
-        <div class="px-3 py-4 border-b border-white/10 flex-shrink-0"
-             :class="isOpen ? '' : 'flex justify-center'">
-            <div v-if="isOpen" class="flex items-center gap-3">
-                <v-avatar size="36" class="flex-shrink-0 ring-2 ring-white/20">
-                    <v-img :src="defAvatar" cover></v-img>
-                </v-avatar>
-                <div class="overflow-hidden">
-                    <p class="text-sm font-semibold mb-0 truncate">{{ authUser?.username || 'User' }}</p>
-                    <span class="role-badge">{{ getRoleLabel() }}</span>
-                </div>
-            </div>
-            <v-tooltip v-else location="right" :text="getRoleLabel()">
-                <template #activator="{ props: tp }">
-                    <v-avatar v-bind="tp" size="36" class="ring-2 ring-white/20">
-                        <v-img :src="defAvatar" cover></v-img>
+        <v-tooltip :disabled="isOpen" location="right" :text="getRoleLabel()">
+            <template #activator="{ props: tp }">
+                <div
+                    v-bind="tp"
+                    class="user-section flex items-center flex-shrink-0 border-b border-white/10"
+                    :class="isOpen ? 'px-3 gap-3' : 'justify-center'"
+                    style="height:56px; cursor:pointer;"
+                    @click="navigateProfile"
+                >
+                    <v-avatar size="34" class="flex-shrink-0 ring-2 ring-white/20" color="indigo-darken-3">
+                        <v-img v-if="avatarSrc" :src="avatarSrc" cover />
+                        <span v-else class="font-weight-bold text-white" style="font-size:11px;">{{ sidebarInitials }}</span>
                     </v-avatar>
-                </template>
-            </v-tooltip>
-        </div>
+                    <div v-if="isOpen" class="overflow-hidden min-w-0 flex-1">
+                        <div class="leading-tight overflow-hidden">
+                            <div class="font-bold text-xs whitespace-nowrap">{{ authUser?.username || 'User' }}</div>
+                            <div class="text-xs text-blue-300 whitespace-nowrap">{{ getRoleLabel() }}</div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </v-tooltip>
 
         <!-- Navigation -->
         <nav class="flex-1 overflow-y-auto px-2 py-3">
@@ -325,6 +340,13 @@ const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
     padding: 5px;
     display: grid;
     place-items: center;
+}
+
+.user-section {
+    transition: background 0.15s;
+}
+.user-section:hover {
+    background: rgba(255,255,255,0.07);
 }
 
 .role-badge {

@@ -1,7 +1,7 @@
 ﻿<template>
-        <div>
-            notification management
-        </div>
+    <div>
+        notification management
+    </div>
 </template>
 
 <script setup>

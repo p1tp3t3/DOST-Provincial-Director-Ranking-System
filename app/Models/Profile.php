@@ -3,12 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Profile extends Model
 {
     public $table = 'profiles',
-           $fillable = ['user_id', 'prefix', 'first_name', 'middle_name', 'last_name', 'profile_picture', 'suffix', 'length_of_service', 'education_attainment'],
+           $fillable = ['user_id', 'prefix', 'first_name', 'middle_name', 'last_name', 'profile_picture', 'cover_picture', 'suffix', 'length_of_service', 'education_attainment'],
            $timestamps = false;
 
     protected $casts = [

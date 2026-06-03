@@ -20,8 +20,8 @@
 
 
       <v-list>
-        <div v-if="show">
-            <v-list-item title="John Doe Dodong" subtitle="Super Admin">
+        <div>
+            <v-list-item title="John Doe Dodong" subtitle="Super Admin" @click="router.get(`/profile/${authUser.id}`);">
                 <template #prepend>
                     <v-avatar color="secondary" size="small">
                         <v-img 
@@ -48,7 +48,8 @@ import { router } from '@inertiajs/vue3';
 import { getAuth } from '@/helper-functions';
 import NotificationPanel from '@/Components/Other/NotificationPanel.vue';
 
-const show = (getAuth().role == 'provincial_director' && getAuth().role != 'employee')
+const authUser = getAuth();
+
 
 const emit = defineEmits(['toggle-drawer']);
 const searchQuery = ref('');
