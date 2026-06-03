@@ -45,12 +45,57 @@
                                                 Submission Guidelines
                                             </v-expansion-panel-title>
                                             <v-expansion-panel-text>
-                                                <div class="d-flex flex-column gap-3 py-1">
-                                                    <div v-for="(item, i) in guidelines" :key="i" class="d-flex align-start gap-3">
-                                                        <v-avatar color="indigo-lighten-5" size="24" rounded="sm" class="flex-shrink-0 mt-px">
-                                                            <span style="color:#5c6bc0; font-size:0.6rem; font-weight:700;">{{ i + 1 }}</span>
-                                                        </v-avatar>
-                                                        <div class="text-body-2">{{ item }}</div>
+                                                <div class="d-flex flex-column gap-4 py-1">
+                                                    <div class="d-flex flex-column gap-3">
+                                                        <div v-for="(item, i) in guidelines" :key="i" class="d-flex align-start gap-3">
+                                                            <v-avatar color="indigo-lighten-5" size="24" rounded="sm" class="flex-shrink-0 mt-px">
+                                                                <span style="color:#5c6bc0; font-size:0.6rem; font-weight:700;">{{ i + 1 }}</span>
+                                                            </v-avatar>
+                                                            <div class="text-body-2">{{ item }}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <v-divider />
+
+                                                    <!-- Sample Table -->
+                                                    <div>
+                                                        <div class="d-flex align-center gap-2 mb-2">
+                                                            <v-icon size="14" color="indigo">mdi-table-eye</v-icon>
+                                                            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.06em;">Sample CSV Format</span>
+                                                        </div>
+                                                        <div class="sample-table-wrap rounded-lg overflow-x-auto">
+                                                            <table class="sample-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>dost_id_number <span class="req">*</span></th>
+                                                                        <th>prefix</th>
+                                                                        <th>first_name <span class="req">*</span></th>
+                                                                        <th>middle_name</th>
+                                                                        <th>last_name <span class="req">*</span></th>
+                                                                        <th>suffix</th>
+                                                                        <th>email <span class="req">*</span></th>
+                                                                        <th>position</th>
+                                                                        <th>length_of_service</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr v-for="row in sampleRows" :key="row.email">
+                                                                        <td>{{ row.dost_id_number }}</td>
+                                                                        <td>{{ row.prefix }}</td>
+                                                                        <td>{{ row.first_name }}</td>
+                                                                        <td>{{ row.middle_name }}</td>
+                                                                        <td>{{ row.last_name }}</td>
+                                                                        <td>{{ row.suffix }}</td>
+                                                                        <td>{{ row.email }}</td>
+                                                                        <td>{{ row.position }}</td>
+                                                                        <td>{{ row.length_of_service }}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                        <div class="text-caption text-medium-emphasis mt-2">
+                                                            <span class="req font-weight-bold">*</span> Required columns &nbsp;·&nbsp; Optional columns may be left blank
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </v-expansion-panel-text>
@@ -471,11 +516,17 @@ const guidelinesRead  = ref(false);
 
 const guidelines = [
     'Ensure all employee data follows the required CSV template format. Download the template before filling in data.',
-    'Required columns: first_name, middle_name, last_name, email, dost_id_number.',
+    'Required columns: first_name, middle_name, last_name, email, dost_id_number. All other columns are optional.',
     'Each row represents one employee. Avoid blank rows and do not repeat the header.',
     'Duplicate emails or DOST IDs — within the CSV or already in the system — will be flagged as invalid.',
     'After verification you can review, edit, or remove rows before committing to the database.',
     'Only rows marked as "included" will be committed. Invalid rows are excluded by default.',
+];
+
+const sampleRows = [
+    { prefix: 'Ms.',   first_name: 'Maria', middle_name: 'Santos', last_name: 'Dela Cruz',  suffix: '',    email: 'maria.delacruz@dost.gov.ph',  dost_id_number: 'DOST-XI-2024-001', position: 'Science Research Analyst',   length_of_service: '3 Years' },
+    { prefix: 'Mr.',   first_name: 'Jose',  middle_name: 'Reyes',  last_name: 'Villanueva', suffix: 'Jr.', email: 'jose.villanueva@dost.gov.ph', dost_id_number: 'DOST-XI-2024-002', position: 'Administrative Officer II', length_of_service: '1 Year' },
+    { prefix: 'Engr.', first_name: 'Luz',   middle_name: 'Roque',       last_name: 'Corpuz',     suffix: '',    email: 'luz.corpuz@dost.gov.ph',      dost_id_number: 'DOST-XI-2024-003', position: 'Engineer II',               length_of_service: '6 Months' },
 ];
 
 const howItWorks = [
@@ -760,6 +811,43 @@ const formatFileSize = (bytes) => {
 </script>
 
 <style scoped>
+/* ── Sample table ─────────────────────────────────────────── */
+.sample-table-wrap {
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    background: #f8fafc;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.sample-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.sample-table thead tr {
+    background: #eef0f8;
+}
+.sample-table th {
+    padding: 6px 10px;
+    text-align: left;
+    font-weight: 700;
+    color: #3730a3;
+    border-bottom: 1px solid #dde1f0;
+    border-right: 1px solid #dde1f0;
+}
+.sample-table th:last-child,
+.sample-table td:last-child { border-right: none; }
+.sample-table td {
+    padding: 5px 10px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+}
+.sample-table tbody tr:last-child td { border-bottom: none; }
+.sample-table tbody tr:hover td { background: #f1f5ff; }
+.req { color: #b91c1c; }
+
 .csv-dropzone {
     border: 2px dashed rgba(0,0,0,0.12);
     cursor: pointer;

@@ -224,9 +224,16 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function employee_dashboard() {
+    private function employee_dashboard()
+    {
+        $user = auth()->user();
+        $province = $user->province?->name;
+
+        $kpiData = self::build_kpi_data();
+
         return inertia('Employee/Dashboard/Main', [
-            // any employee-specific data can go here
+            'my_province' => $province,
+            ...$kpiData,
         ]);
     }
 }

@@ -38,7 +38,7 @@ const getRoleLabel = () => {
         'provincial_admin':   `Provincial Administrator (${authUser.value?.province?.name})`,
         'provincial_sub_admin':   `Provincial Sub Administrator (${authUser.value?.province?.name})`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
-        'employee':           'Employee',
+        'employee':           `Employee at ${authUser.value?.province?.name}`,
     };
     return label[authUser.value?.role] || '';
 };
@@ -119,7 +119,6 @@ const tabs = computed(() => {
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
                 { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
-                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         default:
             return [];

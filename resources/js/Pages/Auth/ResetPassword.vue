@@ -49,7 +49,7 @@
                 </div>
 
                 <!-- ── Reset form ── -->
-                <template v-else-if="!done">
+                <template v-else-if="!doneState">
                     <div class="pa-6 pb-4">
                         <div class="d-flex align-center gap-3 mb-1">
                             <v-avatar color="success-lighten-5" rounded="lg" size="40">
@@ -57,8 +57,8 @@
                             </v-avatar>
                             <div>
                                 <div class="text-subtitle-1 font-weight-bold">Set New Password</div>
-                                <div v-if="email" class="text-caption text-medium-emphasis">
-                                    Resetting for <strong>{{ email }}</strong>
+                                <div v-if="maskedEmail" class="text-caption text-medium-emphasis">
+                                    Resetting for <strong>{{ maskedEmail }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -146,7 +146,7 @@
                 </template>
 
                 <!-- ── Success state ── -->
-                <div v-else class="pa-8 text-center d-flex flex-column align-center gap-4">
+                <div v-else-if="doneState" class="pa-8 text-center d-flex flex-column align-center gap-4">
                     <v-avatar color="success-lighten-5" size="72">
                         <v-icon color="success" size="38">mdi-shield-check-outline</v-icon>
                     </v-avatar>
@@ -175,15 +175,26 @@ import { useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     valid: { type: Boolean, default: false },
-    token: { type: String, required: true },
-    email: { type: String, default: '' },
+    done:  { type: Boolean, default: false },
+    token: { type: String,  default: ''    },
+    email: { type: String,  default: ''    },
 });
 
-const done         = ref(false);
+const doneState    = ref(props.done);
 const showPassword = ref(false);
 const showConfirm  = ref(false);
 
+const maskedEmail = computed(() => {
+    if (!props.email || !props.email.includes('@')) return props.email;
+    const [local, domain] = props.email.split('@');
+    const visible = Math.min(2, local.length);
+    const masked  = local.slice(0, visible) + '*'.repeat(Math.max(local.length - visible, 3));
+    return `${masked}@${domain}`;
+});
+
 const form = useForm({
+    token:                 props.token,
+    email:                 props.email,
     password:              '',
     password_confirmation: '',
 });
@@ -197,8 +208,8 @@ const hints = computed(() => [
 const canSubmit = computed(() => hints.value.every(h => h.ok));
 
 const submit = () => {
-    form.post(route('password.recovery.reset', { token: props.token }), {
-        onSuccess: () => { done.value = true; },
+    form.post(route('password.store'), {
+        onSuccess: () => { doneState.value = true; },
     });
 };
 </script>
