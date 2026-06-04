@@ -26,14 +26,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/console/authenticate', [SuperAdminLoginController::class, 'store'])->name('console.authenticate');
 });
 
-Route::get('/', function () {
-    return Inertia::render('Landing/Welcome', [
-        'canLogin'       => Route::has('login'),
-        'canRegister'    => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion'     => PHP_VERSION,
-    ]);
-});
 
 Route::middleware('auth')->group(function () {
 
