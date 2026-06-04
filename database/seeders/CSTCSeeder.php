@@ -3,12 +3,12 @@
 namespace Database\Seeders;
 
 use App\Helpers\CSVToDFHelper;
+use App\Models\KPI;
 use App\Models\Profile;
 use App\Models\Province;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class CSTCSeeder extends Seeder
 {
@@ -65,19 +65,24 @@ class CSTCSeeder extends Seeder
             $this->command->line("  Created director for <info>{$row['province']}</info>: {$first} {$last}");
         }
 
-        // Load KPI scores only for newly created directors
-        $batch  = [];
-        $missed = [];
+        // Load KPI scores only for newly created directors. Same legacy 54-subrow → new
+        // 37-KPI mapping as KPIScoreSeeder; unmapped subrow IDs are silently skipped.
+        $kpiIdByCode = KPI::pluck('id', 'code')->toArray();
+        $batch       = [];
+        $missed      = [];
         foreach ($kpiRows as $row) {
             $directorId = $directorMap[$row['province']] ?? null;
             if (!$directorId) {
                 if (!isset($allDirectorMap[$row['province']])) $missed[$row['province']] = true;
                 continue;
             }
+            $code  = KPIScoreSeeder::SUBROW_TO_KPI_CODE[(int) $row['subrow_id']] ?? null;
+            $kpiId = $code !== null ? ($kpiIdByCode[$code] ?? null) : null;
+            if ($kpiId === null) continue;
+
             $batch[] = [
                 'provincial_director_id' => $directorId,
-                'kpi_id'                 => (int) $row['kpi_id'],
-                'kpi_subrow_id'          => (int) $row['subrow_id'],
+                'kpi_id'                 => $kpiId,
                 'year'                   => (int) $row['year'],
                 'target'                 => $row['target']       !== '' ? $row['target']       : null,
                 'accomplished'           => $row['accomplished'] !== '' ? $row['accomplished'] : null,

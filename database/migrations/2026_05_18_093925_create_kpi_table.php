@@ -6,40 +6,49 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('kpis', function (Blueprint $table) {
+        // 3 official PSTD matrix categories: CORE (0.6), FUNCTIONAL (0.3), SUPPORT (0.1)
+        Schema::create('kpi_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('outcome_title');
-            $table->timestamps();
+            $table->string('code', 20)->unique();
+            $table->string('name', 50);
+            $table->decimal('weight', 5, 4);
+            $table->unsignedTinyInteger('sort_order');
         });
 
-        Schema::create('kpi_subrows', function (Blueprint $table) {
+        // 37 scored KPIs + supporting input-only rows (e.g. ongoing/delinquent SETUP counts
+        // used to derive the % Delinquent SETUP KPI). is_scored=false means the row is
+        // collected from PSTDs but does not directly contribute to the weighted score.
+        Schema::create('kpis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('kpi_id')->constrained('kpis');
-            $table->text('description');
+            $table->foreignId('category_id')->constrained('kpi_categories');
+            $table->string('code', 60)->unique();
+            $table->text('name');
+            $table->decimal('weight', 6, 4)->default(0);
+            $table->boolean('is_scored')->default(true);
+            $table->boolean('inverse_scoring')->default(false);
+            $table->string('derivation_type', 50)->nullable();
+            $table->unsignedSmallInteger('sort_order');
         });
-        
+
         Schema::create('provincial_director_kpis', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('provincial_director_id')->constrained('users');
             $table->foreignId('kpi_id')->constrained('kpis');
-            $table->foreignId('kpi_subrow_id')->constrained('kpi_subrows');
             $table->text('target')->nullable();
             $table->text('accomplished')->nullable();
             $table->year('year');
+            $table->index(['provincial_director_id', 'year']);
+            // Lets updateOrCreate() find the existing row by (director, kpi, year)
+            $table->unique(['provincial_director_id', 'kpi_id', 'year'], 'pdk_director_kpi_year_unique');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('kpis');
-        Schema::dropIfExists('kpi_subrows');
         Schema::dropIfExists('provincial_director_kpis');
+        Schema::dropIfExists('kpis');
+        Schema::dropIfExists('kpi_categories');
     }
 };

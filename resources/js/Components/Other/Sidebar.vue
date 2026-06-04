@@ -10,7 +10,6 @@ import {
     RiFileChartFill,
     RiFileList3Fill,
     RiGlobalFill,
-    RiLogoutBoxRLine,
     RiFolder2Fill,
     RiUserAddLine,
     RiListCheck3,
@@ -20,6 +19,7 @@ import {
     RiBarChart2Fill,
     RiRoadMapFill,
     RiFolder2Line,
+    RiEdit2Fill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -44,7 +44,6 @@ const getRoleLabel = () => {
     return label[authUser.value?.role] || '';
 };
 
-
 const tabs = computed(() => {
     if (!authUser.value) return [];
 
@@ -54,6 +53,7 @@ const tabs = computed(() => {
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
                 { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
+                { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
                 {
                     name: 'User Management', icon: RiUser2Fill,
                     children: [
@@ -216,13 +216,11 @@ const sidebarInitials = computed(() => {
 
         <!-- User Section -->
         <div
-            v-bind="tp"
-            class="flex items-center flex-shrink-0 border-b border-white/10"
-            :class="isOpen ? 'gap-3' : 'justify-center'"
             v-if="isOpen"
+            class="flex items-center flex-shrink-0 border-b border-white/10 gap-3"
             style="padding: 9px 20px;"
         >
-            <div v-if="isOpen" class="flex-1">
+            <div class="flex-1">
                 <div class="leading-tight">
                     <div class="text-xs text-blue-300">{{ getRoleLabel() }}</div>
                 </div>
@@ -374,13 +372,6 @@ const sidebarInitials = computed(() => {
 .nav-item--collapsed {
     justify-content: center;
     padding: 9px 0;
-}
-.nav-item--logout {
-    color: rgba(248,113,113,0.8);
-}
-.nav-item--logout:hover {
-    background: rgba(248,113,113,0.1);
-    color: #fca5a5;
 }
 
 .nav-icon {

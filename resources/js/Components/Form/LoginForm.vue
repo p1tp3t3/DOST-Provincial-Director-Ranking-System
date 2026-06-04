@@ -27,7 +27,6 @@ const submit = () => {
                 clearable
                 autofocus
                 autocomplete="username"
-                :error-messages="form.errors.identifier"
                 placeholder="Enter your email, username, or DOST ID"
                 prepend-inner-icon="mdi-account-search-outline"
             />
@@ -43,7 +42,6 @@ const submit = () => {
                 :rules="[required]"
                 clearable
                 autocomplete="current-password"
-                :error-messages="form.errors.password"
                 placeholder="*********"
             />
         </div>

@@ -5,62 +5,74 @@
 
     <NotificationPanel />
 
-    <v-menu min-width="200px" rounded>
+    <v-menu min-width="240px" rounded>
       <template #activator="{ props }">
         <v-btn v-bind="props" variant="text" class="text-none px-2 h-auto py-1">
             <div class="d-flex align-center">
                 <v-avatar color="secondary" size="small">
-                    <v-img :src="`/profile-picture?filename=${authUser?.profile?.profile_picture}`" alt="Admin"></v-img>
+                    <v-img :src="avatarSrc" alt="User"></v-img>
                 </v-avatar>
                 <v-icon size="small" class="ml-1 hidden-sm-and-down">mdi-chevron-down</v-icon>
             </div>
         </v-btn>
       </template>
+
       <v-list>
-        <v-list-item title="John Doe Dodong" :subtitle="getRoleLabel()" @click="router.get(`/profile/${authUser.id}`);">
+        <v-list-item :title="authUser?.username || 'User'" :subtitle="roleLabel" @click="goToProfile">
             <template #prepend>
                 <v-avatar color="secondary" size="small">
-                    <v-img 
-                        :src="`/profile-picture?filename=${authUser?.profile?.profile_picture}`" 
-                        alt="Admin"
-                    ></v-img>
+                    <v-img :src="avatarSrc" alt="User"></v-img>
                 </v-avatar>
             </template>
         </v-list-item>
         <v-divider class="my-2"></v-divider>
+        <v-list-item prepend-icon="mdi-account" title="My Profile" value="profile" @click="goToProfile"></v-list-item>
         <v-list-item prepend-icon="mdi-cog" title="Settings" value="settings"></v-list-item>
         <v-divider class="my-2"></v-divider>
-        <v-list-item prepend-icon="mdi-logout" color="error" title="Logout" value="logout" @click="router.post('/logout')"></v-list-item>
+        <v-list-item prepend-icon="mdi-logout" base-color="error" title="Logout" value="logout" @click="router.post('/logout')"></v-list-item>
       </v-list>
     </v-menu>
   </v-toolbar>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { getAuth } from '@/helper-functions';
+import { computed } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import NotificationPanel from '@/Components/Other/NotificationPanel.vue';
 
-const authUser = getAuth();
-
-
 const emit = defineEmits(['toggle-drawer']);
-const searchQuery = ref('');
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user ?? null);
+
+const ROLE_LABELS = {
+    super_admin:          'System Administrator',
+    sub_admin:            'Sub Administrator',
+    provincial_admin:     'Provincial Administrator',
+    provincial_sub_admin: 'Provincial Sub Administrator',
+    provincial_director:  'Provincial Director',
+    employee:             'Employee',
+};
+const roleLabel = computed(() => {
+    const base = ROLE_LABELS[authUser.value?.role] ?? '';
+    const prov = authUser.value?.province?.name;
+    if (!base) return '';
+    if (authUser.value?.role === 'provincial_director' && prov) return `${base} of ${prov}`;
+    if (prov && ['provincial_admin', 'provincial_sub_admin', 'employee'].includes(authUser.value?.role)) return `${base} (${prov})`;
+    return base;
+});
+
+const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
+const avatarSrc = computed(() => {
+    const file = authUser.value?.profile?.profile_picture;
+    return file ? `/profile-picture?filename=${file}` : defAvatar;
+});
+
+const goToProfile = () => {
+    if (authUser.value?.id) router.visit(`/profile/${authUser.value.id}`);
+};
 
 const toggleDrawer = () => {
   emit('toggle-drawer');
-};
-
-const getRoleLabel = () => {
-    const label = {
-        'super_admin':        'System Administrator',
-        'sub_admin':          'Sub Administrator',
-        'provincial_admin':   `Provincial Administrator (${authUser?.province?.name})`,
-        'provincial_sub_admin':   `Provincial Sub Administrator (${authUser?.province?.name})`,
-        'provincial_director':`Provincial Director of ${authUser?.province?.name}`,
-        'employee':           `Employee at ${authUser?.province?.name}`,
-    };
-    return label[authUser?.role] || '';
 };
 </script>

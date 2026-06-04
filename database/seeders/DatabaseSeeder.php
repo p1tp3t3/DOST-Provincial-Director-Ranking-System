@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Helpers\CSVToDFHelper;
 use App\Models\ActivityLog;
 use App\Models\KPI;
+use App\Models\KPICategory;
 use App\Models\Profile;
 use App\Models\Province;
 use App\Models\User;
@@ -218,27 +219,32 @@ class DatabaseSeeder extends Seeder
         return [$first, $middle, $last];
     }
 
+    // Seeds the new PSTD Ranking Matrix structure: 3 categories (CORE/FUNCTIONAL/SUPPORT)
+    // with 37 scored KPIs + 2 supporting input rows used to derive the % Delinquent SETUP KPI.
     private function generate_kpi()
     {
-        $kpi         = CSVToDFHelper::get_df('kpi.csv');
-        $kpi_outcome = CSVToDFHelper::get_df('kpi-outcome.csv');
-
-        $outcomesByKpi = [];
-        foreach ($kpi_outcome as $outcome) {
-            $outcomesByKpi[(int) $outcome['kpi_id']][] = $outcome['description'];
+        foreach (CSVToDFHelper::get_df('kpi-categories.csv') as $row) {
+            KPICategory::create([
+                'code'       => $row['code'],
+                'name'       => $row['name'],
+                'weight'     => (float) $row['weight'],
+                'sort_order' => (int) $row['sort_order'],
+            ]);
         }
 
-        foreach ($kpi as $k) {
-            $kpiRecord = KPI::create([
-                'id'            => $k['id'],
-                'outcome_title' => $k['outcome'],
+        $categoryIds = KPICategory::pluck('id', 'code')->toArray();
+
+        foreach (CSVToDFHelper::get_df('kpis.csv') as $row) {
+            KPI::create([
+                'category_id'     => $categoryIds[$row['category_code']],
+                'code'            => $row['code'],
+                'name'            => $row['name'],
+                'weight'          => (float) $row['weight'],
+                'is_scored'       => (int) $row['is_scored'] === 1,
+                'inverse_scoring' => (int) $row['inverse_scoring'] === 1,
+                'derivation_type' => $row['derivation_type'] !== '' ? $row['derivation_type'] : null,
+                'sort_order'      => (int) $row['sort_order'],
             ]);
-            foreach ($outcomesByKpi[(int) $k['id']] ?? [] as $description) {
-                DB::table('kpi_subrows')->insert([
-                    'kpi_id'      => $kpiRecord->id,
-                    'description' => $description,
-                ]);
-            }
         }
     }
 }

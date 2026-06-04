@@ -6,11 +6,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class KPI extends Model
 {
-    public $table    = 'kpis';
-    protected $fillable = ['id', 'outcome_title'];
+    public $table      = 'kpis';
+    public $timestamps = false;
+    protected $fillable = [
+        'category_id', 'code', 'name', 'weight',
+        'is_scored', 'inverse_scoring', 'derivation_type', 'sort_order',
+    ];
+    protected $casts = [
+        'weight'          => 'float',
+        'is_scored'       => 'boolean',
+        'inverse_scoring' => 'boolean',
+    ];
 
-    public function subRows()
+    public function category()
     {
-        return $this->hasMany(KPISubrow::class, 'kpi_id')->orderBy('id');
+        return $this->belongsTo(KPICategory::class, 'category_id');
+    }
+
+    public function directorScores()
+    {
+        return $this->hasMany(ProvincialDirectorKPI::class, 'kpi_id');
     }
 }

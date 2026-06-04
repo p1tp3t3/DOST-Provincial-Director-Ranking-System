@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Modules\Report;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Province;
-use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
+use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -88,31 +88,36 @@ class SubAdminReportController extends Controller
         ];
     }
 
+    // Rankings come from the official PSTD Ranking Matrix weighted score (latest reporting
+    // year). Each row carries its CSTC-tier rank + bucket (Top / Average / Under) so the
+    // PDF can present the same view the dashboard uses.
     private function get_director_rankings(int $limit = 8): array
     {
-        return User::where('role', 'provincial_director')
-            ->with(['profile', 'province'])
-            ->get()
-            ->map(function ($d) {
-                $kpis         = ProvincialDirectorKPI::where('provincial_director_id', $d->id)->get();
-                $toNum        = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
-                $target       = $kpis->sum(fn($k) => $toNum($k->target));
-                $accomplished = $kpis->sum(fn($k) => $toNum($k->accomplished));
-                $rate        = $target > 0 ? round($accomplished / $target * 100, 1) : 0;
+        $svc   = new RankingService();
+        $years = $svc->availableYears();
+        if (empty($years)) return [];
+        $latestYear = $years[0];
 
-                return [
-                    'id'           => $d->id,
-                    'name'         => trim(($d->profile?->first_name ?? '') . ' ' . ($d->profile?->last_name ?? '')),
-                    'province'     => $d->province?->name ?? '—',
-                    'target'       => $target,
-                    'accomplished' => $accomplished,
-                    'rate'         => $rate,
+        $rows = [];
+        foreach ($svc->rankByYear($latestYear) as $tier => $tierRows) {
+            foreach ($tierRows as $r) {
+                $rows[] = [
+                    'id'           => $r['province_id'],
+                    'name'         => $r['director'] ?: '—',
+                    'province'     => $r['province'],
+                    'tier'         => $tier,
+                    'tier_rank'    => $r['rank'],
+                    'bucket'       => $r['bucket'],
+                    'total_pct'    => $r['total_pct'],
+                    'adjective'    => $r['adjective_label'],
+                    'subtotals'    => $r['subtotals_pct'],
+                    'year'         => $latestYear,
                 ];
-            })
-            ->sortByDesc('rate')
-            ->take($limit)
-            ->values()
-            ->toArray();
+            }
+        }
+
+        usort($rows, fn($a, $b) => $b['total_pct'] <=> $a['total_pct']);
+        return array_slice($rows, 0, $limit);
     }
 
     private function get_log_stats(?Carbon $from = null, ?Carbon $to = null): array

@@ -7,6 +7,7 @@ use App\Http\Requests\ProvinceCreationRequest;
 use App\Http\Resources\ProvinceProfileResource;
 use App\Http\Resources\ProvinceResource;
 use App\Models\KPI;
+use App\Models\KPICategory;
 use App\Models\Province;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -45,36 +46,40 @@ class ProvinceController extends Controller
                 ->toArray()
             : [];
 
-        // Score lookup: subrow_id → year → {target, accomplished}
+        // Score lookup: kpi_id → year → {target, accomplished}
         $scoreMap = [];
         if ($directorId) {
             foreach (DB::table('provincial_director_kpis')->where('provincial_director_id', $directorId)->get() as $s) {
-                $scoreMap[$s->kpi_subrow_id][(string) $s->year] = [
+                $scoreMap[$s->kpi_id][(string) $s->year] = [
                     'target'       => $s->target,
                     'accomplished' => $s->accomplished,
                 ];
             }
         }
 
-        $kpis = KPI::with('subRows')->orderBy('id')->get()
-            ->map(fn ($kpi) => [
-                'id'            => $kpi->id,
-                'outcome_title' => $kpi->outcome_title,
-                'subrows'       => $kpi->subRows
-                    ->map(fn ($row) => [
-                        'id'          => $row->id,
-                        'description' => $row->description,
-                        'scores'      => $scoreMap[$row->id] ?? [],
-                    ])
-                    ->values()
-                    ->toArray(),
+        // Group KPIs under their matrix category (CORE / FUNCTIONAL / SUPPORT) for display
+        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')->get()
+            ->map(fn($cat) => [
+                'id'     => $cat->id,
+                'code'   => $cat->code,
+                'name'   => $cat->name,
+                'weight' => (float) $cat->weight,
+                'kpis'   => $cat->kpis->map(fn($kpi) => [
+                    'id'              => $kpi->id,
+                    'code'            => $kpi->code,
+                    'name'            => $kpi->name,
+                    'weight'          => (float) $kpi->weight,
+                    'is_scored'       => $kpi->is_scored,
+                    'inverse_scoring' => $kpi->inverse_scoring,
+                    'scores'          => $scoreMap[$kpi->id] ?? [],
+                ])->values()->toArray(),
             ])
-            ->values()
-            ->toArray();
+            ->values()->toArray();
 
         return inertia('Other/Province/Profile', [
             'province_profile' => ProvinceProfileResource::collection($data),
-            'kpis'             => $kpis,
+            'kpi_categories'   => $categories,
             'available_years'  => $availableYears,
         ]);
     }
