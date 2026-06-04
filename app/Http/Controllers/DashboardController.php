@@ -120,6 +120,12 @@ class DashboardController extends Controller
 
     private function employee_dashboard()
     {
-        return inertia('Employee/Dashboard/Main', []);
+        $user     = auth()->user();
+        $province = $user->province?->name;
+
+        return inertia('Employee/Dashboard/Main', [
+            'my_province' => $province,
+            ...self::build_ranking_payload(),
+        ]);
     }
 }

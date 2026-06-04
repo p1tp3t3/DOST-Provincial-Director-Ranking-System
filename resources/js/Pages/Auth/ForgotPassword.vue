@@ -133,20 +133,19 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
-    sent: { type: Boolean, default: false },
+    status: { type: String, default: null },
 });
 
-const page     = usePage();
-const trySent  = ref(false);
-const sent     = computed(() => props.sent || trySent.value || !!page.props.flash?.recovery_sent);
+const trySent = ref(false);
+const sent    = computed(() => !!props.status || trySent.value);
 
 const form = useForm({ identifier: '' });
 
 const submit = () => {
-    form.post(route('password.recovery.send'), {
+    form.post(route('password.email'), {
         onSuccess: () => { trySent.value = true; },
     });
 };

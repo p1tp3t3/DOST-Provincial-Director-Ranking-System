@@ -57,7 +57,20 @@ class MaintenanceController extends Controller
         $user = $db['username'];
         $pass = $db['password'];
 
-        $command = "mysqldump --host={$host} --port={$port} --user={$user} --password={$pass} {$name} > \"{$path}\" 2>&1";
+        $mysqldumpPath = 'C:\xampp\mysql\bin\mysqldump.exe';
+
+        // 2. Wrap the binary inside outer double quotes so the Windows shell executes it flawlessly
+        $command = sprintf(
+            '"%s" --host=%s --port=%s --user=%s --password=%s %s > "%s" 2>&1',
+            $mysqldumpPath,
+            escapeshellarg($host),
+            escapeshellarg($port),
+            escapeshellarg($user),
+            escapeshellarg($pass),
+            escapeshellarg($name),
+            $path
+        );
+
         exec($command, $output, $code);
 
         if ($code !== 0 || !file_exists($path)) {

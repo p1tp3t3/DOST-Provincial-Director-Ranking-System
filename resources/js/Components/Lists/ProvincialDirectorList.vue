@@ -37,7 +37,7 @@
                 <!-- Avatar area -->
                 <div class="d-flex flex-column align-center pt-6 pb-3 px-4">
                     <v-avatar size="80" class="mb-3">
-                        <v-img :src="defPic" :alt="director.name" cover></v-img>
+                        <v-img :src="`/profile-picture?filename=${director.profile_picture}`" :alt="director.name" cover></v-img>
                     </v-avatar>
 
                     <div class="text-center">
@@ -102,7 +102,6 @@
 import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 
-const defPic = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
 
 const props = defineProps({
     list: {

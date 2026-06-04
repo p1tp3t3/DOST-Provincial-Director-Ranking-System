@@ -25,6 +25,7 @@ class DirectorResource extends JsonResource
             'id'                => $this->id,
             'employee_id'       => $this->dost_employee_id,
             'name'              => trim($firstName . ' ' . $middleName . $lastName),
+            'profile_picture'   => $profile?->profile_picture,
             'province'          => $this->province?->name,
             'length_of_service' => $profile->length_of_service,
         ];

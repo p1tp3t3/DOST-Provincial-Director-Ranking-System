@@ -7,6 +7,7 @@ use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
 use App\Http\Controllers\Modules\Report\SuperAdminReportController;
+use App\Http\Controllers\Modules\Report\ProvincialAdminReportController;
 use App\Http\Controllers\Modules\Report\SubAdminReportController;
 use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\Report\ProvincialSubAdminReportController;
@@ -26,25 +27,22 @@ Route::middleware('guest')->group(function () {
     Route::post('/console/authenticate', [SuperAdminLoginController::class, 'store'])->name('console.authenticate');
 });
 
-Route::get('/', function () {
-    return Inertia::render('Landing/Welcome', [
-        'canLogin'       => Route::has('login'),
-        'canRegister'    => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion'     => PHP_VERSION,
-    ]);
-});
 
 Route::middleware('auth')->group(function () {
 
     // ── All authenticated users ────────────────────────────────
     Route::get('/dashboard',       [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/profile/{id}', [ProfileController::class, 'index']);
-    Route::get('/profile-picture', [ProfileController::class, 'get_profile_picture'])->name('profile.picture');
-    Route::get('/profile',      [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile',    [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile',   [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::middleware('profile-view')->group(function () {
+
+        Route::get('/profile/{id}', [ProfileController::class, 'index']);
+        Route::get('/profile-picture', [ProfileController::class, 'get_profile_picture'])->name('profile.picture');
+        Route::get('/profile',         [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile',       [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/picture',[ProfileController::class, 'update_picture'])->name('profile.picture.update');
+        Route::delete('/profile',      [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    });
 
     Route::get('/province-directories',       [ProvinceController::class, 'index']);
     Route::post('/province-directories/add',  [ProvinceController::class, 'store']);
@@ -104,6 +102,12 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware('role:super_admin,sub_admin')->group(function () {
         Route::get('/performance-map', [DashboardController::class, 'map_index'])->name('performance-map');
+    });
+
+    // ── Provincial Admin only ─────────────────────────────────
+    Route::middleware('role:provincial_admin')->group(function () {
+        Route::get('/provincial-admin-report',        [ProvincialAdminReportController::class, 'index']);
+        Route::get('/provincial-admin-report/export', [ProvincialAdminReportController::class, 'export']);
     });
 
     // ── Provincial Sub Admin + Provincial Admin ────────────────

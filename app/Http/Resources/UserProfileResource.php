@@ -19,10 +19,12 @@ class UserProfileResource extends JsonResource
         // Users without a profile (super_admin, sub_admin, provincial_admin)
         if (!$profile) {
             return [
+                'id'                  => $this->id,
                 'id_number'           => $this->dost_employee_id,
                 'role'                => $this->role,
                 'province'            => $this->province?->name,
                 'name'                => $this->username ?? $this->email,
+                'profile_picture'     => null,
                 'length_of_service'   => null,
                 'position'            => null,
                 'status'              => null,
@@ -51,10 +53,12 @@ class UserProfileResource extends JsonResource
         );
 
         return [
+            'id'                  => $this->id,
             'id_number'           => $this->dost_employee_id,
             'role'                => $this->role,
             'province'            => $this->province?->name,
             'name'                => implode(' ', $nameParts),
+            'profile_picture'     => $profile->profile_picture,
             'length_of_service'   => $profile->length_of_service,
             'position'            => $profile->employeeProfile?->position,
             'status'              => $profile->employeeProfile?->status,

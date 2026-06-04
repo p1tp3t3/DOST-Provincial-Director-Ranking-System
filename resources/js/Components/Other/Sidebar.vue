@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, watchEffect } from 'vue';import { usePage, router } from '@inertiajs/vue3';
+import { ref, computed, watchEffect } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 
 import {
     RiDashboard2Fill,
@@ -30,6 +31,18 @@ const openGroups = ref([]);
 const page = usePage();
 const authUser  = computed(() => page.props.auth.user);
 const currentUrl = computed(() => page.url);
+
+const getRoleLabel = () => {
+    const label = {
+        'super_admin':        'System Administrator',
+        'sub_admin':          'Sub Administrator',
+        'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
+        'provincial_sub_admin':   `Provincial Sub Administrator of ${authUser.value?.province?.name}`,
+        'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
+        'employee':           `Employee at ${authUser.value?.province?.name}`,
+    };
+    return label[authUser.value?.role] || '';
+};
 
 const tabs = computed(() => {
     if (!authUser.value) return [];
@@ -105,9 +118,8 @@ const tabs = computed(() => {
         case 'employee':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
+                { name: 'My Profile',href: `/profile/${authUser.value?.id}`,   icon: RiUser2Fill      },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
-                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
         default:
             return [];
@@ -141,6 +153,8 @@ watchEffect(() => {
 });
 
 const navigateTo = (href) => router.visit(href);
+const navigateProfile = () => router.visit(`/profile/${authUser.value.id}`);
+const handleLogout = () => router.post('/logout');
 
 const onSubNavEnter = (el) => {
     el.style.height = '0';
@@ -163,6 +177,17 @@ const onSubNavLeave = (el) => {
     el.style.opacity = '0';
 };
 
+const avatarSrc = computed(() => {
+    const pic = authUser.value?.profile?.profile_picture;
+    return pic ? `/profile-picture?filename=${encodeURIComponent(pic)}` : null;
+});
+
+const sidebarInitials = computed(() => {
+    const u = authUser.value;
+    const first = u?.profile?.first_name?.[0] ?? '';
+    const last  = u?.profile?.last_name?.[0]  ?? '';
+    return (first + last).toUpperCase() || u?.username?.[0]?.toUpperCase() || '?';
+});
 </script>
 
 <template>
@@ -186,6 +211,19 @@ const onSubNavLeave = (el) => {
             </div>
             <div v-else class="logo-box">
                 <img src="/assets/logo.png" alt="PDRIS Logo" class="w-8 h-8">
+            </div>
+        </div>
+
+        <!-- User Section -->
+        <div
+            v-if="isOpen"
+            class="flex items-center flex-shrink-0 border-b border-white/10 gap-3"
+            style="padding: 9px 20px;"
+        >
+            <div class="flex-1">
+                <div class="leading-tight">
+                    <div class="text-xs text-blue-300">{{ getRoleLabel() }}</div>
+                </div>
             </div>
         </div>
 
@@ -275,6 +313,21 @@ const onSubNavLeave = (el) => {
     padding: 5px;
     display: grid;
     place-items: center;
+}
+
+.user-section {
+    transition: background 0.15s;
+}
+.user-section:hover {
+    background: rgba(255,255,255,0.07);
+}
+
+.role-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #93c5fd;
+    line-height: 1;
 }
 
 .nav-section-label {

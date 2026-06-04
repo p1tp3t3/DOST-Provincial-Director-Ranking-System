@@ -3,6 +3,7 @@
 use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\User\EmployeeMiddleware;
+use App\Http\Middleware\User\ProfileViewMiddleware;
 use App\Http\Middleware\User\ProvincialAdminMiddleware;
 use App\Http\Middleware\User\ProvincialSubAdminMiddleware;
 use App\Http\Middleware\User\ProvincialDirectorMiddleware;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'provincial-sub-admin' => ProvincialSubAdminMiddleware::class,
             'provincial-director'  => ProvincialDirectorMiddleware::class,
             'employee'             => EmployeeMiddleware::class,
+            'profile-view'         => ProfileViewMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

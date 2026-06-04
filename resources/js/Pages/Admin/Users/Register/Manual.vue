@@ -123,6 +123,49 @@
                                 </div>
                             </v-card>
 
+                            <!-- Assignment Details (both roles) -->
+                            <v-card class="elevation-1 border-0 rounded-md">
+                                <div class="pa-5 pb-3 d-flex align-center gap-3">
+                                    <v-avatar color="indigo-lighten-5" rounded="lg" size="36">
+                                        <v-icon color="indigo" size="18">mdi-map-marker-outline</v-icon>
+                                    </v-avatar>
+                                    <div>
+                                        <div class="text-subtitle-2 font-weight-bold">Assignment Details</div>
+                                        <div class="text-caption text-medium-emphasis">Province assignment and length of service</div>
+                                    </div>
+                                </div>
+                                <v-divider></v-divider>
+                                <div class="pa-5">
+                                    <v-row dense>
+                                        <v-col cols="12" sm="8">
+                                            <v-autocomplete
+                                                v-model="form.province"
+                                                :items="provinces"
+                                                item-title="name"
+                                                item-value="id"
+                                                label="Province"
+                                                variant="outlined"
+                                                density="compact"
+                                                hide-details="auto"
+                                                clearable
+                                                :rules="[r.required]"
+                                            />
+                                        </v-col>
+                                        <v-col cols="12" sm="4">
+                                            <v-text-field
+                                                v-model="form.length_of_service"
+                                                label="Length of Service (years)"
+                                                variant="outlined"
+                                                density="compact"
+                                                hide-details="auto"
+                                                min="0"
+                                                placeholder="e.g. 5"
+                                            />
+                                        </v-col>
+                                    </v-row>
+                                </div>
+                            </v-card>
+
                             <!-- Employee-only fields -->
                             <v-card v-if="form.role === 'employee'" class="elevation-1 border-0 rounded-md">
                                 <div class="pa-5 pb-3 d-flex align-center gap-3">
@@ -329,7 +372,11 @@
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 
-const formRef   = ref(null);
+const props = defineProps({
+    provinces: { type: Array, default: () => [] },
+});
+
+const formRef    = ref(null);
 const submitting = ref(false);
 const showPassword = ref(false);
 const showConfirm  = ref(false);
@@ -337,6 +384,8 @@ const showConfirm  = ref(false);
 const defaultForm = () => ({
     registration_type:    'manual',
     role:                 'employee',
+    province:             null,
+    length_of_service:    '',
     prefix:               '',
     first_name:           '',
     middle_name:          '',
@@ -381,11 +430,17 @@ const fullName = computed(() => {
     return [prefix, first_name, middle_name, last_name, suffix].filter(Boolean).join(' ').trim();
 });
 
+const selectedProvinceName = computed(() =>
+    props.provinces.find(p => p.id === form.value.province)?.name ?? null
+);
+
 const previewItems = computed(() => {
     const items = [
-        { label: 'Role',        value: form.value.role === 'employee' ? 'Employee' : 'Provincial Director' },
-        { label: 'DOST ID',     value: form.value.dost_employee_id },
-        { label: 'Email',       value: form.value.email },
+        { label: 'Role',             value: form.value.role === 'employee' ? 'Employee' : 'Provincial Director' },
+        { label: 'Province',         value: selectedProvinceName.value },
+        { label: 'Length of Service',value: form.value.length_of_service ? `${form.value.length_of_service} yr(s)` : null },
+        { label: 'DOST ID',          value: form.value.dost_employee_id },
+        { label: 'Email',            value: form.value.email },
     ];
     if (form.value.role === 'employee') {
         items.push({ label: 'Position', value: form.value.position });
@@ -397,6 +452,7 @@ const previewItems = computed(() => {
 const checklist = computed(() => {
     const base = [
         { label: 'Role selected',      done: !!form.value.role },
+        { label: 'Province selected',  done: !!form.value.province },
         { label: 'First name filled',  done: !!form.value.first_name },
         { label: 'Last name filled',   done: !!form.value.last_name },
         { label: 'DOST ID filled',     done: !!form.value.dost_employee_id },

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\AccountMail;
 use App\Models\EmployeeProfile;
 use App\Models\Profile;
 use App\Models\User;
@@ -31,6 +32,7 @@ class GenerateEmployeeAccount implements ShouldQueue
             $username = $this->makeUsername($this->row);
             $email    = $this->row['email'] ?? ($username . '@dost.gov.ph');
             $dostId   = $this->row['dost_employee_id'] ?? ('emp-' . strtoupper(Str::random(8)));
+            $password  = $this->makePassword();
 
             // Skip if email or DOST ID already exists
             if (User::where('email', $email)->orWhere('dost_employee_id', $dostId)->exists()) {
@@ -43,7 +45,7 @@ class GenerateEmployeeAccount implements ShouldQueue
                 'dost_employee_id' => $dostId,
                 'email'            => $email,
                 'username'         => $username,
-                'password'         => bcrypt($dostId),   // default password = DOST ID
+                'password'         => $password,   // default password = generated password
             ]);
 
             $profile = Profile::insertGetId([
@@ -64,17 +66,7 @@ class GenerateEmployeeAccount implements ShouldQueue
                 'work_specification' => json_encode($this->row['work_specification'] ?? ['data' => []]),
             ]);
 
-            Mail::raw(
-                "An account has been created for you on the Director Ranking Information System.\n\n" .
-                "ID: {$dostId}\n" .
-                "Username: {$user->username}\n" .
-                "Password: {$dostId}\n\n" .
-                "Please log in and change your password as soon as possible.",
-                function ($message) use ($email) {
-                    $message->to($email)
-                            ->subject('Your New Account on Director Ranking Information System');
-                }
-            );
+            Mail::to($email)->queue(new AccountMail($user, $password));
         });
     }
 
@@ -87,10 +79,13 @@ class GenerateEmployeeAccount implements ShouldQueue
         $base = preg_replace('/[^a-z0-9]/', '', $base);
 
         $username = $base;
-        $suffix   = 1;
-        while (User::where('username', $username)->exists()) {
-            $username = $base . $suffix++;
+        if (User::where('username', $username)->exists()) {
+            $username = $base . strtolower(Str::random(3));
         }
         return $username;
+    }
+
+    private function makePassword() {
+        return Str::random(12);
     }
 }

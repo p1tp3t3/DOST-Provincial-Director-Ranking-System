@@ -10,7 +10,7 @@
         <v-btn v-bind="props" variant="text" class="text-none px-2 h-auto py-1">
             <div class="d-flex align-center">
                 <v-avatar color="secondary" size="small">
-                    <v-img :src="defAvatar" alt="User"></v-img>
+                    <v-img :src="avatarSrc" alt="User"></v-img>
                 </v-avatar>
                 <v-icon size="small" class="ml-1 hidden-sm-and-down">mdi-chevron-down</v-icon>
             </div>
@@ -18,15 +18,15 @@
       </template>
 
       <v-list>
-        <v-list-item :title="authUser?.username || 'User'" :subtitle="roleLabel">
+        <v-list-item :title="authUser?.username || 'User'" :subtitle="roleLabel" @click="goToProfile">
             <template #prepend>
                 <v-avatar color="secondary" size="small">
-                    <v-img :src="defAvatar" alt="User"></v-img>
+                    <v-img :src="avatarSrc" alt="User"></v-img>
                 </v-avatar>
             </template>
         </v-list-item>
         <v-divider class="my-2"></v-divider>
-        <v-list-item prepend-icon="mdi-account" title="My Profile" value="profile" @click="router.visit('/profile')"></v-list-item>
+        <v-list-item prepend-icon="mdi-account" title="My Profile" value="profile" @click="goToProfile"></v-list-item>
         <v-list-item prepend-icon="mdi-cog" title="Settings" value="settings"></v-list-item>
         <v-divider class="my-2"></v-divider>
         <v-list-item prepend-icon="mdi-logout" base-color="error" title="Logout" value="logout" @click="router.post('/logout')"></v-list-item>
@@ -58,11 +58,19 @@ const roleLabel = computed(() => {
     const prov = authUser.value?.province?.name;
     if (!base) return '';
     if (authUser.value?.role === 'provincial_director' && prov) return `${base} of ${prov}`;
-    if (prov && ['provincial_admin','provincial_sub_admin'].includes(authUser.value?.role)) return `${base} (${prov})`;
+    if (prov && ['provincial_admin', 'provincial_sub_admin', 'employee'].includes(authUser.value?.role)) return `${base} (${prov})`;
     return base;
 });
 
 const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
+const avatarSrc = computed(() => {
+    const file = authUser.value?.profile?.profile_picture;
+    return file ? `/profile-picture?filename=${file}` : defAvatar;
+});
+
+const goToProfile = () => {
+    if (authUser.value?.id) router.visit(`/profile/${authUser.value.id}`);
+};
 
 const toggleDrawer = () => {
   emit('toggle-drawer');

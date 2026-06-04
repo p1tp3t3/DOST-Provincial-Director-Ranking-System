@@ -8,6 +8,7 @@ use App\Http\Requests\User\AdminRegistrationRequest;
 use App\Http\Requests\User\UserRegistrationRequest;
 use App\Http\Resources\UserResource;
 use App\Jobs\GenerateEmployeeAccount;
+use App\Models\Province;
 use App\Jobs\VerifyCSVJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -49,7 +50,9 @@ class UserController extends Controller
     public function manual_registration_index()
     {
         $role = self::get_role();
-        return inertia("$role/Users/Register/Manual");
+        return inertia("$role/Users/Register/Manual", [
+            'provinces' => Province::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     public function auto_registration_index()
@@ -76,12 +79,13 @@ class UserController extends Controller
             ]);
 
             $profileId = Profile::insertGetId([
-                'user_id'     => $user->id,
-                'first_name'  => $data['first_name'],
-                'middle_name' => $data['middle_name'],
-                'last_name'   => $data['last_name'],
-                'prefix'      => $data['prefix'],
-                'suffix'      => $data['suffix'],
+                'user_id'            => $user->id,
+                'first_name'         => $data['first_name'],
+                'middle_name'        => $data['middle_name'],
+                'last_name'          => $data['last_name'],
+                'prefix'             => $data['prefix'],
+                'suffix'             => $data['suffix'],
+                'length_of_service'  => $data['length_of_service'] ?? '',
             ]);
 
             if ($data['role'] === 'employee') {
@@ -333,8 +337,13 @@ class UserController extends Controller
                             ->orWhere('dost_employee_id', 'like', "%{$search}%");
                         });
                     })
-                    ->when($role, fn($q, $role) => $q->where('role', $role))
-                    ->latest('created_at')
+                    ->when($role, fn($q, $role) => $q->where('role', $role));
+                    
+        $data = auth()->user()->province_id
+                    ? $data->where('province_id', auth()->user()->province_id)
+                    : $data;
+
+        $data = $data->latest('created_at')
                     ->paginate(20)
                     ->withQueryString();
 
