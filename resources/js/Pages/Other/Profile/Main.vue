@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="w-full">
 
         <!-- Back -->
@@ -11,34 +11,15 @@
         <!-- ── Hero Card ───────────────────────────────────────── -->
         <v-card class="mb-4 rounded-xl overflow-hidden" elevation="0" border>
 
-            <!-- Cover Photo (shown only when set) -->
-            <div v-if="profile.cover_picture" class="cover-banner">
-                <v-img
-                    :src="`/profile-picture?filename=${encodeURIComponent(profile.cover_picture)}`"
-                    cover
-                    height="160"
-                />
-            </div>
-
             <!-- Avatar + identity row -->
-            <div
-                class="d-flex align-center justify-space-between px-6 py-5 flex-wrap gap-3"
-                :style="profile.cover_picture ? 'margin-top:-48px;' : ''"
-            >
+            <div class="d-flex align-center justify-space-between px-6 py-5 flex-wrap gap-3">
                 <div class="d-flex align-center gap-4">
                     <v-avatar
                         size="88"
-                        :color="avatarColor"
-                        class="flex-shrink-0"
-                        :class="profile.cover_picture ? 'elevation-4' : 'elevation-2'"
-                        :style="profile.cover_picture ? 'border:3px solid white;' : ''"
+                        :color="profile?.profile_picture ? undefined : avatarColor"
+                        class="flex-shrink-0 elevation-2"
                     >
-                        <v-img
-                            v-if="profile.profile_picture"
-                            :src="`/profile-picture?filename=${encodeURIComponent(profile.profile_picture)}`"
-                            cover
-                        />
-                        <span v-else class="text-h5 font-weight-bold text-white">{{ initials }}</span>
+                        <v-img :src="`/profile-picture?filename=${profile?.profile_picture}`" alt="Admin"></v-img>
                     </v-avatar>
                     <div>
                         <div class="text-h6 font-weight-bold">{{ profile.name || '—' }}</div>
@@ -86,7 +67,7 @@
         <v-row>
 
             <!-- Personal Information -->
-            <v-col cols="12" md="6">
+            <v-col cols="12" :md="['employee', 'provincial_director'].includes(profile.role) ? 6 : 12">
                 <v-card border elevation="0" rounded="xl" class="h-100">
                     <div class="px-5 pt-4 pb-3 d-flex align-center gap-2">
                         <v-avatar color="indigo-lighten-5" rounded="lg" size="32">
@@ -113,8 +94,8 @@
                 </v-card>
             </v-col>
 
-            <!-- Education Attainment -->
-            <v-col cols="12" md="6">
+            <!-- Education Attainment (employees + directors only) -->
+            <v-col v-if="['employee', 'provincial_director'].includes(profile.role)" cols="12" md="6">
                 <v-card border elevation="0" rounded="xl" class="h-100">
                     <div class="px-5 pt-4 pb-3 d-flex align-center gap-2">
                         <v-avatar color="purple-lighten-5" rounded="lg" size="32">
@@ -246,9 +227,6 @@ const eduColors = ['indigo', 'purple', 'deep-purple'];
 </script>
 
 <style scoped>
-.cover-banner {
-    line-height: 0;
-}
 
 .info-grid {
     display: grid;

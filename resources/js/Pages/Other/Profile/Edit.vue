@@ -207,13 +207,15 @@
                         </div>
                         <v-divider />
                         <div class="pa-5 d-flex flex-column align-center gap-4">
-                            <v-avatar size="96" :color="avatarColor" rounded="xl"
-                                style="border: 3px solid rgba(var(--v-theme-primary), 0.2);">
-                                <v-img v-if="previewSrc || props.profile_picture"
-                                    :src="previewSrc || `/profile-picture?filename=${props.profile_picture}`"
-                                    cover />
+                            <div class="avatar-preview-wrap" :style="{ background: (!previewSrc && !props.profile_picture) ? `rgb(var(--v-theme-${avatarColor}))` : '#000' }">
+                                <img
+                                    v-if="previewSrc || props.profile_picture"
+                                    :src="previewSrc || `/profile-picture?filename=${encodeURIComponent(props.profile_picture)}`"
+                                    alt="Profile photo"
+                                    class="avatar-preview-img"
+                                />
                                 <span v-else class="text-h4 font-weight-bold text-white">{{ initials }}</span>
-                            </v-avatar>
+                            </div>
                             <div class="text-center">
                                 <v-btn size="small" variant="tonal" color="primary"
                                     prepend-icon="mdi-camera-outline" @click="triggerFileInput">
@@ -226,35 +228,6 @@
                             <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp"
                                 class="d-none" @change="onFileSelected" />
                         </div>
-                    </v-card>
-
-                    <!-- Cover Photo -->
-                    <v-card class="elevation-1 border-0 rounded-md overflow-hidden">
-                        <div class="px-5 pt-4 pb-3">
-                            <div class="text-subtitle-2 font-weight-bold">Cover Photo</div>
-                            <div class="text-caption text-medium-emphasis">Background banner on your profile</div>
-                        </div>
-                        <v-divider />
-                        <div class="cover-preview-wrap">
-                            <v-img
-                                v-if="coverPreviewSrc || props.cover_picture"
-                                :src="coverPreviewSrc || `/profile-picture?filename=${props.cover_picture}`"
-                                cover
-                                height="90"
-                            />
-                            <div v-else class="cover-placeholder d-flex align-center justify-center" style="height:90px;">
-                                <v-icon size="28" color="grey-lighten-1">mdi-image-outline</v-icon>
-                            </div>
-                        </div>
-                        <div class="pa-3 d-flex align-center justify-space-between">
-                            <div class="text-caption text-medium-emphasis">JPG, PNG or WebP · Max 5 MB</div>
-                            <v-btn size="x-small" variant="tonal" color="primary"
-                                prepend-icon="mdi-image-edit-outline" @click="triggerCoverInput">
-                                Change
-                            </v-btn>
-                        </div>
-                        <input ref="coverInput" type="file" accept="image/jpeg,image/png,image/webp"
-                            class="d-none" @change="onCoverFileSelected" />
                     </v-card>
 
                     <!-- Account Info (read-only) -->
@@ -278,61 +251,7 @@
             </v-col>
         </v-row>
 
-        <!-- ── Cover Cropper Dialog (3:1) ────────────────────────── -->
-        <v-dialog v-model="coverCropperOpen" max-width="680" persistent>
-            <v-card>
-                <div class="pa-4 pb-2 d-flex align-center justify-space-between">
-                    <div>
-                        <div class="text-subtitle-2 font-weight-bold">Crop Cover Photo</div>
-                        <div class="text-caption text-medium-emphasis">Recommended ratio 3:1 · This will appear as your profile banner</div>
-                    </div>
-                    <v-btn icon size="small" variant="text" color="medium-emphasis" @click="cancelCoverCrop">
-                        <v-icon>mdi-close</v-icon>
-                    </v-btn>
-                </div>
-                <v-divider />
-
-                <div style="height:300px;">
-                    <cropper-canvas v-if="coverCropSrc" style="height:100%; width:100%;" background>
-                        <cropper-image :src="coverCropSrc" alt="Cover preview" rotatable scalable skewable translatable />
-                        <cropper-shade hidden />
-                        <cropper-handle action="select" plain />
-                        <cropper-selection
-                            ref="coverSelectionRef"
-                            aspect-ratio="3"
-                            initial-coverage="0.9"
-                            movable
-                            resizable
-                            zoomable
-                        >
-                            <cropper-grid role="grid" bordered covered />
-                            <cropper-crosshair centered />
-                            <cropper-handle action="move" theme-color="rgba(255,255,255,0.3)" />
-                            <cropper-handle action="e-resize" />
-                            <cropper-handle action="w-resize" />
-                            <cropper-handle action="ne-resize" />
-                            <cropper-handle action="nw-resize" />
-                            <cropper-handle action="se-resize" />
-                            <cropper-handle action="sw-resize" />
-                        </cropper-selection>
-                    </cropper-canvas>
-                </div>
-
-                <v-divider />
-                <div class="pa-4 d-flex align-center justify-space-between">
-                    <div class="text-caption text-medium-emphasis">Drag to reposition · Handles to resize</div>
-                    <div class="d-flex gap-2">
-                        <v-btn variant="text" color="medium-emphasis" size="small" @click="cancelCoverCrop">Cancel</v-btn>
-                        <v-btn color="primary" variant="flat" size="small" :loading="coverUploading" @click="applyCoverCrop">
-                            <v-icon start size="16">mdi-crop</v-icon>
-                            Apply & Upload
-                        </v-btn>
-                    </div>
-                </div>
-            </v-card>
-        </v-dialog>
-
-        <!-- ── Profile Cropper Dialog (1:1) ───────────────────── -->
+        <!-- ── Cropper Dialog ───────────────────────────────────── -->
         <v-dialog v-model="cropperOpen" max-width="520" persistent>
             <v-card>
                 <div class="pa-4 pb-2 d-flex align-center justify-space-between">
@@ -343,30 +262,38 @@
                 </div>
                 <v-divider />
 
-                <div style="height:360px; position:relative;">
-                    <cropper-canvas v-if="cropSrc" style="height:100%; width:100%;" background>
-                        <cropper-image :src="cropSrc" alt="Crop preview" rotatable scalable skewable translatable />
-                        <cropper-shade hidden />
+                <div class="cropper-wrap">
+                    <cropper-canvas
+                        ref="cropCanvasRef"
+                        v-show="cropSrc"
+                        style="display:block; width:100%; height:100%;"
+                    >
+                        <cropper-image
+                            ref="cropImageRef"
+                            :src="cropSrc"
+                            alt="Crop preview"
+                            rotatable scalable skewable translatable
+                        />
+                        <cropper-shade />
                         <cropper-handle action="select" plain />
                         <cropper-selection
                             ref="cropSelectionRef"
                             aspect-ratio="1"
                             initial-coverage="0.8"
-                            movable
-                            resizable
-                            zoomable
+                            movable resizable zoomable keyboard
+                            outlined
                         >
-                            <cropper-grid role="grid" bordered covered />
+                            <cropper-grid role="grid" bordered />
                             <cropper-crosshair centered />
-                            <cropper-handle action="move" theme-color="rgba(255,255,255,0.3)" />
-                            <cropper-handle action="n-resize" />
-                            <cropper-handle action="e-resize" />
-                            <cropper-handle action="s-resize" />
-                            <cropper-handle action="w-resize" />
-                            <cropper-handle action="ne-resize" />
-                            <cropper-handle action="nw-resize" />
-                            <cropper-handle action="se-resize" />
-                            <cropper-handle action="sw-resize" />
+                            <cropper-handle action="move"      plain />
+                            <cropper-handle action="n-resize"  theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="e-resize"  theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="s-resize"  theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="w-resize"  theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="ne-resize" theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="nw-resize" theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="se-resize" theme-color="rgba(255,255,255,0.9)" />
+                            <cropper-handle action="sw-resize" theme-color="rgba(255,255,255,0.9)" />
                         </cropper-selection>
                     </cropper-canvas>
                 </div>
@@ -389,7 +316,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { Head, usePage, router } from '@inertiajs/vue3';
 import 'cropperjs';
 
@@ -399,7 +326,6 @@ const props = defineProps({
     email:              { type: String, default: '' },
     province:           { type: String, default: null },
     profile_picture:    { type: String, default: null },
-    cover_picture:      { type: String, default: null },
     prefix:             { type: String, default: '' },
     first_name:         { type: String, default: '' },
     middle_name:        { type: String, default: '' },
@@ -465,11 +391,81 @@ const submit = async () => {
 // ── Cropper state ─────────────────────────────────────────────
 const cropperOpen      = ref(false);
 const cropSrc          = ref('');
+const cropCanvasRef    = ref(null);
+const cropImageRef     = ref(null);
 const cropSelectionRef = ref(null);
 const previewSrc       = ref('');
 const uploading        = ref(false);
 
 const triggerFileInput = () => fileInput.value?.click();
+
+// ── Boundary constraint ───────────────────────────────────────
+let _constraining    = false;
+let _boundaryHandler = null;
+
+const attachBoundaryConstraint = (bounds) => {
+    const sel = cropSelectionRef.value;
+    if (!sel) return;
+
+    if (_boundaryHandler) sel.removeEventListener('change', _boundaryHandler);
+
+    _boundaryHandler = (e) => {
+        if (_constraining) return;
+        const { x, y, width, height } = e.detail;
+        const { x: bx, y: by, width: bw, height: bh } = bounds;
+
+        // Clamp within image bounds
+        const nx   = Math.max(bx, x);
+        const ny   = Math.max(by, y);
+        const nw   = Math.min(width,  bx + bw - nx);
+        const nh   = Math.min(height, by + bh - ny);
+        const side = Math.min(nw, nh);                 // keep 1:1 square
+        const fx   = Math.min(nx, bx + bw - side);
+        const fy   = Math.min(ny, by + bh - side);
+
+        if (fx !== x || fy !== y || side !== width || side !== height) {
+            e.preventDefault();
+            _constraining = true;
+            sel.$change(fx, fy, side, side);
+            _constraining = false;
+        }
+    };
+
+    sel.addEventListener('change', _boundaryHandler);
+};
+
+const detachBoundaryConstraint = () => {
+    const sel = cropSelectionRef.value;
+    if (sel && _boundaryHandler) {
+        sel.removeEventListener('change', _boundaryHandler);
+        _boundaryHandler = null;
+    }
+};
+
+const recenterCropper = async () => {
+    await nextTick();
+    await new Promise(r => setTimeout(r, 150));
+    const img    = cropImageRef.value;
+    const canvas = cropCanvasRef.value;
+    if (!img || !canvas) return;
+
+    // Show the full image inside the container
+    img.$center('contain');
+
+    // Wait for the layout to settle, then read the image's rendered bounds
+    await new Promise(r => setTimeout(r, 80));
+    const canvasRect = canvas.getBoundingClientRect();
+    const imgRect    = img.getBoundingClientRect();
+
+    const bounds = {
+        x:      imgRect.left   - canvasRect.left,
+        y:      imgRect.top    - canvasRect.top,
+        width:  imgRect.width,
+        height: imgRect.height,
+    };
+
+    attachBoundaryConstraint(bounds);
+};
 
 const onFileSelected = (e) => {
     const file = e.target.files?.[0];
@@ -478,13 +474,15 @@ const onFileSelected = (e) => {
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-        cropSrc.value    = ev.target.result;
+        cropSrc.value     = ev.target.result;
         cropperOpen.value = true;
+        recenterCropper();
     };
     reader.readAsDataURL(file);
 };
 
 const cancelCrop = () => {
+    detachBoundaryConstraint();
     cropperOpen.value = false;
     cropSrc.value     = '';
 };
@@ -501,6 +499,7 @@ const applyCrop = async () => {
 
             // Show locally immediately
             previewSrc.value = URL.createObjectURL(blob);
+            detachBoundaryConstraint();
             cropperOpen.value = false;
             cropSrc.value     = '';
 
@@ -513,57 +512,6 @@ const applyCrop = async () => {
         }, 'image/jpeg', 0.92);
     } catch {
         uploading.value = false;
-    }
-};
-
-// ── Cover photo cropper ───────────────────────────────────────
-const coverInput          = ref(null);
-const coverCropperOpen    = ref(false);
-const coverCropSrc        = ref('');
-const coverSelectionRef   = ref(null);
-const coverPreviewSrc     = ref('');
-const coverUploading      = ref(false);
-
-const triggerCoverInput = () => coverInput.value?.click();
-
-const onCoverFileSelected = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        coverCropSrc.value    = ev.target.result;
-        coverCropperOpen.value = true;
-    };
-    reader.readAsDataURL(file);
-};
-
-const cancelCoverCrop = () => {
-    coverCropperOpen.value = false;
-    coverCropSrc.value     = '';
-};
-
-const applyCoverCrop = async () => {
-    const selEl = coverSelectionRef.value;
-    if (!selEl) return;
-
-    coverUploading.value = true;
-    try {
-        const canvas = await selEl.$toCanvas({ width: 1200, height: 400 });
-        canvas.toBlob((blob) => {
-            if (!blob) { coverUploading.value = false; return; }
-            coverPreviewSrc.value  = URL.createObjectURL(blob);
-            coverCropperOpen.value = false;
-            coverCropSrc.value     = '';
-
-            const fd = new FormData();
-            fd.append('cover', blob, 'cover.jpg');
-            router.post(route('profile.cover.update'), fd, {
-                onFinish: () => { coverUploading.value = false; },
-            });
-        }, 'image/jpeg', 0.92);
-    } catch {
-        coverUploading.value = false;
     }
 };
 
@@ -613,3 +561,46 @@ const educationLevels  = ['Bachelor\'s Degree', 'Master\'s Degree', 'Doctorate']
 const eduIcons         = ['mdi-school-outline', 'mdi-certificate-outline', 'mdi-star-circle-outline'];
 const rules            = { required: (v) => !!v || 'This field is required.' };
 </script>
+
+<style scoped>
+.avatar-preview-wrap {
+    width: 96px;
+    height: 96px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid rgba(var(--v-theme-primary), 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.avatar-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cropper-wrap {
+    width: 100%;
+    height: 360px;
+    overflow: hidden;
+    background: #111;
+}
+</style>
+
+<style>
+/* Override CropperJS v2 web-component theme — these inherit through shadow DOM */
+cropper-selection {
+    --theme-color: rgba(255, 255, 255, 0.9);
+}
+cropper-handle {
+    --theme-color: rgba(255, 255, 255, 0.9);
+}
+cropper-grid {
+    --border-color: rgba(255, 255, 255, 0.4);
+}
+cropper-crosshair {
+    --color: rgba(255, 255, 255, 0.6);
+}
+</style>

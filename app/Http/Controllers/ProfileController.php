@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\UserProfileResource;
+use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -36,7 +38,6 @@ class ProfileController extends Controller
             'email'             => $user->email,
             'province'          => $user->province?->name,
             'profile_picture'   => $profile?->profile_picture,
-            'cover_picture'     => $profile?->cover_picture,
             'prefix'            => $profile?->prefix             ?? '',
             'first_name'        => $profile?->first_name         ?? '',
             'middle_name'       => $profile?->middle_name        ?? '',
@@ -52,11 +53,8 @@ class ProfileController extends Controller
     // ── Save profile fields ───────────────────────────────────────
     public function update(Request $request)
     {
-        $user = Auth::user()->load(['profile.employeeProfile']);
-
-        if (!$user->profile) {
-            return back()->withErrors(['profile' => 'No profile found for this account.']);
-        }
+        $user    = Auth::user()->load(['profile.employeeProfile']);
+        $profile = $this->getOrCreateProfile($user);
 
         $adminRoles      = ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_sub_admin'];
         $restrictedRoles = ['employee', 'provincial_director'];
@@ -68,7 +66,7 @@ class ProfileController extends Controller
                 'education.*' => 'nullable|string|max:300',
             ]);
 
-            $user->profile->update([
+            $profile->update([
                 'education_attainment' => ['data' => array_values($data['education'] ?? [])],
             ]);
 
@@ -83,13 +81,13 @@ class ProfileController extends Controller
                 'length_of_service' => 'nullable|string|max:20',
             ]);
 
-            $user->profile->update([
+            $profile->update([
                 'prefix'            => $data['prefix']            ?? null,
                 'first_name'        => $data['first_name'],
-                'middle_name'       => $data['middle_name']       ?? null,
+                'middle_name'       => $data['middle_name']       ?? '',
                 'last_name'         => $data['last_name'],
                 'suffix'            => $data['suffix']            ?? null,
-                'length_of_service' => $data['length_of_service'] ?? null,
+                'length_of_service' => $data['length_of_service'] ?? '',
             ]);
         }
 
@@ -103,52 +101,43 @@ class ProfileController extends Controller
             'picture' => 'required|image|mimes:jpeg,png,jpg,webp|max:3072',
         ]);
 
-        $user = Auth::user()->load('profile');
-
-        if (!$user->profile) {
-            return back()->withErrors(['picture' => 'No profile found for this account.']);
-        }
+        $user    = Auth::user()->load('profile');
+        $profile = $this->getOrCreateProfile($user);
 
         // Delete previous file if it exists
-        $old = $user->profile->profile_picture;
-        if ($old) {
-            $oldPath = storage_path('app/public/profile-pictures/' . $old);
-            if (file_exists($oldPath)) @unlink($oldPath);
+        $old = $profile->profile_picture;
+        if ($old && Storage::disk('local')->exists('profile-pictures/' . $old)) {
+            Storage::disk('local')->delete('profile-pictures/' . $old);
         }
 
         $filename = 'profile-' . now()->format('Y-m-d-His') . '-' . $user->id . '.jpg';
-        $request->file('picture')->storeAs('public/profile-pictures', $filename);
+        Storage::disk('local')->putFileAs('profile-pictures', $request->file('picture'), $filename);
 
-        $user->profile->update(['profile_picture' => $filename]);
+        $profile->update(['profile_picture' => $filename]);
 
         return back()->with('picture_updated', true);
     }
 
-    // ── Upload cropped cover picture ──────────────────────────────
-    public function update_cover_picture(Request $request)
+    // ── Get or create profile row ─────────────────────────────────
+    private function getOrCreateProfile(User $user): Profile
     {
-        $request->validate([
-            'cover' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+        if ($user->profile) {
+            return $user->profile;
+        }
+
+        $profile = Profile::create([
+            'user_id'              => $user->id,
+            'first_name'           => '',
+            'middle_name'          => '',
+            'last_name'            => '',
+            'length_of_service'    => '',
+            'education_attainment' => ['data' => []],
         ]);
 
-        $user = Auth::user()->load('profile');
+        // Keep the relation in sync so subsequent $user->profile calls work
+        $user->setRelation('profile', $profile);
 
-        if (!$user->profile) {
-            return back()->withErrors(['cover' => 'No profile found for this account.']);
-        }
-
-        $old = $user->profile->cover_picture;
-        if ($old) {
-            $oldPath = storage_path('app/public/profile-pictures/' . $old);
-            if (file_exists($oldPath)) @unlink($oldPath);
-        }
-
-        $filename = 'cover-' . now()->format('Y-m-d-His') . '-' . $user->id . '.jpg';
-        $request->file('cover')->storeAs('public/profile-pictures', $filename);
-
-        $user->profile->update(['cover_picture' => $filename]);
-
-        return back()->with('cover_updated', true);
+        return $profile;
     }
 
     // ── Serve profile picture file ────────────────────────────────
@@ -159,9 +148,11 @@ class ProfileController extends Controller
         ]);
 
         $filename = basename($request->query('filename'));
-        $path     = storage_path('app/public/profile-pictures/' . $filename);
+        $path     = Storage::disk('local')->path('profile-pictures/' . $filename);
 
-        if (!file_exists($path)) abort(404);
+        if (!file_exists($path)) {
+            $path = public_path('assets/default-profile.avif');
+        };
 
         return response()->file($path);
     }

@@ -36,8 +36,8 @@ const getRoleLabel = () => {
     const label = {
         'super_admin':        'System Administrator',
         'sub_admin':          'Sub Administrator',
-        'provincial_admin':   `Provincial Administrator (${authUser.value?.province?.name})`,
-        'provincial_sub_admin':   `Provincial Sub Administrator (${authUser.value?.province?.name})`,
+        'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
+        'provincial_sub_admin':   `Provincial Sub Administrator of ${authUser.value?.province?.name}`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
         'employee':           `Employee at ${authUser.value?.province?.name}`,
     };
@@ -118,7 +118,7 @@ const tabs = computed(() => {
         case 'employee':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
+                { name: 'My Profile',href: `/profile/${authUser.value?.id}`,   icon: RiUser2Fill      },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
             ];
         default:
@@ -215,28 +215,19 @@ const sidebarInitials = computed(() => {
         </div>
 
         <!-- User Section -->
-        <v-tooltip :disabled="isOpen" location="right" :text="getRoleLabel()">
-            <template #activator="{ props: tp }">
-                <div
-                    v-bind="tp"
-                    class="user-section flex items-center flex-shrink-0 border-b border-white/10"
-                    :class="isOpen ? 'px-3 gap-3' : 'justify-center'"
-                    style="height:56px; cursor:pointer;"
-                    @click="navigateProfile"
-                >
-                    <v-avatar size="34" class="flex-shrink-0 ring-2 ring-white/20" color="indigo-darken-3">
-                        <v-img v-if="avatarSrc" :src="avatarSrc" cover />
-                        <span v-else class="font-weight-bold text-white" style="font-size:11px;">{{ sidebarInitials }}</span>
-                    </v-avatar>
-                    <div v-if="isOpen" class="overflow-hidden min-w-0 flex-1">
-                        <div class="leading-tight overflow-hidden">
-                            <div class="font-bold text-xs whitespace-nowrap">{{ authUser?.username || 'User' }}</div>
-                            <div class="text-xs text-blue-300 whitespace-nowrap">{{ getRoleLabel() }}</div>
-                        </div>
-                    </div>
+        <div
+            v-bind="tp"
+            class="flex items-center flex-shrink-0 border-b border-white/10"
+            :class="isOpen ? 'gap-3' : 'justify-center'"
+            v-if="isOpen"
+            style="padding: 9px 20px;"
+        >
+            <div v-if="isOpen" class="flex-1">
+                <div class="leading-tight">
+                    <div class="text-xs text-blue-300">{{ getRoleLabel() }}</div>
                 </div>
-            </template>
-        </v-tooltip>
+            </div>
+        </div>
 
         <!-- Navigation -->
         <nav class="flex-1 overflow-y-auto px-2 py-3">
@@ -305,22 +296,6 @@ const sidebarInitials = computed(() => {
 
             </template>
         </nav>
-
-        <!-- Logout -->
-        <div class="px-2 py-3 border-t border-white/10 flex-shrink-0">
-            <v-tooltip :disabled="isOpen" location="right" text="Logout">
-                <template #activator="{ props: tp }">
-                    <button
-                        v-bind="tp"
-                        :class="['nav-item nav-item--logout', !isOpen ? 'nav-item--collapsed' : '']"
-                        @click="handleLogout"
-                    >
-                        <RiLogoutBoxRLine class="nav-icon" />
-                        <span v-if="isOpen" class="nav-label">Logout</span>
-                    </button>
-                </template>
-            </v-tooltip>
-        </div>
 
     </aside>
 </template>

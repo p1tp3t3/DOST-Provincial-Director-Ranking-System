@@ -40,13 +40,16 @@ Route::middleware('auth')->group(function () {
     // ── All authenticated users ────────────────────────────────
     Route::get('/dashboard',       [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/profile/{id}', [ProfileController::class, 'index']);
-    Route::get('/profile-picture', [ProfileController::class, 'get_profile_picture'])->name('profile.picture');
-    Route::get('/profile',         [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile',       [ProfileController::class, 'update'])->name('profile.update');
-    Route::post('/profile/picture',[ProfileController::class, 'update_picture'])->name('profile.picture.update');
-    Route::post('/profile/cover',  [ProfileController::class, 'update_cover_picture'])->name('profile.cover.update');
-    Route::delete('/profile',      [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::middleware('profile-view')->group(function () {
+
+        Route::get('/profile/{id}', [ProfileController::class, 'index']);
+        Route::get('/profile-picture', [ProfileController::class, 'get_profile_picture'])->name('profile.picture');
+        Route::get('/profile',         [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile',       [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/picture',[ProfileController::class, 'update_picture'])->name('profile.picture.update');
+        Route::delete('/profile',      [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    });
 
     Route::get('/province-directories',       [ProvinceController::class, 'index']);
     Route::post('/province-directories/add',  [ProvinceController::class, 'store']);

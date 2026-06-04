@@ -337,8 +337,13 @@ class UserController extends Controller
                             ->orWhere('dost_employee_id', 'like', "%{$search}%");
                         });
                     })
-                    ->when($role, fn($q, $role) => $q->where('role', $role))
-                    ->latest('created_at')
+                    ->when($role, fn($q, $role) => $q->where('role', $role));
+                    
+        $data = auth()->user()->province_id
+                    ? $data->where('province_id', auth()->user()->province_id)
+                    : $data;
+
+        $data = $data->latest('created_at')
                     ->paginate(20)
                     ->withQueryString();
 
