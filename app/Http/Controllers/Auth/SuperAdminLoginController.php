@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class SuperAdminLoginController extends Controller
 {
@@ -30,10 +31,13 @@ class SuperAdminLoginController extends Controller
             return redirect()->route('login');
         }
 
-        $request->validate([
+        // Silent reload on any failure (missing fields, bad creds, wrong role) — no
+        // flash message, no error bag. Matches the regular login behaviour.
+        $v = Validator::make($request->all(), [
             'identifier' => 'required|string|max:255',
             'password'   => 'required|string',
         ]);
+        if ($v->fails()) return back();
 
         $id = trim($request->identifier);
 
@@ -44,11 +48,10 @@ class SuperAdminLoginController extends Controller
             ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['identifier' => 'Invalid credentials.']);
+            return back();
         }
-
         if ($user->role !== 'super_admin') {
-            return back()->withErrors(['identifier' => 'Access restricted to super administrators only.']);
+            return back();
         }
 
         Auth::login($user, $request->boolean('remember'));

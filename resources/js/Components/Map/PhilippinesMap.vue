@@ -4,16 +4,20 @@
 
         <!-- Navigation panel -->
         <div class="map-nav" v-if="ready">
-            <template v-if="props.selectedCategory === 'cstc'">
+            <template v-if="props.selectedTier === 'cstc'">
                 <select v-model="selCstc" class="map-nav-sel" @change="onCstcChange">
                     <option value="">— Select CSTC —</option>
                     <option v-for="c in cstcList" :key="c" :value="c">{{ c }}</option>
                 </select>
             </template>
             <template v-else>
+                <select v-model="selIsland" class="map-nav-sel" @change="onIslandChange">
+                    <option value="">All Islands</option>
+                    <option v-for="i in ISLANDS" :key="i.value" :value="i.value">{{ i.label }}</option>
+                </select>
                 <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
                     <option value="">All Regions</option>
-                    <option v-for="r in regionList" :key="r.code" :value="r.code">{{ r.label }}</option>
+                    <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
                 </select>
                 <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
                     <option value="">— Select Province —</option>
@@ -65,30 +69,89 @@
                             <span class="panel-label">Director</span>
                             <span class="panel-value">{{ panel.director || '—' }}</span>
                         </div>
-                        <div class="panel-row">
-                            <span class="panel-label">Indicators tracked</span>
-                            <span class="panel-value">{{ panel.count }}</span>
+                        <div v-if="panel.rank" class="panel-row">
+                            <span class="panel-label">Tier rank</span>
+                            <span class="panel-value">#{{ panel.rank }} <small>in {{ (panel.category || '').toUpperCase() }}</small></span>
                         </div>
 
-                        <template v-if="panel.bestKpi || panel.worstKpi">
+                        <template v-if="panel.bestCat || panel.worstCat">
                             <div class="panel-divider"></div>
                             <div class="panel-kpi-highlights">
-                                <div v-if="panel.bestKpi" class="panel-kpi-row">
-                                    <div class="panel-kpi-badge" style="background:#dcfce7;color:#15803d;">▲ KPI {{ panel.bestKpi.id }}</div>
+                                <div v-if="panel.bestCat" class="panel-kpi-row">
+                                    <div class="panel-kpi-badge" style="background:#dcfce7;color:#15803d;">▲ {{ panel.bestCat.code }}</div>
                                     <div class="panel-kpi-info">
-                                        <div class="panel-kpi-title">{{ panel.bestKpi.title }}</div>
-                                        <div class="panel-kpi-score" style="color:#15803d;">{{ panel.bestKpi.score }}%</div>
+                                        <div class="panel-kpi-title">Strongest: {{ panel.bestCat.name }}</div>
+                                        <div class="panel-kpi-score" style="color:#15803d;">{{ panel.bestCat.score }}%</div>
                                     </div>
                                 </div>
-                                <div v-if="panel.worstKpi" class="panel-kpi-row">
-                                    <div class="panel-kpi-badge" style="background:#fee2e2;color:#b91c1c;">▼ KPI {{ panel.worstKpi.id }}</div>
+                                <div v-if="panel.worstCat" class="panel-kpi-row">
+                                    <div class="panel-kpi-badge" style="background:#fee2e2;color:#b91c1c;">▼ {{ panel.worstCat.code }}</div>
                                     <div class="panel-kpi-info">
-                                        <div class="panel-kpi-title">{{ panel.worstKpi.title }}</div>
-                                        <div class="panel-kpi-score" style="color:#b91c1c;">{{ panel.worstKpi.score }}%</div>
+                                        <div class="panel-kpi-title">Weakest: {{ panel.worstCat.name }}</div>
+                                        <div class="panel-kpi-score" style="color:#b91c1c;">{{ panel.worstCat.score }}%</div>
                                     </div>
                                 </div>
                             </div>
                         </template>
+                    </div>
+                </template>
+
+                <!-- Island panel -->
+                <template v-else-if="panel.type === 'island'">
+                    <div class="panel-header panel-header-island">
+                        <div class="panel-header-main">
+                            <div class="panel-title">{{ panel.label }}</div>
+                            <div class="panel-subtitle">{{ panel.provinceCount }} province{{ panel.provinceCount !== 1 ? 's' : '' }} · {{ panel.regionCount }} region{{ panel.regionCount !== 1 ? 's' : '' }}</div>
+                        </div>
+                        <button class="panel-close" @click="panel = null">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="panel-body">
+                        <div v-if="panel.provinceCount > 0">
+                            <div class="panel-score-block">
+                                <div class="panel-score-num" :style="{ color: panel.avgColor }">{{ panel.avgScore }}%</div>
+                                <div class="panel-score-bar-wrap">
+                                    <div class="panel-score-bar" :style="{ width: `${Math.min(panel.avgScore, 100)}%`, background: panel.avgColor }"></div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                    <div class="panel-tier-label" :style="{ color: panel.avgColor }">Island Average</div>
+                                    <div v-if="panel.rank" class="panel-meta-chips">
+                                        <span class="panel-meta-chip panel-rank-chip">#{{ panel.rank }} of {{ panel.totalIslands }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel-divider"></div>
+
+                            <div class="panel-tier-pills">
+                                <div class="panel-tier-pill" style="--tc:#15803d;">
+                                    <span class="pill-count">{{ panel.tierCounts.top }}</span>
+                                    <span class="pill-label">Top</span>
+                                </div>
+                                <div class="panel-tier-pill" style="--tc:#ca8a04;">
+                                    <span class="pill-count">{{ panel.tierCounts.avg }}</span>
+                                    <span class="pill-label">Average</span>
+                                </div>
+                                <div class="panel-tier-pill" style="--tc:#b91c1c;">
+                                    <span class="pill-count">{{ panel.tierCounts.low }}</span>
+                                    <span class="pill-label">Under</span>
+                                </div>
+                            </div>
+
+                            <div class="panel-divider"></div>
+
+                            <div v-if="panel.topProv" class="panel-row">
+                                <span class="panel-label">Best</span>
+                                <span class="panel-value" style="color:#15803d;">{{ panel.topProv.name }}<br><small>{{ panel.topProv.score }}%</small></span>
+                            </div>
+                            <div v-if="panel.lowProv" class="panel-row">
+                                <span class="panel-label">Lowest</span>
+                                <span class="panel-value" style="color:#b91c1c;">{{ panel.lowProv.name }}<br><small>{{ panel.lowProv.score }}%</small></span>
+                            </div>
+                        </div>
+                        <div v-else class="panel-nodata">No score data for this island in the selected year / KPI filter.</div>
                     </div>
                 </template>
 
@@ -107,11 +170,16 @@
                     <div class="panel-body">
                         <div v-if="panel.provinceCount > 0">
                             <div class="panel-score-block">
-                                <div class="panel-score-num" :style="{ color: tierColor(panel.avgScore) }">{{ panel.avgScore }}%</div>
+                                <div class="panel-score-num" :style="{ color: panel.avgColor }">{{ panel.avgScore }}%</div>
                                 <div class="panel-score-bar-wrap">
-                                    <div class="panel-score-bar" :style="{ width: `${Math.min(panel.avgScore, 100)}%`, background: tierColor(panel.avgScore) }"></div>
+                                    <div class="panel-score-bar" :style="{ width: `${Math.min(panel.avgScore, 100)}%`, background: panel.avgColor }"></div>
                                 </div>
-                                <div class="panel-tier-label" :style="{ color: tierColor(panel.avgScore) }">Regional Average</div>
+                                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                    <div class="panel-tier-label" :style="{ color: panel.avgColor }">Regional Average</div>
+                                    <div v-if="panel.rank" class="panel-meta-chips">
+                                        <span class="panel-meta-chip panel-rank-chip">#{{ panel.rank }} of {{ panel.totalRegions }}</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="panel-divider"></div>
@@ -128,7 +196,7 @@
                                 </div>
                                 <div class="panel-tier-pill" style="--tc:#b91c1c;">
                                     <span class="pill-count">{{ panel.tierCounts.low }}</span>
-                                    <span class="pill-label">Low</span>
+                                    <span class="pill-label">Under</span>
                                 </div>
                             </div>
 
@@ -170,10 +238,8 @@ import 'leaflet/dist/leaflet.css';
 
 const props = defineProps({
     scores:           { type: Array,  default: () => [] },
-    yearData:         { type: Object, default: () => ({}) },
-    kpiOutcomes:      { type: Array,  default: () => [] },
     selectedYear:     { type: Number, default: null },
-    selectedCategory: { type: String, default: 'all' },
+    selectedTier:     { type: String, default: 'all' },
     height:           { type: String, default: '460px' },
 });
 
@@ -190,7 +256,7 @@ const REGION_LABELS = {
     200000000:  'Region II — Cagayan Valley',
     300000000:  'Region III — Central Luzon',
     400000000:  'Region IV-A — CALABARZON',
-    1900000000: 'Region IV-B — MIMAROPA',
+    1700000000: 'Region IV-B — MIMAROPA',
     500000000:  'Region V — Bicol',
     600000000:  'Region VI — Western Visayas',
     700000000:  'Region VII — Central Visayas',
@@ -201,16 +267,69 @@ const REGION_LABELS = {
     1200000000: 'Region XII — SOCCSKSARGEN',
     1400000000: 'CAR — Cordillera',
     1600000000: 'Region XIII — Caraga',
-    1700000000: 'BARMM',
+    1900000000: 'BARMM',
     1300000000: 'NCR',
 };
 
-const tierInfo = (score) => {
-    if (score >= 70) return { color: '#15803d', label: 'Top Performers'    };
-    if (score >= 40) return { color: '#ca8a04', label: 'Average Performers' };
-    return             { color: '#b91c1c', label: 'Low Performers'       };
+const REGION_TO_ISLAND = {
+    100000000:  'luzon',    // Region I — Ilocos
+    200000000:  'luzon',    // Region II — Cagayan Valley
+    300000000:  'luzon',    // Region III — Central Luzon
+    400000000:  'luzon',    // Region IV-A — CALABARZON
+    1700000000: 'luzon',    // Region IV-B — MIMAROPA
+    500000000:  'luzon',    // Region V — Bicol
+    1400000000: 'luzon',    // CAR — Cordillera
+    1300000000: 'luzon',    // NCR
+    600000000:  'visayas',  // Region VI — Western Visayas
+    700000000:  'visayas',  // Region VII — Central Visayas
+    800000000:  'visayas',  // Region VIII — Eastern Visayas
+    900000000:  'mindanao', // Region IX — Zamboanga Peninsula
+    1000000000: 'mindanao', // Region X — Northern Mindanao
+    1100000000: 'mindanao', // Region XI — Davao Region
+    1200000000: 'mindanao', // Region XII — SOCCSKSARGEN
+    1600000000: 'mindanao', // Region XIII — Caraga
+    1900000000: 'mindanao', // BARMM
 };
-const tierColor = (score) => tierInfo(score).color;
+
+const ISLANDS = [
+    { value: 'luzon',    label: 'Luzon'    },
+    { value: 'visayas',  label: 'Visayas'  },
+    { value: 'mindanao', label: 'Mindanao' },
+];
+
+// The province's bucket (Top / Average / Under) drives color for individual
+// provinces, matching RankingService's rank-percentile bucketing. For
+// aggregates (region / island averages) the bucket field doesn't apply, so we
+// fall back to score-threshold coloring.
+const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Under: '#b91c1c' };
+const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Under: 'Under Performers' };
+const tierInfo = (entry) => {
+    if (!entry || entry.bucket == null) return { color: '#94a3b8', label: entry ? 'Unbucketed' : 'No data' };
+    return { color: BUCKET_COLOR[entry.bucket] ?? '#94a3b8', label: BUCKET_LABEL[entry.bucket] ?? '—' };
+};
+const tierColor = (entry) => tierInfo(entry).color;
+
+// Score-threshold coloring for raw averages (regions, islands). Calibrated so
+// a typical weighted score range (~0-70%) splits roughly into thirds.
+const scoreColor = (score) => {
+    if (score >= 50) return '#15803d';
+    if (score >= 25) return '#ca8a04';
+    return '#b91c1c';
+};
+
+// Best / worst category subtotal for a province entry, used in the side panel
+// to explain WHERE the province is strong vs weak (CORE / FUNCTIONAL / SUPPORT).
+const CATEGORY_FULL_NAMES = { CORE: 'Core', FUNCTIONAL: 'Functional', SUPPORT: 'Support' };
+const bestWorstCategory = (entry) => {
+    if (!entry?.subtotals_pct) return { best: null, worst: null };
+    const entries = Object.entries(entry.subtotals_pct)
+        .map(([code, pct]) => ({ code, name: CATEGORY_FULL_NAMES[code] ?? code, score: Math.round(pct * 10) / 10 }))
+        .sort((a, b) => b.score - a.score);
+    return {
+        best:  entries[0],
+        worst: entries.length > 1 ? entries[entries.length - 1] : null,
+    };
+};
 
 const catColor = (cat) => ({ micro:'#546e7a', small:'#00796b', medium:'#3949ab', large:'#5e35b1', cstc:'#c2185b' }[cat] ?? '#666');
 const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51b518', large:'#673ab718', cstc:'#e91e6318' }[cat] ?? '#00000010');
@@ -220,6 +339,7 @@ const mapEl        = ref(null);
 const wrapEl       = ref(null);
 const isFullscreen = ref(false);
 const ready        = ref(false);
+const selIsland    = ref('');
 const selRegion    = ref('');
 const selProvince  = ref('');
 const selCstc      = ref('');
@@ -248,48 +368,123 @@ const buildProvincePanel = (geoName) => {
     const dbName = GEO_TO_DB[geoName] ?? geoName;
     const entry  = sm[dbName] ?? null;
 
-    // Find best and worst KPI across all 7 KPIs regardless of current filter
-    let bestKpi = null, worstKpi = null;
-    if (props.yearData?.kpi && props.kpiOutcomes.length) {
-        const kpiScores = [];
-        for (const kpi of props.kpiOutcomes) {
-            const kpiEntry = (props.yearData.kpi[kpi.id] ?? []).find(s => s.province === dbName);
-            if (kpiEntry) kpiScores.push({ id: kpi.id, title: kpi.title, score: kpiEntry.score });
-        }
-        if (kpiScores.length) {
-            kpiScores.sort((a, b) => b.score - a.score);
-            bestKpi  = kpiScores[0];
-            worstKpi = kpiScores[kpiScores.length - 1];
-            if (bestKpi.id === worstKpi.id) worstKpi = null; // only 1 KPI with data
-        }
-    }
-
     if (!entry) return {
         type: 'province', name: geoName, score: null, tier: 'No data',
-        tierColor: '#94a3b8', director: '—', count: 0, category: null,
-        rank: null, year: props.selectedYear,
-        bestKpi, worstKpi,
+        tierColor: '#94a3b8', director: '—', category: null,
+        rank: null, year: props.selectedYear, bestCat: null, worstCat: null,
     };
 
-    const info = tierInfo(entry.score);
+    const info = tierInfo(entry);
+    const { best, worst } = bestWorstCategory(entry);
     return {
         type:      'province',
         name:      geoName,
         category:  entry.category,
         director:  entry.director,
-        score:     entry.score,
-        count:     entry.count,
+        score:     Math.round(entry.score * 100) / 100,
         tier:      info.label,
         tierColor: info.color,
         rank:      entry.rank ?? null,
         year:      props.selectedYear,
-        bestKpi,
-        worstKpi,
+        bestCat:   best,
+        worstCat:  worst,
     };
 };
 
+// Average score per island across the 3 major islands, sorted desc.
+const computeIslandRanking = () => {
+    const sm = scoreMap();
+    const buckets = new Map();
+    for (const p of provinces) {
+        const island = REGION_TO_ISLAND[p.regionCode];
+        if (!island) continue;
+        const dbName = GEO_TO_DB[p.name] ?? p.name;
+        const entry  = sm[dbName];
+        if (!entry) continue;
+        if (!buckets.has(island)) buckets.set(island, []);
+        buckets.get(island).push(entry.score);
+    }
+    const arr = [];
+    for (const [island, scores] of buckets.entries()) {
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        arr.push({ island, avg: Math.round(avg * 10) / 10 });
+    }
+    arr.sort((a, b) => b.avg - a.avg);
+    return arr;
+};
+
+const buildIslandPanel = (islandValue) => {
+    const meta = ISLANDS.find(i => i.value === islandValue);
+    const label = meta?.label ?? islandValue;
+
+    const islandRegionCodes = Object.entries(REGION_TO_ISLAND)
+        .filter(([, v]) => v === islandValue)
+        .map(([code]) => Number(code));
+
+    const islandProvs = provinces.filter(p => islandRegionCodes.includes(p.regionCode));
+    const islandProvNames = islandProvs.map(p => GEO_TO_DB[p.name] ?? p.name);
+    const islandScores    = props.scores.filter(s => islandProvNames.includes(s.province));
+
+    const regionCount = new Set(
+        islandProvs
+            .filter(p => islandProvNames.includes(GEO_TO_DB[p.name] ?? p.name))
+            .filter(p => islandScores.some(s => s.province === (GEO_TO_DB[p.name] ?? p.name)))
+            .map(p => p.regionCode)
+    ).size;
+
+    if (!islandScores.length) return {
+        type: 'island', label, provinceCount: 0, regionCount: 0,
+        avgScore: 0, tierCounts: { top: 0, avg: 0, low: 0 }, topProv: null, lowProv: null,
+        rank: null, totalIslands: 3,
+    };
+
+    const avg    = Math.round(islandScores.reduce((a, s) => a + s.score, 0) / islandScores.length * 10) / 10;
+    const sorted = [...islandScores].sort((a, b) => b.score - a.score);
+
+    const ranking = computeIslandRanking();
+    const rankIdx = ranking.findIndex(r => r.island === islandValue);
+
+    return {
+        type:          'island',
+        label,
+        provinceCount: islandScores.length,
+        regionCount,
+        avgScore:      avg,
+        avgColor:      scoreColor(avg),
+        rank:          rankIdx >= 0 ? rankIdx + 1 : null,
+        totalIslands:  ranking.length,
+        tierCounts: {
+            top: islandScores.filter(s => s.bucket === 'Top').length,
+            avg: islandScores.filter(s => s.bucket === 'Average').length,
+            low: islandScores.filter(s => s.bucket === 'Under').length,
+        },
+        topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
+        lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
+    };
+};
+
+// Average score per region across all regions present on the map, sorted desc.
+// Used to compute a region's rank among its peers in the same filter context.
+const computeRegionRanking = () => {
+    const sm = scoreMap();
+    const buckets = new Map();
+    for (const p of provinces) {
+        const dbName = GEO_TO_DB[p.name] ?? p.name;
+        const entry  = sm[dbName];
+        if (!entry) continue;
+        if (!buckets.has(p.regionCode)) buckets.set(p.regionCode, []);
+        buckets.get(p.regionCode).push(entry.score);
+    }
+    const arr = [];
+    for (const [code, scores] of buckets.entries()) {
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        arr.push({ code, avg: Math.round(avg * 10) / 10 });
+    }
+    arr.sort((a, b) => b.avg - a.avg);
+    return arr;
+};
+
 const buildRegionPanel = (regionCode) => {
-    const sm    = scoreMap();
     const label = REGION_LABELS[regionCode] ?? `Region ${regionCode}`;
     // short label: strip "Region X —" prefix for the header title
     const shortLabel = label.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || label;
@@ -303,23 +498,32 @@ const buildRegionPanel = (regionCode) => {
     if (!regionScores.length) return {
         type: 'region', shortLabel, provinceCount: 0,
         avgScore: 0, tierCounts: { top: 0, avg: 0, low: 0 }, topProv: null, lowProv: null,
+        rank: null, totalRegions: 0,
     };
 
     const avg    = Math.round(regionScores.reduce((a, s) => a + s.score, 0) / regionScores.length * 10) / 10;
     const sorted = [...regionScores].sort((a, b) => b.score - a.score);
+
+    const ranking     = computeRegionRanking();
+    const rankIdx     = ranking.findIndex(r => r.code === regionCode);
+    const rank        = rankIdx >= 0 ? rankIdx + 1 : null;
+    const totalRegions = ranking.length;
 
     return {
         type:         'region',
         shortLabel,
         provinceCount: regionScores.length,
         avgScore:      avg,
+        avgColor:      scoreColor(avg),
+        rank,
+        totalRegions,
         tierCounts: {
-            top: regionScores.filter(s => s.score >= 70).length,
-            avg: regionScores.filter(s => s.score >= 40 && s.score < 70).length,
-            low: regionScores.filter(s => s.score < 40).length,
+            top: regionScores.filter(s => s.bucket === 'Top').length,
+            avg: regionScores.filter(s => s.bucket === 'Average').length,
+            low: regionScores.filter(s => s.bucket === 'Under').length,
         },
-        topProv: { name: sorted[0].province,                       score: sorted[0].score },
-        lowProv: { name: sorted[sorted.length - 1].province,       score: sorted[sorted.length - 1].score },
+        topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
+        lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
     };
 };
 
@@ -327,41 +531,26 @@ const buildCstcPanel = (cstcName) => {
     const sm    = scoreMap();
     const entry = sm[cstcName] ?? null;
 
-    let bestKpi = null, worstKpi = null;
-    if (props.yearData?.kpi && props.kpiOutcomes.length) {
-        const kpiScores = [];
-        for (const kpi of props.kpiOutcomes) {
-            const kpiEntry = (props.yearData.kpi[kpi.id] ?? []).find(s => s.province === cstcName);
-            if (kpiEntry) kpiScores.push({ id: kpi.id, title: kpi.title, score: kpiEntry.score });
-        }
-        if (kpiScores.length) {
-            kpiScores.sort((a, b) => b.score - a.score);
-            bestKpi  = kpiScores[0];
-            worstKpi = kpiScores[kpiScores.length - 1];
-            if (bestKpi.id === worstKpi.id) worstKpi = null;
-        }
-    }
-
     if (!entry) return {
         type: 'cstc', name: cstcName, score: null, tier: 'No data',
-        tierColor: '#94a3b8', director: '—', count: 0, category: 'cstc',
-        rank: null, year: props.selectedYear, bestKpi, worstKpi,
+        tierColor: '#94a3b8', director: '—', category: 'cstc',
+        rank: null, year: props.selectedYear, bestCat: null, worstCat: null,
     };
 
-    const info = tierInfo(entry.score);
+    const info = tierInfo(entry);
+    const { best, worst } = bestWorstCategory(entry);
     return {
         type:      'cstc',
         name:      cstcName,
         category:  'cstc',
         director:  entry.director,
-        score:     entry.score,
-        count:     entry.count,
+        score:     Math.round(entry.score * 100) / 100,
         tier:      info.label,
         tierColor: info.color,
         rank:      entry.rank ?? null,
         year:      props.selectedYear,
-        bestKpi,
-        worstKpi,
+        bestCat:   best,
+        worstCat:  worst,
     };
 };
 
@@ -369,7 +558,7 @@ const buildCstcPanel = (cstcName) => {
 const styleForCstc = (feature, sm) => {
     const cstcName  = feature.properties.cstc;
     const entry     = sm[cstcName] ?? null;
-    const baseColor = entry ? tierColor(entry.score) : '#94a3b8';
+    const baseColor = entry ? tierColor(entry) : '#94a3b8';
     if (selCstc.value === cstcName)
         return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
     return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
@@ -381,19 +570,21 @@ const refreshCstcStyle = () => {
     cstcLayer.setStyle(f => styleForCstc(f, sm));
 };
 
-const styleFor = (feature, sm, selReg, selProv) => {
+const styleFor = (feature, sm, selReg, selProv, selIsl) => {
     const name       = feature.properties.adm2_en;
     const regionCode = feature.properties.adm1_psgc;
     if (SKIP(name)) return { fillColor: '#e2e8f0', weight: 0.4, color: '#cbd5e1', fillOpacity: 0.25 };
 
     const dbName    = GEO_TO_DB[name] ?? name;
     const entry     = sm[dbName] ?? null;
-    const baseColor = entry ? tierColor(entry.score) : '#94a3b8';
+    const baseColor = entry ? tierColor(entry) : '#94a3b8';
 
     const isSelectedProv = selProv && name === selProv;
     const isInSelRegion  = selReg  && regionCode === Number(selReg);
-    const hasRegFilter   = !!selReg;
-    const hasProvFilter  = !!selProv;
+    const isInSelIsland  = selIsl  && REGION_TO_ISLAND[regionCode] === selIsl;
+    const hasRegFilter    = !!selReg;
+    const hasProvFilter   = !!selProv;
+    const hasIslandFilter = !!selIsl;
 
     if (isSelectedProv)
         return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
@@ -406,21 +597,33 @@ const styleFor = (feature, sm, selReg, selProv) => {
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
     }
 
+    if (hasIslandFilter) {
+        if (isInSelIsland)
+            return { fillColor: baseColor, weight: 0.8, color: '#fff', fillOpacity: 0.85 };
+        return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
+    }
+
     return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
 };
 
 const refreshStyle = () => {
     if (!geoLayer) return;
     const sm = scoreMap();
-    geoLayer.setStyle(f => styleFor(f, sm, selRegion.value, selProvince.value));
+    geoLayer.setStyle(f => styleFor(f, sm, selRegion.value, selProvince.value, selIsland.value));
 };
 
-// ── Province dropdown ─────────────────────────────────────────────────────────
-const visibleProvinces = computed(() =>
-    selRegion.value
-        ? provinces.filter(p => p.regionCode === Number(selRegion.value))
-        : provinces
+// ── Region / Province dropdowns ───────────────────────────────────────────────
+const visibleRegions = computed(() =>
+    selIsland.value
+        ? regionList.value.filter(r => REGION_TO_ISLAND[r.code] === selIsland.value)
+        : regionList.value
 );
+
+const visibleProvinces = computed(() => {
+    if (selRegion.value) return provinces.filter(p => p.regionCode === Number(selRegion.value));
+    if (selIsland.value) return provinces.filter(p => REGION_TO_ISLAND[p.regionCode] === selIsland.value);
+    return provinces;
+});
 
 // ── Smart fly ─────────────────────────────────────────────────────────────────
 const HOME = { center: [12.2, 122.5], zoom: 5 };
@@ -445,11 +648,41 @@ const smartFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
 };
 
 // ── Event handlers ────────────────────────────────────────────────────────────
-const onRegionChange = () => {
+const onIslandChange = () => {
+    selRegion.value = '';
     selProvince.value = '';
     pendingFly = false;
     refreshStyle();
-    if (!selRegion.value) { resetView(); return; }
+    if (!selIsland.value) { resetView(); return; }
+
+    panel.value = buildIslandPanel(selIsland.value);
+
+    const islandRegionCodes = Object.entries(REGION_TO_ISLAND)
+        .filter(([, v]) => v === selIsland.value)
+        .map(([code]) => Number(code));
+    const islandProvs = provinces.filter(p => islandRegionCodes.includes(p.regionCode));
+    if (!islandProvs.length) return;
+    let bounds = L.latLngBounds(islandProvs[0].bounds);
+    for (const p of islandProvs.slice(1)) bounds.extend(p.bounds);
+    smartFlyTo(bounds, { maxZoom: 7, padding: [30, 30] });
+};
+
+const onRegionChange = () => {
+    selProvince.value = '';
+    pendingFly = false;
+
+    // Keep island in sync so the dropdown filter and map highlight stay consistent
+    if (selRegion.value) {
+        const island = REGION_TO_ISLAND[Number(selRegion.value)];
+        if (island && selIsland.value !== island) selIsland.value = island;
+    }
+
+    refreshStyle();
+    if (!selRegion.value) {
+        if (selIsland.value) { onIslandChange(); return; }
+        resetView();
+        return;
+    }
 
     const code = Number(selRegion.value);
     panel.value = buildRegionPanel(code);
@@ -480,7 +713,7 @@ const onCstcChange = () => {
 };
 
 const resetView = () => {
-    selRegion.value = selProvince.value = selCstc.value = '';
+    selIsland.value = selRegion.value = selProvince.value = selCstc.value = '';
     panel.value = null;
     pendingFly  = false;
     map?.stop();
@@ -545,7 +778,7 @@ onMounted(async () => {
             layer.on('mouseover', (e) => {
                 const entry = scoreMap()[dbName] ?? null;
                 if (!entry) return;
-                const info = tierInfo(entry.score);
+                const info = tierInfo(entry);
                 layer.bindTooltip(
                     `<div class="map-tip">
                         <strong>${name}</strong>
@@ -554,14 +787,22 @@ onMounted(async () => {
                     </div>`,
                     { sticky: true, className: 'map-tooltip' }
                 ).openTooltip(e.latlng);
-                e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
+                // Keep dimmed provinces dim when a filter is active and they fall outside it
+                const inActiveFilter =
+                    (!selRegion.value || Number(selRegion.value) === regionCode) &&
+                    (!selIsland.value || REGION_TO_ISLAND[regionCode] === selIsland.value);
+                if (inActiveFilter) e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
             });
             layer.on('mouseout', () => {
-                layer.setStyle(styleFor(layer.feature, scoreMap(), selRegion.value, selProvince.value));
+                layer.setStyle(styleFor(layer.feature, scoreMap(), selRegion.value, selProvince.value, selIsland.value));
             });
 
             layer.on('click', () => {
                 // Sync dropdowns
+                const island = REGION_TO_ISLAND[regionCode];
+                if (island && selIsland.value !== island) {
+                    selIsland.value = island;
+                }
                 if (regionCode !== Number(selRegion.value)) {
                     selRegion.value = String(regionCode);
                 }
@@ -605,7 +846,7 @@ onMounted(async () => {
             layer.on('mouseover', (e) => {
                 const entry = scoreMap()[cstcName] ?? null;
                 if (!entry) return;
-                const info = tierInfo(entry.score);
+                const info = tierInfo(entry);
                 layer.bindTooltip(
                     `<div class="map-tip">
                         <strong>${cstcName}</strong>
@@ -632,19 +873,20 @@ onMounted(async () => {
         },
     });
 
-    if (props.selectedCategory === 'cstc') cstcLayer.addTo(map);
+    if (props.selectedTier === 'cstc') cstcLayer.addTo(map);
 
     ready.value = true;
 });
 
 const rebuildPanel = () => {
     if (!panel.value) return;
-    if (panel.value.type === 'province') panel.value = buildProvincePanel(panel.value.name);
+    if (panel.value.type === 'province')    panel.value = buildProvincePanel(panel.value.name);
     else if (panel.value.type === 'cstc')   panel.value = buildCstcPanel(panel.value.name);
     else if (panel.value.type === 'region') panel.value = buildRegionPanel(Number(selRegion.value));
+    else if (panel.value.type === 'island') panel.value = buildIslandPanel(selIsland.value);
 };
 
-watch(() => props.selectedCategory, (cat) => {
+watch(() => props.selectedTier, (cat) => {
     if (!map || !cstcLayer) return;
     if (cat === 'cstc') {
         if (!map.hasLayer(cstcLayer)) cstcLayer.addTo(map);
@@ -718,6 +960,7 @@ onBeforeUnmount(() => {
     border-left: 4px solid #94a3b8;
 }
 .panel-header-region { border-left-color: #6366f1; }
+.panel-header-island { border-left-color: #0ea5e9; }
 .panel-header-main   { flex: 1; min-width: 0; }
 .panel-title         { font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1.3; }
 .panel-subtitle      { font-size: 11.5px; color: #94a3b8; margin-top: 2px; }

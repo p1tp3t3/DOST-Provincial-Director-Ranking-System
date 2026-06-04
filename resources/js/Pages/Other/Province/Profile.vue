@@ -14,16 +14,29 @@
             <!-- Hero Card -->
             <v-card elevation="0" border rounded="lg" class="overflow-hidden">
                 <div class="hero-banner px-5 py-4">
-                    <div class="d-flex align-center gap-3">
-                        <v-avatar color="white" size="44" rounded="lg" style="opacity:0.9;">
-                            <v-icon color="primary" size="22">mdi-map-marker-outline</v-icon>
-                        </v-avatar>
-                        <div>
-                            <div class="text-h6 font-weight-bold text-white">{{ profile.name }}</div>
-                            <v-chip size="x-small" color="white" variant="tonal" class="mt-1 font-weight-medium text-white">
-                                {{ profile.category_label ?? profile.category }}
-                            </v-chip>
+                    <div class="d-flex align-center justify-space-between gap-3 flex-wrap">
+                        <div class="d-flex align-center gap-3">
+                            <v-avatar color="white" size="44" rounded="lg" style="opacity:0.9;">
+                                <v-icon color="primary" size="22">mdi-map-marker-outline</v-icon>
+                            </v-avatar>
+                            <div>
+                                <div class="text-h6 font-weight-bold text-white">{{ profile.name }}</div>
+                                <v-chip size="x-small" color="white" variant="tonal" class="mt-1 font-weight-medium text-white">
+                                    {{ profile.category_label ?? profile.category }}
+                                </v-chip>
+                            </div>
                         </div>
+
+                        <v-btn
+                            v-if="canEditKpiData"
+                            color="white"
+                            variant="elevated"
+                            size="small"
+                            prepend-icon="mdi-pencil-outline"
+                            @click="editKpiData"
+                        >
+                            Edit KPI Data
+                        </v-btn>
                     </div>
                 </div>
 
@@ -90,26 +103,11 @@
                 <div class="d-flex align-center justify-space-between gap-3 px-4 pt-3 pb-3 flex-wrap">
                     <div class="d-flex align-center gap-2 flex-wrap">
                         <div class="text-subtitle-2 font-weight-bold">Key Performance Indicators</div>
-                        <v-chip size="x-small" variant="tonal" color="indigo">{{ kpis.length }} Outcomes</v-chip>
-                        <v-tooltip location="bottom" max-width="320">
-                            <template #activator="{ props: tip }">
-                                <v-chip v-bind="tip" size="x-small" variant="tonal" color="blue-grey" prepend-icon="mdi-scale-balance" class="cursor-pointer">
-                                    RA 11914
-                                </v-chip>
-                            </template>
-                            <div class="pa-1">
-                                <div class="font-weight-bold mb-1">Republic Act 11914 (PSTO Act)</div>
-                                <div class="text-caption mb-2 opacity-80">Each KPI outcome below is grounded in the functional mandates of Section 6 of the Act, which defines the duties of the Provincial Science and Technology Office.</div>
-                                <div v-for="(sections, id) in RA11914" :key="id" class="text-caption d-flex gap-2 mb-1">
-                                    <span class="font-weight-medium text-indigo-lighten-2">{{ sections.map(s => s.ref).join(', ') }}</span>
-                                    <span class="opacity-70">{{ sections[0].label }}</span>
-                                </div>
-                            </div>
-                        </v-tooltip>
+                        <v-chip size="x-small" variant="tonal" color="indigo">PSTD Matrix</v-chip>
+                        <v-chip size="x-small" variant="tonal" color="blue-grey">{{ totalScoredKpis }} KPIs</v-chip>
                     </div>
 
                     <div class="d-flex align-center gap-2">
-                        <!-- Year filter -->
                         <template v-if="availableYears.length > 0">
                             <v-btn-toggle v-model="selectedYear" mandatory density="compact" variant="outlined" divided>
                                 <v-btn
@@ -126,52 +124,42 @@
                         </template>
 
                         <v-divider vertical style="height:20px;" class="mx-1" />
-                        <v-btn size="x-small" variant="text" color="primary" @click="openPanels = kpis.map(k => k.id)">Expand All</v-btn>
+                        <v-btn size="x-small" variant="text" color="primary" @click="openPanels = kpiCategories.map(c => c.id)">Expand All</v-btn>
                         <v-btn size="x-small" variant="text" color="medium-emphasis" @click="openPanels = []">Collapse</v-btn>
                     </div>
                 </div>
                 <v-divider />
 
                 <!-- Empty state -->
-                <div v-if="!kpis.length" class="text-center py-10">
+                <div v-if="!kpiCategories.length" class="text-center py-10">
                     <v-icon size="36" color="grey-lighten-2" class="mb-2">mdi-chart-bar</v-icon>
                     <div class="text-body-2 text-medium-emphasis">No KPI data available. Run the seeder to populate.</div>
                 </div>
 
-                <!-- Accordion panels -->
+                <!-- Category accordion panels -->
                 <v-expansion-panels v-else v-model="openPanels" multiple variant="accordion" flat>
                     <v-expansion-panel
-                        v-for="(kpi, i) in kpis"
-                        :key="kpi.id"
-                        :value="kpi.id"
+                        v-for="(category, i) in kpiCategories"
+                        :key="category.id"
+                        :value="category.id"
                         :rounded="false"
-                        :class="{ 'border-bottom': i < kpis.length - 1 }"
+                        :class="{ 'border-bottom': i < kpiCategories.length - 1 }"
                     >
                         <v-expansion-panel-title class="py-3 px-4">
                             <div class="d-flex align-center gap-3">
-                                <v-avatar :color="kpiColor(i)" size="30" rounded="md">
-                                    <v-icon size="15" color="white">{{ kpiIcon(i) }}</v-icon>
+                                <v-avatar :color="categoryAccent(category.code)" size="30" rounded="md">
+                                    <v-icon size="15" color="white">{{ categoryIcon(category.code) }}</v-icon>
                                 </v-avatar>
                                 <div>
                                     <div>
-                                        <span class="text-caption text-medium-emphasis me-1">Outcome {{ kpi.id }}</span>
-                                        <span class="text-body-2 font-weight-medium">{{ kpi.outcome_title }}</span>
-                                    </div>
-                                    <div v-if="legalBasis(kpi.id).length" class="d-flex align-center gap-1 flex-wrap mt-1">
-                                        <v-chip
-                                            v-for="sec in legalBasis(kpi.id)"
-                                            :key="sec.ref"
-                                            size="x-small"
-                                            variant="tonal"
-                                            color="indigo"
-                                            class="font-weight-medium"
-                                        >RA 11914 {{ sec.ref }}</v-chip>
+                                        <span class="text-body-2 font-weight-medium">{{ category.name }}</span>
+                                        <span class="text-caption text-medium-emphasis ms-2">Weight {{ (category.weight * 100).toFixed(0) }}%</span>
                                     </div>
                                 </div>
                             </div>
                             <template #actions>
                                 <v-chip size="x-small" variant="tonal" color="grey" class="me-2">
-                                    {{ kpi.subrows.length }} indicators
+                                    {{ scoredKpis(category).length }} KPIs
                                 </v-chip>
                             </template>
                         </v-expansion-panel-title>
@@ -181,30 +169,35 @@
                                 <thead>
                                     <tr>
                                         <th class="kpi-th" style="width:36px;">#</th>
-                                        <th class="kpi-th">Indicator</th>
+                                        <th class="kpi-th">KPI</th>
+                                        <th class="kpi-th text-center" style="width:70px;">Weight</th>
                                         <th class="kpi-th text-center" style="width:90px;">Target</th>
                                         <th class="kpi-th text-center" style="width:110px;">Accomplished</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="row in kpi.subrows" :key="row.id" class="kpi-row">
-                                        <td class="text-caption text-medium-emphasis text-center">{{ row.id }}</td>
-                                        <td class="text-body-2 py-2" style="line-height:1.45;">{{ row.description }}</td>
+                                    <tr v-for="(kpi, idx) in scoredKpis(category)" :key="kpi.id" class="kpi-row">
+                                        <td class="text-caption text-medium-emphasis text-center">{{ idx + 1 }}</td>
+                                        <td class="text-body-2 py-2" style="line-height:1.45;">
+                                            {{ kpi.name }}
+                                            <v-chip v-if="kpi.inverse_scoring" size="x-small" variant="tonal" color="orange" class="ms-1">Inverse</v-chip>
+                                        </td>
+                                        <td class="text-caption text-medium-emphasis text-center">{{ (kpi.weight * 100).toFixed(1) }}%</td>
                                         <td class="text-center">
-                                            <span v-if="displayValue(row, 'target') != null" class="text-body-2 font-weight-medium" style="white-space:pre-line;">
-                                                {{ displayValue(row, 'target') }}
+                                            <span v-if="displayValue(kpi, 'target') != null" class="text-body-2 font-weight-medium" style="white-space:pre-line;">
+                                                {{ displayValue(kpi, 'target') }}
                                             </span>
                                             <span v-else class="text-caption text-disabled">—</span>
                                         </td>
                                         <td class="text-center">
-                                            <template v-if="displayValue(row, 'accomplished') != null">
+                                            <template v-if="displayValue(kpi, 'accomplished') != null">
                                                 <v-chip
                                                     size="x-small"
                                                     variant="tonal"
-                                                    :color="accomplishedColor(row)"
+                                                    :color="accomplishedColor(kpi)"
                                                     class="font-weight-medium"
                                                     style="height:auto; white-space:pre-line;"
-                                                >{{ displayValue(row, 'accomplished') }}</v-chip>
+                                                >{{ displayValue(kpi, 'accomplished') }}</v-chip>
                                             </template>
                                             <span v-else class="text-caption text-disabled">—</span>
                                         </td>
@@ -284,69 +277,73 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     province_profile: { type: Object },
-    kpis:             { type: Array,  default: () => [] },
+    kpi_categories:   { type: Array,  default: () => [] },
     available_years:  { type: Array,  default: () => [] },
 });
 
 const profile        = props.province_profile?.data[0] ?? {};
-const kpis           = props.kpis ?? [];
+const kpiCategories  = props.kpi_categories ?? [];
 const availableYears = props.available_years ?? [];
 
 const search      = ref('');
 const openPanels  = ref([]);
 const selectedYear = ref(availableYears[0] ?? null);
 
-// Look up target/accomplished for a subrow in the selected year
-const scoreFor = (row, field) => {
+const scoredKpis = (category) => (category.kpis ?? []).filter(k => k.is_scored);
+const totalScoredKpis = computed(() =>
+    kpiCategories.reduce((sum, c) => sum + scoredKpis(c).length, 0)
+);
+
+const scoreFor = (kpi, field) => {
     if (!selectedYear.value) return null;
-    return row.scores?.[String(selectedYear.value)]?.[field] ?? null;
+    return kpi.scores?.[String(selectedYear.value)]?.[field] ?? null;
 };
 
 const MONEY_PATTERN = /value\s+of|refunded\s+amount|gross\s+sales|external\s+funds/i;
-const isMoneyIndicator = (desc) => MONEY_PATTERN.test(desc ?? '');
+const isMoneyIndicator = (name) => MONEY_PATTERN.test(name ?? '');
 const phpFormat = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 
-const displayValue = (row, field) => {
-    const val = scoreFor(row, field);
+const displayValue = (kpi, field) => {
+    const val = scoreFor(kpi, field);
     if (val == null) return null;
-    if (isMoneyIndicator(row.description)) {
+    if (isMoneyIndicator(kpi.name)) {
         const num = parseFloat(String(val).replace(/,/g, ''));
         if (!isNaN(num)) return phpFormat.format(num);
     }
     return val;
 };
 
-const accomplishedColor = (row) => {
-    const a = parseFloat(scoreFor(row, 'accomplished'));
-    const t = parseFloat(scoreFor(row, 'target'));
+const accomplishedColor = (kpi) => {
+    const a = parseFloat(scoreFor(kpi, 'accomplished'));
+    const t = parseFloat(scoreFor(kpi, 'target'));
     if (isNaN(a) || isNaN(t)) return 'primary';
     return a >= t ? 'success' : 'warning';
 };
 
-const kpiIcons  = ['mdi-lightbulb-outline','mdi-rocket-launch-outline','mdi-flask-outline','mdi-trending-up','mdi-shield-outline','mdi-cog-outline','mdi-dots-horizontal-circle-outline'];
-const kpiColors = ['indigo','teal','deep-purple','blue','green','orange','blue-grey'];
-const kpiIcon   = (i) => kpiIcons[i % kpiIcons.length];
-const kpiColor  = (i) => kpiColors[i % kpiColors.length];
-
-// RA 11914 (PSTO Act) Section 6 — functional mandate per KPI outcome
-const RA11914 = {
-    1: [{ ref: '§6(a)', label: 'Stimulate and accelerate innovation' }],
-    2: [{ ref: '§6(c)', label: 'Promote technology adoption and diffusion' }],
-    3: [{ ref: '§6(h)', label: 'Foster a culture of science and technology' }],
-    4: [{ ref: '§6(c)', label: 'Improve productivity and efficiency of MSMEs' }],
-    5: [{ ref: '§6(b)', label: 'STI interventions for DRRM and climate change' }],
-    6: [{ ref: '§6(k)', label: 'Perform STI governance functions' }],
-    7: [
-        { ref: '§6(e)', label: 'Implement SETUP' },
-        { ref: '§6(f)', label: 'Implement CEST' },
-        { ref: '§6(g)', label: 'Manage GIA programs and linkages' },
-    ],
+const CATEGORY_VISUALS = {
+    CORE:       { icon: 'mdi-rocket-launch-outline', color: 'indigo' },
+    FUNCTIONAL: { icon: 'mdi-shield-outline',        color: 'teal' },
+    SUPPORT:    { icon: 'mdi-cog-outline',           color: 'deep-purple' },
 };
-const legalBasis = (kpiId) => RA11914[kpiId] ?? [];
+const categoryIcon   = (code) => CATEGORY_VISUALS[code]?.icon  ?? 'mdi-chart-bar';
+const categoryAccent = (code) => CATEGORY_VISUALS[code]?.color ?? 'blue-grey';
+
+// Edit shortcut — visible only to super_admin since the editor route is
+// behind the super-admin middleware. The encrypted province id is already
+// in the current URL (/province-directories/{id}), reuse it as-is.
+const page = usePage();
+const canEditKpiData = computed(() => page.props.auth?.user?.role === 'super_admin');
+const editKpiData = () => {
+    const encId = page.url.split('/').filter(Boolean).pop();
+    const target = selectedYear.value
+        ? `/kpi-data/${encId}/${selectedYear.value}`
+        : `/kpi-data/${encId}`;
+    router.visit(target);
+};
 
 const headers = [
     { title: 'Employee', key: 'name',     sortable: true  },

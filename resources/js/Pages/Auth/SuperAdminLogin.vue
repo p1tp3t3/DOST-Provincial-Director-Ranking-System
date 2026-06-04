@@ -61,7 +61,6 @@
                                 variant="outlined"
                                 density="comfortable"
                                 prepend-inner-icon="mdi-account-search-outline"
-                                :error-messages="form.errors.identifier"
                                 autocomplete="username"
                                 autofocus
                                 hide-details="auto"
@@ -76,7 +75,6 @@
                                 prepend-inner-icon="mdi-lock-outline"
                                 :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                                 @click:append-inner="showPassword = !showPassword"
-                                :error-messages="form.errors.password"
                                 autocomplete="current-password"
                                 hide-details="auto"
                             />

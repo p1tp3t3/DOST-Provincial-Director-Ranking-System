@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Modules\KPIDataController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
@@ -71,6 +72,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/super-admin-report/export', [SuperAdminReportController::class, 'export']);
 
         Route::get('/admins', [UserController::class, 'admin_index']);
+
+        // KPI Data Editor — central place for super admin to maintain target/accomplished
+        // values per province per year. Province directory pages remain read-only.
+        Route::get('/kpi-data',                              [KPIDataController::class, 'index']);
+        Route::get('/kpi-data/{id}/{year?}',                 [KPIDataController::class, 'edit']);
+        Route::put('/kpi-data/{director}/{year}',            [KPIDataController::class, 'update']);
     });
 
     // ── Super Admin + Provincial Admin ─────────────────────────

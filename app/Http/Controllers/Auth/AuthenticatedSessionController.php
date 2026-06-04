@@ -30,10 +30,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        // Silent reload on failed credentials — no flash message, no error bag.
+        if (!$request->authenticate()) {
+            return redirect()->back();
+        }
 
         $request->session()->regenerate();
-
         ActivityLogHelper::login();
 
         return redirect()->intended(route('dashboard', absolute: false));

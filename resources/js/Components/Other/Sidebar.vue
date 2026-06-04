@@ -9,7 +9,6 @@ import {
     RiFileChartFill,
     RiFileList3Fill,
     RiGlobalFill,
-    RiLogoutBoxRLine,
     RiFolder2Fill,
     RiUserAddLine,
     RiListCheck3,
@@ -19,6 +18,7 @@ import {
     RiBarChart2Fill,
     RiRoadMapFill,
     RiFolder2Line,
+    RiEdit2Fill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -31,19 +31,6 @@ const page = usePage();
 const authUser  = computed(() => page.props.auth.user);
 const currentUrl = computed(() => page.url);
 
-const getRoleLabel = () => {
-    const label = {
-        'super_admin':        'System Administrator',
-        'sub_admin':          'Sub Administrator',
-        'provincial_admin':   `Provincial Administrator (${authUser.value?.province?.name})`,
-        'provincial_sub_admin':   `Provincial Sub Administrator (${authUser.value?.province?.name})`,
-        'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
-        'employee':           'Employee',
-    };
-    return label[authUser.value?.role] || '';
-};
-
-
 const tabs = computed(() => {
     if (!authUser.value) return [];
 
@@ -53,6 +40,7 @@ const tabs = computed(() => {
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
                 { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
+                { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
                 {
                     name: 'User Management', icon: RiUser2Fill,
                     children: [
@@ -153,7 +141,6 @@ watchEffect(() => {
 });
 
 const navigateTo = (href) => router.visit(href);
-const handleLogout = () => router.post('/logout');
 
 const onSubNavEnter = (el) => {
     el.style.height = '0';
@@ -176,7 +163,6 @@ const onSubNavLeave = (el) => {
     el.style.opacity = '0';
 };
 
-const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
 </script>
 
 <template>
@@ -201,27 +187,6 @@ const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
             <div v-else class="logo-box">
                 <img src="/assets/logo.png" alt="PDRIS Logo" class="w-8 h-8">
             </div>
-        </div>
-
-        <!-- User Section -->
-        <div class="px-3 py-4 border-b border-white/10 flex-shrink-0"
-             :class="isOpen ? '' : 'flex justify-center'">
-            <div v-if="isOpen" class="flex items-center gap-3">
-                <v-avatar size="36" class="flex-shrink-0 ring-2 ring-white/20">
-                    <v-img :src="defAvatar" cover></v-img>
-                </v-avatar>
-                <div class="overflow-hidden">
-                    <p class="text-sm font-semibold mb-0 truncate">{{ authUser?.username || 'User' }}</p>
-                    <span class="role-badge">{{ getRoleLabel() }}</span>
-                </div>
-            </div>
-            <v-tooltip v-else location="right" :text="getRoleLabel()">
-                <template #activator="{ props: tp }">
-                    <v-avatar v-bind="tp" size="36" class="ring-2 ring-white/20">
-                        <v-img :src="defAvatar" cover></v-img>
-                    </v-avatar>
-                </template>
-            </v-tooltip>
         </div>
 
         <!-- Navigation -->
@@ -292,22 +257,6 @@ const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
             </template>
         </nav>
 
-        <!-- Logout -->
-        <div class="px-2 py-3 border-t border-white/10 flex-shrink-0">
-            <v-tooltip :disabled="isOpen" location="right" text="Logout">
-                <template #activator="{ props: tp }">
-                    <button
-                        v-bind="tp"
-                        :class="['nav-item nav-item--logout', !isOpen ? 'nav-item--collapsed' : '']"
-                        @click="handleLogout"
-                    >
-                        <RiLogoutBoxRLine class="nav-icon" />
-                        <span v-if="isOpen" class="nav-label">Logout</span>
-                    </button>
-                </template>
-            </v-tooltip>
-        </div>
-
     </aside>
 </template>
 
@@ -326,14 +275,6 @@ const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
     padding: 5px;
     display: grid;
     place-items: center;
-}
-
-.role-badge {
-    display: inline-block;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #93c5fd;
-    line-height: 1;
 }
 
 .nav-section-label {
@@ -378,13 +319,6 @@ const defAvatar = '/profile-picture?filename=profile-pic-2026-06-01-202414.png';
 .nav-item--collapsed {
     justify-content: center;
     padding: 9px 0;
-}
-.nav-item--logout {
-    color: rgba(248,113,113,0.8);
-}
-.nav-item--logout:hover {
-    background: rgba(248,113,113,0.1);
-    color: #fca5a5;
 }
 
 .nav-icon {

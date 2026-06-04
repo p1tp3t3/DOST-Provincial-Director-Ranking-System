@@ -1,793 +1,745 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
-        <div class="d-flex flex-column gap-3">
+    <div class="d-flex flex-column gap-3">
 
-            <!-- Stat Cards -->
-            <v-row dense>
-                <v-col cols="12" sm="3">
-                    <QuantityCard title="Total Provinces"      :quantity="total_provinces"  :icon="RiBuildingLine"   color="indigo" />
-                </v-col>
-                <v-col cols="12" sm="3">
-                    <QuantityCard title="Provincial Directors" :quantity="total_directors"  :icon="RiUserStarLine"   color="teal"   />
-                </v-col>
-                <v-col cols="12" sm="3">
-                    <QuantityCard title="Total Employees"      :quantity="total_employees"  :icon="RiGroupLine"      color="indigo" />
-                </v-col>
-                <v-col cols="12" sm="3">
-                    <QuantityCard title="Sub-Administrators"   :quantity="total_sub_admins" :icon="RiShieldUserLine" color="indigo" />
-                </v-col>
-            </v-row>
+        <!-- Stat Cards -->
+        <v-row dense>
+            <v-col cols="12" sm="3">
+                <QuantityCard title="Total Provinces"            :quantity="total_provinces"            :icon="RiBuildingLine"      color="indigo" />
+            </v-col>
+            <v-col cols="12" sm="3">
+                <QuantityCard title="Provincial Directors"       :quantity="total_directors"            :icon="RiUserStarLine"      color="indigo" />
+            </v-col>
+            <v-col cols="12" sm="3">
+                <QuantityCard title="Total Employees"            :quantity="total_employees"            :icon="RiGroupLine"         color="indigo" />
+            </v-col>
+            <v-col cols="12" sm="3">
+                <QuantityCard title="Active Reporting Provinces" :quantity="active_reporting_provinces" :icon="RiCheckboxCircleLine" color="indigo" />
+            </v-col>
+        </v-row>
 
-            <!-- Leaderboard Card -->
-            <v-row dense>
-                <v-col cols="12">
-                    <v-card border elevation="0" rounded="lg">
+        <!-- Leaderboard Card -->
+        <v-row dense>
+            <v-col cols="12">
+                <v-card border elevation="0" rounded="lg">
 
-                        <!-- Unified Header -->
-                        <div class="px-4 pt-3 pb-0">
-
-                            <!-- Row 1: Title + Year + View controls -->
-                            <div class="d-flex align-center justify-space-between flex-wrap gap-3 mb-2">
-                                <div class="d-flex align-center gap-2">
-                                    <v-icon size="15" color="indigo">mdi-trophy-outline</v-icon>
-                                    <span class="text-body-2 font-weight-bold">Province Performance Race</span>
-                                    <v-tooltip location="bottom" max-width="340">
-                                        <template #activator="{ props: tip }">
-                                            <v-chip v-bind="tip" size="x-small" variant="tonal" color="blue-grey" prepend-icon="mdi-scale-balance" class="cursor-pointer">
-                                                RA 11914
-                                            </v-chip>
-                                        </template>
-                                        <div class="pa-1">
-                                            <div class="font-weight-bold mb-1">Republic Act 11914 (PSTO Act)</div>
-                                            <div class="text-caption mb-2 opacity-80">
-                                                Rankings are based on KPI accomplishment rates derived from the 7 functional mandates of Section 6 of RA 11914. Province classification (Micro/Small/Medium/Large) follows Section 7 of the same Act.
-                                            </div>
-                                            <div class="text-caption opacity-70">Choose an evaluation method: <strong>Strict</strong> (met ÷ active), <strong>Operational</strong> (active ÷ 54), <strong>Absolute</strong> (met ÷ 54), or <strong>Excellence</strong> (exceeded ÷ active — bonus credit for over-delivering).</div>
-                                        </div>
-                                    </v-tooltip>
-                                    <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
-                                        {{ filteredScores.length }}
-                                        <template v-if="selectedCategory !== 'all'"> · {{ categoryLabel }}</template>
-                                    </v-chip>
-                                </div>
-                                <div class="d-flex align-center gap-3 flex-wrap">
-                                    <div class="d-flex align-center gap-2">
-                                        <span class="text-caption font-weight-medium text-medium-emphasis">Method</span>
-                                        <v-tooltip :text="evaluationMeta[selectedEvaluation].hint" location="bottom" max-width="280">
-                                            <template #activator="{ props: tip }">
-                                                <v-btn-toggle v-bind="tip" v-model="selectedEvaluation" mandatory density="compact" variant="outlined" divided>
-                                                    <v-btn value="strict"      size="small" class="px-2 text-caption">Strict</v-btn>
-                                                    <v-btn value="operational" size="small" class="px-2 text-caption">Operational</v-btn>
-                                                    <v-btn value="absolute"    size="small" class="px-2 text-caption">Absolute</v-btn>
-                                                    <v-btn value="excellence"  size="small" class="px-2 text-caption">Excellence</v-btn>
-                                                </v-btn-toggle>
-                                            </template>
-                                        </v-tooltip>
-                                    </div>
-                                    <v-divider vertical style="height:24px;" />
-                                    <div class="d-flex align-center gap-2">
-                                        <span class="text-caption font-weight-medium text-medium-emphasis">Year</span>
-                                        <v-btn-toggle v-model="selectedYear" mandatory density="compact" variant="outlined" divided>
-                                            <v-btn v-for="y in available_years" :key="y" :value="y" size="small" class="px-3 text-caption">{{ y }}</v-btn>
-                                        </v-btn-toggle>
-                                    </div>
-                                    <v-divider vertical style="height:24px;" />
-                                    <div class="d-flex align-center gap-2">
-                                        <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
-                                            <v-btn value="table" size="small" title="Table view">
-                                                <v-icon size="15">mdi-table-large</v-icon>
-                                            </v-btn>
-                                            <v-btn value="podium" size="small" title="Podium view">
-                                                <v-icon size="15">mdi-podium-gold</v-icon>
-                                            </v-btn>
-                                        </v-btn-toggle>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <v-divider />
-
-                        <!-- Category Tabs -->
-                        <v-tabs
-                            v-model="selectedCategory"
-                            density="compact"
-                            color="indigo"
-                            class="px-2"
-                            @update:modelValue="raceSearch = ''"
-                        >
-                            <v-tab value="all" class="text-caption">
-                                All
-                                <v-chip size="x-small" variant="tonal" class="ml-1">{{ categoryCounts.all }}</v-chip>
-                            </v-tab>
-                            <v-tab v-for="cat in categories" :key="cat.value" :value="cat.value" class="text-caption">
-                                {{ cat.label }}
-                                <v-chip
-                                    size="x-small"
-                                    :color="cat.color"
-                                    variant="tonal"
-                                    class="ml-1"
-                                >{{ categoryCounts[cat.value] ?? 0 }}</v-chip>
-                            </v-tab>
-                        </v-tabs>
-
-                        <!-- KPI Filter + Legend -->
-                        <div class="d-flex align-center gap-2 px-4 py-1 flex-wrap">
-                            <v-chip-group v-model="selectedKpi" mandatory selected-class="kpi-chip-active" @update:modelValue="raceSearch = ''">
-                                <v-chip value="overall" size="small" variant="tonal" color="indigo" class="font-weight-medium">
-                                    Overall
-                                </v-chip>
-                                <v-tooltip
-                                    v-for="kpi in kpi_outcomes"
-                                    :key="kpi.id"
-                                    :text="kpi.title"
-                                    location="bottom"
-                                    max-width="260"
-                                >
+                    <div class="px-4 pt-3 pb-0">
+                        <div class="d-flex align-center justify-space-between flex-wrap gap-3 mb-2">
+                            <div class="d-flex align-center gap-2">
+                                <v-icon size="15" color="indigo">mdi-trophy-outline</v-icon>
+                                <span class="text-body-2 font-weight-bold">PSTD Ranking Matrix</span>
+                                <v-tooltip location="bottom" max-width="360">
                                     <template #activator="{ props: tip }">
-                                        <v-chip
-                                            v-bind="tip"
-                                            :value="kpi.id"
-                                            size="small"
-                                            variant="tonal"
-                                            color="blue-grey"
-                                            class="font-weight-medium"
-                                        >
-                                            KPI {{ kpi.id }}
+                                        <v-chip v-bind="tip" size="x-small" variant="tonal" color="blue-grey" prepend-icon="mdi-information-outline" class="cursor-pointer">
+                                            Scoring
                                         </v-chip>
                                     </template>
+                                    <div class="pa-1">
+                                        <div class="font-weight-bold mb-1">Weighted PSTD Matrix Score</div>
+                                        <div class="text-caption mb-2 opacity-80">
+                                            For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, FUNCTIONAL = 30%, SUPPORT = 10%.
+                                        </div>
+                                        <div class="text-caption opacity-70">
+                                            Provinces are ranked within their CSTC tier. Top 20% by rank = Top Performers, next 60% = Average, bottom 20% = Under.
+                                        </div>
+                                    </div>
                                 </v-tooltip>
-                            </v-chip-group>
-                            <div class="ml-auto d-flex align-center gap-3">
-                                <div class="d-flex align-center gap-1">
-                                    <span class="legend-dot" style="background:#15803d;"></span>
-                                    <span class="text-caption text-medium-emphasis">Top</span>
-                                </div>
-                                <div class="d-flex align-center gap-1">
-                                    <span class="legend-dot" style="background:#ca8a04;"></span>
-                                    <span class="text-caption text-medium-emphasis">Avg</span>
-                                </div>
-                                <div class="d-flex align-center gap-1">
-                                    <span class="legend-dot" style="background:#b91c1c;"></span>
-                                    <span class="text-caption text-medium-emphasis">Low</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <v-divider />
-
-                        <!-- Search row (table view only) -->
-                        <div v-if="viewMode === 'table'" class="px-4 py-2 d-flex justify-end">
-                            <v-text-field
-                                v-model="raceSearch"
-                                placeholder="Search province or director…"
-                                variant="solo-filled"
-                                density="compact"
-                                hide-details
-                                clearable
-                                prepend-inner-icon="mdi-magnify"
-                                style="max-width:280px;"
-                            />
-                        </div>
-
-                        <!-- Table View -->
-                        <v-data-table
-                            v-if="viewMode === 'table'"
-                            :headers="raceHeaders"
-                            :items="rankedScores"
-                            :search="raceSearch"
-                            density="compact"
-                            fixed-header
-                            height="460"
-                            hide-default-footer
-                            :items-per-page="-1"
-                            class="leaderboard-table"
-                        >
-                            <template #item.rank="{ item }">
-                                <span v-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
-                                <span v-else-if="item.rank === 2" class="rank-medal rank-silver">2nd</span>
-                                <span v-else-if="item.rank === 3" class="rank-medal rank-bronze">3rd</span>
-                                <span v-else class="text-caption text-medium-emphasis">#{{ item.rank }}</span>
-                            </template>
-
-                            <template #item.province="{ item }">
-                                <span class="text-body-2 font-weight-medium">{{ item.province }}</span>
-                            </template>
-
-                            <template #item.director="{ item }">
-                                <span class="text-body-2 text-medium-emphasis">{{ item.director }}</span>
-                            </template>
-
-                            <template #item.category="{ item }">
-                                <v-chip :color="categoryColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-capitalize">
-                                    {{ item.category }}
+                                <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
+                                    {{ rankedScores.length }}
+                                    <template v-if="selectedTier !== 'all'"> · {{ tierLabel }}</template>
                                 </v-chip>
-                            </template>
-
-                            <template #item.score="{ item }">
-                                <div class="d-flex align-center gap-2 py-1" style="min-width:220px;">
-                                    <div class="score-track" style="cursor:default;">
-                                        <div
-                                            class="score-fill"
-                                            :style="{
-                                                width: `${Math.min(item.score, 100)}%`,
-                                                background: tierColor(item.score),
-                                            }"
-                                        />
-                                    </div>
-                                    <div class="d-flex flex-column" style="min-width:0;">
-                                        <span class="text-caption font-weight-bold" :style="{ color: tierColor(item.score) }">
-                                            {{ item.score }}%
-                                        </span>
-                                        <span class="text-medium-emphasis" style="font-size:10px; line-height:1.3; white-space:nowrap;">
-                                            {{ item.met }} met · {{ item.exceeded }} exceeded · {{ item.active }}/{{ item.total }} active
-                                        </span>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <template #no-data>
-                                <div class="text-center py-8 text-medium-emphasis text-body-2">
-                                    No provinces found
-                                </div>
-                            </template>
-                        </v-data-table>
-
-                        <!-- Podium View -->
-                        <div v-else class="px-5 pt-3 pb-5">
-
-                            <!-- Leader banner -->
-                            <div v-if="top3[0]" class="podium-banner mb-4">
-                                <v-icon size="16" color="amber-darken-2">mdi-trophy</v-icon>
-                                <span class="text-body-2 ml-2">
-                                    <strong>{{ top3[0].province }}</strong> leads {{ selectedYear }} with
-                                    <span class="font-weight-bold" :style="{ color: tierColor(top3[0].score) }">{{ top3[0].score }}%</span>
-                                    &nbsp;·&nbsp; Dir. {{ top3[0].director }}
-                                </span>
                             </div>
-
-                            <div class="d-flex gap-5">
-
-                                <!-- Podium stage -->
-                                <div class="podium-stage">
-                                    <div class="podium-items">
-
-                                        <!-- 2nd place -->
-                                        <div v-if="top3[1]" class="podium-item">
-                                            <div class="podium-info">
-                                                <div class="podium-province">{{ top3[1].province }}</div>
-                                                <div class="podium-director">{{ top3[1].director }}</div>
-                                                <div class="podium-score" :style="{ color: tierColor(top3[1].score) }">{{ top3[1].score }}%</div>
-                                                <div class="podium-raw">{{ top3[1].met }} met · {{ top3[1].exceeded }} exceeded · {{ top3[1].active }}/{{ top3[1].total }}</div>
-                                            </div>
-                                            <div class="podium-block podium-silver">
-                                                <v-icon color="white" size="22">mdi-medal</v-icon>
-                                                <span class="podium-rank-num">2nd</span>
-                                            </div>
-                                        </div>
-
-                                        <!-- 1st place -->
-                                        <div v-if="top3[0]" class="podium-item">
-                                            <div class="podium-info">
-                                                <v-icon color="amber-darken-1" size="26" class="mb-1">mdi-trophy</v-icon>
-                                                <div class="podium-province">{{ top3[0].province }}</div>
-                                                <div class="podium-director">{{ top3[0].director }}</div>
-                                                <div class="podium-score" :style="{ color: tierColor(top3[0].score) }">{{ top3[0].score }}%</div>
-                                                <div class="podium-raw">{{ top3[0].met }} met · {{ top3[0].exceeded }} exceeded · {{ top3[0].active }}/{{ top3[0].total }}</div>
-                                            </div>
-                                            <div class="podium-block podium-gold">
-                                                <span class="podium-rank-num">1st</span>
-                                            </div>
-                                        </div>
-
-                                        <!-- 3rd place -->
-                                        <div v-if="top3[2]" class="podium-item">
-                                            <div class="podium-info">
-                                                <div class="podium-province">{{ top3[2].province }}</div>
-                                                <div class="podium-director">{{ top3[2].director }}</div>
-                                                <div class="podium-score" :style="{ color: tierColor(top3[2].score) }">{{ top3[2].score }}%</div>
-                                                <div class="podium-raw">{{ top3[2].met }} met · {{ top3[2].exceeded }} exceeded · {{ top3[2].active }}/{{ top3[2].total }}</div>
-                                            </div>
-                                            <div class="podium-block podium-bronze">
-                                                <v-icon color="white" size="22">mdi-medal-outline</v-icon>
-                                                <span class="podium-rank-num">3rd</span>
-                                            </div>
-                                        </div>
-
+                            <div class="d-flex align-center gap-3 flex-wrap">
+                                <div class="d-flex align-center gap-3">
+                                    <div class="d-flex align-center gap-1">
+                                        <span class="legend-dot" style="background:#15803d;"></span>
+                                        <span class="text-caption text-medium-emphasis">Top ({{ bucketCounts.Top }})</span>
+                                    </div>
+                                    <div class="d-flex align-center gap-1">
+                                        <span class="legend-dot" style="background:#ca8a04;"></span>
+                                        <span class="text-caption text-medium-emphasis">Average ({{ bucketCounts.Average }})</span>
+                                    </div>
+                                    <div class="d-flex align-center gap-1">
+                                        <span class="legend-dot" style="background:#b91c1c;"></span>
+                                        <span class="text-caption text-medium-emphasis">Under ({{ bucketCounts.Under }})</span>
                                     </div>
                                 </div>
-
-                                <v-divider vertical class="mx-1" />
-
-                                <!-- Ranks 4+ -->
-                                <div class="flex-1 overflow-y-auto" style="max-height:460px;">
-                                    <div
-                                        v-for="item in restList"
-                                        :key="item.province"
-                                        class="podium-rest-row"
-                                    >
-                                        <span class="podium-rest-rank">#{{ item.rank }}</span>
-                                        <div class="flex-1" style="min-width:0;">
-                                            <div class="text-body-2 font-weight-medium text-truncate">{{ item.province }}</div>
-                                            <div class="text-caption text-medium-emphasis text-truncate">{{ item.director }}</div>
-                                        </div>
-                                        <v-chip :color="categoryColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-capitalize flex-shrink-0">
-                                            {{ item.category }}
-                                        </v-chip>
-                                        <div class="podium-rest-score">
-                                            <div class="score-track">
-                                                <div class="score-fill" :style="{ width: `${Math.min(item.score, 100)}%`, background: tierColor(item.score) }" />
-                                            </div>
-                                            <span class="text-caption font-weight-bold" :style="{ color: tierColor(item.score) }">{{ item.score }}%</span>
-                                            <span class="text-medium-emphasis" style="font-size:10px; line-height:1;">{{ item.met }} met · {{ item.exceeded }} exceeded</span>
-                                        </div>
-                                    </div>
-                                    <div v-if="!restList.length" class="text-center py-8 text-caption text-medium-emphasis">
-                                        Only {{ top3.length }} province(s) in this filter
-                                    </div>
-                                </div>
-
+                                <v-divider vertical style="height:24px;" />
+                                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
+                                    <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
+                                    <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
+                                </v-btn-toggle>
                             </div>
                         </div>
-                    </v-card>
-                </v-col>
-            </v-row>
+                    </div>
 
-            <!-- Top 10 + Failing side by side -->
-            <v-row dense>
+                    <v-divider />
 
-                <v-col cols="12" md="6">
-                    <v-card border elevation="0" rounded="lg" class="overflow-hidden">
-                        <div class="chart-header px-4 pt-3 pb-2">
-                            <div class="d-flex align-center gap-2">
-                                <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
-                                <span class="text-body-2 font-weight-bold">Top 10 Provinces & Directors</span>
-                            </div>
-                            <div class="text-caption text-medium-emphasis">
-                                Best performing · {{ categoryLabel }} · {{ selectedYear }}
+                    <!-- Tier segmented + Year segmented -->
+                    <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap">
+                        <div class="d-flex align-center gap-2">
+                            <span class="filter-label">Tier</span>
+                            <div class="segmented category-segmented">
+                                <button class="segmented-btn" :class="{ active: selectedTier === 'all' }" @click="selectedTier = 'all'; searchTerm = ''">
+                                    All <span class="seg-count seg-count--all">{{ tierCounts.all }}</span>
+                                </button>
+                                <button
+                                    v-for="t in tiers"
+                                    :key="t.value"
+                                    class="segmented-btn"
+                                    :class="['category-btn-' + t.value, { active: selectedTier === t.value }]"
+                                    @click="selectedTier = t.value; searchTerm = ''"
+                                >
+                                    {{ t.label }}
+                                    <span class="seg-count" :class="'seg-count--' + t.value">{{ tierCounts[t.value] ?? 0 }}</span>
+                                </button>
                             </div>
                         </div>
-                        <VueApexCharts
-                            type="bar"
-                            height="360"
-                            :options="top10Options"
-                            :series="top10Series"
-                            :key="`top10-${selectedYear}-${selectedCategory}`"
+                        <div class="ml-auto d-flex align-center gap-2">
+                            <span class="filter-label">Year</span>
+                            <div class="segmented">
+                                <button
+                                    v-for="y in available_years" :key="y"
+                                    class="segmented-btn"
+                                    :class="{ active: selectedYear === y }"
+                                    @click="selectedYear = y"
+                                >{{ y }}</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category segmented (Overall / CORE / FUNCTIONAL / SUPPORT) -->
+                    <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
+                        <div class="d-flex align-center gap-2">
+                            <span class="filter-label">Category</span>
+                            <div class="segmented outcome-segmented">
+                                <button
+                                    class="segmented-btn"
+                                    :class="{ active: selectedCategory === 'overall' }"
+                                    @click="selectedCategory = 'overall'"
+                                >Overall</button>
+                                <button
+                                    v-for="c in categoryOptions" :key="c.value"
+                                    class="segmented-btn"
+                                    :class="{ active: selectedCategory === c.value }"
+                                    @click="selectedCategory = c.value"
+                                >{{ c.label }} <span class="cat-weight">{{ c.weight }}</span></button>
+                            </div>
+                        </div>
+                        <v-spacer />
+                        <span v-if="selectedCategory !== 'overall'" class="text-caption text-medium-emphasis">
+                            Ranking by <strong>{{ selectedCategory }}</strong> contribution
+                            <template v-if="selectedTier !== 'all'"> · re-bucketed within {{ tierLabel }}</template>
+                        </span>
+                    </div>
+
+                    <v-divider />
+
+                    <!-- Search row (table view only) -->
+                    <div v-if="viewMode === 'table'" class="px-4 py-2 d-flex justify-end">
+                        <v-text-field
+                            v-model="searchTerm"
+                            placeholder="Search province or director…"
+                            variant="solo-filled"
+                            density="compact"
+                            hide-details
+                            clearable
+                            prepend-inner-icon="mdi-magnify"
+                            style="max-width:280px;"
                         />
-                    </v-card>
-                </v-col>
+                    </div>
 
-                <v-col cols="12" md="6">
-                    <v-card border elevation="0" rounded="lg" class="overflow-hidden">
-                        <div class="chart-header px-4 pt-3 pb-2">
-                            <div class="d-flex align-center gap-2">
-                                <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
-                                <span class="text-body-2 font-weight-bold">Low Performers</span>
+                    <!-- Table View -->
+                    <v-data-table
+                        v-if="viewMode === 'table'"
+                        :headers="tableHeaders"
+                        :items="rankedScores"
+                        :search="searchTerm"
+                        density="compact"
+                        fixed-header
+                        height="460"
+                        hide-default-footer
+                        :items-per-page="-1"
+                        class="leaderboard-table"
+                    >
+                        <template #item.rank="{ item }">
+                            <span v-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
+                            <span v-else-if="item.rank === 2" class="rank-medal rank-silver">2nd</span>
+                            <span v-else-if="item.rank === 3" class="rank-medal rank-bronze">3rd</span>
+                            <span v-else class="text-caption text-medium-emphasis">#{{ item.rank }}</span>
+                        </template>
+
+                        <template #item.bucket="{ item }">
+                            <v-chip v-if="item.bucket" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium">
+                                {{ bucketDisplay(item.bucket) }}
+                            </v-chip>
+                            <span v-else class="text-caption text-disabled">—</span>
+                        </template>
+
+                        <template #item.province="{ item }">
+                            <span class="text-body-2 font-weight-medium">{{ item.province }}</span>
+                        </template>
+
+                        <template #item.director="{ item }">
+                            <span class="text-body-2 text-medium-emphasis">{{ item.director || '—' }}</span>
+                        </template>
+
+                        <template #item.category="{ item }">
+                            <v-chip :color="tierColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-uppercase">
+                                {{ item.category }}
+                            </v-chip>
+                        </template>
+
+                        <template #item.core="{ item }">
+                            <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'CORE' }">
+                                {{ item.subtotals_pct.CORE.toFixed(1) }}%
+                            </span>
+                        </template>
+                        <template #item.functional="{ item }">
+                            <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">
+                                {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }}%
+                            </span>
+                        </template>
+                        <template #item.support="{ item }">
+                            <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'SUPPORT' }">
+                                {{ item.subtotals_pct.SUPPORT.toFixed(1) }}%
+                            </span>
+                        </template>
+
+                        <template #item.total_pct="{ item }">
+                            <span class="score-pct cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'overall' }" :style="{ color: bucketColor(item.bucket) }">
+                                {{ item.total_pct.toFixed(2) }}%
+                            </span>
+                        </template>
+
+                        <template #no-data>
+                            <div class="text-center py-8 text-medium-emphasis text-body-2">No provinces found</div>
+                        </template>
+                    </v-data-table>
+
+                    <!-- Podium View -->
+                    <div v-else class="px-5 pt-3 pb-5">
+                        <div v-if="top3[0]" class="podium-banner mb-4">
+                            <v-icon size="16" color="amber-darken-2">mdi-trophy</v-icon>
+                            <span class="text-body-2 ml-2">
+                                <strong>{{ top3[0].province }}</strong> leads {{ selectedYear }}<template v-if="selectedTier !== 'all'"> in {{ tierLabel }}</template><template v-if="selectedCategory !== 'overall'"> on {{ selectedCategory }}</template> with
+                                <span class="font-weight-bold" :style="{ color: bucketColor(top3[0].bucket) }">{{ getScore(top3[0]).toFixed(2) }}%</span>
+                            </span>
+                        </div>
+
+                        <div class="d-flex gap-5">
+                            <div class="podium-stage">
+                                <div class="podium-items">
+                                    <div v-if="top3[0]" class="podium-item">
+                                        <div class="podium-info">
+                                            <v-icon color="amber-darken-1" size="26" class="mb-1">mdi-trophy</v-icon>
+                                            <div class="podium-province">{{ top3[0].province }}</div>
+                                            <div class="podium-score" :style="{ color: bucketColor(top3[0].bucket) }">{{ top3[0].total_pct.toFixed(2) }}%</div>
+                                            <div class="podium-raw">CORE {{ top3[0].subtotals_pct.CORE.toFixed(1) }} · FUNC {{ top3[0].subtotals_pct.FUNCTIONAL.toFixed(1) }} · SUPP {{ top3[0].subtotals_pct.SUPPORT.toFixed(1) }}</div>
+                                        </div>
+                                        <div class="podium-block podium-gold">
+                                            <v-icon color="white" size="26">mdi-crown</v-icon>
+                                            <span class="podium-rank-num">1st</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="top3[1]" class="podium-item">
+                                        <div class="podium-info">
+                                            <div class="podium-province">{{ top3[1].province }}</div>
+                                            <div class="podium-score" :style="{ color: bucketColor(top3[1].bucket) }">{{ top3[1].total_pct.toFixed(2) }}%</div>
+                                            <div class="podium-raw">CORE {{ top3[1].subtotals_pct.CORE.toFixed(1) }} · FUNC {{ top3[1].subtotals_pct.FUNCTIONAL.toFixed(1) }} · SUPP {{ top3[1].subtotals_pct.SUPPORT.toFixed(1) }}</div>
+                                        </div>
+                                        <div class="podium-block podium-silver">
+                                            <v-icon color="white" size="22">mdi-medal</v-icon>
+                                            <span class="podium-rank-num">2nd</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="top3[2]" class="podium-item">
+                                        <div class="podium-info">
+                                            <div class="podium-province">{{ top3[2].province }}</div>
+                                            <div class="podium-score" :style="{ color: bucketColor(top3[2].bucket) }">{{ top3[2].total_pct.toFixed(2) }}%</div>
+                                            <div class="podium-raw">CORE {{ top3[2].subtotals_pct.CORE.toFixed(1) }} · FUNC {{ top3[2].subtotals_pct.FUNCTIONAL.toFixed(1) }} · SUPP {{ top3[2].subtotals_pct.SUPPORT.toFixed(1) }}</div>
+                                        </div>
+                                        <div class="podium-block podium-bronze">
+                                            <v-icon color="white" size="22">mdi-medal-outline</v-icon>
+                                            <span class="podium-rank-num">3rd</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Top 3 category-subtotal breakdown -->
+                                <div v-if="top3.length" class="podium-breakdown">
+                                    <div v-for="(p, idx) in top3" :key="p.province" class="breakdown-col">
+                                        <div class="breakdown-header">
+                                            <span class="breakdown-rank">{{ ['1st','2nd','3rd'][idx] }}</span>
+                                            <span class="breakdown-province">{{ p.province }}</span>
+                                        </div>
+                                        <div v-for="cat in ['CORE','FUNCTIONAL','SUPPORT']" :key="cat" class="breakdown-row">
+                                            <span class="breakdown-label">{{ cat }}</span>
+                                            <span class="breakdown-score">{{ p.subtotals_pct[cat].toFixed(1) }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-caption text-medium-emphasis">
-                                Below 70% · {{ categoryLabel }} · {{ selectedYear }}
+
+                            <v-divider vertical class="mx-1" />
+
+                            <div class="flex-1 podium-rest-scroll">
+                                <div v-for="item in restList" :key="item.province" class="podium-rest-row">
+                                    <span class="podium-rest-rank">#{{ item.rank }}</span>
+                                    <div class="flex-1" style="min-width:0;">
+                                        <div class="text-body-2 font-weight-medium text-truncate">{{ item.province }}</div>
+                                    </div>
+                                    <v-chip v-if="item.bucket && selectedTier !== 'all'" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium flex-shrink-0">
+                                        {{ bucketDisplay(item.bucket) }}
+                                    </v-chip>
+                                    <v-chip :color="tierColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-uppercase flex-shrink-0">
+                                        {{ item.category }}
+                                    </v-chip>
+                                    <div class="score-cell podium-rest-cell">
+                                        <div class="score-track">
+                                            <div class="score-fill" :style="{ width: `${Math.min(item.total_pct, 100)}%`, background: bucketColor(item.bucket) }" />
+                                        </div>
+                                        <div class="score-text">
+                                            <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ item.total_pct.toFixed(2) }}%</span>
+                                            <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · FUNC {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="!restList.length" class="text-center py-8 text-caption text-medium-emphasis">
+                                    Only {{ top3.length }} province(s) in this filter
+                                </div>
                             </div>
                         </div>
-                        <VueApexCharts
-                            v-if="failingData.names.length"
-                            type="bar"
-                            height="360"
-                            :options="failingOptions"
-                            :series="failingSeries"
-                            :key="`fail-${selectedYear}-${selectedCategory}`"
-                        />
-                        <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
-                            <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
-                            <div class="text-body-2 font-weight-medium">No Low Performers!</div>
-                            <div class="text-caption text-medium-emphasis">All provinces are Average Performers or Top Performers</div>
+                    </div>
+                </v-card>
+            </v-col>
+        </v-row>
+
+        <!-- Top 10 + Under Performers side by side -->
+        <v-row dense>
+            <v-col cols="12" md="6">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden">
+                    <div class="chart-header px-4 pt-3 pb-2">
+                        <div class="d-flex align-center gap-2">
+                            <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
+                            <span class="text-body-2 font-weight-bold">Top 10 Provinces & Directors</span>
                         </div>
-                    </v-card>
-                </v-col>
+                        <div class="text-caption text-medium-emphasis">
+                            Highest weighted score · {{ tierLabel }} · {{ selectedYear }}
+                        </div>
+                    </div>
+                    <VueApexCharts
+                        type="bar"
+                        height="360"
+                        :options="top10Options"
+                        :series="top10Series"
+                        :key="`top10-${selectedYear}-${selectedTier}`"
+                    />
+                </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden">
+                    <div class="chart-header px-4 pt-3 pb-2">
+                        <div class="d-flex align-center gap-2">
+                            <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
+                            <span class="text-body-2 font-weight-bold">Under Performers</span>
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                            Bottom 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
+                        </div>
+                    </div>
+                    <VueApexCharts
+                        v-if="underData.names.length"
+                        type="bar"
+                        height="360"
+                        :options="underOptions"
+                        :series="underSeries"
+                        :key="`under-${selectedYear}-${selectedTier}`"
+                    />
+                    <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
+                        <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
+                        <div class="text-body-2 font-weight-medium">No Under Performers</div>
+                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                    </div>
+                </v-card>
+            </v-col>
+        </v-row>
 
-            </v-row>
-
-        </div>
+    </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
-import QuantityCard        from '@/Components/Cards/QuantityCard.vue';
-import {
-    RiGroupLine,
-    RiUserStarLine,
-    RiShieldUserLine,
-    RiBuildingLine,
-} from '@remixicon/vue';
+import QuantityCard from '@/Components/Cards/QuantityCard.vue';
+import { RiGroupLine, RiUserStarLine, RiCheckboxCircleLine, RiBuildingLine } from '@remixicon/vue';
 
 const props = defineProps({
-    total_users:         { type: Number, default: 0 },
-    total_sub_admins:    { type: Number, default: 0 },
-    total_directors:     { type: Number, default: 0 },
-    total_employees:     { type: Number, default: 0 },
-    total_provinces:     { type: Number, default: 0 },
-    kpi_scores_by_year:  { type: Object, default: () => ({}) },
-    kpi_outcomes:        { type: Array,  default: () => [] },
-    available_years:     { type: Array,  default: () => [] },
+    total_users:                { type: Number, default: 0 },
+    active_reporting_provinces: { type: Number, default: 0 },
+    total_directors:            { type: Number, default: 0 },
+    total_employees:            { type: Number, default: 0 },
+    total_provinces:            { type: Number, default: 0 },
+    rankings_by_year:           { type: Object, default: () => ({}) },
+    kpi_categories:             { type: Array,  default: () => [] },
+    available_years:            { type: Array,  default: () => [] },
 });
 
-const selectedYear       = ref(props.available_years[0] ?? 2025);
-const selectedCategory   = ref('all');
-const selectedKpi        = ref('overall');
-const raceSearch         = ref('');
-const viewMode           = ref('table');
-const selectedEvaluation = ref('operational'); // 'strict' | 'operational' | 'absolute' | 'excellence'
+const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
+const selectedTier     = ref('all');
+const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'FUNCTIONAL' | 'SUPPORT'
+const searchTerm       = ref('');
+const viewMode         = ref('table');
 
-// Each ranking record from the controller carries all four scores; the active
-// one is selected here so the rest of the template only sees `item.score`.
-const SCORE_FIELD = {
-    strict:      'strict_score',
-    operational: 'operational_score',
-    absolute:    'absolute_score',
-    excellence:  'excellence_score',
-};
-const evaluationMeta = {
-    strict:      { label: 'Strict',      desc: 'Met ÷ Active Targets',  hint: 'Skill rate: of the targets you set, how many you hit.' },
-    operational: { label: 'Operational', desc: '(Met + Monitored) ÷ 54', hint: 'Board coverage: how many of the 54 indicators you engaged with.' },
-    absolute:    { label: 'Absolute',    desc: 'Met ÷ 54',               hint: 'Hardest line: blanks and misses both count as zero.' },
-    excellence:  { label: 'Excellence',  desc: 'Exceeded ÷ Active Targets', hint: 'Bonus credit: of the targets you set, how many you actually beat.' },
-};
-
-const categories = [
-    { value: 'micro',  label: 'Micro',  color: 'blue-grey'   },
-    { value: 'small',  label: 'Small',  color: 'teal'        },
-    { value: 'medium', label: 'Medium', color: 'indigo'      },
-    { value: 'large',  label: 'Large',  color: 'deep-purple' },
-    { value: 'cstc',   label: 'CSTC',   color: 'pink'        },
+const tiers = [
+    { value: 'micro',  label: 'Micro'  },
+    { value: 'small',  label: 'Small'  },
+    { value: 'medium', label: 'Medium' },
+    { value: 'large',  label: 'Large'  },
+    { value: 'cstc',   label: 'CSTC'   },
 ];
 
-const categoryLabel = computed(() =>
-    selectedCategory.value === 'all'
-        ? 'All Categories'
-        : (categories.find(c => c.value === selectedCategory.value)?.label ?? '')
+// Category options derived from the kpi_categories prop so the weight labels
+// stay in sync with whatever the matrix says.
+const categoryOptions = computed(() =>
+    props.kpi_categories.map(c => ({
+        value:  c.code,
+        label:  c.code,
+        weight: `${Math.round(c.weight * 100)}%`,
+    }))
 );
 
-// Project the active evaluation score onto each record as `score`, then re-sort.
-// The controller pre-sorts by operational so other order is recomputed here.
-const currentScores = computed(() => {
-    const yearData = props.kpi_scores_by_year[selectedYear.value];
-    if (!yearData) return [];
-    const raw = selectedKpi.value === 'overall'
-        ? (yearData.overall ?? [])
-        : (yearData.kpi?.[selectedKpi.value] ?? []);
-    const field = SCORE_FIELD[selectedEvaluation.value];
-    return raw
-        .map(r => ({ ...r, score: r[field] ?? 0 }))
-        .sort((a, b) => b.score - a.score);
+const tierLabel = computed(() =>
+    selectedTier.value === 'all'
+        ? 'All Tiers'
+        : (tiers.find(t => t.value === selectedTier.value)?.label ?? '')
+);
+
+// Rank-percentile bucketing matches RankingService::rankAndBucket on the backend.
+// Mirrored client-side so the Category filter can re-bucket within the active
+// tier when the user picks CORE / FUNCTIONAL / SUPPORT instead of Overall.
+// If config/ranking.php values change, update these to match.
+const BUCKET_TOP_PCT   = 0.20;
+const BUCKET_UNDER_PCT = 0.20;
+const MIN_GROUP_FOR_BUCKETS = 5;
+
+const getScore = (row) =>
+    selectedCategory.value === 'overall'
+        ? row.total_pct
+        : (row.subtotals_pct?.[selectedCategory.value] ?? 0);
+
+const assignBuckets = (sortedRows) => {
+    const n = sortedRows.length;
+    if (n < MIN_GROUP_FOR_BUCKETS) return sortedRows.map(r => ({ ...r, bucket: null }));
+    const topN = Math.max(1, Math.round(n * BUCKET_TOP_PCT));
+    let   undN = Math.max(1, Math.round(n * BUCKET_UNDER_PCT));
+    if (topN + undN >= n) undN = Math.max(1, n - topN - 1);
+    const avgEnd = n - undN;
+    return sortedRows.map((r, i) => ({
+        ...r,
+        bucket: i < topN ? 'Top' : i < avgEnd ? 'Average' : 'Under',
+    }));
+};
+
+// Pull this year's per-tier rankings from the controller payload, flatten into
+// one array with rank already assigned per tier. When "All" is selected we
+// resort globally by total_pct so the table is comparable across tiers — but
+// the per-tier rank field is still useful so we surface it as `tier_rank`.
+const allTierRows = computed(() => {
+    const yearData = props.rankings_by_year[selectedYear.value] ?? {};
+    const out = [];
+    for (const [tier, rows] of Object.entries(yearData)) {
+        for (const r of rows) {
+            out.push({ ...r, tier_rank: r.rank });
+        }
+    }
+    return out;
 });
 
+const rankedScores = computed(() => {
+    const isOverall = selectedCategory.value === 'overall';
 
-const categoryCounts = computed(() => {
-    const counts = { all: currentScores.value.length };
-    for (const s of currentScores.value) {
-        if (s.category) counts[s.category] = (counts[s.category] ?? 0) + 1;
+    if (selectedTier.value === 'all') {
+        // Global view: sort by the active score (Total or category subtotal). No
+        // bucketing — the Performer column is hidden in All Tiers mode because
+        // buckets are tier-relative and don't mix meaningfully.
+        return allTierRows.value
+            .slice()
+            .sort((a, b) => getScore(b) - getScore(a))
+            .map((r, i) => ({ ...r, rank: i + 1 }));
+    }
+
+    const tierRows = allTierRows.value.filter(r => r.category === selectedTier.value);
+
+    // Overall view: trust backend rank + bucket (already sorted and bucketed
+    // within tier by RankingService).
+    if (isOverall) return tierRows;
+
+    // Category view: re-sort by the chosen category's subtotal and re-bucket
+    // within the tier so Top / Average / Under reflect category performance.
+    const sorted = tierRows.slice().sort((a, b) => getScore(b) - getScore(a));
+    return assignBuckets(sorted).map((r, i) => ({ ...r, rank: i + 1 }));
+});
+
+const tierCounts = computed(() => {
+    const counts = { all: allTierRows.value.length };
+    for (const r of allTierRows.value) counts[r.category] = (counts[r.category] ?? 0) + 1;
+    return counts;
+});
+
+const bucketCounts = computed(() => {
+    const counts = { Top: 0, Average: 0, Under: 0 };
+    for (const r of rankedScores.value) {
+        if (r.bucket && counts[r.bucket] !== undefined) counts[r.bucket]++;
     }
     return counts;
 });
 
-// Scores filtered by selected category, preserving score-desc sort from PHP
-const filteredScores = computed(() =>
-    selectedCategory.value === 'all'
-        ? currentScores.value
-        : currentScores.value.filter(s => s.category === selectedCategory.value)
-);
-
-// Rank is 1-based within the filtered category
-const rankedScores = computed(() =>
-    filteredScores.value.map((s, i) => ({ ...s, rank: i + 1 }))
-);
-
 const top3     = computed(() => rankedScores.value.slice(0, 3));
 const restList = computed(() => rankedScores.value.slice(3));
 
-const raceHeaders = computed(() => [
-    { title: 'Rank',     key: 'rank',     width: '64px',  sortable: false },
-    { title: 'Province', key: 'province', sortable: true  },
-    { title: 'Director', key: 'director', sortable: false },
-    { title: 'Category', key: 'category', width: '100px', sortable: true  },
-    { title: 'Active',   key: 'active',   width: '70px',  align: 'center', sortable: true },
-    { title: 'Met',      key: 'met',      width: '60px',  align: 'center', sortable: true },
-    { title: 'Exceeded', key: 'exceeded', width: '80px',  align: 'center', sortable: true },
-    { title: `${evaluationMeta[selectedEvaluation.value].label} Score`,
-        key: 'score', width: '240px', sortable: true },
-]);
+// Performer (Top / Average / Under) is bucketed per-tier so it's only meaningful
+// when a single tier is selected. In the "All Tiers" view we hide the column
+// entirely — mixing buckets across tiers would put a SMALL "Top" below a
+// LARGE "Average" on the absolute % axis, which reads as inconsistent.
+const tableHeaders = computed(() => {
+    const cols = [
+        { title: 'Rank',     key: 'rank',     width: '70px',  sortable: false },
+        { title: 'Performer', key: 'bucket',  width: '110px', sortable: true  },
+        { title: 'Province', key: 'province', sortable: true  },
+        { title: 'Director', key: 'director', sortable: false },
+        { title: 'Tier',     key: 'category', width: '90px',  align: 'center', sortable: true  },
+        { title: 'CORE 60%', key: 'core',     width: '90px',  align: 'center', sortable: false },
+        { title: 'FUNC 30%', key: 'functional', width: '90px', align: 'center', sortable: false },
+        { title: 'SUPP 10%', key: 'support',  width: '90px',  align: 'center', sortable: false },
+        { title: 'Total',    key: 'total_pct', width: '110px', align: 'center', sortable: true  },
+    ];
+    return selectedTier.value === 'all' ? cols.filter(c => c.key !== 'bucket') : cols;
+});
 
-// Scores are 0-100 binary-counting percentages. Tiers calibrated so a
-// reasonable Operational/Absolute score lands in the middle band.
-const tierColor = score =>
-    score >= 70 ? '#15803d' :
-    score >= 40 ? '#ca8a04' : '#b91c1c';
+const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Under: '#b91c1c' }[b] ?? '#64748b');
+const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Under: 'Under' }[b] ?? '—');
+const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink' }[cat] ?? 'grey');
 
-const tierLabel = score =>
-    score >= 70 ? 'Top Performers'    :
-    score >= 40 ? 'Average Performers' : 'Low Performers';
-
-const categoryColor = cat => ({
-    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink'
-}[cat] ?? 'grey');
-
-// Top 10 from filtered category
+// Top 10 by the active score (total or category subtotal)
 const top10Data = computed(() => {
-    const slice = filteredScores.value.slice(0, 10);
+    const slice = rankedScores.value.slice(0, 10);
     return {
         names:     slice.map(s => s.province),
-        scores:    slice.map(s => s.score),
-        directors: slice.map(s => s.director),
-        counts:    slice.map(s => s.active ?? 0),
+        scores:    slice.map(s => getScore(s)),
+        directors: slice.map(s => s.director || '—'),
+        buckets:   slice.map(s => s.bucket),
     };
 });
 
-// Failing from filtered category, sorted desc (least-failing at top)
-const failingData = computed(() => {
-    const slice = filteredScores.value
-        .filter(s => s.score < 40)
+// Under Performers = anyone with bucket=Under in the current filter (sorted desc)
+const underData = computed(() => {
+    const slice = rankedScores.value
+        .filter(s => s.bucket === 'Under')
         .slice()
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 15);
+        .sort((a, b) => getScore(b) - getScore(a));
     return {
         names:     slice.map(s => s.province),
-        scores:    slice.map(s => s.score),
-        directors: slice.map(s => s.director),
-        counts:    slice.map(s => s.active ?? 0),
+        scores:    slice.map(s => getScore(s)),
+        directors: slice.map(s => s.director || '—'),
+        buckets:   slice.map(s => s.bucket),
     };
 });
 
 const tooltipHtml = (data, i) => {
-    const score = data.scores[i]    ?? 0;
+    const score = (data.scores[i] ?? 0).toFixed(2);
     const dir   = data.directors[i] ?? '—';
     const name  = data.names[i]     ?? '';
-    const cnt   = data.counts[i]    ?? 0;
-    const color = tierColor(score);
-    return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:180px;">
+    const bk    = data.buckets[i]   ?? '—';
+    const color = bucketColor(bk);
+    const label = selectedCategory.value === 'overall' ? 'weighted score' : `${selectedCategory.value} contribution`;
+    return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:200px;">
                 <div style="font-weight:700;margin-bottom:4px;">${name}</div>
                 <div style="color:#64748b;margin-bottom:2px;">Director: ${dir}</div>
-                <div style="color:#64748b;margin-bottom:6px;">${cnt} indicators tracked</div>
+                <div style="color:#64748b;margin-bottom:6px;">Performer: ${bucketDisplay(bk)}</div>
                 <div style="display:flex;align-items:center;gap:6px;">
                     <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
-                    <strong style="color:${color};">${score}% accomplishment</strong>
+                    <strong style="color:${color};">${score}% ${label}</strong>
                 </div>
             </div>`;
 };
 
-const makeHorizOptions = (data, maxX = null, extraOpts = {}) => {
-    const maxScore    = Math.max(...data.scores, 0);
-    const computedMax = maxX ?? Math.ceil((maxScore * 1.12) / 10) * 10;
+const makeHorizOptions = (data) => {
+    const max = Math.max(...data.scores, 0);
+    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
     return {
-        chart: {
-            type: 'bar',
-            toolbar: { show: false },
-            fontFamily: 'inherit',
-            animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } },
-        },
-        plotOptions: {
-            bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true },
-        },
-        colors: data.scores.map(tierColor),
+        chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
+                 animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
+        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
+        colors: data.buckets.map(bucketColor),
         legend: { show: false },
-        grid: {
-            borderColor: '#f1f5f9',
-            xaxis: { lines: { show: true } },
-            yaxis: { lines: { show: false } },
-            padding: { left: 0, right: 12, top: -8, bottom: 0 },
-        },
-        dataLabels: {
-            enabled: true,
-            formatter: v => `${Math.round(v)}%`,
-            style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] },
-            dropShadow: { enabled: false },
-        },
-        xaxis: {
-            categories: data.names,
-            min: 0,
-            max: computedMax,
-            labels: {
-                formatter: v => `${v}%`,
-                style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' },
-            },
-            axisBorder: { show: false },
-            axisTicks:  { show: false },
-        },
-        yaxis: {
-            labels: {
-                style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' },
-                maxWidth: 115,
-            },
-        },
-        tooltip: {
-            theme: 'light',
-            custom: ({ dataPointIndex }) => tooltipHtml(data, dataPointIndex),
-        },
-        ...extraOpts,
+        grid: { borderColor: '#f1f5f9',
+                xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
+                padding: { left: 0, right: 12, top: -8, bottom: 0 } },
+        dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
+                      style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
+        xaxis: { categories: data.names, min: 0, max: computedMax,
+                 labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
+                 axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 115 } },
+        tooltip: { theme: 'light', custom: ({ dataPointIndex }) => tooltipHtml(data, dataPointIndex) },
     };
 };
 
 const top10Options = computed(() => makeHorizOptions(top10Data.value));
-const top10Series  = computed(() => [{ name: 'KPI Score', data: top10Data.value.scores }]);
-
-const failingOptions = computed(() => makeHorizOptions(failingData.value, 75, {
-    annotations: {
-        xaxis: [{
-            x: 70,
-            borderColor: '#f59e0b',
-            strokeDashArray: 5,
-            label: {
-                text: '70% threshold',
-                offsetY: 6,
-                style: {
-                    fontSize: '10px',
-                    fontFamily: 'inherit',
-                    background: '#fef3c7',
-                    color: '#92400e',
-                    padding: { top: 2, bottom: 2, left: 4, right: 4 },
-                },
-            },
-        }],
-    },
-}));
-const failingSeries = computed(() => [{ name: 'KPI Score', data: failingData.value.scores }]);
+const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
+const underOptions = computed(() => makeHorizOptions(underData.value));
+const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
 </script>
 
 <style scoped>
-.chart-header {
-    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+.filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
-.legend-dot {
-    display: inline-block;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    flex-shrink: 0;
+.segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: #f1f5f9;
+    border-radius: 9px;
+    border: 1px solid #e2e8f0;
+}
+.segmented-btn {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+.segmented-btn:hover:not(.active) { color: #0f172a; background: rgba(255, 255, 255, 0.6); }
+.segmented-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-:deep(.kpi-chip-active) { font-weight: 700 !important; opacity: 1 !important; }
+.seg-count {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.5;
+    background: #e2e8f0;
+    color: #475569;
+}
+.seg-count--all    { background: #e0e7ff; color: #4338ca; }
+.seg-count--micro  { background: #cfd8dc; color: #455a64; }
+.seg-count--small  { background: #b2dfdb; color: #00695c; }
+.seg-count--medium { background: #c5cae9; color: #283593; }
+.seg-count--large  { background: #d1c4e9; color: #4527a0; }
+.seg-count--cstc   { background: #f8bbd0; color: #ad1457; }
+
+.category-btn-micro.active  { color: #455a64; background: #eceff1; box-shadow: 0 1px 2px rgba(69,90,100,0.10); }
+.category-btn-small.active  { color: #00695c; background: #e0f2f1; box-shadow: 0 1px 2px rgba(0,105,92,0.10); }
+.category-btn-medium.active { color: #283593; background: #e8eaf6; box-shadow: 0 1px 2px rgba(40,53,147,0.10); }
+.category-btn-large.active  { color: #4527a0; background: #ede7f6; box-shadow: 0 1px 2px rgba(69,39,160,0.10); }
+.category-btn-cstc.active   { color: #ad1457; background: #fce4ec; box-shadow: 0 1px 2px rgba(173,20,87,0.10); }
+
+.chart-header { border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
+.legend-dot   { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 .leaderboard-table :deep(tr) { cursor: default; }
 .leaderboard-table :deep(thead th) { font-size: 11px !important; font-weight: 600 !important; }
+.leaderboard-table :deep(table) { width: 100% !important; }
 
-.rank-medal {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 20px;
-}
+.rank-medal { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 20px; }
 .rank-gold   { background: #fef9c3; color: #854d0e; }
 .rank-silver { background: #f1f5f9; color: #475569; }
 .rank-bronze { background: #ffedd5; color: #9a3412; }
 
-.score-track {
-    flex: 1;
-    height: 8px;
-    background: #f1f5f9;
-    border-radius: 4px;
-    overflow: hidden;
-}
-.score-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.6s ease;
-}
+.score-track { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+.score-fill  { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
 
-/* ── Podium view ─────────────────────────────────────── */
 .podium-banner {
-    display: flex;
-    align-items: center;
-    background: rgba(var(--v-theme-surface-variant), 0.4);
-    border-left: 3px solid rgb(var(--v-theme-primary));
+    display: flex; align-items: center;
+    background: linear-gradient(90deg, #fef9c3 0%, #fef3c7 60%, #fff 100%);
+    border-left: 3px solid #ca8a04;
     border-radius: 0 6px 6px 0;
     padding: 8px 14px;
+    box-shadow: 0 1px 2px rgba(202, 138, 4, 0.08);
 }
+.podium-stage   { width: 42%; flex-shrink: 0; display: flex; flex-direction: column; align-self: flex-start; }
+.podium-items   { display: flex; align-items: flex-end; gap: 8px; }
+.podium-item    { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.podium-info    { text-align: center; padding-bottom: 10px; }
+.podium-province { font-size: 14px; font-weight: 700; line-height: 1.3; max-width: 170px; word-wrap: break-word; }
+.podium-score   { font-size: 24px; font-weight: 800; line-height: 1; }
+.podium-raw     { font-size: 11px; color: #64748b; margin-top: 4px; }
+.podium-block   { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-radius: 8px 8px 0 0; color: white; }
+.podium-rank-num { font-size: 18px; font-weight: 800; color: white; }
+.podium-gold    { height: 210px; background: linear-gradient(160deg, #ca8a04, #fde047); }
+.podium-silver  { height: 160px; background: linear-gradient(160deg, #64748b, #cbd5e1); }
+.podium-bronze  { height: 120px; background: linear-gradient(160deg, #78350f, #c2410c); }
 
-.podium-stage {
-    width: 42%;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-self: flex-start;
+.podium-rest-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
+.podium-rest-rank { width: 32px; text-align: right; flex-shrink: 0; font-size: 11px; color: #94a3b8; font-weight: 600; }
+.podium-rest-scroll { max-height: 590px; overflow-y: auto; }
+
+.podium-breakdown { display: flex; gap: 20px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
+.breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.breakdown-header { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; line-height: 1.2; }
+.breakdown-rank   { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; color: #94a3b8; text-transform: uppercase; }
+.breakdown-province { font-size: 12px; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.breakdown-row    { display: flex; align-items: center; gap: 8px; cursor: default; }
+.breakdown-label  { font-size: 10px; font-weight: 600; color: #64748b; width: 110px; flex-shrink: 0; white-space: nowrap; }
+.breakdown-score  { font-size: 11px; font-weight: 700; width: 60px; text-align: right; flex-shrink: 0; margin-left: auto; }
+
+.score-text { display: flex; flex-direction: column; line-height: 1.2; }
+.score-pct  { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.score-counts { font-size: 11px; color: rgba(0, 0, 0, 0.55); white-space: nowrap; }
+
+/* Highlights the column matching the active category filter so the user can
+   instantly see which value drives the current sort + bucket. */
+.cat-cell {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
 }
-
-.podium-items {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-}
-
-.podium-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.podium-info {
-    text-align: center;
-    padding-bottom: 10px;
-}
-
-.podium-province {
-    font-size: 14px;
+.cat-cell--active {
+    background: rgba(99, 102, 241, 0.10);
     font-weight: 700;
-    line-height: 1.3;
-    max-width: 130px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-.podium-director {
-    font-size: 12px;
-    color: #64748b;
-    margin: 3px 0 6px;
-    max-width: 130px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+/* Small weight chip embedded in the Category segmented buttons */
+.cat-weight {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 6px;
+    border-radius: 7px;
+    font-size: 9.5px;
+    font-weight: 700;
+    background: #e0e7ff;
+    color: #4338ca;
+    line-height: 1.5;
 }
 
-.podium-score {
-    font-size: 24px;
-    font-weight: 800;
-    line-height: 1;
-}
-
-.podium-raw {
-    font-size: 11px;
-    color: #64748b;
-    margin-top: 4px;
-}
-
-.podium-block {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border-radius: 8px 8px 0 0;
-    color: white;
-}
-
-.podium-rank-num {
-    font-size: 18px;
-    font-weight: 800;
-    color: white;
-}
-
-.podium-gold   { height: 210px; background: linear-gradient(160deg, #3730a3, #6366f1); }
-.podium-silver { height: 160px; background: linear-gradient(160deg, #334155, #64748b); }
-.podium-bronze { height: 120px; background: linear-gradient(160deg, #92400e, #d97706); }
-
-.podium-rest-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 7px 0;
-    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.podium-rest-rank {
-    width: 32px;
-    text-align: right;
-    flex-shrink: 0;
-    font-size: 11px;
-    color: #94a3b8;
-    font-weight: 600;
-}
-
-.podium-rest-score {
-    width: 130px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.podium-rest-score .score-track { flex: unset; }
+.score-cell { display: flex; align-items: center; gap: 8px; width: 290px; flex-shrink: 0; }
+.score-cell .score-track { flex: unset; width: 100px; flex-shrink: 0; }
+.score-cell .score-text  { width: 175px; flex-shrink: 0; }
+.score-cell .score-pct   { font-size: 12px; }
+.score-cell .score-counts { font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
+.podium-rest-cell { width: 290px; }
 </style>

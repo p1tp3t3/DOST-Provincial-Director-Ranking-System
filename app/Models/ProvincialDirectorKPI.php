@@ -8,7 +8,7 @@ class ProvincialDirectorKPI extends Model
 {
     public $table      = 'provincial_director_kpis';
     public $timestamps = false;
-    protected $fillable = ['provincial_director_id', 'kpi_id', 'kpi_subrow_id', 'target', 'accomplished', 'year'];
+    protected $fillable = ['provincial_director_id', 'kpi_id', 'target', 'accomplished', 'year'];
 
     public function director()
     {
@@ -18,10 +18,5 @@ class ProvincialDirectorKPI extends Model
     public function kpi()
     {
         return $this->belongsTo(KPI::class, 'kpi_id');
-    }
-
-    public function subrow()
-    {
-        return $this->belongsTo(KPISubrow::class, 'kpi_subrow_id');
     }
 }

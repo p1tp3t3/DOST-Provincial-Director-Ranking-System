@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Modules\Report;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Province;
-use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
+use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -119,6 +119,8 @@ class ProvincialSubAdminReportController extends Controller
             ])->toArray();
     }
 
+    // Director KPI summary using the official PSTD Ranking Matrix weighted score
+    // for the most recent reporting year. Includes CSTC-tier rank + bucket.
     private function get_director_kpi(?int $provinceId): array
     {
         if (!$provinceId) return [];
@@ -126,23 +128,30 @@ class ProvincialSubAdminReportController extends Controller
         $director = User::where('province_id', $provinceId)
             ->where('role', 'provincial_director')
             ->first();
-
         if (!$director) return [];
 
-        $toNum = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
+        $svc   = new RankingService();
+        $years = $svc->availableYears();
+        if (empty($years)) return ['director_id' => $director->id];
+        $latestYear = $years[0];
 
-        $kpis        = ProvincialDirectorKPI::where('provincial_director_id', $director->id)->get();
-        $target      = $kpis->sum(fn($k) => $toNum($k->target));
-        $accomplished = $kpis->sum(fn($k) => $toNum($k->accomplished));
-        $rate        = $target > 0 ? round($accomplished / $target * 100, 1) : 0;
-
-        return [
-            'director_id'  => $director->id,
-            'target'       => $target,
-            'accomplished' => $accomplished,
-            'rate'         => $rate,
-            'total_items'  => $kpis->count(),
-        ];
+        foreach ($svc->rankByYear($latestYear) as $tier => $rows) {
+            foreach ($rows as $r) {
+                if ((int) $r['province_id'] === (int) $provinceId) {
+                    return [
+                        'director_id'    => $director->id,
+                        'year'           => $latestYear,
+                        'tier'           => $tier,
+                        'tier_rank'      => $r['rank'],
+                        'bucket'         => $r['bucket'],
+                        'total_pct'      => $r['total_pct'],
+                        'adjective'      => $r['adjective_label'],
+                        'subtotals_pct'  => $r['subtotals_pct'],
+                    ];
+                }
+            }
+        }
+        return ['director_id' => $director->id, 'year' => $latestYear];
     }
 
     private function get_log_stats(?int $provinceId, ?Carbon $from = null, ?Carbon $to = null): array
