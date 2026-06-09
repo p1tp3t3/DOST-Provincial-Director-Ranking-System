@@ -92,6 +92,7 @@
         <PhilippinesMap
             key="ph-map"
             :scores="filteredScores"
+            :trends="trendsByProvince"
             :selected-year="selectedYear"
             :selected-tier="selectedTier"
             height="calc(100vh - 260px)"
@@ -198,6 +199,33 @@ const bucketCounts = computed(() => {
     }
     return counts;
 });
+
+// ── Per-province trend data ────────────────────────────────────────────────
+// One pass through every year × every tier × every province, building a
+// chronologically-sorted history per province. Sparklines in the side panel
+// use this to show "this director has been Top for 3 years running" etc.
+const trendsByProvince = computed(() => {
+    const out = {};
+    for (const [year, tiers] of Object.entries(props.rankings_by_year)) {
+        for (const rows of Object.values(tiers)) {
+            for (const r of rows) {
+                if (!out[r.province]) out[r.province] = [];
+                out[r.province].push({
+                    year:      Number(year),
+                    total_pct: r.total_pct,
+                    bucket:    r.bucket,
+                    status:    r.status,
+                    rank:      r.rank,
+                });
+            }
+        }
+    }
+    for (const name of Object.keys(out)) {
+        out[name].sort((a, b) => a.year - b.year);
+    }
+    return out;
+});
+
 </script>
 
 <style scoped>

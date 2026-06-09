@@ -17,11 +17,12 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('{login?}', [AuthenticatedSessionController::class, 'create'])
-        ->where('login', 'login')
-        ->name('login');
-
-
+    // `/` and `/login` both render the login form, but only `/login` is named
+    // so route('login') always resolves to /login — matching the POST handler.
+    // Without this split, route('login') returns `/` (shorter optional form),
+    // the form POSTs to `/`, and you get a 405 Method Not Allowed.
+    Route::get('/',     [AuthenticatedSessionController::class, 'create']);
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
