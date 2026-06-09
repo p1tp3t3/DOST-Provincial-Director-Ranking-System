@@ -26,8 +26,7 @@
             </template>
         </v-list-item>
         <v-divider class="my-2"></v-divider>
-        <v-list-item prepend-icon="mdi-account" title="My Profile" value="profile" @click="goToProfile"></v-list-item>
-        <v-list-item prepend-icon="mdi-cog" title="Settings" value="settings"></v-list-item>
+        <v-list-item prepend-icon="mdi-cog" title="Settings" value="settings" @click="router.visit('/settings')"></v-list-item>
         <v-divider class="my-2"></v-divider>
         <v-list-item prepend-icon="mdi-logout" base-color="error" title="Logout" value="logout" @click="router.post('/logout')"></v-list-item>
       </v-list>

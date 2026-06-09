@@ -10,6 +10,7 @@ use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
 use App\Services\RankingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -72,8 +73,9 @@ class KPIDataController extends Controller
         $province   = Province::findOrFail($provinceId);
 
         $director = User::where('province_id', $provinceId)
-            ->where('role', 'provincial_director')
-            ->with('profile')->first();
+                        ->where('role', 'provincial_director')
+                        ->with('profile')
+                        ->first();
 
         if (!$director) {
             return back()->withErrors(['no_director' => 'Province has no provincial director assigned.']);
@@ -177,6 +179,122 @@ class KPIDataController extends Controller
         });
 
         return back()->with('success', "Saved KPI data for {$year}.");
+    }
+
+    // ── Provincial Sub Admin ──────────────────────────────────────────────────
+
+    public function provincial_index(?int $year = null)
+    {
+        $user       = Auth::user();
+        $provinceId = $user->province_id;
+
+        $director = User::query()
+            ->where('province_id', $provinceId)
+            ->where('role', 'provincial_director')
+            ->with('profile')
+            ->first();
+
+        if (!$director) {
+            return inertia('ProvincialSubAdmin/KPI/Main', ['no_director' => true]);
+        }
+
+        $svc            = new RankingService();
+        $availableYears = $svc->availableYears();
+        $year           = $year ?: ($availableYears[0] ?? now()->year);
+
+        $directorYears = DB::table('provincial_director_kpis')
+            ->where('provincial_director_id', $director->id)
+            ->distinct()->orderByDesc('year')->pluck('year')->values()->toArray();
+
+        $values = ProvincialDirectorKPI::query()
+            ->where('provincial_director_id', $director->id)
+            ->where('year', $year)
+            ->get()
+            ->keyBy('kpi_id')
+            ->map(fn($r) => ['target' => $r->target, 'accomplished' => $r->accomplished])
+            ->toArray();
+
+        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')->get()
+            ->map(fn($cat) => [
+                'id'     => $cat->id,
+                'code'   => $cat->code,
+                'name'   => $cat->name,
+                'weight' => (float) $cat->weight,
+                'kpis'   => $cat->kpis->map(fn($k) => [
+                    'id'              => $k->id,
+                    'code'            => $k->code,
+                    'name'            => $k->name,
+                    'weight'          => (float) $k->weight,
+                    'is_scored'       => (bool) $k->is_scored,
+                    'inverse_scoring' => (bool) $k->inverse_scoring,
+                    'derivation_type' => $k->derivation_type,
+                    'target'          => $values[$k->id]['target']       ?? '',
+                    'accomplished'    => $values[$k->id]['accomplished'] ?? '',
+                ])->values()->toArray(),
+            ])->values()->toArray();
+
+        $profile      = $director->profile;
+        $directorName = $profile
+            ? trim(($profile->first_name ?? '') . ' ' . ($profile->middle_name ?? '') . ' ' . ($profile->last_name ?? ''))
+            : '—';
+
+        return inertia('ProvincialSubAdmin/KPI/Main', [
+            'director'        => ['id' => $director->id, 'name' => $directorName ?: '—'],
+            'year'            => (int) $year,
+            'available_years' => $availableYears,
+            'director_years'  => $directorYears,
+            'kpi_categories'  => $categories,
+            'no_director'     => false,
+        ]);
+    }
+
+    public function provincial_update(Request $request, int $directorId, int $year)
+    {
+        $user = Auth::user();
+
+        $director = User::query()
+            ->where('id', $directorId)
+            ->where('role', 'provincial_director')
+            ->where('province_id', $user->province_id)
+            ->firstOrFail();
+
+        $request->validate([
+            'values'                => ['required', 'array'],
+            'values.*.kpi_id'       => ['required', 'integer', 'exists:kpis,id'],
+            'values.*.target'       => ['nullable', 'string', 'max:255'],
+            'values.*.accomplished' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        DB::transaction(function () use ($request, $director, $year) {
+            foreach ($request->input('values') as $row) {
+                $target       = $this->normalizeInput($row['target']       ?? null);
+                $accomplished = $this->normalizeInput($row['accomplished'] ?? null);
+
+                if ($target === null && $accomplished === null) {
+                    ProvincialDirectorKPI::query()
+                        ->where('provincial_director_id', $director->id)
+                        ->where('kpi_id', $row['kpi_id'])
+                        ->where('year', $year)
+                        ->delete();
+                    continue;
+                }
+
+                ProvincialDirectorKPI::updateOrCreate(
+                    [
+                        'provincial_director_id' => $director->id,
+                        'kpi_id'                 => $row['kpi_id'],
+                        'year'                   => $year,
+                    ],
+                    [
+                        'target'       => $target,
+                        'accomplished' => $accomplished,
+                    ]
+                );
+            }
+        });
+
+        return back()->with('success', "KPI data saved for {$year}.");
     }
 
     private function normalizeInput(?string $v): ?string

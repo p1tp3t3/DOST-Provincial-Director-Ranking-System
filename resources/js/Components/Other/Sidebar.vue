@@ -20,6 +20,7 @@ import {
     RiRoadMapFill,
     RiFolder2Line,
     RiEdit2Fill,
+    RiTable2,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -71,7 +72,7 @@ const tabs = computed(() => {
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
                 { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
-                { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
+                { name: 'KPI Management', href: '/kpi', icon: RiTable2 },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
                 { name: 'Reports',              href: '/sub-admin-report',              icon: RiFileChartFill  },
             ];
@@ -91,16 +92,10 @@ const tabs = computed(() => {
             ];
         case 'provincial_sub_admin':
             return [
-                { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
-                {
-                    name: 'KPI Management', icon: RiListCheck3,
-                    children: [
-                        { name: 'KPI Overview',    href: '/kpi',        icon: RiFileList3Fill },
-                        { name: 'KPI Reports',     href: '/kpi/reports',icon: RiFileChartFill },
-                    ]
-                },
-                { name: 'Reports',   href: '/provincial-sub-admin-report',    icon: RiFileList3Fill  },
+                { name: 'Dashboard',   href: '/dashboard',                  icon: RiDashboard2Fill },
+                { name: 'Employees',   href: '/employees',                  icon: RiTeamFill       },
+                { name: 'KPI Editor',  href: '/provincial-kpi',             icon: RiEdit2Fill      },
+                { name: 'Reports',     href: '/provincial-sub-admin-report', icon: RiFileList3Fill  },
             ];
         case 'provincial_director':
             return [
