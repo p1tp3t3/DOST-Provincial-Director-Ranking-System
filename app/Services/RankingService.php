@@ -163,7 +163,14 @@ class RankingService
 
         $total = array_sum($subtotals);
 
-        // Same band lookup as a single KPI, applied to the final 0..1 score expressed as %
+        // Status determines whether this province competes for a rank:
+        //   no_director — vacant PSTD position; cannot have submitted anything
+        //   no_data     — director assigned but hasn't submitted KPI data this year
+        //   ranked      — has director + at least one KPI value for this year
+        $hasDirector = !empty($meta['director_id']);
+        $hasData     = !empty($values);
+        $status      = !$hasDirector ? 'no_director' : (!$hasData ? 'no_data' : 'ranked');
+
         $totalBand = $this->lookupStandardBand($total * 100);
 
         return [
@@ -171,6 +178,7 @@ class RankingService
             'province'         => $meta['province'],
             'category'         => $meta['category'],
             'director'         => $meta['director'] ?? null,
+            'status'           => $status,
             'total'            => round($total, 6),
             'total_pct'        => round($total * 100, 2),
             'adjective_label'  => $totalBand['label'],
@@ -230,13 +238,20 @@ class RankingService
     }
 
     // Ranks within a single CSTC tier and assigns Top / Average / Under buckets.
+    //   - Provinces with status != 'ranked' (no director or no submitted data) are
+    //     EXCLUDED from the bucket math — they shouldn't dilute N or steal an
+    //     "Under" slot from a province that genuinely underperformed. They're
+    //     appended at the end of the returned array with rank=null, bucket=null.
     //   - Tiebreaker: total DESC, then CORE subtotal DESC, FUNCTIONAL DESC, SUPPORT DESC,
-    //     then province name ASC (so the order is deterministic).
+    //     then province name ASC (deterministic).
     //   - Bucketing rule: Top = round(N * top_pct, min 1), Under = round(N * under_pct, min 1),
     //     Average absorbs the remainder. Skipped entirely when N < min_group_size_for_buckets.
     private function rankAndBucket(array $rows): array
     {
-        usort($rows, function ($a, $b) {
+        $ranked   = array_values(array_filter($rows, fn($r) => ($r['status'] ?? 'ranked') === 'ranked'));
+        $unranked = array_values(array_filter($rows, fn($r) => ($r['status'] ?? 'ranked') !== 'ranked'));
+
+        usort($ranked, function ($a, $b) {
             $cmp = $b['total'] <=> $a['total'];
             if ($cmp !== 0) return $cmp;
             foreach (['CORE', 'FUNCTIONAL', 'SUPPORT'] as $c) {
@@ -246,7 +261,7 @@ class RankingService
             return strcmp($a['province'], $b['province']);
         });
 
-        $n      = count($rows);
+        $n      = count($ranked);
         $minN   = (int) config('ranking.min_group_size_for_buckets', 5);
         $topPct = (float) config('ranking.buckets.top_pct',   0.20);
         $undPct = (float) config('ranking.buckets.under_pct', 0.20);
@@ -257,14 +272,13 @@ class RankingService
         if ($useBuckets) {
             $topCount   = max(1, (int) round($n * $topPct));
             $underCount = max(1, (int) round($n * $undPct));
-            // Avoid overlap when Top + Under would exceed N
             if ($topCount + $underCount >= $n) {
-                $underCount = max(1, $n - $topCount - 1); // leave at least 1 Average
+                $underCount = max(1, $n - $topCount - 1);
             }
         }
-        $avgEnd = $n - $underCount; // ranks above this index → Under
+        $avgEnd = $n - $underCount;
 
-        foreach ($rows as $i => &$row) {
+        foreach ($ranked as $i => &$row) {
             $row['rank'] = $i + 1;
             if (!$useBuckets) {
                 $row['bucket'] = null;
@@ -276,7 +290,17 @@ class RankingService
                 $row['bucket'] = 'Under';
             }
         }
-        return $rows;
+        unset($row);
+
+        // Unranked provinces sort alphabetically and carry no rank or bucket
+        usort($unranked, fn($a, $b) => strcmp($a['province'], $b['province']));
+        foreach ($unranked as &$row) {
+            $row['rank']   = null;
+            $row['bucket'] = null;
+        }
+        unset($row);
+
+        return array_merge($ranked, $unranked);
     }
 
     // Parses a raw string from the legacy data into a number, or null if unparseable.

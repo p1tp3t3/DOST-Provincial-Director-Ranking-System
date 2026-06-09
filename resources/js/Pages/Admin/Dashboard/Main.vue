@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3">
 
@@ -50,32 +50,29 @@
                                 </v-chip>
                             </div>
                             <div class="d-flex align-center gap-3 flex-wrap">
-                                <div class="d-flex align-center gap-3">
-                                    <div class="d-flex align-center gap-1">
-                                        <span class="legend-dot" style="background:#15803d;"></span>
-                                        <span class="text-caption text-medium-emphasis">Top ({{ bucketCounts.Top }})</span>
-                                    </div>
-                                    <div class="d-flex align-center gap-1">
-                                        <span class="legend-dot" style="background:#ca8a04;"></span>
-                                        <span class="text-caption text-medium-emphasis">Average ({{ bucketCounts.Average }})</span>
-                                    </div>
-                                    <div class="d-flex align-center gap-1">
-                                        <span class="legend-dot" style="background:#b91c1c;"></span>
-                                        <span class="text-caption text-medium-emphasis">Under ({{ bucketCounts.Under }})</span>
-                                    </div>
+                                <div class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#15803d;"></span>
+                                    <span class="text-caption text-medium-emphasis">Top ({{ bucketCounts.Top }})</span>
                                 </div>
-                                <v-divider vertical style="height:24px;" />
-                                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
-                                    <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
-                                    <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
-                                </v-btn-toggle>
+                                <div class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#ca8a04;"></span>
+                                    <span class="text-caption text-medium-emphasis">Average ({{ bucketCounts.Average }})</span>
+                                </div>
+                                <div class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#b91c1c;"></span>
+                                    <span class="text-caption text-medium-emphasis">Under ({{ bucketCounts.Under }})</span>
+                                </div>
+                                <div v-if="unrankedProvinces.length" class="d-flex align-center gap-1">
+                                    <span class="legend-dot" style="background:#94a3b8;"></span>
+                                    <span class="text-caption text-medium-emphasis">Pending ({{ unrankedProvinces.length }})</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <v-divider />
 
-                    <!-- Tier segmented + Year segmented -->
+                    <!-- Tier segmented + Table/Podium view toggle -->
                     <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap">
                         <div class="d-flex align-center gap-2">
                             <span class="filter-label">Tier</span>
@@ -95,20 +92,13 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="ml-auto d-flex align-center gap-2">
-                            <span class="filter-label">Year</span>
-                            <div class="segmented">
-                                <button
-                                    v-for="y in available_years" :key="y"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedYear === y }"
-                                    @click="selectedYear = y"
-                                >{{ y }}</button>
-                            </div>
-                        </div>
+                        <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
+                            <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
+                            <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
+                        </v-btn-toggle>
                     </div>
 
-                    <!-- Category segmented (Overall / CORE / FUNCTIONAL / SUPPORT) -->
+                    <!-- Category segmented (Overall / CORE / FUNCTIONAL / SUPPORT) + Year segmented -->
                     <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
                         <div class="d-flex align-center gap-2">
                             <span class="filter-label">Category</span>
@@ -126,11 +116,21 @@
                                 >{{ c.label }} <span class="cat-weight">{{ c.weight }}</span></button>
                             </div>
                         </div>
-                        <v-spacer />
                         <span v-if="selectedCategory !== 'overall'" class="text-caption text-medium-emphasis">
                             Ranking by <strong>{{ selectedCategory }}</strong> contribution
                             <template v-if="selectedTier !== 'all'"> · re-bucketed within {{ tierLabel }}</template>
                         </span>
+                        <div class="ml-auto d-flex align-center gap-2">
+                            <span class="filter-label">Year</span>
+                            <div class="segmented">
+                                <button
+                                    v-for="y in available_years" :key="y"
+                                    class="segmented-btn"
+                                    :class="{ active: selectedYear === y }"
+                                    @click="selectedYear = y"
+                                >{{ y }}</button>
+                            </div>
+                        </div>
                     </div>
 
                     <v-divider />
@@ -163,25 +163,34 @@
                         class="leaderboard-table"
                     >
                         <template #item.rank="{ item }">
-                            <span v-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
+                            <span v-if="!isRanked(item)" class="text-caption text-disabled">—</span>
+                            <span v-else-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
                             <span v-else-if="item.rank === 2" class="rank-medal rank-silver">2nd</span>
                             <span v-else-if="item.rank === 3" class="rank-medal rank-bronze">3rd</span>
                             <span v-else class="text-caption text-medium-emphasis">#{{ item.rank }}</span>
                         </template>
 
                         <template #item.bucket="{ item }">
-                            <v-chip v-if="item.bucket" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium">
+                            <v-chip v-if="item.status === 'no_director'" color="blue-grey" size="x-small" variant="tonal" class="font-weight-medium">
+                                No director
+                            </v-chip>
+                            <v-chip v-else-if="item.status === 'no_data'" color="blue-grey" size="x-small" variant="tonal" class="font-weight-medium">
+                                No data
+                            </v-chip>
+                            <v-chip v-else-if="item.bucket" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium">
                                 {{ bucketDisplay(item.bucket) }}
                             </v-chip>
                             <span v-else class="text-caption text-disabled">—</span>
                         </template>
 
                         <template #item.province="{ item }">
-                            <span class="text-body-2 font-weight-medium">{{ item.province }}</span>
+                            <span class="text-body-2 font-weight-medium" :class="{ 'text-disabled': !isRanked(item) }">{{ item.province }}</span>
                         </template>
 
                         <template #item.director="{ item }">
-                            <span class="text-body-2 text-medium-emphasis">{{ item.director || '—' }}</span>
+                            <span class="text-body-2" :class="!isRanked(item) ? 'text-disabled font-italic' : 'text-medium-emphasis'">
+                                {{ item.director || 'Vacant' }}
+                            </span>
                         </template>
 
                         <template #item.category="{ item }">
@@ -191,25 +200,29 @@
                         </template>
 
                         <template #item.core="{ item }">
-                            <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'CORE' }">
+                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'CORE' }">
                                 {{ item.subtotals_pct.CORE.toFixed(1) }}%
                             </span>
+                            <span v-else class="text-caption text-disabled">—</span>
                         </template>
                         <template #item.functional="{ item }">
-                            <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">
+                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">
                                 {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }}%
                             </span>
+                            <span v-else class="text-caption text-disabled">—</span>
                         </template>
                         <template #item.support="{ item }">
-                            <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'SUPPORT' }">
+                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'SUPPORT' }">
                                 {{ item.subtotals_pct.SUPPORT.toFixed(1) }}%
                             </span>
+                            <span v-else class="text-caption text-disabled">—</span>
                         </template>
 
                         <template #item.total_pct="{ item }">
-                            <span class="score-pct cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'overall' }" :style="{ color: bucketColor(item.bucket) }">
+                            <span v-if="isRanked(item)" class="score-pct cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'overall' }" :style="{ color: bucketColor(item.bucket) }">
                                 {{ item.total_pct.toFixed(2) }}%
                             </span>
+                            <span v-else class="text-caption text-disabled">—</span>
                         </template>
 
                         <template #no-data>
@@ -228,7 +241,7 @@
                         </div>
 
                         <div class="d-flex gap-5">
-                            <div class="podium-stage">
+                            <div ref="podiumStageRef" class="podium-stage">
                                 <div class="podium-items">
                                     <div v-if="top3[0]" class="podium-item">
                                         <div class="podium-info">
@@ -283,7 +296,7 @@
 
                             <v-divider vertical class="mx-1" />
 
-                            <div class="flex-1 podium-rest-scroll">
+                            <div class="flex-1 podium-rest-scroll" :style="podiumStageHeight ? { maxHeight: podiumStageHeight + 'px' } : null">
                                 <div v-for="item in restList" :key="item.province" class="podium-rest-row">
                                     <span class="podium-rest-rank">#{{ item.rank }}</span>
                                     <div class="flex-1" style="min-width:0;">
@@ -369,7 +382,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
@@ -429,17 +442,30 @@ const getScore = (row) =>
         ? row.total_pct
         : (row.subtotals_pct?.[selectedCategory.value] ?? 0);
 
+// Buckets only the ranked rows (status === 'ranked'); unranked rows keep their
+// null rank/bucket and get appended at the end alphabetically.
+const isRanked = (r) => (r.status ?? 'ranked') === 'ranked';
+
 const assignBuckets = (sortedRows) => {
-    const n = sortedRows.length;
-    if (n < MIN_GROUP_FOR_BUCKETS) return sortedRows.map(r => ({ ...r, bucket: null }));
+    const ranked   = sortedRows.filter(isRanked);
+    const unranked = sortedRows.filter(r => !isRanked(r))
+        .slice().sort((a, b) => a.province.localeCompare(b.province))
+        .map(r => ({ ...r, rank: null, bucket: null }));
+
+    const n = ranked.length;
+    if (n < MIN_GROUP_FOR_BUCKETS) {
+        return [...ranked.map((r, i) => ({ ...r, rank: i + 1, bucket: null })), ...unranked];
+    }
     const topN = Math.max(1, Math.round(n * BUCKET_TOP_PCT));
     let   undN = Math.max(1, Math.round(n * BUCKET_UNDER_PCT));
     if (topN + undN >= n) undN = Math.max(1, n - topN - 1);
     const avgEnd = n - undN;
-    return sortedRows.map((r, i) => ({
+    const bucketed = ranked.map((r, i) => ({
         ...r,
+        rank:   i + 1,
         bucket: i < topN ? 'Top' : i < avgEnd ? 'Average' : 'Under',
     }));
+    return [...bucketed, ...unranked];
 };
 
 // Pull this year's per-tier rankings from the controller payload, flatten into
@@ -461,25 +487,32 @@ const rankedScores = computed(() => {
     const isOverall = selectedCategory.value === 'overall';
 
     if (selectedTier.value === 'all') {
-        // Global view: sort by the active score (Total or category subtotal). No
-        // bucketing — the Performer column is hidden in All Tiers mode because
-        // buckets are tier-relative and don't mix meaningfully.
-        return allTierRows.value
-            .slice()
-            .sort((a, b) => getScore(b) - getScore(a))
+        // Global view: ranked rows sorted by active score, unranked appended at the
+        // bottom alphabetically. Performer column is hidden in All Tiers mode.
+        const all      = allTierRows.value;
+        const ranked   = all.filter(isRanked)
+            .slice().sort((a, b) => getScore(b) - getScore(a))
             .map((r, i) => ({ ...r, rank: i + 1 }));
+        const unranked = all.filter(r => !isRanked(r))
+            .slice().sort((a, b) => a.province.localeCompare(b.province))
+            .map(r => ({ ...r, rank: null, bucket: null }));
+        return [...ranked, ...unranked];
     }
 
     const tierRows = allTierRows.value.filter(r => r.category === selectedTier.value);
 
-    // Overall view: trust backend rank + bucket (already sorted and bucketed
-    // within tier by RankingService).
+    // Overall view: backend already excluded unranked from bucketing. Trust its
+    // ordering — unranked rows are appended at the end with null rank/bucket.
     if (isOverall) return tierRows;
 
-    // Category view: re-sort by the chosen category's subtotal and re-bucket
-    // within the tier so Top / Average / Under reflect category performance.
-    const sorted = tierRows.slice().sort((a, b) => getScore(b) - getScore(a));
-    return assignBuckets(sorted).map((r, i) => ({ ...r, rank: i + 1 }));
+    // Category view: re-sort + re-bucket only the ranked rows within the tier.
+    const sorted = tierRows.slice().sort((a, b) => {
+        // Unranked sinks to the bottom regardless of category sort
+        if (!isRanked(a) && isRanked(b)) return 1;
+        if (isRanked(a) && !isRanked(b)) return -1;
+        return getScore(b) - getScore(a);
+    });
+    return assignBuckets(sorted);
 });
 
 const tierCounts = computed(() => {
@@ -496,8 +529,12 @@ const bucketCounts = computed(() => {
     return counts;
 });
 
-const top3     = computed(() => rankedScores.value.slice(0, 3));
-const restList = computed(() => rankedScores.value.slice(3));
+// Podium + rest list operate on RANKED rows only so unranked never appears on
+// the leader podium. Unranked provinces still show in the table at the bottom.
+const rankedOnly       = computed(() => rankedScores.value.filter(isRanked));
+const unrankedProvinces = computed(() => rankedScores.value.filter(r => !isRanked(r)));
+const top3     = computed(() => rankedOnly.value.slice(0, 3));
+const restList = computed(() => rankedOnly.value.slice(3));
 
 // Performer (Top / Average / Under) is bucketed per-tier so it's only meaningful
 // when a single tier is selected. In the "All Tiers" view we hide the column
@@ -522,9 +559,9 @@ const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Under: '#b91c1
 const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Under: 'Under' }[b] ?? '—');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink' }[cat] ?? 'grey');
 
-// Top 10 by the active score (total or category subtotal)
+// Top 10 by the active score (total or category subtotal). Excludes unranked.
 const top10Data = computed(() => {
-    const slice = rankedScores.value.slice(0, 10);
+    const slice = rankedOnly.value.slice(0, 10);
     return {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => getScore(s)),
@@ -535,7 +572,7 @@ const top10Data = computed(() => {
 
 // Under Performers = anyone with bucket=Under in the current filter (sorted desc)
 const underData = computed(() => {
-    const slice = rankedScores.value
+    const slice = rankedOnly.value
         .filter(s => s.bucket === 'Under')
         .slice()
         .sort((a, b) => getScore(b) - getScore(a));
@@ -591,6 +628,41 @@ const top10Options = computed(() => makeHorizOptions(top10Data.value));
 const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
 const underOptions = computed(() => makeHorizOptions(underData.value));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
+
+// Match the right-side rest list's max height to the podium stage so the two
+// columns line up flush at the bottom regardless of how many top-3 details or
+// breakdown rows render. Without this the rest list either leaves a gap below
+// the last row or overflows past the breakdown when many provinces are listed.
+const podiumStageRef    = ref(null);
+const podiumStageHeight = ref(0);
+let podiumResizeObserver = null;
+
+const updatePodiumHeight = () => {
+    if (podiumStageRef.value) podiumStageHeight.value = podiumStageRef.value.offsetHeight;
+};
+
+onMounted(() => {
+    nextTick(updatePodiumHeight);
+    if (typeof ResizeObserver !== 'undefined') {
+        podiumResizeObserver = new ResizeObserver(updatePodiumHeight);
+        if (podiumStageRef.value) podiumResizeObserver.observe(podiumStageRef.value);
+    }
+});
+
+onUnmounted(() => {
+    if (podiumResizeObserver) podiumResizeObserver.disconnect();
+});
+
+// Re-measure when the podium re-renders (view toggle, filter change) since the
+// ResizeObserver is rebound to a new DOM node when v-if flips podium ↔ table.
+watch([viewMode, selectedYear, selectedTier, selectedCategory], async () => {
+    await nextTick();
+    updatePodiumHeight();
+    if (podiumResizeObserver && podiumStageRef.value) {
+        podiumResizeObserver.disconnect();
+        podiumResizeObserver.observe(podiumStageRef.value);
+    }
+});
 </script>
 
 <style scoped>
@@ -695,7 +767,7 @@ const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.v
 
 .podium-rest-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .podium-rest-rank { width: 32px; text-align: right; flex-shrink: 0; font-size: 11px; color: #94a3b8; font-weight: 600; }
-.podium-rest-scroll { max-height: 590px; overflow-y: auto; }
+.podium-rest-scroll { overflow-y: auto; }
 
 .podium-breakdown { display: flex; gap: 20px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
 .breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }

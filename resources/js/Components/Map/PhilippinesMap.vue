@@ -36,12 +36,15 @@
             <div v-if="panel" class="map-info-panel">
                 <!-- Province / CSTC panel (same structure) -->
                 <template v-if="panel.type === 'province' || panel.type === 'cstc'">
-                    <div class="panel-header" :style="{ borderLeftColor: panel.tierColor }">
+                    <div class="panel-header">
                         <div class="panel-header-main">
+                            <div class="panel-caption">
+                                <span class="panel-caption-tier" :style="{ color: catColor(panel.category) }">{{ panel.category?.toUpperCase() }}</span>
+                                <span class="panel-caption-sep">·</span>
+                                <span class="panel-caption-year">{{ panel.year }}</span>
+                            </div>
                             <div class="panel-title">{{ panel.name }}</div>
-                            <span class="panel-cat-chip" :style="{ color: catColor(panel.category), background: catBg(panel.category) }">
-                                {{ panel.category?.toUpperCase() }}
-                            </span>
+                            <div class="panel-subtitle">{{ panel.director || 'Vacant' }}</div>
                         </div>
                         <button class="panel-close" @click="panel = null">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -49,50 +52,70 @@
                     </div>
 
                     <div class="panel-body">
-                        <div class="panel-score-block">
-                            <div class="panel-score-num" :style="{ color: panel.tierColor }">{{ panel.score }}%</div>
-                            <div class="panel-score-bar-wrap">
+                        <!-- Hero: score + inline status -->
+                        <div class="panel-hero">
+                            <div class="panel-hero-row">
+                                <div class="panel-score-num" :style="{ color: panel.tierColor }">
+                                    {{ panel.score != null ? panel.score + '%' : '—' }}
+                                </div>
+                                <div class="panel-hero-status" :style="{ color: panel.tierColor }">
+                                    {{ panel.tier }}<span v-if="panel.rank" class="panel-hero-rank">#{{ panel.rank }}</span>
+                                </div>
+                            </div>
+                            <div class="panel-score-bar-wrap" v-if="panel.score != null">
                                 <div class="panel-score-bar" :style="{ width: `${Math.min(panel.score, 100)}%`, background: panel.tierColor }"></div>
                             </div>
-                            <div class="d-flex align-items-center gap-2" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <div class="panel-tier-label" :style="{ color: panel.tierColor }">{{ panel.tier }}</div>
-                                <div class="panel-meta-chips">
-                                    <span v-if="panel.rank" class="panel-meta-chip panel-rank-chip">#{{ panel.rank }}</span>
-                                    <span v-if="panel.year" class="panel-meta-chip panel-year-chip">{{ panel.year }}</span>
+                        </div>
+
+                        <!-- Category breakdown: all three rows in matrix-weight order -->
+                        <div v-if="panel.categories?.length" class="panel-section">
+                            <div class="panel-section-label">Category breakdown</div>
+                            <div class="cat-rows">
+                                <div v-for="c in panel.categories" :key="c.code"
+                                     class="cat-row"
+                                     :class="{ 'cat-row--top': c.isStrongest, 'cat-row--bottom': c.isWeakest }">
+                                    <span class="cat-row-marker">{{ c.isStrongest ? '▲' : c.isWeakest ? '▼' : '·' }}</span>
+                                    <span class="cat-row-name">{{ c.name }}</span>
+                                    <span class="cat-row-score">{{ c.score.toFixed(1) }}%</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="panel-divider"></div>
-
-                        <div class="panel-row">
-                            <span class="panel-label">Director</span>
-                            <span class="panel-value">{{ panel.director || '—' }}</span>
-                        </div>
-                        <div v-if="panel.rank" class="panel-row">
-                            <span class="panel-label">Tier rank</span>
-                            <span class="panel-value">#{{ panel.rank }} <small>in {{ (panel.category || '').toUpperCase() }}</small></span>
-                        </div>
-
-                        <template v-if="panel.bestCat || panel.worstCat">
-                            <div class="panel-divider"></div>
-                            <div class="panel-kpi-highlights">
-                                <div v-if="panel.bestCat" class="panel-kpi-row">
-                                    <div class="panel-kpi-badge" style="background:#dcfce7;color:#15803d;">▲ {{ panel.bestCat.code }}</div>
-                                    <div class="panel-kpi-info">
-                                        <div class="panel-kpi-title">Strongest: {{ panel.bestCat.name }}</div>
-                                        <div class="panel-kpi-score" style="color:#15803d;">{{ panel.bestCat.score }}%</div>
-                                    </div>
-                                </div>
-                                <div v-if="panel.worstCat" class="panel-kpi-row">
-                                    <div class="panel-kpi-badge" style="background:#fee2e2;color:#b91c1c;">▼ {{ panel.worstCat.code }}</div>
-                                    <div class="panel-kpi-info">
-                                        <div class="panel-kpi-title">Weakest: {{ panel.worstCat.name }}</div>
-                                        <div class="panel-kpi-score" style="color:#b91c1c;">{{ panel.worstCat.score }}%</div>
-                                    </div>
-                                </div>
+                        <!-- Trend sparkline: score across all reporting years -->
+                        <div v-if="panel.trend" class="panel-section">
+                            <div class="panel-section-header">
+                                <span class="panel-section-label">Score over time</span>
+                                <span class="trend-delta" :style="{ color: panel.trend.delta >= 0 ? '#15803d' : '#b91c1c' }">
+                                    {{ panel.trend.delta >= 0 ? '▲' : '▼' }} {{ Math.abs(panel.trend.delta).toFixed(1) }}%
+                                </span>
                             </div>
-                        </template>
+                            <svg viewBox="0 0 100 42" preserveAspectRatio="none" class="sparkline">
+                                <line x1="0" y1="23" x2="100" y2="23" stroke="#e5e7eb" stroke-width="0.3" stroke-dasharray="1,1" />
+                                <polyline
+                                    :points="panel.trend.polyline"
+                                    fill="none"
+                                    :stroke="panel.trend.lineColor"
+                                    stroke-width="1.6"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <circle
+                                    v-for="p in panel.trend.points" :key="p.year"
+                                    :cx="p.x" :cy="p.y"
+                                    :r="p.isActive ? 2.4 : 1.5"
+                                    :fill="p.isActive ? '#fff' : (p.bucket ? BUCKET_COLOR[p.bucket] : '#94a3b8')"
+                                    :stroke="p.isActive ? (p.bucket ? BUCKET_COLOR[p.bucket] : '#94a3b8') : 'none'"
+                                    :stroke-width="p.isActive ? 1.5 : 0"
+                                >
+                                    <title>{{ p.year }}: {{ p.total_pct?.toFixed?.(2) ?? p.pct.toFixed(2) }}%{{ p.bucket ? ' (' + p.bucket + ')' : '' }}{{ p.rank ? ' · #' + p.rank : '' }}</title>
+                                </circle>
+                            </svg>
+                            <div class="panel-trend-years">
+                                <span v-for="p in panel.trend.points" :key="p.year" :class="{ 'panel-trend-year-active': p.isActive }">
+                                    {{ p.year }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </template>
 
@@ -238,6 +261,7 @@ import 'leaflet/dist/leaflet.css';
 
 const props = defineProps({
     scores:           { type: Array,  default: () => [] },
+    trends:           { type: Object, default: () => ({}) },  // province name → [{year, total_pct, bucket, ...}]
     selectedYear:     { type: Number, default: null },
     selectedTier:     { type: String, default: 'all' },
     height:           { type: String, default: '460px' },
@@ -304,7 +328,10 @@ const ISLANDS = [
 const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Under: '#b91c1c' };
 const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Under: 'Under Performers' };
 const tierInfo = (entry) => {
-    if (!entry || entry.bucket == null) return { color: '#94a3b8', label: entry ? 'Unbucketed' : 'No data' };
+    if (!entry) return { color: '#94a3b8', label: 'No data' };
+    if (entry.status === 'no_director') return { color: '#94a3b8', label: 'No director assigned' };
+    if (entry.status === 'no_data')     return { color: '#94a3b8', label: 'No data submitted' };
+    if (entry.bucket == null)           return { color: '#94a3b8', label: 'Unbucketed' };
     return { color: BUCKET_COLOR[entry.bucket] ?? '#94a3b8', label: BUCKET_LABEL[entry.bucket] ?? '—' };
 };
 const tierColor = (entry) => tierInfo(entry).color;
@@ -317,18 +344,68 @@ const scoreColor = (score) => {
     return '#b91c1c';
 };
 
-// Best / worst category subtotal for a province entry, used in the side panel
-// to explain WHERE the province is strong vs weak (CORE / FUNCTIONAL / SUPPORT).
+// Full per-category breakdown for the side panel. Always returns CORE → FUNCTIONAL
+// → SUPPORT in matrix-weight order, with isStrongest/isWeakest flags so the
+// panel can mark the leader and laggard with arrow markers.
 const CATEGORY_FULL_NAMES = { CORE: 'Core', FUNCTIONAL: 'Functional', SUPPORT: 'Support' };
-const bestWorstCategory = (entry) => {
-    if (!entry?.subtotals_pct) return { best: null, worst: null };
-    const entries = Object.entries(entry.subtotals_pct)
-        .map(([code, pct]) => ({ code, name: CATEGORY_FULL_NAMES[code] ?? code, score: Math.round(pct * 10) / 10 }))
-        .sort((a, b) => b.score - a.score);
-    return {
-        best:  entries[0],
-        worst: entries.length > 1 ? entries[entries.length - 1] : null,
-    };
+const CATEGORY_ORDER      = ['CORE', 'FUNCTIONAL', 'SUPPORT'];
+const categoryBreakdown = (entry) => {
+    if (!entry?.subtotals_pct) return [];
+    const list = CATEGORY_ORDER
+        .filter(code => entry.subtotals_pct[code] !== undefined)
+        .map(code => ({
+            code,
+            name:  CATEGORY_FULL_NAMES[code] ?? code,
+            score: Math.round(entry.subtotals_pct[code] * 10) / 10,
+        }));
+    if (list.length === 0) return [];
+    const sorted = [...list].sort((a, b) => b.score - a.score);
+    const top  = sorted[0]?.code;
+    const bot  = sorted.length > 1 ? sorted[sorted.length - 1].code : null;
+    return list.map(c => ({
+        ...c,
+        isStrongest: c.code === top  && c.score > 0,
+        isWeakest:   c.code === bot  && bot !== top,
+    }));
+};
+
+// Build the sparkline points (SVG viewBox coordinates 0..100 × 0..30) for a
+// province's year-by-year history. Returns null when there's no history or
+// just one data point (a single dot isn't a trend).
+const buildTrend = (provinceName) => {
+    const history = props.trends?.[provinceName];
+    if (!history || history.length < 2) return null;
+
+    const xs = history.map(h => h.year);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const xSpan = Math.max(1, maxX - minX);
+
+    // Y axis: 0..100% always, so trends are visually comparable across provinces
+    const PAD_TOP = 4, PAD_BOTTOM = 8, H = 42;
+    const yFor = (pct) => PAD_TOP + (1 - Math.min(100, Math.max(0, pct)) / 100) * (H - PAD_TOP - PAD_BOTTOM);
+
+    const points = history.map(h => ({
+        year:    h.year,
+        pct:     h.total_pct,
+        bucket:  h.bucket,
+        status:  h.status,
+        rank:    h.rank,
+        x:       ((h.year - minX) / xSpan) * 92 + 4,   // 4..96 inside the 100-wide viewBox
+        y:       yFor(h.total_pct),
+        isActive: h.year === props.selectedYear,
+    }));
+
+    const polyline = points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+    const lastBucket = points[points.length - 1].bucket;
+    const lineColor  = BUCKET_COLOR[lastBucket] ?? '#94a3b8';
+
+    // Direction arrow: did this province climb or drop vs first year?
+    const firstPct = points[0].pct;
+    const lastPct  = points[points.length - 1].pct;
+    const delta    = Math.round((lastPct - firstPct) * 10) / 10;
+
+    return { points, polyline, lineColor, delta, firstPct, lastPct, H };
 };
 
 const catColor = (cat) => ({ micro:'#546e7a', small:'#00796b', medium:'#3949ab', large:'#5e35b1', cstc:'#c2185b' }[cat] ?? '#666');
@@ -367,27 +444,28 @@ const buildProvincePanel = (geoName) => {
     const sm     = scoreMap();
     const dbName = GEO_TO_DB[geoName] ?? geoName;
     const entry  = sm[dbName] ?? null;
+    const trend  = buildTrend(dbName);
 
     if (!entry) return {
         type: 'province', name: geoName, score: null, tier: 'No data',
         tierColor: '#94a3b8', director: '—', category: null,
-        rank: null, year: props.selectedYear, bestCat: null, worstCat: null,
+        rank: null, year: props.selectedYear, categories: [], trend,
     };
 
     const info = tierInfo(entry);
-    const { best, worst } = bestWorstCategory(entry);
     return {
-        type:      'province',
-        name:      geoName,
-        category:  entry.category,
-        director:  entry.director,
-        score:     Math.round(entry.score * 100) / 100,
-        tier:      info.label,
-        tierColor: info.color,
-        rank:      entry.rank ?? null,
-        year:      props.selectedYear,
-        bestCat:   best,
-        worstCat:  worst,
+        type:       'province',
+        name:       geoName,
+        category:   entry.category,
+        director:   entry.director,
+        status:     entry.status,
+        score:      Math.round(entry.score * 100) / 100,
+        tier:       info.label,
+        tierColor:  info.color,
+        rank:       entry.rank ?? null,
+        year:       props.selectedYear,
+        categories: categoryBreakdown(entry),
+        trend,
     };
 };
 
@@ -530,27 +608,28 @@ const buildRegionPanel = (regionCode) => {
 const buildCstcPanel = (cstcName) => {
     const sm    = scoreMap();
     const entry = sm[cstcName] ?? null;
+    const trend = buildTrend(cstcName);
 
     if (!entry) return {
         type: 'cstc', name: cstcName, score: null, tier: 'No data',
         tierColor: '#94a3b8', director: '—', category: 'cstc',
-        rank: null, year: props.selectedYear, bestCat: null, worstCat: null,
+        rank: null, year: props.selectedYear, categories: [], trend,
     };
 
     const info = tierInfo(entry);
-    const { best, worst } = bestWorstCategory(entry);
     return {
-        type:      'cstc',
-        name:      cstcName,
-        category:  'cstc',
-        director:  entry.director,
-        score:     Math.round(entry.score * 100) / 100,
-        tier:      info.label,
-        tierColor: info.color,
-        rank:      entry.rank ?? null,
-        year:      props.selectedYear,
-        bestCat:   best,
-        worstCat:  worst,
+        type:       'cstc',
+        name:       cstcName,
+        category:   'cstc',
+        director:   entry.director,
+        status:     entry.status,
+        score:      Math.round(entry.score * 100) / 100,
+        tier:       info.label,
+        tierColor:  info.color,
+        rank:       entry.rank ?? null,
+        year:       props.selectedYear,
+        categories: categoryBreakdown(entry),
+        trend,
     };
 };
 
@@ -898,8 +977,12 @@ watch(() => props.selectedTier, (cat) => {
     refreshCstcStyle();
 });
 
-watch(() => props.scores,   () => { refreshStyle(); refreshCstcStyle(); rebuildPanel(); }, { deep: true });
-watch(() => props.yearData, () => { rebuildPanel(); },                                      { deep: true });
+watch(() => props.scores,       () => { refreshStyle(); refreshCstcStyle(); rebuildPanel(); }, { deep: true });
+// Sparkline highlights the active year, so the panel needs to rebuild when the
+// year changes (especially during time-lapse playback). Trends prop only
+// updates if a full reload happens — usually not during the session.
+watch(() => props.selectedYear, () => { rebuildPanel(); });
+watch(() => props.trends,       () => { rebuildPanel(); }, { deep: true });
 
 onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', onFullscreenChange);
@@ -955,55 +1038,85 @@ onBeforeUnmount(() => {
 }
 .panel-header {
     display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 8px; padding: 14px 14px 11px;
+    gap: 8px; padding: 13px 14px 12px;
     border-bottom: 1px solid #f1f5f9;
-    border-left: 4px solid #94a3b8;
 }
-.panel-header-region { border-left-color: #6366f1; }
-.panel-header-island { border-left-color: #0ea5e9; }
+.panel-header-region { border-left: 3px solid #6366f1; padding-left: 11px; }
+.panel-header-island { border-left: 3px solid #0ea5e9; padding-left: 11px; }
 .panel-header-main   { flex: 1; min-width: 0; }
-.panel-title         { font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1.3; }
-.panel-subtitle      { font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
-.panel-cat-chip {
-    display: inline-block; margin-top: 5px;
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
-    padding: 2px 8px; border-radius: 20px;
+.panel-caption {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 4px;
 }
+.panel-caption-tier { color: #6366f1; }
+.panel-caption-sep  { color: #cbd5e1; font-weight: 400; }
+.panel-caption-year { color: #94a3b8; }
+
+.panel-title    { font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.panel-subtitle { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.3; }
+
 .panel-close {
     flex-shrink: 0; width: 22px; height: 22px; padding: 3px;
-    background: none; border: none; cursor: pointer; color: #94a3b8;
+    background: none; border: none; cursor: pointer; color: #cbd5e1;
     display: flex; align-items: center; justify-content: center;
     border-radius: 4px; transition: background 0.12s, color 0.12s;
 }
-.panel-close:hover { background: #f1f5f9; color: #334155; }
+.panel-close:hover { background: #f1f5f9; color: #475569; }
 .panel-close svg    { width: 14px; height: 14px; }
 
-.panel-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 9px; }
+.panel-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 14px; }
 
-.panel-score-block { display: flex; flex-direction: column; gap: 5px; }
-.panel-score-num   { font-size: 26px; font-weight: 800; line-height: 1; }
+/* Hero: large score number paired with inline tier/rank — no chips */
+.panel-hero          { display: flex; flex-direction: column; gap: 6px; }
+.panel-hero-row      { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.panel-score-num     { font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.panel-hero-status   { font-size: 11.5px; font-weight: 600; line-height: 1.3; text-align: right; }
+.panel-hero-rank     { font-weight: 700; margin-left: 4px; }
 .panel-score-bar-wrap {
-    height: 7px; background: #f1f5f9; border-radius: 4px; overflow: hidden;
+    height: 4px; background: #f1f5f9; border-radius: 3px; overflow: hidden;
 }
-.panel-score-bar {
-    height: 100%; border-radius: 4px;
-    transition: width 0.5s ease;
+.panel-score-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; opacity: 0.85; }
+
+/* Section labels — small uppercase tags above each block */
+.panel-section          { display: flex; flex-direction: column; gap: 6px; }
+.panel-section-header   { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.panel-section-label {
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #94a3b8;
 }
-.panel-tier-label { font-size: 12px; font-weight: 600; }
 
-.panel-meta-chips  { display: flex; align-items: center; gap: 4px; }
-.panel-meta-chip   { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 20px; }
-.panel-rank-chip   { background: #ede9fe; color: #5b21b6; }
-.panel-year-chip   { background: #f1f5f9; color: #64748b; }
+/* Category rows — flat list, ▲/▼/· markers, score on the right */
+.cat-rows { display: flex; flex-direction: column; gap: 1px; }
+.cat-row {
+    display: grid;
+    grid-template-columns: 14px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-top: 1px solid #f1f5f9;
+}
+.cat-row:first-child { border-top: none; }
+.cat-row-marker      { color: #cbd5e1; text-align: center; font-size: 11px; line-height: 1; }
+.cat-row-name        { font-size: 12px; color: #475569; }
+.cat-row-score       { font-size: 12px; font-weight: 700; color: #0f172a; }
+.cat-row--top .cat-row-marker { color: #16a34a; }
+.cat-row--top .cat-row-score  { color: #15803d; }
+.cat-row--bottom .cat-row-marker { color: #dc2626; }
+.cat-row--bottom .cat-row-score  { color: #b91c1c; }
 
+/* Trend delta badge in the section header */
+.trend-delta { font-size: 11px; font-weight: 700; }
+
+/* Shared classes — also used by the Island + Region panel variants */
 .panel-divider { height: 1px; background: #f1f5f9; margin: 0 -14px; }
-
 .panel-row {
     display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
 }
 .panel-label { font-size: 11px; color: #94a3b8; font-weight: 500; flex-shrink: 0; }
 .panel-value { font-size: 12px; color: #334155; font-weight: 600; text-align: right; line-height: 1.4; }
 .panel-value small { font-weight: 400; font-size: 10.5px; }
+.panel-tier-label { font-size: 12px; font-weight: 600; }
 
 .panel-tier-pills {
     display: flex; gap: 6px;
@@ -1025,6 +1138,35 @@ onBeforeUnmount(() => {
 .panel-kpi-info       { flex: 1; min-width: 0; }
 .panel-kpi-title      { font-size: 11px; color: #475569; line-height: 1.35; word-break: break-word; }
 .panel-kpi-score      { font-size: 12px; font-weight: 700; line-height: 1.4; margin-top: 1px; }
+
+/* Trend sparkline (score across reporting years) */
+.panel-trend            { display: flex; flex-direction: column; gap: 4px; }
+.panel-trend-header     { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.panel-trend-label      { font-size: 11px; color: #94a3b8; font-weight: 600; }
+.panel-trend-delta      { font-size: 11px; font-weight: 700; white-space: nowrap; }
+.panel-trend-delta-since {
+    font-size: 9.5px; font-weight: 500; color: #94a3b8; margin-left: 2px;
+}
+.sparkline {
+    width: 100%;
+    height: 46px;
+    display: block;
+    overflow: visible;
+}
+.sparkline circle { transition: r 0.25s ease; cursor: default; }
+.panel-trend-years {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: #94a3b8;
+    font-weight: 600;
+    padding: 0 4px;
+    margin-top: -2px;
+}
+.panel-trend-year-active {
+    color: #4338ca;
+    font-weight: 800;
+}
 
 /* ── Fullscreen button ─────────────────────── */
 .fs-btn {
