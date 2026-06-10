@@ -46,23 +46,6 @@
             </div>
         </v-card>
 
-        <!-- ── Quick Stat Tiles ────────────────────────────────── -->
-        <v-row dense class="mb-4">
-            <v-col v-for="tile in statTiles" :key="tile.label" cols="6" sm="3">
-                <v-card border elevation="0" rounded="lg" class="pa-4">
-                    <div class="d-flex align-center gap-3">
-                        <v-avatar :color="tile.color + '-lighten-5'" rounded="lg" size="36">
-                            <v-icon :color="tile.color" size="18">{{ tile.icon }}</v-icon>
-                        </v-avatar>
-                        <div class="min-w-0">
-                            <div class="text-caption text-medium-emphasis" style="font-size:10px; text-transform:uppercase; letter-spacing:.06em;">{{ tile.label }}</div>
-                            <div class="text-body-2 font-weight-bold text-truncate mt-px">{{ tile.value || '—' }}</div>
-                        </div>
-                    </div>
-                </v-card>
-            </v-col>
-        </v-row>
-
         <!-- ── Info Cards ──────────────────────────────────────── -->
         <v-row>
 

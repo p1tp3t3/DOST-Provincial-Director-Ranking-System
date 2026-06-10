@@ -13,6 +13,13 @@ class ProfileViewMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $authUser = Auth::user();
+
+        // Routes without an {id} parameter (e.g. /profile, /profile/picture,
+        // /profile-picture) operate on the authenticated user's own profile.
+        if (!$request->route()->hasParameter('id')) {
+            return $next($request);
+        }
+
         $targetId = (int) $request->route('id');
 
         // Always allow viewing your own profile

@@ -7,6 +7,7 @@ use App\Http\Middleware\User\ProfileViewMiddleware;
 use App\Http\Middleware\User\ProvincialAdminMiddleware;
 use App\Http\Middleware\User\ProvincialSubAdminMiddleware;
 use App\Http\Middleware\User\ProvincialDirectorMiddleware;
+use App\Http\Middleware\User\ActivationStatusMiddleware;
 use App\Http\Middleware\User\SubAdminMiddleware;
 use App\Http\Middleware\User\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             CheckMaintenanceMode::class,
         ]);
         $middleware->alias([
+            'activation'           => ActivationStatusMiddleware::class,
             'role'                 => RoleMiddleware::class,
             'super-admin'          => SuperAdminMiddleware::class,
             'sub-admin'            => SubAdminMiddleware::class,

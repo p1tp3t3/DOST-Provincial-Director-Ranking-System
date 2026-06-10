@@ -44,16 +44,17 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
+        // Log while the user is still authenticated
+        ActivityLogHelper::logout();
+
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        ActivityLogHelper::logout();
-        
-        return redirect('/');
+        // Inertia::location forces a full browser redirect, which clears
+        // the stale CSRF token that would cause a 419 on the next request.
+        return Inertia::location(route('login'));
     }
 }

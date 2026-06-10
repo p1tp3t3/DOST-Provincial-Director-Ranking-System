@@ -4,15 +4,16 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Models\KPI;
-use Illuminate\Http\Request;
 
 class KPIController extends Controller
 {
-    public function index() {
+    public function director_index()
+    {
         return inertia('Other/Director/KPI');
     }
 
-    public function get_kpi() {
+    public function get_kpi()
+    {
         return KPI::all();
     }
 }

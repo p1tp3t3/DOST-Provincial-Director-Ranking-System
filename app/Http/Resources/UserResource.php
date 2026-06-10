@@ -23,13 +23,22 @@ class UserResource extends JsonResource
         $lastName = $profile?->last_name ?? '';
 
         return [
-            'id'          => $this->id,
-            'employee_id' => $this->dost_employee_id,
-            'role'        => $this->role,
-            'name'        => trim($firstName . ' ' . $middleName . $lastName),
-            'username'    => $this->username,
-            'email'       => $this->email,
-            'province'    => $this->province?->name,
+            'id'                => $this->id,
+            'employee_id'       => $this->dost_employee_id,
+            'role'              => $this->role,
+            'activate'          => (bool) $this->activate,
+            'profile_picture'   => $profile?->profile_picture,
+            'name'              => trim($firstName . ' ' . $middleName . $lastName),
+            'username'          => $this->username,
+            'email'             => $this->email,
+            'province'          => $this->province?->name,
+            'province_id'       => $this->province_id,
+            'prefix'            => $profile?->prefix,
+            'first_name'        => $profile?->first_name,
+            'middle_name'       => $profile?->middle_name,
+            'last_name'         => $profile?->last_name,
+            'suffix'            => $profile?->suffix,
+            'length_of_service' => $profile?->length_of_service,
         ];
     }
 }
