@@ -95,7 +95,88 @@
                         <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
                             <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
                             <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
+                            <v-btn value="trend"  size="small" title="Trend view"><v-icon size="15">mdi-chart-line</v-icon></v-btn>
                         </v-btn-toggle>
+                    </div>
+
+                    <!-- Island / Region filters (Trend view only) -->
+                    <div v-if="viewMode === 'trend'" class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
+                        <div class="d-flex align-center gap-2">
+                            <span class="filter-label">Island</span>
+                            <div class="segmented">
+                                <button
+                                    class="segmented-btn"
+                                    :class="{ active: selectedIsland === 'all' }"
+                                    @click="selectedIsland = 'all'; selectedRegion = 'all'"
+                                >All</button>
+                                <button
+                                    v-for="isl in ISLANDS" :key="isl"
+                                    class="segmented-btn"
+                                    :class="{ active: selectedIsland === isl }"
+                                    @click="selectedIsland = isl; selectedRegion = 'all'"
+                                >{{ isl }}</button>
+                            </div>
+                        </div>
+                        <div class="d-flex align-center gap-2">
+                            <span class="filter-label">Region</span>
+                            <v-select
+                                v-model="selectedRegion"
+                                :items="regionOptions"
+                                item-title="label"
+                                item-value="value"
+                                density="compact"
+                                variant="outlined"
+                                hide-details
+                                style="min-width:220px;"
+                            />
+                        </div>
+                        <div class="d-flex align-center gap-2">
+                            <v-autocomplete
+                                v-if="trendProvinceList.length"
+                                v-model="selectedProvinces"
+                                :items="trendProvinceList"
+                                multiple
+                                density="compact"
+                                variant="outlined"
+                                label="Provinces"
+                                placeholder="Search provinces…"
+                                hide-details
+                                :menu-props="{ maxHeight: 320 }"
+                                class="trend-province-select"
+                                style="min-width:220px; max-width:280px;"
+                            >
+                                <template #selection></template>
+
+                                <template #prepend-inner>
+                                    <span v-if="selectedProvinces.length" class="d-inline-flex align-center text-caption" style="max-width:130px;">
+                                        <span class="legend-dot mr-1 flex-shrink-0" :style="{ background: provinceColorMap[selectedProvinces[0]] }"></span>
+                                        <span class="text-truncate">{{ trendSelectionLabel }}</span>
+                                    </span>
+                                </template>
+
+                                <template #prepend-item>
+                                    <v-list-item title="Select all" density="compact" @click="toggleSelectAllTrend">
+                                        <template #prepend>
+                                            <v-checkbox-btn
+                                                density="compact"
+                                                :model-value="allTrendSelected"
+                                                :indeterminate="someTrendSelected && !allTrendSelected"
+                                            />
+                                        </template>
+                                    </v-list-item>
+                                    <v-divider class="mt-1" />
+                                </template>
+
+                                <template #item="{ item, props: itemProps }">
+                                    <v-list-item v-bind="itemProps" density="compact">
+                                        <template #prepend="{ isSelected }">
+                                            <v-checkbox-btn density="compact" :model-value="isSelected" />
+                                            <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item.raw] }"></span>
+                                        </template>
+                                    </v-list-item>
+                                </template>
+                            </v-autocomplete>
+                        </div>
                     </div>
 
                     <!-- Category segmented (Overall / CORE / FUNCTIONAL / SUPPORT) + Year segmented -->
@@ -229,6 +310,20 @@
                             <div class="text-center py-8 text-medium-emphasis text-body-2">No provinces found</div>
                         </template>
                     </v-data-table>
+
+                    <!-- Trend View -->
+                    <div v-else-if="viewMode === 'trend'" class="px-4 pt-3 pb-5">
+                        <VueApexCharts
+                            v-if="trendSeries.length"
+                            type="line"
+                            height="420"
+                            :options="trendOptions"
+                            :series="trendSeries"
+                        />
+                        <div v-else class="text-center py-8 text-medium-emphasis text-body-2">
+                            {{ trendProvinceList.length ? 'Select at least one province to display' : 'No ranked provinces found for this filter' }}
+                        </div>
+                    </div>
 
                     <!-- Podium View -->
                     <div v-else class="px-5 pt-3 pb-5">
@@ -387,6 +482,7 @@ import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import { RiGroupLine, RiUserStarLine, RiCheckboxCircleLine, RiBuildingLine } from '@remixicon/vue';
+import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
 
 const props = defineProps({
     total_users:                { type: Number, default: 0 },
@@ -404,6 +500,10 @@ const selectedTier     = ref('all');
 const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'FUNCTIONAL' | 'SUPPORT'
 const searchTerm       = ref('');
 const viewMode         = ref('table');
+
+// Trend view filters
+const selectedIsland = ref('all'); // 'all' | 'Luzon' | 'Visayas' | 'Mindanao'
+const selectedRegion = ref('all'); // 'all' | region value from REGIONS
 
 const tiers = [
     { value: 'micro',  label: 'Micro'  },
@@ -629,6 +729,120 @@ const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.v
 const underOptions = computed(() => makeHorizOptions(underData.value));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
 
+// ── Trend view: weighted score per province across years ──────────────────
+const TREND_LIMIT = 15;
+
+// Region dropdown narrows to the selected island's regions, plus "All".
+const regionOptions = computed(() => {
+    const regions = selectedIsland.value === 'all'
+        ? REGIONS
+        : REGIONS.filter(r => r.island === selectedIsland.value);
+    return [{ value: 'all', label: 'All Regions' }, ...regions];
+});
+
+// Builds { years: [ascending...], provinceMap: { province: { year: score } } }
+// honoring the active Tier / Island / Region filters and the active score
+// (overall total or selected category subtotal).
+const trendData = computed(() => {
+    const years = [...props.available_years].sort((a, b) => a - b);
+    const provinceMap = {};
+
+    for (const year of years) {
+        const yearData = props.rankings_by_year[year] ?? {};
+        for (const [tier, rows] of Object.entries(yearData)) {
+            if (selectedTier.value !== 'all' && tier !== selectedTier.value) continue;
+
+            for (const r of rows) {
+                if (!isRanked(r)) continue;
+
+                const geo = PROVINCE_REGIONS[r.province];
+                if (selectedIsland.value !== 'all' && geo?.island !== selectedIsland.value) continue;
+                if (selectedRegion.value !== 'all' && geo?.region !== selectedRegion.value) continue;
+
+                if (!provinceMap[r.province]) provinceMap[r.province] = {};
+                provinceMap[r.province][year] = getScore(r);
+            }
+        }
+    }
+
+    return { years, provinceMap };
+});
+
+// All provinces under the active filters, sorted by their most recent year's
+// score (best first) so the chip list and default selection are consistent.
+const trendProvinceList = computed(() => {
+    const { years, provinceMap } = trendData.value;
+    const lastYear = years[years.length - 1];
+    return Object.keys(provinceMap)
+        .sort((a, b) => (provinceMap[b][lastYear] ?? -1) - (provinceMap[a][lastYear] ?? -1));
+});
+
+const TREND_COLORS = ['#4f46e5', '#16a34a', '#dc2626', '#d97706', '#0891b2', '#9333ea',
+                       '#db2777', '#65a30d', '#0d9488', '#7c3aed', '#ea580c', '#2563eb',
+                       '#be123c', '#15803d', '#a16207'];
+
+// Stable color per province (by rank position) so a province keeps its color
+// whether or not it's currently selected.
+const provinceColorMap = computed(() => {
+    const map = {};
+    trendProvinceList.value.forEach((p, i) => { map[p] = TREND_COLORS[i % TREND_COLORS.length]; });
+    return map;
+});
+
+// Provinces currently plotted, picked via the dropdown's checkboxes — only
+// selected provinces are shown in the graph. Defaults to the top TREND_LIMIT
+// whenever the filtered province list changes.
+const selectedProvinces = ref([]);
+
+watch(trendProvinceList, (list) => {
+    selectedProvinces.value = list.slice(0, TREND_LIMIT);
+}, { immediate: true });
+
+const allTrendSelected  = computed(() => trendProvinceList.value.length > 0 && selectedProvinces.value.length === trendProvinceList.value.length);
+const someTrendSelected = computed(() => selectedProvinces.value.length > 0);
+
+const toggleSelectAllTrend = () => {
+    selectedProvinces.value = allTrendSelected.value ? [] : [...trendProvinceList.value];
+};
+
+// Summary text shown inside the Provinces field — the field's own input is
+// reserved for the search query, so the selection summary is rendered
+// separately via the prepend-inner slot.
+const trendSelectionLabel = computed(() => {
+    const n = selectedProvinces.value.length;
+    if (n === 0) return '';
+    if (n === 1) return selectedProvinces.value[0];
+    return `${n} provinces selected`;
+});
+
+const trendSeries = computed(() => {
+    const { years, provinceMap } = trendData.value;
+    return trendProvinceList.value
+        .filter(p => selectedProvinces.value.includes(p))
+        .map(p => ({
+            name:  p,
+            data:  years.map(y => provinceMap[p][y] ?? null),
+            color: provinceColorMap.value[p],
+        }));
+});
+
+const trendOptions = computed(() => ({
+    chart: { type: 'line', toolbar: { show: true }, fontFamily: 'inherit',
+             animations: { enabled: true, speed: 500 } },
+    stroke: { curve: 'smooth', width: 2.5 },
+    markers: { size: 4 },
+    xaxis: { categories: trendData.value.years,
+             title: { text: 'Year', style: { fontSize: '11px', fontFamily: 'inherit' } },
+             labels: { style: { fontSize: '11px', fontFamily: 'inherit' } } },
+    yaxis: { min: 0, max: 100,
+             title: { text: 'Weighted Score (%)', style: { fontSize: '11px', fontFamily: 'inherit' } },
+             labels: { formatter: v => `${v}%`, style: { fontSize: '11px', fontFamily: 'inherit' } } },
+    grid: { borderColor: '#f1f5f9' },
+    legend: { position: 'bottom', fontSize: '11px', fontFamily: 'inherit', showForSingleSeries: true,
+              markers: { size: 6 }, itemMargin: { horizontal: 8, vertical: 4 } },
+    tooltip: { y: { formatter: v => v == null ? '—' : `${v.toFixed(2)}%` } },
+}));
+
 // Match the right-side rest list's max height to the podium stage so the two
 // columns line up flush at the bottom regardless of how many top-3 details or
 // breakdown rows render. Without this the rest list either leaves a gap below
@@ -814,4 +1028,15 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory], async () => {
 .score-cell .score-pct   { font-size: 12px; }
 .score-cell .score-counts { font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
 .podium-rest-cell { width: 290px; }
+
+/* Tighten the province dropdown's menu rows so more items fit without scrolling */
+.trend-province-select :deep(.v-list-item) { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
+.trend-province-select :deep(.v-list-item-title) { font-size: 12.5px; }
+.trend-province-select :deep(.v-checkbox-btn) { min-height: unset; }
+.trend-province-select :deep(.v-selection-control) { min-height: unset; }
+.trend-province-select :deep(.v-selection-control__wrapper) { width: 28px; height: 28px; }
+
+/* Keep the field a fixed single-line height regardless of selection count —
+   selections are rendered as a text summary via prepend-inner instead of chips. */
+.trend-province-select :deep(.v-field__input) { flex-wrap: nowrap; }
 </style>
