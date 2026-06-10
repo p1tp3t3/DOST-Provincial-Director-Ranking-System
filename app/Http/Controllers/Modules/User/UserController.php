@@ -29,10 +29,78 @@ class UserController extends Controller
     public function index(Request $request)
     {
         return inertia('Admin/Users/Main', [
-            'users'  => self::get_users($request->input('search'), $request->input('role')),
-            'search' => $request->input('search', ''),
-            'role'   => $request->input('role', ''),
+            'users'     => self::get_users($request->input('search'), $request->input('role')),
+            'search'    => $request->input('search', ''),
+            'role'      => $request->input('role', ''),
+            'provinces' => Province::orderBy('name')->get(['id', 'name']),
         ]);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $user = User::with('profile')->findOrFail($id);
+
+        $validated = $request->validate([
+            'role'                  => ['required', 'in:super_admin,sub_admin,provincial_admin,provincial_sub_admin,provincial_director,employee'],
+            'province_id'           => ['nullable', 'exists:provinces,id'],
+            'dost_employee_id'      => ['nullable', 'string', 'unique:users,dost_employee_id,' . $id],
+            'username'              => ['required', 'string', 'unique:users,username,' . $id],
+            'email'                 => ['required', 'email', 'unique:users,email,' . $id],
+            'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password_confirmation' => ['nullable', 'string'],
+            'prefix'                => ['nullable', 'string', 'max:20'],
+            'first_name'            => ['required', 'string', 'max:100'],
+            'middle_name'           => ['nullable', 'string', 'max:100'],
+            'last_name'             => ['required', 'string', 'max:100'],
+            'suffix'                => ['nullable', 'string', 'max:20'],
+            'length_of_service'     => ['nullable', 'string', 'max:50'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $userFields = [
+                'role'             => $validated['role'],
+                'province_id'      => $validated['province_id'],
+                'dost_employee_id' => $validated['dost_employee_id'],
+                'username'         => $validated['username'],
+                'email'            => $validated['email'],
+            ];
+
+            if (!empty($validated['password'])) {
+                $userFields['password'] = $validated['password'];
+            }
+
+            $user->update($userFields);
+
+            $user->profile->update([
+                'prefix'            => $validated['prefix'],
+                'first_name'        => $validated['first_name'],
+                'middle_name'       => $validated['middle_name'],
+                'last_name'         => $validated['last_name'],
+                'suffix'            => $validated['suffix'],
+                'length_of_service' => $validated['length_of_service'],
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        return response()->json(['message' => 'User updated successfully.']);
+    }
+
+    public function toggle_activation(int $id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === Auth::id()) {
+            return response()->json(['message' => 'You cannot change the activation status of your own account.'], 403);
+        }
+
+        $user->update(['activate' => !$user->activate]);
+
+        return back();
     }
 
     public function admin_index()
@@ -338,7 +406,7 @@ class UserController extends Controller
                         });
                     })
                     ->when($role, fn($q, $role) => $q->where('role', $role));
-                    
+
         $data = auth()->user()->province_id
                     ? $data->where('province_id', auth()->user()->province_id)
                     : $data;

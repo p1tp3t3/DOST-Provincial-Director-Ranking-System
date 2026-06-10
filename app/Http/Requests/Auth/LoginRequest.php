@@ -62,6 +62,12 @@ class LoginRequest extends FormRequest
             return false;
         }
 
+        // Block deactivated accounts — same silent treatment as wrong credentials
+        if (!$user->activate) {
+            RateLimiter::hit($this->throttleKey());
+            return false;
+        }
+
         Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());
         return true;

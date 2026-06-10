@@ -8,7 +8,7 @@
                 </div>
             </div>
 
-            <UserList :list="users" :initial-search="search" :initial-role="role" />
+            <UserList :list="users" :initial-search="search" :initial-role="role" :provinces="provinces" />
 
         </div>
 </template>
@@ -18,8 +18,9 @@ import UserList from '@/Components/Lists/UserList.vue';
 import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
 
 defineProps({
-    users:  { type: Object, required: true },
-    search: { type: String, default: '' },
-    role:   { type: String, default: '' },
+    users:     { type: Object, required: true },
+    search:    { type: String, default: '' },
+    role:      { type: String, default: '' },
+    provinces: { type: Array, default: () => [] },
 });
 </script>

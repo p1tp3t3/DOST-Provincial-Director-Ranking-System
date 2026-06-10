@@ -13,10 +13,9 @@ use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\Report\ProvincialSubAdminReportController;
 use App\Http\Controllers\Modules\User\ProvincialDirectorController;
 use App\Http\Controllers\Modules\User\UserController;
+use App\Http\Controllers\Modules\SettingsController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 // ── Public: maintenance notice ─────────────────────────────────
 Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
@@ -28,10 +27,11 @@ Route::middleware('guest')->group(function () {
 });
 
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'activation'])->group(function () {
 
     // ── All authenticated users ────────────────────────────────
     Route::get('/dashboard',       [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/settings',        [SettingsController::class, 'index'])->name('settings');
 
     Route::middleware('profile-view')->group(function () {
 
@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
 
     // ── Super Admin only ───────────────────────────────────────
     Route::middleware('super-admin')->group(function () {
+        Route::put('/users/{id}', [UserController::class, 'update']);
+
         Route::get('/maintenance',                                    [MaintenanceController::class, 'index']);
         Route::post('/maintenance/backup',                            [MaintenanceController::class, 'create_backup']);
         Route::get('/maintenance/backup/{filename}',                  [MaintenanceController::class, 'download_backup']);
@@ -81,6 +83,7 @@ Route::middleware('auth')->group(function () {
     // ── Super Admin + Provincial Admin ─────────────────────────
     Route::middleware('role:super_admin,provincial_admin')->group(function () {
         Route::get('/users',                                           [UserController::class, 'index']);
+        Route::patch('/users/{id}/toggle-activation',                  [UserController::class, 'toggle_activation']);
         Route::get('/activity-logs',                                   [ActivityLogController::class, 'index']);
         Route::get('/activity-logs/report',                            [ActivityLogController::class, 'generate_logs_report']);
 
@@ -108,6 +111,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-admin-report',        [ProvincialAdminReportController::class, 'index']);
         Route::get('/provincial-admin-report/export', [ProvincialAdminReportController::class, 'export']);
+    });
+
+    // ── Provincial Sub Admin only ──────────────────────────────
+    Route::middleware('role:provincial_sub_admin')->group(function () {
+        Route::get('/provincial-kpi/{year?}',          [KPIDataController::class, 'provincial_index']);
+        Route::put('/provincial-kpi/{director}/{year}', [KPIDataController::class, 'provincial_update']);
     });
 
     // ── Provincial Sub Admin + Provincial Admin ────────────────
