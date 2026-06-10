@@ -105,6 +105,7 @@ class RankingService
                 'p.id as province_id',
                 'p.name as province',
                 'p.category',
+                'p.region',
                 'u.id as director_id',
                 DB::raw("$directorNameSql as director")
             )->get()->keyBy('province_id');
@@ -176,8 +177,10 @@ class RankingService
         return [
             'province_id'      => $provinceId,
             'province'         => $meta['province'],
+            'region'           => $meta['region'] ?? null,
             'category'         => $meta['category'],
             'director'         => $meta['director'] ?? null,
+            'director_id'      => $meta['director_id'] ?? null,
             'status'           => $status,
             'total'            => round($total, 6),
             'total_pct'        => round($total * 100, 2),

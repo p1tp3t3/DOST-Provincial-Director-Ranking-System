@@ -33,7 +33,7 @@
 
         <!-- Info Panel -->
         <transition name="panel-slide">
-            <div v-if="panel" class="map-info-panel">
+            <div v-if="panel" class="map-info-panel" :class="{ 'map-info-panel--region': panel.type === 'region', 'map-info-panel--island': panel.type === 'island' }">
                 <!-- Province / CSTC panel (same structure) -->
                 <template v-if="panel.type === 'province' || panel.type === 'cstc'">
                     <div class="panel-header">
@@ -43,8 +43,11 @@
                                 <span class="panel-caption-sep">·</span>
                                 <span class="panel-caption-year">{{ panel.year }}</span>
                             </div>
-                            <div class="panel-title">{{ panel.name }}</div>
-                            <div class="panel-subtitle">{{ panel.director || 'Vacant' }}</div>
+                            <a v-if="panel.provinceUrlId" :href="`/province-directories/${panel.provinceUrlId}`" class="panel-title panel-name-link">{{ panel.name }}</a>
+                            <div v-else class="panel-title">{{ panel.name }}</div>
+                            <div v-if="panel.region" class="panel-region-tag">{{ panel.region }}</div>
+                            <a v-if="panel.directorId" :href="`/profile/${panel.directorId}`" class="panel-subtitle panel-name-link">{{ panel.director }}</a>
+                            <div v-else class="panel-subtitle">{{ panel.director || 'Vacant' }}</div>
                         </div>
                         <button class="panel-close" @click="panel = null">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -123,10 +126,15 @@
                 <template v-else-if="panel.type === 'island'">
                     <div class="panel-header panel-header-island">
                         <div class="panel-header-main">
-                            <div class="panel-title">{{ panel.label }}</div>
+                            <div class="panel-title-row">
+                                <button class="panel-expand-btn" @click="regionListOpen = !regionListOpen" :class="{ 'panel-expand-btn--active': regionListOpen }" title="View all regions">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                </button>
+                                <div class="panel-title">{{ panel.label }}</div>
+                            </div>
                             <div class="panel-subtitle">{{ panel.provinceCount }} province{{ panel.provinceCount !== 1 ? 's' : '' }} · {{ panel.regionCount }} region{{ panel.regionCount !== 1 ? 's' : '' }}</div>
                         </div>
-                        <button class="panel-close" @click="panel = null">
+                        <button class="panel-close" @click="panel = null; regionListOpen = false">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
@@ -182,10 +190,15 @@
                 <template v-else-if="panel.type === 'region'">
                     <div class="panel-header panel-header-region">
                         <div class="panel-header-main">
-                            <div class="panel-title">{{ panel.shortLabel }}</div>
+                            <div class="panel-title-row">
+                                <button class="panel-expand-btn" @click="provinceListOpen = !provinceListOpen" :class="{ 'panel-expand-btn--active': provinceListOpen }" title="View all provinces">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                </button>
+                                <div class="panel-title">{{ panel.shortLabel }}</div>
+                            </div>
                             <div class="panel-subtitle">{{ panel.provinceCount }} province{{ panel.provinceCount !== 1 ? 's' : '' }} with data</div>
                         </div>
-                        <button class="panel-close" @click="panel = null">
+                        <button class="panel-close" @click="panel = null; provinceListOpen = false">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
@@ -237,6 +250,62 @@
                         <div v-else class="panel-nodata">No score data for this region in the selected year / KPI filter.</div>
                     </div>
                 </template>
+            </div>
+        </transition>
+
+        <!-- Region list panel (left side, shown when island is selected) -->
+        <transition name="panel-slide-left">
+            <div v-if="panel && panel.type === 'island' && regionListOpen" class="map-province-list-panel">
+                <div class="plist-header">
+                    <div class="plist-header-main">
+                        <div class="plist-subtitle">All Regions</div>
+                    </div>
+                    <button class="panel-close" @click="regionListOpen = false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="plist-body">
+                    <div v-for="region in panel.allRegions" :key="region.code"
+                         class="plist-item"
+                         @click="selectRegionFromList(region.code)">
+                        <div class="plist-dot" :style="{ background: region.color }"></div>
+                        <div class="plist-info">
+                            <span class="plist-name">{{ region.label }}</span>
+                            <span class="plist-director">{{ region.provinceCount }} province{{ region.provinceCount !== 1 ? 's' : '' }}</span>
+                        </div>
+                        <span class="plist-score" :style="{ color: region.color }">
+                            {{ region.score != null ? region.score + '%' : '—' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- Province list panel (left side, shown when region is selected) -->
+        <transition name="panel-slide-left">
+            <div v-if="panel && panel.type === 'region' && provinceListOpen" class="map-province-list-panel">
+                <div class="plist-header">
+                    <div class="plist-header-main">
+                        <div class="plist-subtitle">Provinces</div>
+                    </div>
+                    <button class="panel-close" @click="provinceListOpen = false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="plist-body">
+                    <div v-for="prov in panel.allProvinces" :key="prov.name"
+                         class="plist-item"
+                         @click="selectProvinceFromList(prov.name)">
+                        <div class="plist-dot" :style="{ background: prov.color }"></div>
+                        <div class="plist-info">
+                            <span class="plist-name">{{ prov.name }}</span>
+                            <span class="plist-director">{{ prov.director || 'Vacant' }}</span>
+                        </div>
+                        <span class="plist-score" :style="{ color: prov.color }">
+                            {{ prov.score != null ? prov.score + '%' : '—' }}
+                        </span>
+                    </div>
+                </div>
             </div>
         </transition>
 
@@ -420,7 +489,9 @@ const selIsland    = ref('');
 const selRegion    = ref('');
 const selProvince  = ref('');
 const selCstc      = ref('');
-const panel        = ref(null);
+const panel              = ref(null);
+const provinceListOpen   = ref(false);
+const regionListOpen     = ref(false);
 
 let map       = null;
 let geoLayer  = null;
@@ -450,21 +521,25 @@ const buildProvincePanel = (geoName) => {
         type: 'province', name: geoName, score: null, tier: 'No data',
         tierColor: '#94a3b8', director: '—', category: null,
         rank: null, year: props.selectedYear, categories: [], trend,
+        region: null, provinceUrlId: null, directorId: null,
     };
 
     const info = tierInfo(entry);
     return {
-        type:       'province',
-        name:       geoName,
-        category:   entry.category,
-        director:   entry.director,
-        status:     entry.status,
-        score:      Math.round(entry.score * 100) / 100,
-        tier:       info.label,
-        tierColor:  info.color,
-        rank:       entry.rank ?? null,
-        year:       props.selectedYear,
-        categories: categoryBreakdown(entry),
+        type:          'province',
+        name:          geoName,
+        region:        entry.region ?? null,
+        provinceUrlId: entry.province_url_id ?? null,
+        category:      entry.category,
+        director:      entry.director,
+        directorId:    entry.director_id ?? null,
+        status:        entry.status,
+        score:         Math.round(entry.score * 100) / 100,
+        tier:          info.label,
+        tierColor:     info.color,
+        rank:          entry.rank ?? null,
+        year:          props.selectedYear,
+        categories:    categoryBreakdown(entry),
         trend,
     };
 };
@@ -510,10 +585,32 @@ const buildIslandPanel = (islandValue) => {
             .map(p => p.regionCode)
     ).size;
 
+    const allRegions = islandRegionCodes
+        .filter(code => REGION_LABELS[code])
+        .map(code => {
+            const regProvNames = provinces
+                .filter(p => p.regionCode === code)
+                .map(p => GEO_TO_DB[p.name] ?? p.name);
+            const regScores = props.scores.filter(s => regProvNames.includes(s.province));
+            const avg = regScores.length
+                ? Math.round(regScores.reduce((a, s) => a + s.score, 0) / regScores.length * 10) / 10
+                : null;
+            const fullLabel = REGION_LABELS[code];
+            const shortLabel = fullLabel.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || fullLabel;
+            return {
+                code,
+                label:         shortLabel,
+                provinceCount: regScores.length,
+                score:         avg,
+                color:         avg != null ? scoreColor(avg) : '#94a3b8',
+            };
+        })
+        .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+
     if (!islandScores.length) return {
         type: 'island', label, provinceCount: 0, regionCount: 0,
         avgScore: 0, tierCounts: { top: 0, avg: 0, low: 0 }, topProv: null, lowProv: null,
-        rank: null, totalIslands: 3,
+        rank: null, totalIslands: 3, allRegions,
     };
 
     const avg    = Math.round(islandScores.reduce((a, s) => a + s.score, 0) / islandScores.length * 10) / 10;
@@ -538,6 +635,7 @@ const buildIslandPanel = (islandValue) => {
         },
         topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
         lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
+        allRegions,
     };
 };
 
@@ -567,16 +665,28 @@ const buildRegionPanel = (regionCode) => {
     // short label: strip "Region X —" prefix for the header title
     const shortLabel = label.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || label;
 
-    const regionProvNames = provinces
-        .filter(p => p.regionCode === regionCode)
-        .map(p => GEO_TO_DB[p.name] ?? p.name);
-
+    const sm = scoreMap();
+    const regionProvs = provinces.filter(p => p.regionCode === regionCode);
+    const regionProvNames = regionProvs.map(p => GEO_TO_DB[p.name] ?? p.name);
     const regionScores = props.scores.filter(s => regionProvNames.includes(s.province));
+
+    const allProvinces = regionProvs.map(p => {
+        const dbName = GEO_TO_DB[p.name] ?? p.name;
+        const entry  = sm[dbName] ?? null;
+        const info   = entry ? tierInfo(entry) : { color: '#94a3b8', label: 'No data' };
+        return {
+            name:     p.name,
+            director: entry?.director ?? null,
+            score:    entry ? Math.round(entry.score * 100) / 100 : null,
+            color:    info.color,
+            tier:     info.label,
+        };
+    }).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
 
     if (!regionScores.length) return {
         type: 'region', shortLabel, provinceCount: 0,
         avgScore: 0, tierCounts: { top: 0, avg: 0, low: 0 }, topProv: null, lowProv: null,
-        rank: null, totalRegions: 0,
+        rank: null, totalRegions: 0, allProvinces,
     };
 
     const avg    = Math.round(regionScores.reduce((a, s) => a + s.score, 0) / regionScores.length * 10) / 10;
@@ -602,6 +712,7 @@ const buildRegionPanel = (regionCode) => {
         },
         topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
         lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
+        allProvinces,
     };
 };
 
@@ -614,21 +725,25 @@ const buildCstcPanel = (cstcName) => {
         type: 'cstc', name: cstcName, score: null, tier: 'No data',
         tierColor: '#94a3b8', director: '—', category: 'cstc',
         rank: null, year: props.selectedYear, categories: [], trend,
+        region: null, provinceUrlId: null, directorId: null,
     };
 
     const info = tierInfo(entry);
     return {
-        type:       'cstc',
-        name:       cstcName,
-        category:   'cstc',
-        director:   entry.director,
-        status:     entry.status,
-        score:      Math.round(entry.score * 100) / 100,
-        tier:       info.label,
-        tierColor:  info.color,
-        rank:       entry.rank ?? null,
-        year:       props.selectedYear,
-        categories: categoryBreakdown(entry),
+        type:          'cstc',
+        name:          cstcName,
+        region:        entry.region ?? null,
+        provinceUrlId: entry.province_url_id ?? null,
+        category:      'cstc',
+        director:      entry.director,
+        directorId:    entry.director_id ?? null,
+        status:        entry.status,
+        score:         Math.round(entry.score * 100) / 100,
+        tier:          info.label,
+        tierColor:     info.color,
+        rank:          entry.rank ?? null,
+        year:          props.selectedYear,
+        categories:    categoryBreakdown(entry),
         trend,
     };
 };
@@ -780,6 +895,34 @@ const onProvinceChange = () => {
     panel.value = buildProvincePanel(selProvince.value);
     const prov = provinces.find(p => p.name === selProvince.value);
     if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+};
+
+const selectRegionFromList = (code) => {
+    const island = REGION_TO_ISLAND[code];
+    if (island) selIsland.value = island;
+    selRegion.value = String(code);
+    selProvince.value = '';
+    pendingFly = false;
+    refreshStyle();
+    panel.value = buildRegionPanel(code);
+    const regionProvs = provinces.filter(p => p.regionCode === code);
+    if (regionProvs.length) {
+        let bounds = L.latLngBounds(regionProvs[0].bounds);
+        for (const p of regionProvs.slice(1)) bounds.extend(p.bounds);
+        smartFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
+    }
+    regionListOpen.value = false;
+};
+
+const selectProvinceFromList = (name) => {
+    const prov = provinces.find(p => p.name === name);
+    if (!prov) return;
+    selProvince.value = name;
+    pendingFly = false;
+    refreshStyle();
+    panel.value = buildProvincePanel(name);
+    smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+    provinceListOpen.value = false;
 };
 
 const onCstcChange = () => {
@@ -978,6 +1121,10 @@ watch(() => props.selectedTier, (cat) => {
 });
 
 watch(() => props.scores,       () => { refreshStyle(); refreshCstcStyle(); rebuildPanel(); }, { deep: true });
+watch(panel, (p) => {
+    if (!p || p.type !== 'region') provinceListOpen.value = false;
+    if (!p || p.type !== 'island') regionListOpen.value = false;
+});
 // Sparkline highlights the active year, so the panel needs to rebuild when the
 // year changes (especially during time-lapse playback). Trends prop only
 // updates if a full reload happens — usually not during the session.
@@ -1055,6 +1202,12 @@ onBeforeUnmount(() => {
 
 .panel-title    { font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.2; }
 .panel-subtitle { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.3; }
+.panel-region-tag { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
+.panel-name-link {
+    text-decoration: none !important; color: inherit; display: block;
+    transition: color 0.15s;
+}
+.panel-name-link:hover { color: #4f46e5 !important; text-decoration: underline !important; }
 
 .panel-close {
     flex-shrink: 0; width: 22px; height: 22px; padding: 3px;
@@ -1066,6 +1219,15 @@ onBeforeUnmount(() => {
 .panel-close svg    { width: 14px; height: 14px; }
 
 .panel-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 14px; }
+
+.map-info-panel--region,
+.map-info-panel--island { height: 325px; display: flex; flex-direction: column; }
+.map-info-panel--region .panel-body,
+.map-info-panel--island .panel-body { overflow-y: auto; flex: 1; min-height: 0; }
+.map-info-panel--region .panel-body > div:first-child,
+.map-info-panel--island .panel-body > div:first-child {
+    flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+}
 
 /* Hero: large score number paired with inline tier/rank — no chips */
 .panel-hero          { display: flex; flex-direction: column; gap: 6px; }
@@ -1186,12 +1348,77 @@ onBeforeUnmount(() => {
 .ph-map-wrap:-webkit-full-screen .fs-btn  { top: 14px; right: 14px; }
 .ph-map-wrap:fullscreen .map-info-panel,
 .ph-map-wrap:-webkit-full-screen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
+.ph-map-wrap:fullscreen .map-province-list-panel,
+.ph-map-wrap:-webkit-full-screen .map-province-list-panel { bottom: 32px; right: 324px; }
 
 /* ── Panel slide-in transition ─────────────── */
 .panel-slide-enter-active { transition: transform 0.22s ease, opacity 0.22s ease; }
 .panel-slide-leave-active { transition: transform 0.18s ease, opacity 0.18s ease; }
 .panel-slide-enter-from   { transform: translateX(20px); opacity: 0; }
 .panel-slide-leave-to     { transform: translateX(20px); opacity: 0; }
+
+/* ── Province list panel (left of region card) ── */
+.map-province-list-panel {
+    position: absolute; bottom: 28px; right: 310px; z-index: 999;
+    width: 256px; height: 325px;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid #e2e8f0; border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    font-family: inherit;
+}
+.plist-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 8px; padding: 12px 14px 11px;
+    border-bottom: 1px solid #f1f5f9;
+    border-left: 3px solid #6366f1; padding-left: 11px;
+    flex-shrink: 0;
+}
+.plist-header-main { flex: 1; min-width: 0; }
+.plist-title    { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.plist-subtitle { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-top: 3px; }
+.plist-body {
+    overflow-y: auto; flex: 1; min-height: 0;
+    padding: 4px 0;
+}
+.plist-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 14px; cursor: pointer;
+    transition: background 0.12s;
+}
+.plist-item:hover { background: #f8fafc; }
+.plist-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.plist-info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 1px;
+}
+.plist-name     { font-size: 12px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plist-director { font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plist-score    { font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+/* ── Region panel: title row with expand button ── */
+.panel-title-row {
+    display: flex; align-items: center; gap: 6px;
+}
+.panel-expand-btn {
+    flex-shrink: 0; width: 20px; height: 20px; padding: 3px;
+    background: none; border: none; cursor: pointer; color: #94a3b8;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; transition: background 0.12s, color 0.12s;
+}
+.panel-expand-btn:hover,
+.panel-expand-btn--active { background: #ede9fe; color: #6366f1; }
+.panel-expand-btn svg { width: 13px; height: 13px; }
+
+/* ── Province list slide-in from right (expands leftward from region card) ── */
+.panel-slide-left-enter-active { transition: transform 0.22s ease, opacity 0.22s ease; }
+.panel-slide-left-leave-active { transition: transform 0.18s ease, opacity 0.18s ease; }
+.panel-slide-left-enter-from   { transform: translateX(20px); opacity: 0; }
+.panel-slide-left-leave-to     { transform: translateX(20px); opacity: 0; }
 </style>
 
 <style>
