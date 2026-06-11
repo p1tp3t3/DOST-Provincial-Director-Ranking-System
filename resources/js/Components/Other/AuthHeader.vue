@@ -47,6 +47,7 @@ const authUser = computed(() => page.props.auth?.user ?? null);
 const ROLE_LABELS = {
     super_admin:          'System Administrator',
     sub_admin:            'Sub Administrator',
+    regional_admin:       'Regional Administrator',
     provincial_admin:     'Provincial Administrator',
     provincial_sub_admin: 'Provincial Sub Administrator',
     provincial_director:  'Provincial Director',
@@ -55,7 +56,9 @@ const ROLE_LABELS = {
 const roleLabel = computed(() => {
     const base = ROLE_LABELS[authUser.value?.role] ?? '';
     const prov = authUser.value?.province?.name;
+    const reg = authUser.value?.region?.name;
     if (!base) return '';
+    if (authUser.value?.role === 'regional_admin' && reg) return `${base} of ${reg}`;
     if (authUser.value?.role === 'provincial_director' && prov) return `${base} of ${prov}`;
     if (prov && ['provincial_admin', 'provincial_sub_admin', 'employee'].includes(authUser.value?.role)) return `${base} (${prov})`;
     return base;

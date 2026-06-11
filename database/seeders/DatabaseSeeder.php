@@ -8,6 +8,7 @@ use App\Models\KPI;
 use App\Models\KPICategory;
 use App\Models\Profile;
 use App\Models\Province;
+use App\Models\Region;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -63,6 +64,18 @@ class DatabaseSeeder extends Seeder
         ],
     ];
 
+    // CSTCs (CSTC = cluster of cities with no province of their own) and the
+    // regions.csv `id` of the region their member cities actually belong to —
+    // see public/geo/cstc-cities.geojson for the per-city breakdown.
+    private const CSTC_PROVINCES = [
+        ['name' => 'CAMANAVA',    'region_id' => 1,  'num_plantilla_employees' => 0, 'num_municipalities' => 0, 'num_cities' => 4], // NCR
+        ['name' => 'PAMAMAZON',   'region_id' => 1,  'num_plantilla_employees' => 0, 'num_municipalities' => 0, 'num_cities' => 0], // NCR
+        ['name' => 'PAMAMARISAN', 'region_id' => 1,  'num_plantilla_employees' => 4, 'num_municipalities' => 0, 'num_cities' => 0], // NCR
+        ['name' => 'MUNTAPARLAS', 'region_id' => 1,  'num_plantilla_employees' => 4, 'num_municipalities' => 0, 'num_cities' => 3], // NCR
+        ['name' => 'ZCIC',        'region_id' => 12, 'num_plantilla_employees' => 1, 'num_municipalities' => 0, 'num_cities' => 1], // Region IX
+        ['name' => 'Davao City',  'region_id' => 14, 'num_plantilla_employees' => 3, 'num_municipalities' => 0, 'num_cities' => 1], // Region XI
+    ];
+
     private static function get_category(string $name): string
     {
         foreach (self::CLASSIFICATION as $category => $list) {
@@ -71,16 +84,47 @@ class DatabaseSeeder extends Seeder
         return 'micro';
     }
 
+    // Returns a map of regions.csv `id` → actual `region` table id
+    private function generate_region(): array
+    {
+        $regions = CSVToDFHelper::get_df('regions.csv');
+        $map     = [];
+
+        foreach ($regions as $r) {
+            $region = Region::create([
+                'name'         => $r['name'],
+                'island_under' => $r['island_under'],
+            ]);
+            $map[(int) $r['id']] = $region->id;
+        }
+
+        return $map;
+    }
+
     private function generate_provinces()
     {
+        $regionMap = self::generate_region();
         $provinces = CSVToDFHelper::get_df('provinces.csv');
+
         foreach ($provinces as $p) {
             Province::create([
                 'name'                    => $p['name'],
                 'category'                => self::get_category($p['name']),
+                'region_id'               => $regionMap[(int) $p['region_id']],
                 'num_plantilla_employees' => (int) ($p['num_plantilla_employees'] ?? 0),
                 'num_municipalities'      => (int) ($p['num_municipalities']      ?? 0),
                 'num_cities'              => (int) ($p['num_cities']              ?? 0),
+            ]);
+        }
+
+        foreach (self::CSTC_PROVINCES as $c) {
+            Province::create([
+                'name'                    => $c['name'],
+                'category'                => 'cstc',
+                'region_id'               => $regionMap[$c['region_id']],
+                'num_plantilla_employees' => $c['num_plantilla_employees'],
+                'num_municipalities'      => $c['num_municipalities'],
+                'num_cities'              => $c['num_cities'],
             ]);
         }
     }
@@ -112,6 +156,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::factory()->create(['role' => 'sub_admin']);
+
+        // Create one Regional Admin per region
+        foreach (Region::all() as $region) {
+            User::factory()->create(['role' => 'regional_admin', 'region_id' => $region->id]);
+        }
 
         foreach ($directorRows as $dir) {
             $province = $provinces[$dir['province']] ?? null;

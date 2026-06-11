@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['role', 'province_id', 'dost_employee_id', 'username', 'email', 'password', 'activate'])]
+#[Fillable(['role', 'region_id', 'province_id', 'dost_employee_id', 'username', 'email', 'password', 'activate'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -36,5 +36,8 @@ class User extends Authenticatable
     }
     public function province() {
         return $this->belongsTo(Province::class, 'province_id', 'id');
+    }
+    public function region() {
+        return $this->belongsTo(Region::class, 'region_id', 'id');
     }
 }

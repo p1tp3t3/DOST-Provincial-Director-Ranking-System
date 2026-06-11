@@ -107,6 +107,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/performance-map', [DashboardController::class, 'map_index'])->name('performance-map');
     });
 
+    // ── Regional Admin only ─────────────────────────────────────
+    Route::middleware('role:regional_admin')->group(function () {
+        Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
+    });
+
     // ── Provincial Admin only ─────────────────────────────────
     Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-admin-report',        [ProvincialAdminReportController::class, 'index']);

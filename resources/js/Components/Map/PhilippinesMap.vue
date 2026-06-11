@@ -262,6 +262,7 @@ import 'leaflet/dist/leaflet.css';
 const props = defineProps({
     scores:           { type: Array,  default: () => [] },
     trends:           { type: Object, default: () => ({}) },  // province name → [{year, total_pct, bucket, ...}]
+    regions:          { type: Array,  default: () => [] },     // region table: [{id, name, island_under}]
     selectedYear:     { type: Number, default: null },
     selectedTier:     { type: String, default: 'all' },
     height:           { type: String, default: '460px' },
@@ -274,46 +275,6 @@ const GEO_TO_DB = {
     'Dinagat Islands': 'Dinagat Island',
 };
 const SKIP = (name) => !name || name.includes('Not a Province') || name.includes('NCR,');
-
-const REGION_LABELS = {
-    100000000:  'Region I — Ilocos',
-    200000000:  'Region II — Cagayan Valley',
-    300000000:  'Region III — Central Luzon',
-    400000000:  'Region IV-A — CALABARZON',
-    1700000000: 'Region IV-B — MIMAROPA',
-    500000000:  'Region V — Bicol',
-    600000000:  'Region VI — Western Visayas',
-    700000000:  'Region VII — Central Visayas',
-    800000000:  'Region VIII — Eastern Visayas',
-    900000000:  'Region IX — Zamboanga Peninsula',
-    1000000000: 'Region X — Northern Mindanao',
-    1100000000: 'Region XI — Davao Region',
-    1200000000: 'Region XII — SOCCSKSARGEN',
-    1400000000: 'CAR — Cordillera',
-    1600000000: 'Region XIII — Caraga',
-    1900000000: 'BARMM',
-    1300000000: 'NCR',
-};
-
-const REGION_TO_ISLAND = {
-    100000000:  'luzon',    // Region I — Ilocos
-    200000000:  'luzon',    // Region II — Cagayan Valley
-    300000000:  'luzon',    // Region III — Central Luzon
-    400000000:  'luzon',    // Region IV-A — CALABARZON
-    1700000000: 'luzon',    // Region IV-B — MIMAROPA
-    500000000:  'luzon',    // Region V — Bicol
-    1400000000: 'luzon',    // CAR — Cordillera
-    1300000000: 'luzon',    // NCR
-    600000000:  'visayas',  // Region VI — Western Visayas
-    700000000:  'visayas',  // Region VII — Central Visayas
-    800000000:  'visayas',  // Region VIII — Eastern Visayas
-    900000000:  'mindanao', // Region IX — Zamboanga Peninsula
-    1000000000: 'mindanao', // Region X — Northern Mindanao
-    1100000000: 'mindanao', // Region XI — Davao Region
-    1200000000: 'mindanao', // Region XII — SOCCSKSARGEN
-    1600000000: 'mindanao', // Region XIII — Caraga
-    1900000000: 'mindanao', // BARMM
-};
 
 const ISLANDS = [
     { value: 'luzon',    label: 'Luzon'    },
@@ -428,7 +389,7 @@ let cstcLayer = null;
 let pendingFly = false;
 
 const provinces  = [];
-const regionList = ref([]);
+const provinceRegionMap = new Map(); // geo name → {region_id, island_under} (from province.region_id via the region table)
 const cstcList   = ref([]);
 let   cstcData   = {};
 
@@ -471,16 +432,11 @@ const buildProvincePanel = (geoName) => {
 
 // Average score per island across the 3 major islands, sorted desc.
 const computeIslandRanking = () => {
-    const sm = scoreMap();
     const buckets = new Map();
-    for (const p of provinces) {
-        const island = REGION_TO_ISLAND[p.regionCode];
-        if (!island) continue;
-        const dbName = GEO_TO_DB[p.name] ?? p.name;
-        const entry  = sm[dbName];
-        if (!entry) continue;
-        if (!buckets.has(island)) buckets.set(island, []);
-        buckets.get(island).push(entry.score);
+    for (const s of props.scores) {
+        if (!s.island_under) continue;
+        if (!buckets.has(s.island_under)) buckets.set(s.island_under, []);
+        buckets.get(s.island_under).push(s.score);
     }
     const arr = [];
     for (const [island, scores] of buckets.entries()) {
@@ -495,20 +451,8 @@ const buildIslandPanel = (islandValue) => {
     const meta = ISLANDS.find(i => i.value === islandValue);
     const label = meta?.label ?? islandValue;
 
-    const islandRegionCodes = Object.entries(REGION_TO_ISLAND)
-        .filter(([, v]) => v === islandValue)
-        .map(([code]) => Number(code));
-
-    const islandProvs = provinces.filter(p => islandRegionCodes.includes(p.regionCode));
-    const islandProvNames = islandProvs.map(p => GEO_TO_DB[p.name] ?? p.name);
-    const islandScores    = props.scores.filter(s => islandProvNames.includes(s.province));
-
-    const regionCount = new Set(
-        islandProvs
-            .filter(p => islandProvNames.includes(GEO_TO_DB[p.name] ?? p.name))
-            .filter(p => islandScores.some(s => s.province === (GEO_TO_DB[p.name] ?? p.name)))
-            .map(p => p.regionCode)
-    ).size;
+    const islandScores = props.scores.filter(s => s.island_under === islandValue);
+    const regionCount  = new Set(islandScores.map(s => s.region_id)).size;
 
     if (!islandScores.length) return {
         type: 'island', label, provinceCount: 0, regionCount: 0,
@@ -544,34 +488,27 @@ const buildIslandPanel = (islandValue) => {
 // Average score per region across all regions present on the map, sorted desc.
 // Used to compute a region's rank among its peers in the same filter context.
 const computeRegionRanking = () => {
-    const sm = scoreMap();
     const buckets = new Map();
-    for (const p of provinces) {
-        const dbName = GEO_TO_DB[p.name] ?? p.name;
-        const entry  = sm[dbName];
-        if (!entry) continue;
-        if (!buckets.has(p.regionCode)) buckets.set(p.regionCode, []);
-        buckets.get(p.regionCode).push(entry.score);
+    for (const s of props.scores) {
+        if (s.region_id == null) continue;
+        if (!buckets.has(s.region_id)) buckets.set(s.region_id, []);
+        buckets.get(s.region_id).push(s.score);
     }
     const arr = [];
-    for (const [code, scores] of buckets.entries()) {
+    for (const [id, scores] of buckets.entries()) {
         const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        arr.push({ code, avg: Math.round(avg * 10) / 10 });
+        arr.push({ id, avg: Math.round(avg * 10) / 10 });
     }
     arr.sort((a, b) => b.avg - a.avg);
     return arr;
 };
 
-const buildRegionPanel = (regionCode) => {
-    const label = REGION_LABELS[regionCode] ?? `Region ${regionCode}`;
+const buildRegionPanel = (regionId) => {
+    const label = props.regions.find(r => r.id === regionId)?.name ?? `Region ${regionId}`;
     // short label: strip "Region X —" prefix for the header title
     const shortLabel = label.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || label;
 
-    const regionProvNames = provinces
-        .filter(p => p.regionCode === regionCode)
-        .map(p => GEO_TO_DB[p.name] ?? p.name);
-
-    const regionScores = props.scores.filter(s => regionProvNames.includes(s.province));
+    const regionScores = props.scores.filter(s => s.region_id === regionId);
 
     if (!regionScores.length) return {
         type: 'region', shortLabel, provinceCount: 0,
@@ -583,7 +520,7 @@ const buildRegionPanel = (regionCode) => {
     const sorted = [...regionScores].sort((a, b) => b.score - a.score);
 
     const ranking     = computeRegionRanking();
-    const rankIdx     = ranking.findIndex(r => r.code === regionCode);
+    const rankIdx     = ranking.findIndex(r => r.id === regionId);
     const rank        = rankIdx >= 0 ? rankIdx + 1 : null;
     const totalRegions = ranking.length;
 
@@ -650,17 +587,17 @@ const refreshCstcStyle = () => {
 };
 
 const styleFor = (feature, sm, selReg, selProv, selIsl) => {
-    const name       = feature.properties.adm2_en;
-    const regionCode = feature.properties.adm1_psgc;
+    const name = feature.properties.adm2_en;
     if (SKIP(name)) return { fillColor: '#e2e8f0', weight: 0.4, color: '#cbd5e1', fillOpacity: 0.25 };
 
     const dbName    = GEO_TO_DB[name] ?? name;
     const entry     = sm[dbName] ?? null;
     const baseColor = entry ? tierColor(entry) : '#94a3b8';
+    const regionMeta = provinceRegionMap.get(name);
 
     const isSelectedProv = selProv && name === selProv;
-    const isInSelRegion  = selReg  && regionCode === Number(selReg);
-    const isInSelIsland  = selIsl  && REGION_TO_ISLAND[regionCode] === selIsl;
+    const isInSelRegion  = selReg  && regionMeta?.region_id === Number(selReg);
+    const isInSelIsland  = selIsl  && regionMeta?.island_under === selIsl;
     const hasRegFilter    = !!selReg;
     const hasProvFilter   = !!selProv;
     const hasIslandFilter = !!selIsl;
@@ -691,16 +628,18 @@ const refreshStyle = () => {
     geoLayer.setStyle(f => styleFor(f, sm, selRegion.value, selProvince.value, selIsland.value));
 };
 
-// ── Region / Province dropdowns ───────────────────────────────────────────────
-const visibleRegions = computed(() =>
-    selIsland.value
-        ? regionList.value.filter(r => REGION_TO_ISLAND[r.code] === selIsland.value)
-        : regionList.value
-);
+// ── Region / Province dropdowns ─────────────────────────────────────────────
+// Region options come from the `region` table (props.regions), not the geojson.
+const visibleRegions = computed(() => {
+    const regions = selIsland.value
+        ? props.regions.filter(r => r.island_under === selIsland.value)
+        : props.regions;
+    return regions.map(r => ({ code: r.id, label: r.name }));
+});
 
 const visibleProvinces = computed(() => {
-    if (selRegion.value) return provinces.filter(p => p.regionCode === Number(selRegion.value));
-    if (selIsland.value) return provinces.filter(p => REGION_TO_ISLAND[p.regionCode] === selIsland.value);
+    if (selRegion.value) return provinces.filter(p => provinceRegionMap.get(p.name)?.region_id === Number(selRegion.value));
+    if (selIsland.value) return provinces.filter(p => provinceRegionMap.get(p.name)?.island_under === selIsland.value);
     return provinces;
 });
 
@@ -736,10 +675,7 @@ const onIslandChange = () => {
 
     panel.value = buildIslandPanel(selIsland.value);
 
-    const islandRegionCodes = Object.entries(REGION_TO_ISLAND)
-        .filter(([, v]) => v === selIsland.value)
-        .map(([code]) => Number(code));
-    const islandProvs = provinces.filter(p => islandRegionCodes.includes(p.regionCode));
+    const islandProvs = provinces.filter(p => provinceRegionMap.get(p.name)?.island_under === selIsland.value);
     if (!islandProvs.length) return;
     let bounds = L.latLngBounds(islandProvs[0].bounds);
     for (const p of islandProvs.slice(1)) bounds.extend(p.bounds);
@@ -752,7 +688,7 @@ const onRegionChange = () => {
 
     // Keep island in sync so the dropdown filter and map highlight stay consistent
     if (selRegion.value) {
-        const island = REGION_TO_ISLAND[Number(selRegion.value)];
+        const island = props.regions.find(r => r.id === Number(selRegion.value))?.island_under;
         if (island && selIsland.value !== island) selIsland.value = island;
     }
 
@@ -763,10 +699,10 @@ const onRegionChange = () => {
         return;
     }
 
-    const code = Number(selRegion.value);
-    panel.value = buildRegionPanel(code);
+    const id = Number(selRegion.value);
+    panel.value = buildRegionPanel(id);
 
-    const regionProvs = provinces.filter(p => p.regionCode === code);
+    const regionProvs = provinces.filter(p => provinceRegionMap.get(p.name)?.region_id === id);
     if (!regionProvs.length) return;
     let bounds = L.latLngBounds(regionProvs[0].bounds);
     for (const p of regionProvs.slice(1)) bounds.extend(p.bounds);
@@ -831,26 +767,26 @@ onMounted(async () => {
     const geojson = await res.json();
     const sm      = scoreMap();
 
-    const regionCodes = new Set();
     for (const feature of geojson.features) {
         const name = feature.properties.adm2_en;
         if (SKIP(name)) continue;
-        const bounds     = L.geoJSON(feature).getBounds();
-        const regionCode = feature.properties.adm1_psgc;
-        provinces.push({ name, regionCode, bounds });
-        regionCodes.add(regionCode);
+        const bounds = L.geoJSON(feature).getBounds();
+        provinces.push({ name, bounds });
+
+        // Resolve this province's region/island from province.region_id (via the
+        // region table), using the score row's region_id/island_under fields.
+        const dbName = GEO_TO_DB[name] ?? name;
+        const entry  = sm[dbName];
+        if (entry) {
+            provinceRegionMap.set(name, { region_id: entry.region_id, island_under: entry.island_under });
+        }
     }
     provinces.sort((a, b) => a.name.localeCompare(b.name));
-    regionList.value = [...regionCodes]
-        .sort((a, b) => a - b)
-        .filter(c => REGION_LABELS[c])
-        .map(c => ({ code: c, label: REGION_LABELS[c] }));
 
     geoLayer = L.geoJSON(geojson, {
         style:         f => styleFor(f, sm, selRegion.value, selProvince.value),
         onEachFeature: (feature, layer) => {
-            const name       = feature.properties.adm2_en;
-            const regionCode = feature.properties.adm1_psgc;
+            const name = feature.properties.adm2_en;
             if (SKIP(name)) return;
             const dbName = GEO_TO_DB[name] ?? name;
 
@@ -867,9 +803,10 @@ onMounted(async () => {
                     { sticky: true, className: 'map-tooltip' }
                 ).openTooltip(e.latlng);
                 // Keep dimmed provinces dim when a filter is active and they fall outside it
+                const regionMeta = provinceRegionMap.get(name);
                 const inActiveFilter =
-                    (!selRegion.value || Number(selRegion.value) === regionCode) &&
-                    (!selIsland.value || REGION_TO_ISLAND[regionCode] === selIsland.value);
+                    (!selRegion.value || Number(selRegion.value) === regionMeta?.region_id) &&
+                    (!selIsland.value || regionMeta?.island_under === selIsland.value);
                 if (inActiveFilter) e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
             });
             layer.on('mouseout', () => {
@@ -878,12 +815,13 @@ onMounted(async () => {
 
             layer.on('click', () => {
                 // Sync dropdowns
-                const island = REGION_TO_ISLAND[regionCode];
+                const regionMeta = provinceRegionMap.get(name);
+                const island = regionMeta?.island_under;
                 if (island && selIsland.value !== island) {
                     selIsland.value = island;
                 }
-                if (regionCode !== Number(selRegion.value)) {
-                    selRegion.value = String(regionCode);
+                if (regionMeta && regionMeta.region_id !== Number(selRegion.value)) {
+                    selRegion.value = String(regionMeta.region_id);
                 }
                 selProvince.value = name;
                 pendingFly = false;

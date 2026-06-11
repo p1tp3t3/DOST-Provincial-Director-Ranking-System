@@ -93,6 +93,7 @@
             key="ph-map"
             :scores="filteredScores"
             :trends="trendsByProvince"
+            :regions="regions"
             :selected-year="selectedYear"
             :selected-tier="selectedTier"
             height="calc(100vh - 260px)"
@@ -110,6 +111,7 @@ const props = defineProps({
     rankings_by_year: { type: Object, default: () => ({}) },
     kpi_categories:   { type: Array,  default: () => [] },
     available_years:  { type: Array,  default: () => [] },
+    regions:          { type: Array,  default: () => [] },
 });
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());

@@ -100,7 +100,7 @@
                     </div>
 
                     <!-- Island / Region filters (Trend view only) -->
-                    <div v-if="viewMode === 'trend'" class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
+                    <div v-show="viewMode === 'trend'" class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
                         <div class="d-flex align-center gap-2">
                             <span class="filter-label">Island</span>
                             <div class="segmented">
@@ -110,11 +110,11 @@
                                     @click="selectedIsland = 'all'; selectedRegion = 'all'"
                                 >All</button>
                                 <button
-                                    v-for="isl in ISLANDS" :key="isl"
+                                    v-for="isl in ISLANDS" :key="isl.value"
                                     class="segmented-btn"
-                                    :class="{ active: selectedIsland === isl }"
-                                    @click="selectedIsland = isl; selectedRegion = 'all'"
-                                >{{ isl }}</button>
+                                    :class="{ active: selectedIsland === isl.value }"
+                                    @click="selectedIsland = isl.value; selectedRegion = 'all'"
+                                >{{ isl.label }}</button>
                             </div>
                         </div>
                         <div class="d-flex align-center gap-2">
@@ -132,7 +132,7 @@
                         </div>
                         <div class="d-flex align-center gap-2">
                             <v-autocomplete
-                                v-if="trendProvinceList.length"
+                                v-show="trendProvinceList.length"
                                 v-model="selectedProvinces"
                                 :items="trendProvinceList"
                                 multiple
@@ -141,6 +141,7 @@
                                 label="Provinces"
                                 placeholder="Search provinces…"
                                 hide-details
+                                location="bottom start"
                                 :menu-props="{ maxHeight: 320 }"
                                 class="trend-province-select"
                                 style="min-width:220px; max-width:280px;"
@@ -482,8 +483,6 @@ import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import { RiGroupLine, RiUserStarLine, RiCheckboxCircleLine, RiBuildingLine } from '@remixicon/vue';
-import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
-
 const props = defineProps({
     total_users:                { type: Number, default: 0 },
     active_reporting_provinces: { type: Number, default: 0 },
@@ -493,7 +492,15 @@ const props = defineProps({
     rankings_by_year:           { type: Object, default: () => ({}) },
     kpi_categories:             { type: Array,  default: () => [] },
     available_years:            { type: Array,  default: () => [] },
+    regions:                    { type: Array,  default: () => [] },
 });
+
+// Island groupings come from the `region.island_under` enum (luzon/visayas/mindanao).
+const ISLANDS = [
+    { value: 'luzon',    label: 'Luzon'    },
+    { value: 'visayas',  label: 'Visayas'  },
+    { value: 'mindanao', label: 'Mindanao' },
+];
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('all');
@@ -735,9 +742,12 @@ const TREND_LIMIT = 15;
 // Region dropdown narrows to the selected island's regions, plus "All".
 const regionOptions = computed(() => {
     const regions = selectedIsland.value === 'all'
-        ? REGIONS
-        : REGIONS.filter(r => r.island === selectedIsland.value);
-    return [{ value: 'all', label: 'All Regions' }, ...regions];
+        ? props.regions
+        : props.regions.filter(r => r.island_under === selectedIsland.value);
+    return [
+        { value: 'all', label: 'All Regions' },
+        ...regions.map(r => ({ value: r.id, label: r.name })),
+    ];
 });
 
 // Builds { years: [ascending...], provinceMap: { province: { year: score } } }
@@ -755,9 +765,8 @@ const trendData = computed(() => {
             for (const r of rows) {
                 if (!isRanked(r)) continue;
 
-                const geo = PROVINCE_REGIONS[r.province];
-                if (selectedIsland.value !== 'all' && geo?.island !== selectedIsland.value) continue;
-                if (selectedRegion.value !== 'all' && geo?.region !== selectedRegion.value) continue;
+                if (selectedIsland.value !== 'all' && r.island_under !== selectedIsland.value) continue;
+                if (selectedRegion.value !== 'all' && r.region_id !== selectedRegion.value) continue;
 
                 if (!provinceMap[r.province]) provinceMap[r.province] = {};
                 provinceMap[r.province][year] = getScore(r);

@@ -9,7 +9,6 @@ import {
     RiTeamFill,
     RiFileChartFill,
     RiFileList3Fill,
-    RiGlobalFill,
     RiFolder2Fill,
     RiUserAddLine,
     RiListCheck3,
@@ -40,6 +39,7 @@ const getRoleLabel = () => {
         'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
         'provincial_sub_admin':   `Provincial Sub Administrator of ${authUser.value?.province?.name}`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
+        'regional_admin':     `Regional Administrator of ${authUser.value?.region?.name}`,
         'employee':           `Employee at ${authUser.value?.province?.name}`,
     };
     return label[authUser.value?.role] || '';
@@ -104,11 +104,11 @@ const tabs = computed(() => {
                 { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
             ];
-        case 'regional_director':
+        case 'regional_admin':
             return [
-                { name: 'Dashboard',       href: '/dashboard',        icon: RiDashboard2Fill },
-                { name: 'My Profile',      href: '/profile',          icon: RiUser2Fill      },
-                { name: 'Regional Reports',href: '/regional-reports', icon: RiGlobalFill     },
+                { name: 'Dashboard',       href: '/dashboard',                  icon: RiDashboard2Fill },
+                { name: 'Performance Map', href: '/regional-performance-map',   icon: RiRoadMapFill    },
+                { name: 'My Profile',      href: '/profile',                    icon: RiUser2Fill      },
             ];
         case 'employee':
             return [

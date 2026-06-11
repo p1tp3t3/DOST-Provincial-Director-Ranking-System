@@ -58,18 +58,20 @@ class RankingService
     //       ]
     //     ]
     //   ]
-    public function rankAllYears(): array
+    // $provinceIds optionally restricts the result to a subset of provinces
+    // (e.g. all provinces within a given region for the Regional Admin views).
+    public function rankAllYears(?array $provinceIds = null): array
     {
         $out = [];
         foreach ($this->availableYears() as $year) {
-            $out[$year] = $this->rankByYear($year);
+            $out[$year] = $this->rankByYear($year, $provinceIds);
         }
         return $out;
     }
 
-    public function rankByYear(int $year): array
+    public function rankByYear(int $year, ?array $provinceIds = null): array
     {
-        $records = $this->scoreAllProvinces($year);
+        $records = $this->scoreAllProvinces($year, $provinceIds);
 
         // Group by CSTC tier so each tier is ranked independently
         $byCategory = [];
@@ -85,8 +87,9 @@ class RankingService
     }
 
     // Computes the weighted score for every province for the given year, including
-    // provinces that have no data (they show up with total = 0).
-    public function scoreAllProvinces(int $year): array
+    // provinces that have no data (they show up with total = 0). Pass $provinceIds
+    // to restrict the result to a subset of provinces (e.g. one region).
+    public function scoreAllProvinces(int $year, ?array $provinceIds = null): array
     {
         $directorNameSql = "CONCAT_WS(' ',
             NULLIF(TRIM(IFNULL(pr.prefix,'')), ''),
@@ -101,10 +104,15 @@ class RankingService
                 $j->on('u.province_id', '=', 'p.id')->where('u.role', '=', 'provincial_director');
             })
             ->leftJoin('profiles as pr', 'pr.user_id', '=', 'u.id')
+            ->leftJoin('region as r', 'r.id', '=', 'p.region_id')
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('p.id', $provinceIds))
             ->select(
                 'p.id as province_id',
                 'p.name as province',
                 'p.category',
+                'p.region_id as region_id',
+                'r.name as region_name',
+                'r.island_under as island_under',
                 'u.id as director_id',
                 DB::raw("$directorNameSql as director")
             )->get()->keyBy('province_id');
@@ -112,6 +120,7 @@ class RankingService
         $rows = DB::table('provincial_director_kpis as pk')
             ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
             ->where('pk.year', $year)
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('u.province_id', $provinceIds))
             ->select('u.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
             ->get();
 
@@ -177,6 +186,9 @@ class RankingService
             'province_id'      => $provinceId,
             'province'         => $meta['province'],
             'category'         => $meta['category'],
+            'region_id'        => $meta['region_id'],
+            'region_name'      => $meta['region_name'],
+            'island_under'     => $meta['island_under'],
             'director'         => $meta['director'] ?? null,
             'status'           => $status,
             'total'            => round($total, 6),
