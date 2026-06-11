@@ -8,8 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Extend the ENUM to include 'cstc'
-        DB::statement("ALTER TABLE provinces MODIFY COLUMN category ENUM('micro','small','medium','large','cstc') NOT NULL");
+        // SQLite stores ENUMs as text and doesn't support MODIFY COLUMN; only run on MySQL/MariaDB
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE provinces MODIFY COLUMN category ENUM('micro','small','medium','large','cstc') NOT NULL");
+        }
 
         // Insert the 6 named CSTCs from the ranking matrix Excel
         $cstcs = [
@@ -37,6 +39,8 @@ return new class extends Migration
     public function down(): void
     {
         DB::table('provinces')->whereIn('name', ['CAMANAVA','PAMAMAZON','PAMAMARISAN','MUNTAPARLAS','ZCIC','Davao City'])->delete();
-        DB::statement("ALTER TABLE provinces MODIFY COLUMN category ENUM('micro','small','medium','large') NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE provinces MODIFY COLUMN category ENUM('micro','small','medium','large') NOT NULL");
+        }
     }
 };

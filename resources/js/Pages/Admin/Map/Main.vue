@@ -20,7 +20,7 @@
                 </div>
                 <div class="d-flex align-center gap-1">
                     <span class="legend-dot" style="background:#b91c1c;"></span>
-                    <span class="text-caption text-medium-emphasis">Under ({{ bucketCounts.Under }})</span>
+                    <span class="text-caption text-medium-emphasis">Low ({{ bucketCounts.Low }})</span>
                 </div>
                 <div class="d-flex align-center gap-1">
                     <span class="legend-dot" style="background:#94a3b8;"></span>
@@ -121,7 +121,6 @@ const tiers = [
     { value: 'small',  label: 'Small'  },
     { value: 'medium', label: 'Medium' },
     { value: 'large',  label: 'Large'  },
-    { value: 'cstc',   label: 'CSTC'   },
 ];
 
 const categoryOptions = computed(() =>
@@ -153,7 +152,7 @@ const assignBuckets = (sortedRows) => {
     const avgEnd = n - undN;
     return sortedRows.map((r, i) => ({
         ...r,
-        bucket: i < topN ? 'Top' : i < avgEnd ? 'Average' : 'Under',
+        bucket: i < topN ? 'Top' : i < avgEnd ? 'Average' : 'Low',
     }));
 };
 
@@ -193,7 +192,7 @@ const tierCounts = computed(() => {
 });
 
 const bucketCounts = computed(() => {
-    const counts = { Top: 0, Average: 0, Under: 0 };
+    const counts = { Top: 0, Average: 0, Low: 0 };
     for (const r of filteredScores.value) {
         if (r.bucket && counts[r.bucket] !== undefined) counts[r.bucket]++;
     }
@@ -287,13 +286,11 @@ const trendsByProvince = computed(() => {
 .seg-count--small  { background: #b2dfdb; color: #00695c; }
 .seg-count--medium { background: #c5cae9; color: #283593; }
 .seg-count--large  { background: #d1c4e9; color: #4527a0; }
-.seg-count--cstc   { background: #f8bbd0; color: #ad1457; }
 
 .category-btn-micro.active  { color: #455a64; background: #eceff1; box-shadow: 0 1px 2px rgba(69,90,100,0.10); }
 .category-btn-small.active  { color: #00695c; background: #e0f2f1; box-shadow: 0 1px 2px rgba(0,105,92,0.10); }
 .category-btn-medium.active { color: #283593; background: #e8eaf6; box-shadow: 0 1px 2px rgba(40,53,147,0.10); }
 .category-btn-large.active  { color: #4527a0; background: #ede7f6; box-shadow: 0 1px 2px rgba(69,39,160,0.10); }
-.category-btn-cstc.active   { color: #ad1457; background: #fce4ec; box-shadow: 0 1px 2px rgba(173,20,87,0.10); }
 
 .cat-weight {
     display: inline-block;

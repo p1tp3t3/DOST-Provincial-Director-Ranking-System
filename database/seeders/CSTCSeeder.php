@@ -12,12 +12,15 @@ use Illuminate\Support\Facades\DB;
 
 class CSTCSeeder extends Seeder
 {
+    private const CLUSTERS = ['CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'ZCIC', 'Davao City'];
+
     public function run(): void
     {
         $directorRows = CSVToDFHelper::get_df('cstc-directors.csv');
         $kpiRows      = CSVToDFHelper::get_df('cstc-kpi-scores.csv');
 
-        $provinces = Province::where('category', 'cstc')->get()->keyBy('name');
+        // The CSTC clusters now live in the Large tier, so look them up by name.
+        $provinces = Province::whereIn('name', self::CLUSTERS)->get()->keyBy('name');
         $directorMap    = [];  // province name → director id (newly created only, for KPI insert)
         $allDirectorMap = [];  // province name → director id (all, for reference)
 

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 //      derives its actual % from two input-only KPIs and uses the inverse bands.
 //   3. weighted_score = kpi.weight * adjective_score
 //   4. Total = sum of all KPI weighted scores (max 1.0)
-//   5. Provinces are ranked WITHIN their CSTC tier (micro/small/medium/large/cstc),
+//   5. Provinces are ranked WITHIN their classification tier (micro/small/medium/large),
 //      then bucketed into Top / Average / Under by rank percentile.
 class RankingService
 {
@@ -48,7 +48,7 @@ class RankingService
     // Returns the structure expected by the dashboard / map views:
     //   [
     //     <year> => [
-    //       <province_category> => [   // 'micro' | 'small' | 'medium' | 'large' | 'cstc'
+    //       <province_category> => [   // 'micro' | 'small' | 'medium' | 'large'
     //         {
     //           rank, bucket, province, category, director, total, total_pct, adjective_label,
     //           subtotals: {CORE: float, FUNCTIONAL: float, SUPPORT: float},
@@ -71,7 +71,7 @@ class RankingService
     {
         $records = $this->scoreAllProvinces($year);
 
-        // Group by CSTC tier so each tier is ranked independently
+        // Group by classification tier so each tier is ranked independently
         $byCategory = [];
         foreach ($records as $r) {
             $byCategory[$r['category']][] = $r;
@@ -105,6 +105,7 @@ class RankingService
                 'p.id as province_id',
                 'p.name as province',
                 'p.category',
+                'p.region',
                 'u.id as director_id',
                 DB::raw("$directorNameSql as director")
             )->get()->keyBy('province_id');
@@ -176,8 +177,10 @@ class RankingService
         return [
             'province_id'      => $provinceId,
             'province'         => $meta['province'],
+            'region'           => $meta['region'] ?? null,
             'category'         => $meta['category'],
             'director'         => $meta['director'] ?? null,
+            'director_id'      => $meta['director_id'] ?? null,
             'status'           => $status,
             'total'            => round($total, 6),
             'total_pct'        => round($total * 100, 2),
@@ -237,7 +240,7 @@ class RankingService
         return end($this->bandsInverse);
     }
 
-    // Ranks within a single CSTC tier and assigns Top / Average / Under buckets.
+    // Ranks within a single classification tier and assigns Top / Average / Under buckets.
     //   - Provinces with status != 'ranked' (no director or no submitted data) are
     //     EXCLUDED from the bucket math — they shouldn't dilute N or steal an
     //     "Under" slot from a province that genuinely underperformed. They're
@@ -287,7 +290,7 @@ class RankingService
             } elseif ($i < $avgEnd) {
                 $row['bucket'] = 'Average';
             } else {
-                $row['bucket'] = 'Under';
+                $row['bucket'] = 'Low';
             }
         }
         unset($row);
