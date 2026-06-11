@@ -17,7 +17,6 @@ import {
     RiListView,
     RiFile2Fill,
     RiBarChart2Fill,
-    RiRoadMapFill,
     RiFolder2Line,
     RiEdit2Fill,
     RiTable2,
@@ -52,7 +51,6 @@ const tabs = computed(() => {
         case 'super_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
                 { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
                 {
@@ -70,7 +68,6 @@ const tabs = computed(() => {
         case 'sub_admin':
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
-                { name: 'Performance Map', href: '/performance-map', icon: RiRoadMapFill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'KPI Management', href: '/kpi', icon: RiTable2 },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },

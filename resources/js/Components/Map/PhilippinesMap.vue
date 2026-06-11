@@ -1,35 +1,38 @@
 <template>
-    <div ref="wrapEl" class="ph-map-wrap">
-        <div ref="mapEl" class="ph-map"></div>
-
-        <!-- Navigation panel -->
-        <div class="map-nav" v-if="ready">
-            <template v-if="props.selectedTier === 'cstc'">
-                <select v-model="selCstc" class="map-nav-sel" @change="onCstcChange">
-                    <option value="">— Select CSTC —</option>
-                    <option v-for="c in cstcList" :key="c" :value="c">{{ c }}</option>
-                </select>
-            </template>
-            <template v-else>
-                <select v-model="selIsland" class="map-nav-sel" @change="onIslandChange">
-                    <option value="">All Islands</option>
-                    <option v-for="i in ISLANDS" :key="i.value" :value="i.value">{{ i.label }}</option>
-                </select>
-                <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
+    <div ref="wrapEl" class="ph-map-root">
+        <!-- Filter bar — Island / Region / Province, displayed like the other dashboard views -->
+        <div class="map-filter-bar" v-if="ready">
+            <div class="mfb-group">
+                <span class="mfb-label">Island</span>
+                <div class="mfb-seg">
+                    <button class="mfb-seg-btn" :class="{ active: selIsland === '' }" @click="selIsland = ''; onIslandChange()">All</button>
+                    <button v-for="i in ISLANDS" :key="i.value" class="mfb-seg-btn" :class="{ active: selIsland === i.value }" @click="selIsland = i.value; onIslandChange()">{{ i.label }}</button>
+                </div>
+            </div>
+            <div class="mfb-group">
+                <span class="mfb-label">Region</span>
+                <select v-model="selRegion" class="mfb-select" @change="onRegionChange">
                     <option value="">All Regions</option>
                     <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
                 </select>
-                <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
-                    <option value="">— Select Province —</option>
+            </div>
+            <div class="mfb-group">
+                <span class="mfb-label">Province</span>
+                <select v-model="selProvince" class="mfb-select" @change="onProvinceChange">
+                    <option value="">All Provinces</option>
                     <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
                 </select>
-            </template>
-            <button class="map-nav-reset" @click="resetView" title="Reset view">
+            </div>
+            <button class="mfb-reset" @click="resetView" title="Reset view">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                 </svg>
+                <span>Reset</span>
             </button>
         </div>
+
+        <div class="ph-map-wrap">
+        <div ref="mapEl" class="ph-map"></div>
 
         <!-- Info Panel -->
         <transition name="panel-slide">
@@ -167,7 +170,7 @@
                                 </div>
                                 <div class="panel-tier-pill" style="--tc:#b91c1c;">
                                     <span class="pill-count">{{ panel.tierCounts.low }}</span>
-                                    <span class="pill-label">Under</span>
+                                    <span class="pill-label">Low</span>
                                 </div>
                             </div>
 
@@ -232,7 +235,7 @@
                                 </div>
                                 <div class="panel-tier-pill" style="--tc:#b91c1c;">
                                     <span class="pill-count">{{ panel.tierCounts.low }}</span>
-                                    <span class="pill-label">Under</span>
+                                    <span class="pill-label">Low</span>
                                 </div>
                             </div>
 
@@ -320,6 +323,7 @@
                 <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
             </svg>
         </button>
+        </div>
     </div>
 </template>
 
@@ -344,6 +348,18 @@ const GEO_TO_DB = {
 };
 const SKIP = (name) => !name || name.includes('Not a Province') || name.includes('NCR,');
 
+// Region-code (adm1_psgc) overrides applied to the basemap so the choropleth
+// matches the DOST region scheme rather than the GeoJSON's PSGC vintage:
+//   • Negros Occidental/Oriental + Siquijor → Negros Island Region (XVIII)
+//   • Sulu → Region IX (it sits under BARMM in PSGC, but DOST tracks it in IX)
+const NIR_CODE = 1800000000;
+const REGION_CODE_OVERRIDE = {
+    'Negros Occidental': NIR_CODE,
+    'Negros Oriental':   NIR_CODE,
+    'Siquijor':          NIR_CODE,
+    'Sulu':              900000000,
+};
+
 const REGION_LABELS = {
     100000000:  'Region I — Ilocos',
     200000000:  'Region II — Cagayan Valley',
@@ -354,13 +370,13 @@ const REGION_LABELS = {
     600000000:  'Region VI — Western Visayas',
     700000000:  'Region VII — Central Visayas',
     800000000:  'Region VIII — Eastern Visayas',
+    [NIR_CODE]: 'NIR — Negros Island Region',
     900000000:  'Region IX — Zamboanga Peninsula',
     1000000000: 'Region X — Northern Mindanao',
     1100000000: 'Region XI — Davao Region',
     1200000000: 'Region XII — SOCCSKSARGEN',
     1400000000: 'CAR — Cordillera',
     1600000000: 'Region XIII — Caraga',
-    1900000000: 'BARMM',
     1300000000: 'NCR',
 };
 
@@ -376,12 +392,13 @@ const REGION_TO_ISLAND = {
     600000000:  'visayas',  // Region VI — Western Visayas
     700000000:  'visayas',  // Region VII — Central Visayas
     800000000:  'visayas',  // Region VIII — Eastern Visayas
+    [NIR_CODE]: 'visayas',  // NIR — Negros Island Region
     900000000:  'mindanao', // Region IX — Zamboanga Peninsula
     1000000000: 'mindanao', // Region X — Northern Mindanao
     1100000000: 'mindanao', // Region XI — Davao Region
     1200000000: 'mindanao', // Region XII — SOCCSKSARGEN
     1600000000: 'mindanao', // Region XIII — Caraga
-    1900000000: 'mindanao', // BARMM
+    1900000000: 'mindanao', // BARMM (no DOST PSTD provinces; not a selectable region)
 };
 
 const ISLANDS = [
@@ -394,8 +411,8 @@ const ISLANDS = [
 // provinces, matching RankingService's rank-percentile bucketing. For
 // aggregates (region / island averages) the bucket field doesn't apply, so we
 // fall back to score-threshold coloring.
-const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Under: '#b91c1c' };
-const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Under: 'Under Performers' };
+const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' };
+const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Low: 'Low Performers' };
 const tierInfo = (entry) => {
     if (!entry) return { color: '#94a3b8', label: 'No data' };
     if (entry.status === 'no_director') return { color: '#94a3b8', label: 'No director assigned' };
@@ -477,8 +494,8 @@ const buildTrend = (provinceName) => {
     return { points, polyline, lineColor, delta, firstPct, lastPct, H };
 };
 
-const catColor = (cat) => ({ micro:'#546e7a', small:'#00796b', medium:'#3949ab', large:'#5e35b1', cstc:'#c2185b' }[cat] ?? '#666');
-const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51b518', large:'#673ab718', cstc:'#e91e6318' }[cat] ?? '#00000010');
+const catColor = (cat) => ({ micro:'#546e7a', small:'#00796b', medium:'#3949ab', large:'#5e35b1' }[cat] ?? '#666');
+const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51b518', large:'#673ab718' }[cat] ?? '#00000010');
 
 // ── Refs ──────────────────────────────────────────────────────────────────────
 const mapEl        = ref(null);
@@ -631,7 +648,7 @@ const buildIslandPanel = (islandValue) => {
         tierCounts: {
             top: islandScores.filter(s => s.bucket === 'Top').length,
             avg: islandScores.filter(s => s.bucket === 'Average').length,
-            low: islandScores.filter(s => s.bucket === 'Under').length,
+            low: islandScores.filter(s => s.bucket === 'Low').length,
         },
         topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
         lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
@@ -708,7 +725,7 @@ const buildRegionPanel = (regionCode) => {
         tierCounts: {
             top: regionScores.filter(s => s.bucket === 'Top').length,
             avg: regionScores.filter(s => s.bucket === 'Average').length,
-            low: regionScores.filter(s => s.bucket === 'Under').length,
+            low: regionScores.filter(s => s.bucket === 'Low').length,
         },
         topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
         lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
@@ -723,7 +740,7 @@ const buildCstcPanel = (cstcName) => {
 
     if (!entry) return {
         type: 'cstc', name: cstcName, score: null, tier: 'No data',
-        tierColor: '#94a3b8', director: '—', category: 'cstc',
+        tierColor: '#94a3b8', director: '—', category: 'large',
         rank: null, year: props.selectedYear, categories: [], trend,
         region: null, provinceUrlId: null, directorId: null,
     };
@@ -734,7 +751,7 @@ const buildCstcPanel = (cstcName) => {
         name:          cstcName,
         region:        entry.region ?? null,
         provinceUrlId: entry.province_url_id ?? null,
-        category:      'cstc',
+        category:      'large',
         director:      entry.director,
         directorId:    entry.director_id ?? null,
         status:        entry.status,
@@ -752,10 +769,18 @@ const buildCstcPanel = (cstcName) => {
 const styleForCstc = (feature, sm) => {
     const cstcName  = feature.properties.cstc;
     const entry     = sm[cstcName] ?? null;
-    const baseColor = entry ? tierColor(entry) : '#94a3b8';
+
+    // CSTC clusters (e.g. Zamboanga City / ZCIC) overlap the province polygons in the
+    // basemap — Zamboanga City's land is baked into Zamboanga del Sur. With no score in
+    // the active filter we render the cluster as a neutral cut-out so it masks the
+    // province's highlight beneath it rather than inheriting that province's colour.
+    if (!entry)
+        return { fillColor: '#e2e8f0', weight: 0.6, color: '#fff', fillOpacity: 0.95 };
+
+    const baseColor = tierColor(entry);
     if (selCstc.value === cstcName)
         return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
-    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
+    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.85 };
 };
 
 const refreshCstcStyle = () => {
@@ -925,15 +950,6 @@ const selectProvinceFromList = (name) => {
     provinceListOpen.value = false;
 };
 
-const onCstcChange = () => {
-    pendingFly = false;
-    refreshCstcStyle();
-    if (!selCstc.value) { panel.value = null; return; }
-    panel.value = buildCstcPanel(selCstc.value);
-    const bounds = cstcData[selCstc.value];
-    if (bounds) smartFlyTo(bounds, { maxZoom: 13, padding: [50, 50] });
-};
-
 const resetView = () => {
     selIsland.value = selRegion.value = selProvince.value = selCstc.value = '';
     panel.value = null;
@@ -973,6 +989,13 @@ onMounted(async () => {
     const res     = await fetch('/geo/philippines-provinces.geojson');
     const geojson = await res.json();
     const sm      = scoreMap();
+
+    // Normalize basemap region codes to the DOST scheme (NIR, Sulu → Region IX)
+    // before anything reads adm1_psgc, so styling and grouping stay consistent.
+    for (const feature of geojson.features) {
+        const ov = REGION_CODE_OVERRIDE[feature.properties.adm2_en];
+        if (ov) feature.properties.adm1_psgc = ov;
+    }
 
     const regionCodes = new Set();
     for (const feature of geojson.features) {
@@ -1095,7 +1118,11 @@ onMounted(async () => {
         },
     });
 
-    if (props.selectedTier === 'cstc') cstcLayer.addTo(map);
+    // Keep the CSTC city clusters as an always-on overlay: they're independent of the
+    // province polygons, so this both surfaces them and masks their footprints out of
+    // the province choropleth (e.g. Zamboanga City no longer highlights as part of
+    // Zamboanga del Sur). They colour by score on Large/All and render neutral otherwise.
+    cstcLayer.addTo(map);
 
     ready.value = true;
 });
@@ -1108,15 +1135,9 @@ const rebuildPanel = () => {
     else if (panel.value.type === 'island') panel.value = buildIslandPanel(selIsland.value);
 };
 
-watch(() => props.selectedTier, (cat) => {
+watch(() => props.selectedTier, () => {
+    // Overlay stays on across tiers; just recolour clusters for the active filter.
     if (!map || !cstcLayer) return;
-    if (cat === 'cstc') {
-        if (!map.hasLayer(cstcLayer)) cstcLayer.addTo(map);
-    } else {
-        if (map.hasLayer(cstcLayer)) map.removeLayer(cstcLayer);
-        selCstc.value = '';
-        if (panel.value?.type === 'cstc') panel.value = null;
-    }
     refreshCstcStyle();
 });
 
@@ -1138,39 +1159,57 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.ph-map-root { width: 100%; }
 .ph-map-wrap { position: relative; width: 100%; }
 
 .ph-map {
     height: v-bind(height); width: 100%; z-index: 0;
     border-radius: 0 0 8px 8px;
 }
-.ph-map-wrap:fullscreen .ph-map,
-.ph-map-wrap:-webkit-full-screen .ph-map { height: 100vh; border-radius: 0; }
 
-/* ── Nav panel ─────────────────────────────── */
-.map-nav {
-    position: absolute; top: 10px; left: 10px; z-index: 1000;
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0;
-    border-radius: 8px; padding: 6px 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.12); backdrop-filter: blur(4px);
+/* Fullscreen: keep the filter bar on top and let the map fill the rest */
+.ph-map-root:fullscreen, .ph-map-root:-webkit-full-screen { background: #fff; display: flex; flex-direction: column; }
+.ph-map-root:fullscreen .ph-map-wrap, .ph-map-root:-webkit-full-screen .ph-map-wrap { flex: 1; min-height: 0; }
+.ph-map-root:fullscreen .ph-map, .ph-map-root:-webkit-full-screen .ph-map { height: 100%; border-radius: 0; }
+
+/* ── Filter bar (Island / Region / Province) — matches the other dashboard filter rows ── */
+.map-filter-bar {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06);
 }
-.map-nav-sel {
-    height: 30px; padding: 0 24px 0 8px; font-size: 12px; font-family: inherit;
-    border: 1px solid #e2e8f0; border-radius: 5px;
-    background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 8px center;
-    appearance: none; color: #334155; cursor: pointer; min-width: 160px;
-    outline: none; transition: border-color 0.15s;
+.mfb-group { display: flex; align-items: center; gap: 8px; }
+.mfb-label {
+    font-size: 13px; font-weight: 700; color: #475569;
+    letter-spacing: 0.02em; text-transform: uppercase;
 }
-.map-nav-sel:focus { border-color: #6366f1; }
-.map-nav-reset {
-    width: 30px; height: 30px; padding: 5px; background: #f1f5f9;
-    border: 1px solid #e2e8f0; border-radius: 5px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: #64748b; flex-shrink: 0; transition: background 0.15s, color 0.15s;
+.mfb-seg {
+    display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+    background: #f1f5f9; border-radius: 9px; border: 1px solid #e2e8f0;
 }
-.map-nav-reset:hover { background: #e2e8f0; color: #1e293b; }
-.map-nav-reset svg { width: 14px; height: 14px; }
+.mfb-seg-btn {
+    appearance: none; border: none; background: transparent; color: #475569;
+    font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 6px;
+    cursor: pointer; font-family: inherit; line-height: 1.3; white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.mfb-seg-btn:hover:not(.active) { color: #0f172a; background: rgba(255,255,255,0.6); }
+.mfb-seg-btn.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }
+.mfb-select {
+    height: 38px; padding: 0 32px 0 12px; font-size: 14px; font-family: inherit;
+    color: #334155; cursor: pointer; min-width: 210px; appearance: none; outline: none;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 12px center;
+    transition: border-color 0.15s;
+}
+.mfb-select:focus { border-color: #6366f1; }
+.mfb-reset {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    height: 38px; padding: 0 16px; font-size: 14px; font-weight: 600;
+    color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 8px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.mfb-reset:hover { background: #e2e8f0; color: #1e293b; }
+.mfb-reset svg { width: 16px; height: 16px; }
 
 /* ── Info panel ────────────────────────────── */
 .map-info-panel {

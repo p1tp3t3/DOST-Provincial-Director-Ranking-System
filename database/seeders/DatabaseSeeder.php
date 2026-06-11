@@ -57,8 +57,7 @@ class DatabaseSeeder extends Seeder
         'large' => [
             'Bohol', 'Camarines Sur', 'Cebu Province', 'Ilocos Sur', 'Iloilo',
             'Isabela', 'Leyte', 'Negros Occidental', 'Pangasinan', 'Quezon',
-        ],
-        'cstc' => [
+            // Former CSTC city clusters, now classified as Large
             'CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'ZCIC', 'Davao City',
         ],
     ];
@@ -78,6 +77,7 @@ class DatabaseSeeder extends Seeder
             Province::create([
                 'name'                    => $p['name'],
                 'category'                => self::get_category($p['name']),
+                'region'                  => Province::REGIONS[$p['name']] ?? null,
                 'num_plantilla_employees' => (int) ($p['num_plantilla_employees'] ?? 0),
                 'num_municipalities'      => (int) ($p['num_municipalities']      ?? 0),
                 'num_cities'              => (int) ($p['num_cities']              ?? 0),

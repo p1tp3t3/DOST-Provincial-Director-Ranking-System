@@ -136,7 +136,6 @@ const tiers = [
     { value: 'small',  label: 'Small'  },
     { value: 'medium', label: 'Medium' },
     { value: 'large',  label: 'Large'  },
-    { value: 'cstc',   label: 'CSTC'   },
 ];
 
 const tierCounts = computed(() => {
@@ -159,7 +158,7 @@ const headers = [
     { title: '',              key: 'actions',      width: '90px',  align: 'end',    sortable: false },
 ];
 
-const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink' }[cat] ?? 'grey');
+const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
 // Open the most recent year the director has data for; if none, fall back to
 // the system's latest available year so the editor isn't blank.
@@ -225,13 +224,11 @@ const editProvince = (item) => {
 .seg-count--small  { background: #b2dfdb; color: #00695c; }
 .seg-count--medium { background: #c5cae9; color: #283593; }
 .seg-count--large  { background: #d1c4e9; color: #4527a0; }
-.seg-count--cstc   { background: #f8bbd0; color: #ad1457; }
 
 .category-btn-micro.active  { color: #455a64; background: #eceff1; box-shadow: 0 1px 2px rgba(69,90,100,0.10); }
 .category-btn-small.active  { color: #00695c; background: #e0f2f1; box-shadow: 0 1px 2px rgba(0,105,92,0.10); }
 .category-btn-medium.active { color: #283593; background: #e8eaf6; box-shadow: 0 1px 2px rgba(40,53,147,0.10); }
 .category-btn-large.active  { color: #4527a0; background: #ede7f6; box-shadow: 0 1px 2px rgba(69,39,160,0.10); }
-.category-btn-cstc.active   { color: #ad1457; background: #fce4ec; box-shadow: 0 1px 2px rgba(173,20,87,0.10); }
 
 .editor-table :deep(thead th) { font-size: 11px !important; font-weight: 600 !important; }
 .editor-table :deep(tbody tr) { cursor: default; }

@@ -24,3 +24,6 @@ Homestead.yaml
 Thumbs.db
 __pycache__/
 *.pyc
+
+# Large hero background video — kept local, served at /assets/hero.mp4 (landing falls back to an animated background if absent)
+/public/assets/hero.mp4

@@ -89,7 +89,7 @@ class SubAdminReportController extends Controller
     }
 
     // Rankings come from the official PSTD Ranking Matrix weighted score (latest reporting
-    // year). Each row carries its CSTC-tier rank + bucket (Top / Average / Under) so the
+    // year). Each row carries its tier rank + bucket (Top / Average / Under) so the
     // PDF can present the same view the dashboard uses.
     private function get_director_rankings(int $limit = 8): array
     {

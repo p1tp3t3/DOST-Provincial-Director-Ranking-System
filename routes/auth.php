@@ -17,11 +17,9 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    // `/` and `/login` both render the login form, but only `/login` is named
-    // so route('login') always resolves to /login — matching the POST handler.
-    // Without this split, route('login') returns `/` (shorter optional form),
-    // the form POSTs to `/`, and you get a 405 Method Not Allowed.
-    Route::get('/',     [AuthenticatedSessionController::class, 'create']);
+    // Login lives at the named `/login` route. `/` is the public landing page
+    // (defined in routes/web.php). route('login') must resolve to /login so the
+    // form POSTs to /login and not to `/`, which would 405.
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
