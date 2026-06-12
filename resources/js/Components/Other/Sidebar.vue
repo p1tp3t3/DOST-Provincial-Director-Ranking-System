@@ -108,6 +108,7 @@ const tabs = computed(() => {
             return [
                 { name: 'Dashboard',       href: '/dashboard',                  icon: RiDashboard2Fill },
                 { name: 'Performance Map', href: '/regional-performance-map',   icon: RiRoadMapFill    },
+                { name: 'Reports',         href: '/regional-admin-report',      icon: RiFileChartFill  },
                 { name: 'My Profile',      href: '/profile',                    icon: RiUser2Fill      },
             ];
         case 'employee':

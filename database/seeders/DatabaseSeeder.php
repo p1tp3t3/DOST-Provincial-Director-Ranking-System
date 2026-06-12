@@ -170,8 +170,8 @@ class DatabaseSeeder extends Seeder
             $director = User::factory()->create([
                 'role'             => 'provincial_director',
                 'dost_employee_id' => self::generate_emp_id(),
-                'province_id'      => $province->id,
             ]);
+            $director->provinces()->attach($province->id);
             self::generate_profile_from_data($director, [
                 'full_name'           => $dir['full_name'],
                 'length_of_service'   => $dir['length_of_service_dost'],
@@ -185,9 +185,9 @@ class DatabaseSeeder extends Seeder
             foreach ($provEmployees as $i => $emp) {
                 $employee = User::factory()->create([
                     'role'             => 'employee',
-                    'province_id'      => $province->id,
                     'dost_employee_id' => "emp-p{$province->id}-" . sprintf('%02d', $i + 1),
                 ]);
+                $employee->provinces()->attach($province->id);
                 self::generate_profile_from_data($employee, [
                     'full_name'           => $emp['full_name'],
                     'length_of_service'   => $emp['length_of_service'],
@@ -201,8 +201,11 @@ class DatabaseSeeder extends Seeder
             }
 
             // Create Provincial Admin (no real data available)
-            User::factory()->create(['role' => 'provincial_admin', 'province_id' => $province->id]);
-            User::factory()->create(['role' => 'provincial_sub_admin', 'province_id' => $province->id]);
+            $provincialAdmin = User::factory()->create(['role' => 'provincial_admin']);
+            $provincialAdmin->provinces()->attach($province->id);
+
+            $provincialSubAdmin = User::factory()->create(['role' => 'provincial_sub_admin']);
+            $provincialSubAdmin->provinces()->attach($province->id);
         }
     }
 

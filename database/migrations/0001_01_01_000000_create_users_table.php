@@ -42,10 +42,8 @@ return new class extends Migration
             ]);
             $table->foreignId('region_id')
                   ->nullable()
-                  ->constrained('region');
-            $table->foreignId('province_id')
-                  ->nullable()
-                  ->constrained('provinces');
+                  ->constrained('region')
+                  ->nullOnDelete();
             $table->string('dost_employee_id')->nullable()->unique();
             $table->string('username')->unique();
             $table->string('email')->unique();
@@ -54,6 +52,15 @@ return new class extends Migration
                   ->default(true);
             $table->rememberToken();
             $table->timestamps();
+        });
+
+        Schema::create('user_province', function (Blueprint $table) {
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+            $table->foreignId('province_id')
+                  ->constrained('provinces')
+                  ->cascadeOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -102,6 +109,7 @@ return new class extends Migration
         Schema::dropIfExists('region');
         Schema::dropIfExists('provinces');
         Schema::dropIfExists('users');
+        Schema::dropIfExists('user_province');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('profiles');

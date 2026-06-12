@@ -27,4 +27,9 @@ class KPI extends Model
     {
         return $this->hasMany(ProvincialDirectorKPI::class, 'kpi_id');
     }
+
+    public function provincialKpis()
+    {
+        return $this->hasMany(ProvincialKPI::class, 'kpi_id');
+    }
 }

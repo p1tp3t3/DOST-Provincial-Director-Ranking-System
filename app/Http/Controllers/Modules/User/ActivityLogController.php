@@ -15,7 +15,7 @@ class ActivityLogController extends Controller
         $logs = ActivityLog::with('user.profile')
                            ->whereHas('user', function ($query) {
                                if (auth()->user()->province_id) {
-                                   $query->where('province_id', auth()->user()->province_id);
+                                   $query->whereProvince(auth()->user()->province_id);
                                }
                            })
                            ->latest('created_at')
@@ -40,7 +40,7 @@ class ActivityLogController extends Controller
         $query = ActivityLog::with('user.profile')
             ->whereHas('user', function ($q) {
                 if (auth()->user()->province_id) {
-                    $q->where('province_id', auth()->user()->province_id);
+                    $q->whereProvince(auth()->user()->province_id);
                 }
             })
             ->whereDate('created_at', '>=', $request->date_from)

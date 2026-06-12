@@ -13,11 +13,20 @@ class Province extends Model
         return $this->belongsTo(Region::class, 'region_id', 'id');
     }
 
-    public function user() {
-        return $this->hasMany(User::class, 'province_id', 'id');
+    public function users() {
+        return $this->belongsToMany(User::class, 'user_province', 'province_id', 'user_id')
+                     ->using(UserProvince::class);
     }
-    public function provincialDirector() {
-        return $this->hasOne(User::class, 'province_id', 'id')
-                    ->where('role', 'provincial_director');
+
+    public function directorAssignments() {
+        return $this->users()->where('role', 'provincial_director');
+    }
+
+    public function provincialKpis() {
+        return $this->hasMany(ProvincialKPI::class, 'province_id');
+    }
+
+    public function getProvincialDirectorAttribute() {
+        return $this->directorAssignments->first();
     }
 }

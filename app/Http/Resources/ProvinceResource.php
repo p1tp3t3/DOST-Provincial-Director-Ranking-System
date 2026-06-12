@@ -30,7 +30,7 @@ class ProvinceResource extends JsonResource
             'category_label'       => self::category($this->category),
             'category'             => $this->category,
             'provincial_director'  => $directorData,
-            'employee_member_count' => $this->user->where('role', 'employee')->count(),
+            'employee_member_count' => $this->users->where('role', 'employee')->count(),
         ];
     }
 

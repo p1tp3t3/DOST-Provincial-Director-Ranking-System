@@ -4,26 +4,18 @@
 
         <!-- Navigation panel -->
         <div class="map-nav" v-if="ready">
-            <template v-if="props.selectedTier === 'cstc'">
-                <select v-model="selCstc" class="map-nav-sel" @change="onCstcChange">
-                    <option value="">— Select CSTC —</option>
-                    <option v-for="c in cstcList" :key="c" :value="c">{{ c }}</option>
-                </select>
-            </template>
-            <template v-else>
-                <select v-model="selIsland" class="map-nav-sel" @change="onIslandChange">
-                    <option value="">All Islands</option>
-                    <option v-for="i in ISLANDS" :key="i.value" :value="i.value">{{ i.label }}</option>
-                </select>
-                <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
-                    <option value="">All Regions</option>
-                    <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
-                </select>
-                <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
-                    <option value="">— Select Province —</option>
-                    <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
-                </select>
-            </template>
+            <select v-model="selIsland" class="map-nav-sel" @change="onIslandChange">
+                <option value="">All Islands</option>
+                <option v-for="i in ISLANDS" :key="i.value" :value="i.value">{{ i.label }}</option>
+            </select>
+            <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
+                <option value="">All Regions</option>
+                <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
+            </select>
+            <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
+                <option value="">— Select Province —</option>
+                <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
+            </select>
             <button class="map-nav-reset" @click="resetView" title="Reset view">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
@@ -274,7 +266,9 @@ const GEO_TO_DB = {
     'Samar':           'Samar (Western Samar)',
     'Dinagat Islands': 'Dinagat Island',
 };
-const SKIP = (name) => !name || name.includes('Not a Province') || name.includes('NCR,');
+// "Not a Province" geo features are skipped (e.g. City of Isabela) — except NCR's
+// districts, which we keep so the NCR region can render, zoom, and be selected.
+const SKIP = (name) => !name || (name.includes('Not a Province') && !name.includes('NCR,'));
 
 const ISLANDS = [
     { value: 'luzon',    label: 'Luzon'    },
@@ -392,6 +386,21 @@ const provinces  = [];
 const provinceRegionMap = new Map(); // geo name → {region_id, island_under} (from province.region_id via the region table)
 const cstcList   = ref([]);
 let   cstcData   = {};
+let   cstcLayerDynamic = false; // true when cstcLayer was added outside of the 'cstc' tier (e.g. NCR region/province filter)
+
+// CSTC name → {region_id, island_under}, derived from the score rows tagged
+// category 'cstc' (e.g. NCR's CAMANAVA/PAMAMAZON/PAMAMARISAN/MUNTAPARLAS).
+// Lets CSTC clusters appear in the Region/Province filters of the regions
+// they belong to, since NCR has no "real" provinces of its own.
+const cstcRegionMap = computed(() => {
+    const m = new Map();
+    for (const s of props.scores) {
+        if (s.category === 'cstc' && s.region_id != null) {
+            m.set(s.province, { region_id: s.region_id, island_under: s.island_under });
+        }
+    }
+    return m;
+});
 
 // ── Score helpers ─────────────────────────────────────────────────────────────
 const scoreMap = () => {
@@ -586,13 +595,25 @@ const refreshCstcStyle = () => {
     cstcLayer.setStyle(f => styleForCstc(f, sm));
 };
 
+// NCR's districts have no province score row of their own — color them using
+// the average score of NCR's CSTC clusters (CAMANAVA/PAMAMAZON/PAMAMARISAN/
+// MUNTAPARLAS) so the NCR area isn't left flat grey on the map.
+const ncrAggregateColor = (sm) => {
+    const ncr = props.regions.find(r => r.name === 'NCR');
+    if (!ncr) return '#94a3b8';
+    const cstcScores = props.scores.filter(s => s.category === 'cstc' && s.region_id === ncr.id);
+    if (!cstcScores.length) return '#94a3b8';
+    const avg = cstcScores.reduce((a, s) => a + s.score, 0) / cstcScores.length;
+    return scoreColor(avg);
+};
+
 const styleFor = (feature, sm, selReg, selProv, selIsl) => {
     const name = feature.properties.adm2_en;
     if (SKIP(name)) return { fillColor: '#e2e8f0', weight: 0.4, color: '#cbd5e1', fillOpacity: 0.25 };
 
     const dbName    = GEO_TO_DB[name] ?? name;
     const entry     = sm[dbName] ?? null;
-    const baseColor = entry ? tierColor(entry) : '#94a3b8';
+    const baseColor = entry ? tierColor(entry) : (name.includes('NCR,') ? ncrAggregateColor(sm) : '#94a3b8');
     const regionMeta = provinceRegionMap.get(name);
 
     const isSelectedProv = selProv && name === selProv;
@@ -637,10 +658,32 @@ const visibleRegions = computed(() => {
     return regions.map(r => ({ code: r.id, label: r.name }));
 });
 
+// NCR's geo features are congressional districts ("NCR, ... (Not a Province)"),
+// kept in `provinces` only so the map can render/zoom/color the NCR area —
+// they're not real provinces and shouldn't be selectable from the dropdown.
+const isRealProvince = (p) => !p.name.includes('Not a Province');
+
 const visibleProvinces = computed(() => {
-    if (selRegion.value) return provinces.filter(p => provinceRegionMap.get(p.name)?.region_id === Number(selRegion.value));
-    if (selIsland.value) return provinces.filter(p => provinceRegionMap.get(p.name)?.island_under === selIsland.value);
-    return provinces;
+    let list;
+    if (selRegion.value) list = provinces.filter(p => provinceRegionMap.get(p.name)?.region_id === Number(selRegion.value));
+    else if (selIsland.value) list = provinces.filter(p => provinceRegionMap.get(p.name)?.island_under === selIsland.value);
+    else list = provinces;
+
+    list = list.filter(isRealProvince);
+
+    // Append CSTC clusters that belong to the selected region/island (e.g. NCR's
+    // CAMANAVA/PAMAMAZON/PAMAMARISAN/MUNTAPARLAS), so they're selectable even
+    // though they aren't part of the provinces geojson.
+    let cstcs = [];
+    if (selRegion.value) {
+        cstcs = cstcList.value.filter(name => cstcRegionMap.value.get(name)?.region_id === Number(selRegion.value));
+    } else if (selIsland.value) {
+        cstcs = cstcList.value.filter(name => cstcRegionMap.value.get(name)?.island_under === selIsland.value);
+    } else if (!selRegion.value && !selIsland.value) {
+        cstcs = cstcList.value;
+    }
+
+    return [...list, ...cstcs.map(name => ({ name, isCstc: true }))];
 });
 
 // ── Smart fly ─────────────────────────────────────────────────────────────────
@@ -670,7 +713,9 @@ const onIslandChange = () => {
     selRegion.value = '';
     selProvince.value = '';
     pendingFly = false;
+    hideCstcLayerDynamic();
     refreshStyle();
+    refreshCstcStyle();
     if (!selIsland.value) { resetView(); return; }
 
     panel.value = buildIslandPanel(selIsland.value);
@@ -685,6 +730,7 @@ const onIslandChange = () => {
 const onRegionChange = () => {
     selProvince.value = '';
     pendingFly = false;
+    hideCstcLayerDynamic();
 
     // Keep island in sync so the dropdown filter and map highlight stay consistent
     if (selRegion.value) {
@@ -693,6 +739,7 @@ const onRegionChange = () => {
     }
 
     refreshStyle();
+    refreshCstcStyle();
     if (!selRegion.value) {
         if (selIsland.value) { onIslandChange(); return; }
         resetView();
@@ -709,26 +756,55 @@ const onRegionChange = () => {
     smartFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
 };
 
+// Show / hide the CSTC city layer outside of the dedicated 'cstc' tier, so a
+// CSTC cluster picked from the Province dropdown (e.g. NCR's CAMANAVA) can be
+// highlighted on the map even when selectedTier !== 'cstc'.
+const showCstcLayerDynamic = () => {
+    if (!map.hasLayer(cstcLayer)) {
+        cstcLayer.addTo(map);
+        cstcLayerDynamic = true;
+    }
+};
+const hideCstcLayerDynamic = () => {
+    if (cstcLayerDynamic && props.selectedTier !== 'cstc') {
+        map.removeLayer(cstcLayer);
+        cstcLayerDynamic = false;
+    }
+    selCstc.value = '';
+};
+
 const onProvinceChange = () => {
     pendingFly = false;
+
+    if (!selProvince.value) {
+        panel.value = null;
+        hideCstcLayerDynamic();
+        refreshStyle();
+        refreshCstcStyle();
+        return;
+    }
+
+    // CSTC cluster picked from the Province dropdown (no entry in `provinces`)
+    if (cstcData[selProvince.value]) {
+        selCstc.value = selProvince.value;
+        showCstcLayerDynamic();
+        refreshCstcStyle();
+        panel.value = buildCstcPanel(selProvince.value);
+        smartFlyTo(cstcData[selProvince.value], { maxZoom: 13, padding: [50, 50] });
+        return;
+    }
+
+    hideCstcLayerDynamic();
     refreshStyle();
-    if (!selProvince.value) { panel.value = null; return; }
+    refreshCstcStyle();
     panel.value = buildProvincePanel(selProvince.value);
     const prov = provinces.find(p => p.name === selProvince.value);
     if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
 };
 
-const onCstcChange = () => {
-    pendingFly = false;
-    refreshCstcStyle();
-    if (!selCstc.value) { panel.value = null; return; }
-    panel.value = buildCstcPanel(selCstc.value);
-    const bounds = cstcData[selCstc.value];
-    if (bounds) smartFlyTo(bounds, { maxZoom: 13, padding: [50, 50] });
-};
-
 const resetView = () => {
-    selIsland.value = selRegion.value = selProvince.value = selCstc.value = '';
+    selIsland.value = selRegion.value = selProvince.value = '';
+    hideCstcLayerDynamic();
     panel.value = null;
     pendingFly  = false;
     map?.stop();
@@ -779,6 +855,11 @@ onMounted(async () => {
         const entry  = sm[dbName];
         if (entry) {
             provinceRegionMap.set(name, { region_id: entry.region_id, island_under: entry.island_under });
+        } else if (name.includes('NCR,')) {
+            // NCR districts have no province score row of their own — fall back
+            // to the NCR region row so the region still groups/zooms correctly.
+            const ncr = props.regions.find(r => r.name === 'NCR');
+            if (ncr) provinceRegionMap.set(name, { region_id: ncr.id, island_under: ncr.island_under });
         }
     }
     provinces.sort((a, b) => a.name.localeCompare(b.name));
@@ -880,7 +961,19 @@ onMounted(async () => {
             });
 
             layer.on('click', () => {
-                selRegion.value = selProvince.value = '';
+                if (props.selectedTier === 'cstc') {
+                    selRegion.value = selProvince.value = '';
+                } else {
+                    // Keep the Island/Region/Province dropdowns in sync when a CSTC
+                    // cluster (e.g. NCR's CAMANAVA) is clicked directly on the map.
+                    const meta = cstcRegionMap.value.get(cstcName);
+                    if (meta) {
+                        if (selIsland.value !== meta.island_under) selIsland.value = meta.island_under;
+                        selRegion.value = String(meta.region_id);
+                    }
+                    selProvince.value = cstcName;
+                    showCstcLayerDynamic();
+                }
                 selCstc.value = cstcName;
                 refreshCstcStyle();
                 panel.value = buildCstcPanel(cstcName);

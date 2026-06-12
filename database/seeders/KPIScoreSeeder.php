@@ -63,8 +63,10 @@ class KPIScoreSeeder extends Seeder
 
     public function run(): void
     {
-        $directorMap = [];
-        foreach (Province::with('provincialDirector')->get() as $province) {
+        $directorMap   = [];
+        $provinceIdMap = [];
+        foreach (Province::with('directorAssignments')->get() as $province) {
+            $provinceIdMap[$province->name] = $province->id;
             if ($province->provincialDirector) {
                 $directorMap[$province->name] = $province->provincialDirector->id;
             }
@@ -72,17 +74,15 @@ class KPIScoreSeeder extends Seeder
 
         $kpiIdByCode = KPI::pluck('id', 'code')->toArray();
 
-        $rows        = CSVToDFHelper::get_df('kpi-scores.csv');
-        $batch       = [];
-        $missedProv  = [];
-        $skippedSub  = [];
+        $rows            = CSVToDFHelper::get_df('kpi-scores.csv');
+        $batch           = [];
+        $provincialBatch = [];
+        $missedProv      = [];
+        $skippedSub      = [];
 
         foreach ($rows as $row) {
-            $directorId = $directorMap[$row['province']] ?? null;
-            if (!$directorId) {
-                $missedProv[$row['province']] = true;
-                continue;
-            }
+            $provinceId = $provinceIdMap[$row['province']] ?? null;
+            if (!$provinceId) continue;
 
             $subrowId = (int) $row['subrow_id'];
             $code     = self::SUBROW_TO_KPI_CODE[$subrowId] ?? null;
@@ -93,6 +93,22 @@ class KPIScoreSeeder extends Seeder
 
             $kpiId = $kpiIdByCode[$code] ?? null;
             if ($kpiId === null) continue;
+
+            if ($row['target'] !== '') {
+                $key = "{$provinceId}-{$kpiId}-{$row['year']}";
+                $provincialBatch[$key] = [
+                    'province_id' => $provinceId,
+                    'kpi_id'      => $kpiId,
+                    'year'        => (int) $row['year'],
+                    'target'      => $row['target'],
+                ];
+            }
+
+            $directorId = $directorMap[$row['province']] ?? null;
+            if (!$directorId) {
+                $missedProv[$row['province']] = true;
+                continue;
+            }
 
             $batch[] = [
                 'provincial_director_id' => $directorId,
@@ -107,6 +123,10 @@ class KPIScoreSeeder extends Seeder
             DB::table('provincial_director_kpis')->insert($chunk);
         }
 
+        foreach (array_chunk(array_values($provincialBatch), 500) as $chunk) {
+            DB::table('provincial_kpis')->insert($chunk);
+        }
+
         if ($missedProv) {
             $this->command->warn('No director found for provinces: ' . implode(', ', array_keys($missedProv)));
         }
@@ -114,5 +134,6 @@ class KPIScoreSeeder extends Seeder
             $this->command->info('Skipped unmapped legacy subrow IDs: ' . implode(', ', array_keys($skippedSub)));
         }
         $this->command->info('KPI scores inserted: ' . count($batch));
+        $this->command->info('Provincial KPI targets inserted: ' . count($provincialBatch));
     }
 }

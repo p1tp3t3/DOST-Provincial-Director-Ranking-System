@@ -17,10 +17,10 @@ class EmployeeController extends Controller
     public function get_employees() {
         $user = auth()->user();
         $data = User::has('profile.employeeProfile')
-                    ->with(['province', 'profile.employeeProfile'])
+                    ->with(['provinces', 'profile.employeeProfile'])
                     ->where('role', 'employee')
                     ->when($user->role !== 'sub_admin', function ($query) use ($user) {
-                        $query->where('province_id', $user->province_id);
+                        $query->whereProvince($user->province_id);
                     })
                     ->latest('created_at')
                     ->paginate(20);

@@ -30,9 +30,6 @@
                 For urgent concerns, please contact the DOST system administrator.
             </div>
 
-            <!-- Admin link -->
-            <a :href="route('console.login')" class="admin-link">Admin Access</a>
-
             <!-- Copyright -->
             <div class="text-caption mt-8" style="color:rgba(255,255,255,.3);">
                 &copy; {{ currentYear }} Department of Science and Technology — Philippines

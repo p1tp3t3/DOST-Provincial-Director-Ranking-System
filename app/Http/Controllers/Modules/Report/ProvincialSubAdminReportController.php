@@ -54,7 +54,7 @@ class ProvincialSubAdminReportController extends Controller
         $p = Province::find($provinceId);
         if (!$p) return [];
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->with('profile')
             ->first();
@@ -78,10 +78,10 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $users = User::where('province_id', $provinceId)->get();
+        $users = User::whereProvince($provinceId)->get();
 
         $byRole    = $users->groupBy('role')->map->count();
-        $employees = User::where('province_id', $provinceId)
+        $employees = User::whereProvince($provinceId)
             ->where('role', 'employee')
             ->with('profile.employeeProfile')
             ->get();
@@ -103,7 +103,7 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        return User::where('province_id', $provinceId)
+        return User::whereProvince($provinceId)
             ->where('role', 'employee')
             ->with(['profile.employeeProfile'])
             ->latest()
@@ -125,7 +125,7 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->first();
         if (!$director) return [];
@@ -157,7 +157,7 @@ class ProvincialSubAdminReportController extends Controller
     private function get_log_stats(?int $provinceId, ?Carbon $from = null, ?Carbon $to = null): array
     {
         $userIds = $provinceId
-            ? User::where('province_id', $provinceId)->pluck('id')
+            ? User::whereProvince($provinceId)->pluck('id')
             : collect();
 
         $query = ActivityLog::selectRaw('type, COUNT(*) as count')
@@ -185,7 +185,7 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $userIds = User::where('province_id', $provinceId)->pluck('id');
+        $userIds = User::whereProvince($provinceId)->pluck('id');
 
         return ActivityLog::with('user.profile')
             ->whereIn('user_id', $userIds)

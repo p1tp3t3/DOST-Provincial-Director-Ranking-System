@@ -26,7 +26,7 @@
             />
         </div>
         <span class="text-caption text-medium-emphasis">
-            {{ filtered.length }} of {{ list.data.length }} admins
+            {{ list.meta.total }} admins
         </span>
     </div>
 
@@ -39,7 +39,7 @@
                     <th class="text-caption text-medium-emphasis">Name</th>
                     <th class="text-caption text-medium-emphasis">Username</th>
                     <th class="text-caption text-medium-emphasis">Email</th>
-                    <th class="text-caption text-medium-emphasis">Province</th>
+                    <th class="text-caption text-medium-emphasis">Province / Region</th>
                     <th class="text-caption text-medium-emphasis text-center" width="140">Role</th>
                     <th class="text-caption text-medium-emphasis text-center" width="100">Actions</th>
                 </tr>
@@ -57,7 +57,7 @@
                     </td>
                     <td class="text-body-2 text-medium-emphasis">{{ admin.username ?? '—' }}</td>
                     <td class="text-body-2">{{ admin.email }}</td>
-                    <td class="text-body-2 text-medium-emphasis">{{ admin.province ?? '—' }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ admin.province ?? admin.region ?? '—' }}</td>
                     <td class="text-center">
                         <v-chip
                             size="small"
@@ -152,11 +152,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
-    list: { type: Object, required: true },
+    list:          { type: Object, required: true },
+    initialSearch: { type: String, default: '' },
+    initialRole:   { type: String, default: '' },
 });
 
 const currentPage = computed({
@@ -165,38 +167,53 @@ const currentPage = computed({
 });
 
 const changePage = (page) => {
-    search.value = '';
-    router.get(window.location.pathname, { page }, { preserveScroll: true, preserveState: true });
+    router.get(
+        window.location.pathname,
+        { page, search: search.value || undefined, role: selectedRole.value || undefined },
+        { preserveScroll: true, preserveState: true }
+    );
 };
 
-const search       = ref('');
-const selectedRole = ref(null);
+const search       = ref(props.initialSearch);
+const selectedRole = ref(props.initialRole || null);
 const deleteDialog = ref(false);
 const deleting     = ref(false);
 const targetAdmin  = ref(null);
 
 const roleOptions = [
+    { label: 'Super Admin',            value: 'super_admin'            },
     { label: 'Sub Admin',              value: 'sub_admin'              },
+    { label: 'Regional Admin',         value: 'regional_admin'         },
     { label: 'Provincial Admin',       value: 'provincial_admin'       },
     { label: 'Provincial Sub Admin',   value: 'provincial_sub_admin'   },
 ];
 
-const filtered = computed(() => {
-    let data = props.list.data;
-    const q = search.value.toLowerCase().trim();
-    if (q) {
-        const m = (v) => (v ?? '').toLowerCase().includes(q);
-        data = data.filter(u => m(u.name) || m(u.email) || m(u.username));
-    }
-    if (selectedRole.value) {
-        data = data.filter(u => u.role === selectedRole.value);
-    }
-    return data;
+const filtered = computed(() => props.list.data);
+
+let debounceTimer = null;
+const sendSearch = () => {
+    router.get(
+        window.location.pathname,
+        { search: search.value || undefined, role: selectedRole.value || undefined },
+        { preserveScroll: true, preserveState: true, replace: true }
+    );
+};
+
+watch(search, () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(sendSearch, 350);
+});
+
+watch(selectedRole, () => {
+    clearTimeout(debounceTimer);
+    sendSearch();
 });
 
 const roleLabel = (role) => {
     const map = {
+        super_admin:          'Super Admin',
         sub_admin:            'Sub Admin',
+        regional_admin:       'Regional Admin',
         provincial_admin:     'Provincial Admin',
         provincial_sub_admin: 'Provincial Sub Admin',
     };
@@ -205,7 +222,9 @@ const roleLabel = (role) => {
 
 const roleColor = (role) => {
     const map = {
+        super_admin:          'deep-purple',
         sub_admin:            'indigo',
+        regional_admin:       'orange',
         provincial_admin:     'teal',
         provincial_sub_admin: 'cyan',
     };
@@ -214,7 +233,9 @@ const roleColor = (role) => {
 
 const roleIcon = (role) => {
     const map = {
+        super_admin:          'mdi-shield-crown-outline',
         sub_admin:            'mdi-shield-account-outline',
+        regional_admin:       'mdi-map-marker-radius-outline',
         provincial_admin:     'mdi-account-cog-outline',
         provincial_sub_admin: 'mdi-account-settings-outline',
     };

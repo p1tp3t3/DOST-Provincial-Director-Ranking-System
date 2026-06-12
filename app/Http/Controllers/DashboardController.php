@@ -35,8 +35,9 @@ class DashboardController extends Controller
         $activeProvinces = $latestYear
             ? DB::table('provincial_director_kpis as pk')
                 ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
+                ->join('user_province as up', 'up.user_id', '=', 'u.id')
                 ->where('pk.year', $latestYear)
-                ->distinct()->count('u.province_id')
+                ->distinct()->count('up.province_id')
             : 0;
 
         return inertia('Admin/Dashboard/Main', [
@@ -103,7 +104,7 @@ class DashboardController extends Controller
     {
         return inertia('ProvincialAdmin/Dashboard/Main', [
             'total_employees' => User::where('role', 'employee')
-                ->where('province_id', auth()->user()->province_id)->count(),
+                ->whereProvince(auth()->user()->province_id)->count(),
         ]);
     }
 
@@ -111,7 +112,7 @@ class DashboardController extends Controller
     {
         return inertia('ProvincialSubAdmin/Dashboard/Main', [
             'total_employees' => User::where('role', 'employee')
-                ->where('province_id', auth()->user()->province_id)->count(),
+                ->whereProvince(auth()->user()->province_id)->count(),
         ]);
     }
 
@@ -119,7 +120,7 @@ class DashboardController extends Controller
     {
         return inertia('ProvincialDirector/Dasbboard/Main', [
             'total_employees' => User::where('role', 'employee')
-                ->where('province_id', auth()->user()->province_id)->count(),
+                ->whereProvince(auth()->user()->province_id)->count(),
         ]);
     }
 
@@ -145,17 +146,18 @@ class DashboardController extends Controller
         $activeProvinces = $latestYear
             ? DB::table('provincial_director_kpis as pk')
                 ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
+                ->join('user_province as up', 'up.user_id', '=', 'u.id')
                 ->where('pk.year', $latestYear)
-                ->whereIn('u.province_id', $provinceIds)
-                ->distinct()->count('u.province_id')
+                ->whereIn('up.province_id', $provinceIds)
+                ->distinct()->count('up.province_id')
             : 0;
 
         return inertia('Admin/Dashboard/Main', [
             'region_name'                 => $region->name,
             'total_provinces'             => count($provinceIds),
-            'total_users'                 => User::whereIn('province_id', $provinceIds)->count(),
-            'total_directors'             => User::where('role', 'provincial_director')->whereIn('province_id', $provinceIds)->count(),
-            'total_employees'             => User::where('role', 'employee')->whereIn('province_id', $provinceIds)->count(),
+            'total_users'                 => User::whereProvinceIn($provinceIds)->count(),
+            'total_directors'             => User::where('role', 'provincial_director')->whereProvinceIn($provinceIds)->count(),
+            'total_employees'             => User::where('role', 'employee')->whereProvinceIn($provinceIds)->count(),
             'active_reporting_provinces'  => $activeProvinces,
             ...$payload,
         ]);

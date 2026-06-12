@@ -99,10 +99,14 @@ class RankingService
             NULLIF(TRIM(IFNULL(pr.suffix,'')), '')
         )";
 
+        $directors = DB::table('user_province as up')
+            ->join('users as u', 'u.id', '=', 'up.user_id')
+            ->where('u.role', 'provincial_director')
+            ->select('up.province_id', 'up.user_id as director_id');
+
         $provinceMeta = DB::table('provinces as p')
-            ->leftJoin('users as u', function ($j) {
-                $j->on('u.province_id', '=', 'p.id')->where('u.role', '=', 'provincial_director');
-            })
+            ->leftJoinSub($directors, 'd', 'd.province_id', '=', 'p.id')
+            ->leftJoin('users as u', 'u.id', '=', 'd.director_id')
             ->leftJoin('profiles as pr', 'pr.user_id', '=', 'u.id')
             ->leftJoin('region as r', 'r.id', '=', 'p.region_id')
             ->when($provinceIds !== null, fn($q) => $q->whereIn('p.id', $provinceIds))
@@ -119,9 +123,10 @@ class RankingService
 
         $rows = DB::table('provincial_director_kpis as pk')
             ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
+            ->join('user_province as up', 'up.user_id', '=', 'u.id')
             ->where('pk.year', $year)
-            ->when($provinceIds !== null, fn($q) => $q->whereIn('u.province_id', $provinceIds))
-            ->select('u.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('up.province_id', $provinceIds))
+            ->select('up.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
             ->get();
 
         // valuesByProvince[province_id][kpi_id] = ['target' => ..., 'accomplished' => ...]

@@ -29,7 +29,7 @@ class CSTCSeeder extends Seeder
             }
 
             // Skip creating if director already exists
-            $existing = User::where('province_id', $province->id)
+            $existing = User::whereProvince($province->id)
                 ->where('role', 'provincial_director')
                 ->first();
             if ($existing) {
@@ -41,9 +41,9 @@ class CSTCSeeder extends Seeder
 
             $user = User::factory()->create([
                 'role'             => 'provincial_director',
-                'province_id'      => $province->id,
                 'dost_employee_id' => sprintf('cstc-%s-%d', strtolower(substr($row['province'], 0, 3)), rand(100, 999)),
             ]);
+            $user->provinces()->attach($province->id);
 
             Profile::create([
                 'user_id'              => $user->id,
@@ -101,9 +101,11 @@ class CSTCSeeder extends Seeder
 
         // Create employees (skip if already seeded for that province)
         $employeeRows   = CSVToDFHelper::get_df('cstc-employees.csv');
-        $seededProvinces = User::where('role', 'employee')
-            ->whereIn('province_id', $provinces->pluck('id'))
-            ->pluck('province_id')
+        $seededProvinces = DB::table('user_province')
+            ->join('users', 'users.id', '=', 'user_province.user_id')
+            ->where('users.role', 'employee')
+            ->whereIn('user_province.province_id', $provinces->pluck('id'))
+            ->pluck('user_province.province_id')
             ->unique()
             ->toArray();
         $empCount = 0;
@@ -117,9 +119,9 @@ class CSTCSeeder extends Seeder
 
             $user = User::factory()->create([
                 'role'             => 'employee',
-                'province_id'      => $province->id,
                 'dost_employee_id' => sprintf('cstc-emp-%s-%02d', strtolower(substr($row['province'], 0, 3)), $i + 1),
             ]);
+            $user->provinces()->attach($province->id);
 
             $rawStatus = strtolower(trim($row['status'] ?? ''));
             $profile = Profile::create([

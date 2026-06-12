@@ -11,6 +11,7 @@ use App\Http\Controllers\Modules\Report\ProvincialAdminReportController;
 use App\Http\Controllers\Modules\Report\SubAdminReportController;
 use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\Report\ProvincialSubAdminReportController;
+use App\Http\Controllers\Modules\Report\RegionalAdminReportController;
 use App\Http\Controllers\Modules\User\ProvincialDirectorController;
 use App\Http\Controllers\Modules\User\UserController;
 use App\Http\Controllers\Modules\SettingsController;
@@ -110,6 +111,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // ── Regional Admin only ─────────────────────────────────────
     Route::middleware('role:regional_admin')->group(function () {
         Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
+        Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
+        Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
     });
 
     // ── Provincial Admin only ─────────────────────────────────

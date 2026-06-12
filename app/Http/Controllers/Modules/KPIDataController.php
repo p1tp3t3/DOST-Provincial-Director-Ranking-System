@@ -28,8 +28,9 @@ class KPIDataController extends Controller
         )";
 
         $provinces = DB::table('provinces as p')
+            ->leftJoin('user_province as up', 'up.province_id', '=', 'p.id')
             ->leftJoin('users as u', function ($j) {
-                $j->on('u.province_id', '=', 'p.id')->where('u.role', '=', 'provincial_director');
+                $j->on('u.id', '=', 'up.user_id')->where('u.role', '=', 'provincial_director');
             })
             ->leftJoin('profiles as pr', 'pr.user_id', '=', 'u.id')
             ->select(
@@ -72,7 +73,7 @@ class KPIDataController extends Controller
         $provinceId = Crypt::decrypt($id);
         $province   = Province::findOrFail($provinceId);
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
                         ->where('role', 'provincial_director')
                         ->with('profile')
                         ->first();
@@ -189,7 +190,7 @@ class KPIDataController extends Controller
         $provinceId = $user->province_id;
 
         $director = User::query()
-            ->where('province_id', $provinceId)
+            ->whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->with('profile')
             ->first();
@@ -256,7 +257,7 @@ class KPIDataController extends Controller
         $director = User::query()
             ->where('id', $directorId)
             ->where('role', 'provincial_director')
-            ->where('province_id', $user->province_id)
+            ->whereProvince($user->province_id)
             ->firstOrFail();
 
         $request->validate([

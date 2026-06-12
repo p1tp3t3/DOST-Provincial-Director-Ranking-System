@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Modules\Report;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
-use App\Models\Province;
+use App\Models\Region;
 use App\Models\User;
 use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -12,16 +12,20 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class SubAdminReportController extends Controller
+class RegionalAdminReportController extends Controller
 {
     public function index()
     {
-        return inertia('SubAdmin/Report/Main', [
-            'province_stats'      => $this->get_province_stats(),
-            'user_stats'          => $this->get_user_stats(),
-            'director_rankings'   => $this->get_director_rankings(),
-            'log_stats'           => $this->get_log_stats(),
-            'recent_logs'         => $this->get_recent_logs(),
+        $region      = Region::with('provinces')->findOrFail(Auth::user()->region_id);
+        $provinceIds = $region->provinces->pluck('id')->toArray();
+
+        return inertia('RegionalAdmin/Report/Main', [
+            'region'             => ['id' => $region->id, 'name' => $region->name, 'island_under' => $region->island_under],
+            'province_stats'     => $this->get_province_stats($region),
+            'user_stats'         => $this->get_user_stats($provinceIds),
+            'director_rankings'  => $this->get_director_rankings($provinceIds),
+            'log_stats'          => $this->get_log_stats($provinceIds),
+            'recent_logs'        => $this->get_recent_logs($provinceIds),
         ]);
     }
 
@@ -35,26 +39,30 @@ class SubAdminReportController extends Controller
         $dateFrom = $request->date_from ? Carbon::parse($request->date_from)->startOfDay() : now()->subMonth();
         $dateTo   = $request->date_to   ? Carbon::parse($request->date_to)->endOfDay()     : now()->endOfDay();
 
-        $pdf = Pdf::loadView('reports.sub-admin-report', [
-            'province_stats'    => $this->get_province_stats(),
-            'user_stats'        => $this->get_user_stats(),
-            'director_rankings' => $this->get_director_rankings(10),
-            'log_stats'         => $this->get_log_stats($dateFrom, $dateTo),
-            'recent_logs'       => $this->get_recent_logs(15, $dateFrom, $dateTo),
+        $region      = Region::with('provinces')->findOrFail(Auth::user()->region_id);
+        $provinceIds = $region->provinces->pluck('id')->toArray();
+
+        $pdf = Pdf::loadView('reports.regional-admin-report', [
+            'region'            => ['id' => $region->id, 'name' => $region->name, 'island_under' => $region->island_under],
+            'province_stats'    => $this->get_province_stats($region),
+            'user_stats'        => $this->get_user_stats($provinceIds),
+            'director_rankings' => $this->get_director_rankings($provinceIds, 10),
+            'log_stats'         => $this->get_log_stats($provinceIds, $dateFrom, $dateTo),
+            'recent_logs'       => $this->get_recent_logs($provinceIds, 15, $dateFrom, $dateTo),
             'date_from'         => $dateFrom->format('F d, Y'),
             'date_to'           => $dateTo->format('F d, Y'),
             'generated'         => now()->format('F d, Y g:i A'),
             'generated_by'      => Auth::user()?->username ?? 'System',
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('sub-admin-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('regional-admin-report-' . now()->format('Y-m-d') . '.pdf');
     }
 
     // ── Helpers ───────────────────────────────────────────────
 
-    private function get_province_stats(): array
+    private function get_province_stats(Region $region): array
     {
-        return Province::with(['directorAssignments.profile'])->get()->map(function ($p) {
+        return $region->provinces()->with(['directorAssignments.profile'])->get()->map(function ($p) {
             $director = $p->provincialDirector;
             $name     = $director
                 ? trim(($director->profile?->first_name ?? '') . ' ' . ($director->profile?->last_name ?? ''))
@@ -72,26 +80,26 @@ class SubAdminReportController extends Controller
         })->sortBy('name')->values()->toArray();
     }
 
-    private function get_user_stats(): array
+    private function get_user_stats(array $provinceIds): array
     {
-        $counts = User::selectRaw('role, COUNT(*) as count')
-                      ->groupBy('role')
-                      ->pluck('count', 'role');
+        $counts = User::whereProvinceIn($provinceIds)
+            ->selectRaw('role, COUNT(*) as count')
+            ->groupBy('role')
+            ->pluck('count', 'role');
 
         return [
-            'total'                => User::count(),
+            'total'                => User::whereProvinceIn($provinceIds)->count(),
             'provincial_admin'     => $counts['provincial_admin']     ?? 0,
             'provincial_director'  => $counts['provincial_director']  ?? 0,
             'provincial_sub_admin' => $counts['provincial_sub_admin'] ?? 0,
             'employee'             => $counts['employee']             ?? 0,
-            'provinces'            => Province::count(),
+            'provinces'            => count($provinceIds),
         ];
     }
 
     // Rankings come from the official PSTD Ranking Matrix weighted score (latest reporting
-    // year). Each row carries its CSTC-tier rank + bucket (Top / Average / Under) so the
-    // PDF can present the same view the dashboard uses.
-    private function get_director_rankings(int $limit = 8): array
+    // year), restricted to provinces within this region.
+    private function get_director_rankings(array $provinceIds, int $limit = 8): array
     {
         $svc   = new RankingService();
         $years = $svc->availableYears();
@@ -99,7 +107,7 @@ class SubAdminReportController extends Controller
         $latestYear = $years[0];
 
         $rows = [];
-        foreach ($svc->rankByYear($latestYear) as $tier => $tierRows) {
+        foreach ($svc->rankByYear($latestYear, $provinceIds) as $tier => $tierRows) {
             foreach ($tierRows as $r) {
                 $rows[] = [
                     'id'           => $r['province_id'],
@@ -120,9 +128,13 @@ class SubAdminReportController extends Controller
         return array_slice($rows, 0, $limit);
     }
 
-    private function get_log_stats(?Carbon $from = null, ?Carbon $to = null): array
+    private function get_log_stats(array $provinceIds, ?Carbon $from = null, ?Carbon $to = null): array
     {
-        $query = ActivityLog::selectRaw('type, COUNT(*) as count')->groupBy('type');
+        $userIds = User::whereProvinceIn($provinceIds)->pluck('id');
+
+        $query = ActivityLog::selectRaw('type, COUNT(*) as count')
+            ->whereIn('user_id', $userIds)
+            ->groupBy('type');
         if ($from) $query->where('created_at', '>=', $from);
         if ($to)   $query->where('created_at', '<=', $to);
 
@@ -140,9 +152,14 @@ class SubAdminReportController extends Controller
         ];
     }
 
-    private function get_recent_logs(int $limit = 8, ?Carbon $from = null, ?Carbon $to = null): array
+    private function get_recent_logs(array $provinceIds, int $limit = 8, ?Carbon $from = null, ?Carbon $to = null): array
     {
-        $query = ActivityLog::with('user.profile')->latest('created_at')->limit($limit);
+        $userIds = User::whereProvinceIn($provinceIds)->pluck('id');
+
+        $query = ActivityLog::with('user.profile')
+            ->whereIn('user_id', $userIds)
+            ->latest('created_at')
+            ->limit($limit);
         if ($from) $query->where('created_at', '>=', $from);
         if ($to)   $query->where('created_at', '<=', $to);
 
