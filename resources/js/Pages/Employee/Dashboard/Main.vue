@@ -301,7 +301,6 @@ const categories = [
     { value: 'small',  label: 'Small',  color: 'teal'        },
     { value: 'medium', label: 'Medium', color: 'indigo'      },
     { value: 'large',  label: 'Large',  color: 'deep-purple' },
-    { value: 'cstc',   label: 'CSTC',   color: 'pink'        },
 ];
 
 const currentScores = computed(() => {
@@ -364,7 +363,7 @@ const tierChipColor = score =>
     score >= 40 ? 'warning' : 'error';
 
 const categoryColor = cat => ({
-    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink',
+    micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple',
 }[cat] ?? 'grey');
 
 // Top 10 chart

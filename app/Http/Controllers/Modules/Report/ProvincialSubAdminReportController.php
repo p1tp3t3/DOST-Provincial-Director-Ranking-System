@@ -120,7 +120,7 @@ class ProvincialSubAdminReportController extends Controller
     }
 
     // Director KPI summary using the official PSTD Ranking Matrix weighted score
-    // for the most recent reporting year. Includes CSTC-tier rank + bucket.
+    // for the most recent reporting year. Includes tier rank + bucket.
     private function get_director_kpi(?int $provinceId): array
     {
         if (!$provinceId) return [];

@@ -8,6 +8,7 @@ use App\Models\Province;
 use App\Models\Region;
 use App\Models\User;
 use App\Services\RankingService;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -83,10 +84,20 @@ class DashboardController extends Controller
                 ])->values()->toArray(),
             ])->values()->toArray();
 
+        $rankings = $svc->rankAllYears($provinceIds);
+        foreach ($rankings as &$tiers) {
+            foreach ($tiers as &$records) {
+                foreach ($records as &$record) {
+                    $record['province_url_id'] = Crypt::encrypt($record['province_id']);
+                }
+            }
+        }
+        unset($tiers, $records, $record);
+
         return [
             'available_years'  => $svc->availableYears(),
             'kpi_categories'   => $categories,
-            'rankings_by_year' => $svc->rankAllYears($provinceIds),
+            'rankings_by_year' => $rankings,
             'regions'          => Region::orderBy('name')->get(['id', 'name', 'island_under']),
         ];
     }

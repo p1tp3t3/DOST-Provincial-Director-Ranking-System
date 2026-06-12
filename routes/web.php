@@ -18,6 +18,12 @@ use App\Http\Controllers\Modules\SettingsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+// ── Public: landing page ───────────────────────────────────────
+Route::get('/', fn() => inertia('Landing/Welcome', [
+    'canLogin'    => Route::has('login'),
+    'canRegister' => Route::has('register'),
+]))->name('home');
+
 // ── Public: maintenance notice ─────────────────────────────────
 Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
 

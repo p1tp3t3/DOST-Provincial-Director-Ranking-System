@@ -1,31 +1,42 @@
 <template>
-    <div ref="wrapEl" class="ph-map-wrap">
-        <div ref="mapEl" class="ph-map"></div>
-
-        <!-- Navigation panel -->
-        <div class="map-nav" v-if="ready">
-            <select v-model="selIsland" class="map-nav-sel" @change="onIslandChange">
-                <option value="">All Islands</option>
-                <option v-for="i in ISLANDS" :key="i.value" :value="i.value">{{ i.label }}</option>
-            </select>
-            <select v-model="selRegion" class="map-nav-sel" @change="onRegionChange">
-                <option value="">All Regions</option>
-                <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
-            </select>
-            <select v-model="selProvince" class="map-nav-sel" @change="onProvinceChange">
-                <option value="">— Select Province —</option>
-                <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
-            </select>
-            <button class="map-nav-reset" @click="resetView" title="Reset view">
+    <div ref="wrapEl" class="ph-map-root">
+        <!-- Filter bar — Island / Region / Province, displayed like the other dashboard views -->
+        <div class="map-filter-bar" v-if="ready">
+            <div class="mfb-group">
+                <span class="mfb-label">Island</span>
+                <div class="mfb-seg">
+                    <button class="mfb-seg-btn" :class="{ active: selIsland === '' }" @click="selIsland = ''; onIslandChange()">All</button>
+                    <button v-for="i in ISLANDS" :key="i.value" class="mfb-seg-btn" :class="{ active: selIsland === i.value }" @click="selIsland = i.value; onIslandChange()">{{ i.label }}</button>
+                </div>
+            </div>
+            <div class="mfb-group">
+                <span class="mfb-label">Region</span>
+                <select v-model="selRegion" class="mfb-select" @change="onRegionChange">
+                    <option value="">All Regions</option>
+                    <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
+                </select>
+            </div>
+            <div class="mfb-group">
+                <span class="mfb-label">Province</span>
+                <select v-model="selProvince" class="mfb-select" @change="onProvinceChange">
+                    <option value="">All Provinces</option>
+                    <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
+                </select>
+            </div>
+            <button class="mfb-reset" @click="resetView" title="Reset view">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                 </svg>
+                <span>Reset</span>
             </button>
         </div>
 
+        <div class="ph-map-wrap">
+        <div ref="mapEl" class="ph-map"></div>
+
         <!-- Info Panel -->
         <transition name="panel-slide">
-            <div v-if="panel" class="map-info-panel">
+            <div v-if="panel" class="map-info-panel" :class="{ 'map-info-panel--region': panel.type === 'region', 'map-info-panel--island': panel.type === 'island' }">
                 <!-- Province / CSTC panel (same structure) -->
                 <template v-if="panel.type === 'province' || panel.type === 'cstc'">
                     <div class="panel-header">
@@ -35,8 +46,11 @@
                                 <span class="panel-caption-sep">·</span>
                                 <span class="panel-caption-year">{{ panel.year }}</span>
                             </div>
-                            <div class="panel-title">{{ panel.name }}</div>
-                            <div class="panel-subtitle">{{ panel.director || 'Vacant' }}</div>
+                            <a v-if="panel.provinceUrlId" :href="`/province-directories/${panel.provinceUrlId}`" class="panel-title panel-name-link">{{ panel.name }}</a>
+                            <div v-else class="panel-title">{{ panel.name }}</div>
+                            <div v-if="panel.region" class="panel-region-tag">{{ panel.region }}</div>
+                            <a v-if="panel.directorId" :href="`/profile/${panel.directorId}`" class="panel-subtitle panel-name-link">{{ panel.director }}</a>
+                            <div v-else class="panel-subtitle">{{ panel.director || 'Vacant' }}</div>
                         </div>
                         <button class="panel-close" @click="panel = null">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -115,10 +129,15 @@
                 <template v-else-if="panel.type === 'island'">
                     <div class="panel-header panel-header-island">
                         <div class="panel-header-main">
-                            <div class="panel-title">{{ panel.label }}</div>
+                            <div class="panel-title-row">
+                                <button class="panel-expand-btn" @click="regionListOpen = !regionListOpen" :class="{ 'panel-expand-btn--active': regionListOpen }" title="View all regions">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                </button>
+                                <div class="panel-title">{{ panel.label }}</div>
+                            </div>
                             <div class="panel-subtitle">{{ panel.provinceCount }} province{{ panel.provinceCount !== 1 ? 's' : '' }} · {{ panel.regionCount }} region{{ panel.regionCount !== 1 ? 's' : '' }}</div>
                         </div>
-                        <button class="panel-close" @click="panel = null">
+                        <button class="panel-close" @click="panel = null; regionListOpen = false">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
@@ -151,7 +170,7 @@
                                 </div>
                                 <div class="panel-tier-pill" style="--tc:#b91c1c;">
                                     <span class="pill-count">{{ panel.tierCounts.low }}</span>
-                                    <span class="pill-label">Under</span>
+                                    <span class="pill-label">Low</span>
                                 </div>
                             </div>
 
@@ -174,10 +193,15 @@
                 <template v-else-if="panel.type === 'region'">
                     <div class="panel-header panel-header-region">
                         <div class="panel-header-main">
-                            <div class="panel-title">{{ panel.shortLabel }}</div>
+                            <div class="panel-title-row">
+                                <button class="panel-expand-btn" @click="provinceListOpen = !provinceListOpen" :class="{ 'panel-expand-btn--active': provinceListOpen }" title="View all provinces">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                </button>
+                                <div class="panel-title">{{ panel.shortLabel }}</div>
+                            </div>
                             <div class="panel-subtitle">{{ panel.provinceCount }} province{{ panel.provinceCount !== 1 ? 's' : '' }} with data</div>
                         </div>
-                        <button class="panel-close" @click="panel = null">
+                        <button class="panel-close" @click="panel = null; provinceListOpen = false">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
@@ -211,7 +235,7 @@
                                 </div>
                                 <div class="panel-tier-pill" style="--tc:#b91c1c;">
                                     <span class="pill-count">{{ panel.tierCounts.low }}</span>
-                                    <span class="pill-label">Under</span>
+                                    <span class="pill-label">Low</span>
                                 </div>
                             </div>
 
@@ -232,6 +256,62 @@
             </div>
         </transition>
 
+        <!-- Region list panel (left side, shown when island is selected) -->
+        <transition name="panel-slide-left">
+            <div v-if="panel && panel.type === 'island' && regionListOpen" class="map-province-list-panel">
+                <div class="plist-header">
+                    <div class="plist-header-main">
+                        <div class="plist-subtitle">All Regions</div>
+                    </div>
+                    <button class="panel-close" @click="regionListOpen = false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="plist-body">
+                    <div v-for="region in panel.allRegions" :key="region.code"
+                         class="plist-item"
+                         @click="selectRegionFromList(region.code)">
+                        <div class="plist-dot" :style="{ background: region.color }"></div>
+                        <div class="plist-info">
+                            <span class="plist-name">{{ region.label }}</span>
+                            <span class="plist-director">{{ region.provinceCount }} province{{ region.provinceCount !== 1 ? 's' : '' }}</span>
+                        </div>
+                        <span class="plist-score" :style="{ color: region.color }">
+                            {{ region.score != null ? region.score + '%' : '—' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- Province list panel (left side, shown when region is selected) -->
+        <transition name="panel-slide-left">
+            <div v-if="panel && panel.type === 'region' && provinceListOpen" class="map-province-list-panel">
+                <div class="plist-header">
+                    <div class="plist-header-main">
+                        <div class="plist-subtitle">Provinces</div>
+                    </div>
+                    <button class="panel-close" @click="provinceListOpen = false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="plist-body">
+                    <div v-for="prov in panel.allProvinces" :key="prov.name"
+                         class="plist-item"
+                         @click="selectProvinceFromList(prov.name)">
+                        <div class="plist-dot" :style="{ background: prov.color }"></div>
+                        <div class="plist-info">
+                            <span class="plist-name">{{ prov.name }}</span>
+                            <span class="plist-director">{{ prov.director || 'Vacant' }}</span>
+                        </div>
+                        <span class="plist-score" :style="{ color: prov.color }">
+                            {{ prov.score != null ? prov.score + '%' : '—' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
         <!-- Fullscreen toggle -->
         <button class="fs-btn" @click="toggleFullscreen" :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
             <svg v-if="!isFullscreen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -243,6 +323,7 @@
                 <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
             </svg>
         </button>
+        </div>
     </div>
 </template>
 
@@ -270,6 +351,12 @@ const GEO_TO_DB = {
 // districts, which we keep so the NCR region can render, zoom, and be selected.
 const SKIP = (name) => !name || (name.includes('Not a Province') && !name.includes('NCR,'));
 
+// The 6 named CSTC city-clusters (CSTC = cluster of cities with no province of
+// their own). They're scored alongside provinces in the Large tier (see
+// DatabaseSeeder::CSTC_PROVINCES / generate_provinces), but have their own
+// geojson layer (cstc-cities.geojson) instead of a province polygon.
+const CSTC_NAMES = ['CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'ZCIC', 'Davao City'];
+
 const ISLANDS = [
     { value: 'luzon',    label: 'Luzon'    },
     { value: 'visayas',  label: 'Visayas'  },
@@ -280,8 +367,8 @@ const ISLANDS = [
 // provinces, matching RankingService's rank-percentile bucketing. For
 // aggregates (region / island averages) the bucket field doesn't apply, so we
 // fall back to score-threshold coloring.
-const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Under: '#b91c1c' };
-const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Under: 'Under Performers' };
+const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' };
+const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Low: 'Low Performers' };
 const tierInfo = (entry) => {
     if (!entry) return { color: '#94a3b8', label: 'No data' };
     if (entry.status === 'no_director') return { color: '#94a3b8', label: 'No director assigned' };
@@ -363,8 +450,8 @@ const buildTrend = (provinceName) => {
     return { points, polyline, lineColor, delta, firstPct, lastPct, H };
 };
 
-const catColor = (cat) => ({ micro:'#546e7a', small:'#00796b', medium:'#3949ab', large:'#5e35b1', cstc:'#c2185b' }[cat] ?? '#666');
-const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51b518', large:'#673ab718', cstc:'#e91e6318' }[cat] ?? '#00000010');
+const catColor = (cat) => ({ micro:'#546e7a', small:'#00796b', medium:'#3949ab', large:'#5e35b1' }[cat] ?? '#666');
+const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51b518', large:'#673ab718' }[cat] ?? '#00000010');
 
 // ── Refs ──────────────────────────────────────────────────────────────────────
 const mapEl        = ref(null);
@@ -375,7 +462,9 @@ const selIsland    = ref('');
 const selRegion    = ref('');
 const selProvince  = ref('');
 const selCstc      = ref('');
-const panel        = ref(null);
+const panel              = ref(null);
+const provinceListOpen   = ref(false);
+const regionListOpen     = ref(false);
 
 let map       = null;
 let geoLayer  = null;
@@ -388,14 +477,14 @@ const cstcList   = ref([]);
 let   cstcData   = {};
 let   cstcLayerDynamic = false; // true when cstcLayer was added outside of the 'cstc' tier (e.g. NCR region/province filter)
 
-// CSTC name → {region_id, island_under}, derived from the score rows tagged
-// category 'cstc' (e.g. NCR's CAMANAVA/PAMAMAZON/PAMAMARISAN/MUNTAPARLAS).
+// CSTC name → {region_id, island_under}, derived from the score rows for the
+// named CSTC clusters (e.g. NCR's CAMANAVA/PAMAMAZON/PAMAMARISAN/MUNTAPARLAS).
 // Lets CSTC clusters appear in the Region/Province filters of the regions
 // they belong to, since NCR has no "real" provinces of its own.
 const cstcRegionMap = computed(() => {
     const m = new Map();
     for (const s of props.scores) {
-        if (s.category === 'cstc' && s.region_id != null) {
+        if (CSTC_NAMES.includes(s.province) && s.region_id != null) {
             m.set(s.province, { region_id: s.region_id, island_under: s.island_under });
         }
     }
@@ -420,21 +509,25 @@ const buildProvincePanel = (geoName) => {
         type: 'province', name: geoName, score: null, tier: 'No data',
         tierColor: '#94a3b8', director: '—', category: null,
         rank: null, year: props.selectedYear, categories: [], trend,
+        region: null, provinceUrlId: null, directorId: null,
     };
 
     const info = tierInfo(entry);
     return {
-        type:       'province',
-        name:       geoName,
-        category:   entry.category,
-        director:   entry.director,
-        status:     entry.status,
-        score:      Math.round(entry.score * 100) / 100,
-        tier:       info.label,
-        tierColor:  info.color,
-        rank:       entry.rank ?? null,
-        year:       props.selectedYear,
-        categories: categoryBreakdown(entry),
+        type:          'province',
+        name:          geoName,
+        region:        entry.region ?? null,
+        provinceUrlId: entry.province_url_id ?? null,
+        category:      entry.category,
+        director:      entry.director,
+        directorId:    entry.director_id ?? null,
+        status:        entry.status,
+        score:         Math.round(entry.score * 100) / 100,
+        tier:          info.label,
+        tierColor:     info.color,
+        rank:          entry.rank ?? null,
+        year:          props.selectedYear,
+        categories:    categoryBreakdown(entry),
         trend,
     };
 };
@@ -463,10 +556,28 @@ const buildIslandPanel = (islandValue) => {
     const islandScores = props.scores.filter(s => s.island_under === islandValue);
     const regionCount  = new Set(islandScores.map(s => s.region_id)).size;
 
+    const allRegions = props.regions
+        .filter(r => r.island_under === islandValue)
+        .map(r => {
+            const regScores = props.scores.filter(s => s.region_id === r.id);
+            const avg = regScores.length
+                ? Math.round(regScores.reduce((a, s) => a + s.score, 0) / regScores.length * 10) / 10
+                : null;
+            const shortLabel = r.name.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || r.name;
+            return {
+                code:          r.id,
+                label:         shortLabel,
+                provinceCount: regScores.length,
+                score:         avg,
+                color:         avg != null ? scoreColor(avg) : '#94a3b8',
+            };
+        })
+        .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+
     if (!islandScores.length) return {
         type: 'island', label, provinceCount: 0, regionCount: 0,
         avgScore: 0, tierCounts: { top: 0, avg: 0, low: 0 }, topProv: null, lowProv: null,
-        rank: null, totalIslands: 3,
+        rank: null, totalIslands: 3, allRegions,
     };
 
     const avg    = Math.round(islandScores.reduce((a, s) => a + s.score, 0) / islandScores.length * 10) / 10;
@@ -487,10 +598,11 @@ const buildIslandPanel = (islandValue) => {
         tierCounts: {
             top: islandScores.filter(s => s.bucket === 'Top').length,
             avg: islandScores.filter(s => s.bucket === 'Average').length,
-            low: islandScores.filter(s => s.bucket === 'Under').length,
+            low: islandScores.filter(s => s.bucket === 'Low').length,
         },
         topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
         lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
+        allRegions,
     };
 };
 
@@ -517,12 +629,27 @@ const buildRegionPanel = (regionId) => {
     // short label: strip "Region X —" prefix for the header title
     const shortLabel = label.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || label;
 
+    const sm = scoreMap();
     const regionScores = props.scores.filter(s => s.region_id === regionId);
+    const regionProvs  = provinces.filter(p => provinceRegionMap.get(p.name)?.region_id === regionId);
+
+    const allProvinces = regionProvs.map(p => {
+        const dbName = GEO_TO_DB[p.name] ?? p.name;
+        const entry  = sm[dbName] ?? null;
+        const info   = entry ? tierInfo(entry) : { color: '#94a3b8', label: 'No data' };
+        return {
+            name:     p.name,
+            director: entry?.director ?? null,
+            score:    entry ? Math.round(entry.score * 100) / 100 : null,
+            color:    info.color,
+            tier:     info.label,
+        };
+    }).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
 
     if (!regionScores.length) return {
         type: 'region', shortLabel, provinceCount: 0,
         avgScore: 0, tierCounts: { top: 0, avg: 0, low: 0 }, topProv: null, lowProv: null,
-        rank: null, totalRegions: 0,
+        rank: null, totalRegions: 0, allProvinces,
     };
 
     const avg    = Math.round(regionScores.reduce((a, s) => a + s.score, 0) / regionScores.length * 10) / 10;
@@ -544,10 +671,11 @@ const buildRegionPanel = (regionId) => {
         tierCounts: {
             top: regionScores.filter(s => s.bucket === 'Top').length,
             avg: regionScores.filter(s => s.bucket === 'Average').length,
-            low: regionScores.filter(s => s.bucket === 'Under').length,
+            low: regionScores.filter(s => s.bucket === 'Low').length,
         },
         topProv: { name: sorted[0].province,                 score: Math.round(sorted[0].score * 100) / 100 },
         lowProv: { name: sorted[sorted.length - 1].province, score: Math.round(sorted[sorted.length - 1].score * 100) / 100 },
+        allProvinces,
     };
 };
 
@@ -558,23 +686,27 @@ const buildCstcPanel = (cstcName) => {
 
     if (!entry) return {
         type: 'cstc', name: cstcName, score: null, tier: 'No data',
-        tierColor: '#94a3b8', director: '—', category: 'cstc',
+        tierColor: '#94a3b8', director: '—', category: 'large',
         rank: null, year: props.selectedYear, categories: [], trend,
+        region: null, provinceUrlId: null, directorId: null,
     };
 
     const info = tierInfo(entry);
     return {
-        type:       'cstc',
-        name:       cstcName,
-        category:   'cstc',
-        director:   entry.director,
-        status:     entry.status,
-        score:      Math.round(entry.score * 100) / 100,
-        tier:       info.label,
-        tierColor:  info.color,
-        rank:       entry.rank ?? null,
-        year:       props.selectedYear,
-        categories: categoryBreakdown(entry),
+        type:          'cstc',
+        name:          cstcName,
+        region:        entry.region ?? null,
+        provinceUrlId: entry.province_url_id ?? null,
+        category:      'large',
+        director:      entry.director,
+        directorId:    entry.director_id ?? null,
+        status:        entry.status,
+        score:         Math.round(entry.score * 100) / 100,
+        tier:          info.label,
+        tierColor:     info.color,
+        rank:          entry.rank ?? null,
+        year:          props.selectedYear,
+        categories:    categoryBreakdown(entry),
         trend,
     };
 };
@@ -583,10 +715,18 @@ const buildCstcPanel = (cstcName) => {
 const styleForCstc = (feature, sm) => {
     const cstcName  = feature.properties.cstc;
     const entry     = sm[cstcName] ?? null;
-    const baseColor = entry ? tierColor(entry) : '#94a3b8';
+
+    // CSTC clusters (e.g. Zamboanga City / ZCIC) overlap the province polygons in the
+    // basemap — Zamboanga City's land is baked into Zamboanga del Sur. With no score in
+    // the active filter we render the cluster as a neutral cut-out so it masks the
+    // province's highlight beneath it rather than inheriting that province's colour.
+    if (!entry)
+        return { fillColor: '#e2e8f0', weight: 0.6, color: '#fff', fillOpacity: 0.95 };
+
+    const baseColor = tierColor(entry);
     if (selCstc.value === cstcName)
         return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
-    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
+    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.85 };
 };
 
 const refreshCstcStyle = () => {
@@ -601,7 +741,7 @@ const refreshCstcStyle = () => {
 const ncrAggregateColor = (sm) => {
     const ncr = props.regions.find(r => r.name === 'NCR');
     if (!ncr) return '#94a3b8';
-    const cstcScores = props.scores.filter(s => s.category === 'cstc' && s.region_id === ncr.id);
+    const cstcScores = props.scores.filter(s => CSTC_NAMES.includes(s.province) && s.region_id === ncr.id);
     if (!cstcScores.length) return '#94a3b8';
     const avg = cstcScores.reduce((a, s) => a + s.score, 0) / cstcScores.length;
     return scoreColor(avg);
@@ -802,6 +942,33 @@ const onProvinceChange = () => {
     if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
 };
 
+const selectRegionFromList = (code) => {
+    const island = props.regions.find(r => r.id === code)?.island_under;
+    if (island) selIsland.value = island;
+    selRegion.value = String(code);
+    selProvince.value = '';
+    pendingFly = false;
+    refreshStyle();
+    panel.value = buildRegionPanel(code);
+    const regionProvs = provinces.filter(p => provinceRegionMap.get(p.name)?.region_id === code);
+    if (regionProvs.length) {
+        let bounds = L.latLngBounds(regionProvs[0].bounds);
+        for (const p of regionProvs.slice(1)) bounds.extend(p.bounds);
+        smartFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
+    }
+    regionListOpen.value = false;
+};
+
+const selectProvinceFromList = (name) => {
+    const prov = provinces.find(p => p.name === name);
+    if (!prov) return;
+    selProvince.value = name;
+    pendingFly = false;
+    refreshStyle();
+    panel.value = buildProvincePanel(name);
+    smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+    provinceListOpen.value = false;
+};
 const resetView = () => {
     selIsland.value = selRegion.value = selProvince.value = '';
     hideCstcLayerDynamic();
@@ -983,7 +1150,11 @@ onMounted(async () => {
         },
     });
 
-    if (props.selectedTier === 'cstc') cstcLayer.addTo(map);
+    // Keep the CSTC city clusters as an always-on overlay: they're independent of the
+    // province polygons, so this both surfaces them and masks their footprints out of
+    // the province choropleth (e.g. Zamboanga City no longer highlights as part of
+    // Zamboanga del Sur). They colour by score on Large/All and render neutral otherwise.
+    cstcLayer.addTo(map);
 
     ready.value = true;
 });
@@ -996,19 +1167,17 @@ const rebuildPanel = () => {
     else if (panel.value.type === 'island') panel.value = buildIslandPanel(selIsland.value);
 };
 
-watch(() => props.selectedTier, (cat) => {
+watch(() => props.selectedTier, () => {
+    // Overlay stays on across tiers; just recolour clusters for the active filter.
     if (!map || !cstcLayer) return;
-    if (cat === 'cstc') {
-        if (!map.hasLayer(cstcLayer)) cstcLayer.addTo(map);
-    } else {
-        if (map.hasLayer(cstcLayer)) map.removeLayer(cstcLayer);
-        selCstc.value = '';
-        if (panel.value?.type === 'cstc') panel.value = null;
-    }
     refreshCstcStyle();
 });
 
 watch(() => props.scores,       () => { refreshStyle(); refreshCstcStyle(); rebuildPanel(); }, { deep: true });
+watch(panel, (p) => {
+    if (!p || p.type !== 'region') provinceListOpen.value = false;
+    if (!p || p.type !== 'island') regionListOpen.value = false;
+});
 // Sparkline highlights the active year, so the panel needs to rebuild when the
 // year changes (especially during time-lapse playback). Trends prop only
 // updates if a full reload happens — usually not during the session.
@@ -1022,39 +1191,57 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.ph-map-root { width: 100%; }
 .ph-map-wrap { position: relative; width: 100%; }
 
 .ph-map {
     height: v-bind(height); width: 100%; z-index: 0;
     border-radius: 0 0 8px 8px;
 }
-.ph-map-wrap:fullscreen .ph-map,
-.ph-map-wrap:-webkit-full-screen .ph-map { height: 100vh; border-radius: 0; }
 
-/* ── Nav panel ─────────────────────────────── */
-.map-nav {
-    position: absolute; top: 10px; left: 10px; z-index: 1000;
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0;
-    border-radius: 8px; padding: 6px 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.12); backdrop-filter: blur(4px);
+/* Fullscreen: keep the filter bar on top and let the map fill the rest */
+.ph-map-root:fullscreen, .ph-map-root:-webkit-full-screen { background: #fff; display: flex; flex-direction: column; }
+.ph-map-root:fullscreen .ph-map-wrap, .ph-map-root:-webkit-full-screen .ph-map-wrap { flex: 1; min-height: 0; }
+.ph-map-root:fullscreen .ph-map, .ph-map-root:-webkit-full-screen .ph-map { height: 100%; border-radius: 0; }
+
+/* ── Filter bar (Island / Region / Province) — matches the other dashboard filter rows ── */
+.map-filter-bar {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06);
 }
-.map-nav-sel {
-    height: 30px; padding: 0 24px 0 8px; font-size: 12px; font-family: inherit;
-    border: 1px solid #e2e8f0; border-radius: 5px;
-    background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 8px center;
-    appearance: none; color: #334155; cursor: pointer; min-width: 160px;
-    outline: none; transition: border-color 0.15s;
+.mfb-group { display: flex; align-items: center; gap: 8px; }
+.mfb-label {
+    font-size: 13px; font-weight: 700; color: #475569;
+    letter-spacing: 0.02em; text-transform: uppercase;
 }
-.map-nav-sel:focus { border-color: #6366f1; }
-.map-nav-reset {
-    width: 30px; height: 30px; padding: 5px; background: #f1f5f9;
-    border: 1px solid #e2e8f0; border-radius: 5px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: #64748b; flex-shrink: 0; transition: background 0.15s, color 0.15s;
+.mfb-seg {
+    display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+    background: #f1f5f9; border-radius: 9px; border: 1px solid #e2e8f0;
 }
-.map-nav-reset:hover { background: #e2e8f0; color: #1e293b; }
-.map-nav-reset svg { width: 14px; height: 14px; }
+.mfb-seg-btn {
+    appearance: none; border: none; background: transparent; color: #475569;
+    font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 6px;
+    cursor: pointer; font-family: inherit; line-height: 1.3; white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.mfb-seg-btn:hover:not(.active) { color: #0f172a; background: rgba(255,255,255,0.6); }
+.mfb-seg-btn.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }
+.mfb-select {
+    height: 38px; padding: 0 32px 0 12px; font-size: 14px; font-family: inherit;
+    color: #334155; cursor: pointer; min-width: 210px; appearance: none; outline: none;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 12px center;
+    transition: border-color 0.15s;
+}
+.mfb-select:focus { border-color: #6366f1; }
+.mfb-reset {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    height: 38px; padding: 0 16px; font-size: 14px; font-weight: 600;
+    color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 8px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.mfb-reset:hover { background: #e2e8f0; color: #1e293b; }
+.mfb-reset svg { width: 16px; height: 16px; }
 
 /* ── Info panel ────────────────────────────── */
 .map-info-panel {
@@ -1086,6 +1273,12 @@ onBeforeUnmount(() => {
 
 .panel-title    { font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.2; }
 .panel-subtitle { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.3; }
+.panel-region-tag { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
+.panel-name-link {
+    text-decoration: none !important; color: inherit; display: block;
+    transition: color 0.15s;
+}
+.panel-name-link:hover { color: #4f46e5 !important; text-decoration: underline !important; }
 
 .panel-close {
     flex-shrink: 0; width: 22px; height: 22px; padding: 3px;
@@ -1097,6 +1290,15 @@ onBeforeUnmount(() => {
 .panel-close svg    { width: 14px; height: 14px; }
 
 .panel-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 14px; }
+
+.map-info-panel--region,
+.map-info-panel--island { height: 325px; display: flex; flex-direction: column; }
+.map-info-panel--region .panel-body,
+.map-info-panel--island .panel-body { overflow-y: auto; flex: 1; min-height: 0; }
+.map-info-panel--region .panel-body > div:first-child,
+.map-info-panel--island .panel-body > div:first-child {
+    flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+}
 
 /* Hero: large score number paired with inline tier/rank — no chips */
 .panel-hero          { display: flex; flex-direction: column; gap: 6px; }
@@ -1217,12 +1419,77 @@ onBeforeUnmount(() => {
 .ph-map-wrap:-webkit-full-screen .fs-btn  { top: 14px; right: 14px; }
 .ph-map-wrap:fullscreen .map-info-panel,
 .ph-map-wrap:-webkit-full-screen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
+.ph-map-wrap:fullscreen .map-province-list-panel,
+.ph-map-wrap:-webkit-full-screen .map-province-list-panel { bottom: 32px; right: 324px; }
 
 /* ── Panel slide-in transition ─────────────── */
 .panel-slide-enter-active { transition: transform 0.22s ease, opacity 0.22s ease; }
 .panel-slide-leave-active { transition: transform 0.18s ease, opacity 0.18s ease; }
 .panel-slide-enter-from   { transform: translateX(20px); opacity: 0; }
 .panel-slide-leave-to     { transform: translateX(20px); opacity: 0; }
+
+/* ── Province list panel (left of region card) ── */
+.map-province-list-panel {
+    position: absolute; bottom: 28px; right: 310px; z-index: 999;
+    width: 256px; height: 325px;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid #e2e8f0; border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    font-family: inherit;
+}
+.plist-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 8px; padding: 12px 14px 11px;
+    border-bottom: 1px solid #f1f5f9;
+    border-left: 3px solid #6366f1; padding-left: 11px;
+    flex-shrink: 0;
+}
+.plist-header-main { flex: 1; min-width: 0; }
+.plist-title    { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.plist-subtitle { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-top: 3px; }
+.plist-body {
+    overflow-y: auto; flex: 1; min-height: 0;
+    padding: 4px 0;
+}
+.plist-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 14px; cursor: pointer;
+    transition: background 0.12s;
+}
+.plist-item:hover { background: #f8fafc; }
+.plist-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.plist-info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 1px;
+}
+.plist-name     { font-size: 12px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plist-director { font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plist-score    { font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+/* ── Region panel: title row with expand button ── */
+.panel-title-row {
+    display: flex; align-items: center; gap: 6px;
+}
+.panel-expand-btn {
+    flex-shrink: 0; width: 20px; height: 20px; padding: 3px;
+    background: none; border: none; cursor: pointer; color: #94a3b8;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; transition: background 0.12s, color 0.12s;
+}
+.panel-expand-btn:hover,
+.panel-expand-btn--active { background: #ede9fe; color: #6366f1; }
+.panel-expand-btn svg { width: 13px; height: 13px; }
+
+/* ── Province list slide-in from right (expands leftward from region card) ── */
+.panel-slide-left-enter-active { transition: transform 0.22s ease, opacity 0.22s ease; }
+.panel-slide-left-leave-active { transition: transform 0.18s ease, opacity 0.18s ease; }
+.panel-slide-left-enter-from   { transform: translateX(20px); opacity: 0; }
+.panel-slide-left-leave-to     { transform: translateX(20px); opacity: 0; }
 </style>
 
 <style>

@@ -4,15 +4,15 @@
 // Adjust these values to tune the ranking behaviour without touching service code.
 return [
 
-    // Performer bucket cutoffs by RANK within each province CSTC tier
-    // (micro / small / medium / large / cstc). Per Ma'am Grace's directive, ranking is
+    // Performer bucket cutoffs by RANK within each province classification tier
+    // (micro / small / medium / large). Per Ma'am Grace's directive, ranking is
     // rank-based not score-based: the top 20% by rank get the Top label, etc.
     'buckets' => [
         'top_pct'   => 0.20,
         'under_pct' => 0.20,
     ],
 
-    // If a CSTC tier has fewer than this many provinces with data for the year, skip
+    // If a tier has fewer than this many provinces with data for the year, skip
     // bucket labels entirely (the rank is still shown). Keeps tiny groups from getting
     // meaningless "Top of 2" / "Under of 1" labels.
     'min_group_size_for_buckets' => 5,

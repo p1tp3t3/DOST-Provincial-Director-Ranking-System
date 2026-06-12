@@ -388,7 +388,7 @@ const buildName = (p) => {
 const palette    = ['#5C6BC0','#42A5F5','#26A69A','#66BB6A','#FFA726','#EC407A','#AB47BC','#78909C'];
 const nameColor  = (name = '') => palette[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % palette.length];
 const initials   = (name = '') => name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
-const categoryColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple', cstc: 'pink' }[cat] ?? 'grey');
+const categoryColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 </script>
 
 <style scoped>
