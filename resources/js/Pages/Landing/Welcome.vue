@@ -4,13 +4,12 @@ import { ref } from 'vue';
 import RegionInfoMap from '@/Components/Map/RegionInfoMap.vue';
 import {
     RiTrophyLine, RiMapPin2Line, RiBuilding2Line, RiBarChart2Line,
-    RiLineChartLine, RiGroupLine, RiShieldCheckLine, RiDashboard3Line,
+    RiLineChartLine, RiGroupLine, RiDashboard3Line,
     RiArrowRightLine, RiGlobalLine,
 } from '@remixicon/vue';
 
 defineProps({
-    canLogin:    { type: Boolean, default: true },
-    canRegister: { type: Boolean, default: false },
+    canLogin: { type: Boolean, default: true },
 });
 
 const stats = [
@@ -66,7 +65,6 @@ const mobileOpen = ref(false);
                         <a href="#overview" class="nav-link">Overview</a>
                         <a href="#map" class="nav-link">Map</a>
                         <a href="#features" class="nav-link">Features</a>
-                        <a v-if="canRegister" href="/register" class="ml-2 btn-outline">Register</a>
                         <a v-if="canLogin" href="/login" class="ml-1 btn-primary">Sign In</a>
                     </nav>
 
@@ -98,7 +96,13 @@ const mobileOpen = ref(false);
                     <div class="grid lg:grid-cols-2 gap-12 items-center">
                         <div class="text-white">
                             <div class="hero-badge">
-                                <RiShieldCheckLine class="w-4 h-4" /> Department of Science and Technology
+                                <img src="/assets/logo.png" alt="DOST" class="hero-badge-logo" />
+                                Department of Science and Technology
+                            </div>
+                            <div class="hero-tagline">
+                                <span class="hero-tagline-mark">OneDOST4U</span>
+                                <span class="hero-tagline-sep">—</span>
+                                <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
                             </div>
                             <h1 class="hero-title">
                                 Provincial S&amp;T Director
@@ -259,7 +263,6 @@ const mobileOpen = ref(false);
                         <h4 class="font-semibold text-white mb-3">Access</h4>
                         <ul class="space-y-2 text-sm">
                             <li><Link href="/login" class="foot-link">Sign In</Link></li>
-                            <li v-if="canRegister"><Link href="/register" class="foot-link">Register</Link></li>
                         </ul>
                     </div>
                 </div>
@@ -331,10 +334,15 @@ const mobileOpen = ref(false);
 .hero-inner { position: relative; z-index: 3; }
 
 .hero-badge {
-    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px;
     background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
     padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: #eaf2fb;
 }
+.hero-badge-logo    { width: 16px; height: 16px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+.hero-tagline       { color: #eaf2fb; font-size: 15px; letter-spacing: .01em; margin-bottom: 22px; }
+.hero-tagline-mark  { font-weight: 800; letter-spacing: 0.02em; }
+.hero-tagline-sep   { margin: 0 6px; opacity: .55; font-weight: 400; }
+.hero-tagline-sub   { opacity: .85; font-weight: 500; }
 .hero-title {
     font-size: clamp(2.4rem, 4.5vw, 3.4rem); font-weight: 800; line-height: 1.08; letter-spacing: -.01em;
     color: #ffffff; text-shadow: 0 2px 20px rgba(0,0,0,.25);

@@ -1,6 +1,14 @@
 <template>
   <v-toolbar color="primary" elevation="2">
 
+    <!-- DOST tagline — always-visible system signature.
+         Kept readable but not loud: bold brand mark + lighter descriptor. -->
+    <div class="dost-tagline d-flex align-center ml-4">
+      <span class="tagline-mark">OneDOST4U</span>
+      <span class="tagline-sep">—</span>
+      <span class="tagline-sub">Solutions and Opportunities for All</span>
+    </div>
+
     <v-spacer></v-spacer>
 
     <NotificationPanel />
@@ -75,3 +83,24 @@ const toggleDrawer = () => {
   emit('toggle-drawer');
 };
 </script>
+
+<style scoped>
+.dost-tagline {
+    color: #ffffff;
+    font-size: 0.86rem;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tagline-mark { font-weight: 800; letter-spacing: 0.02em; }
+.tagline-sep  { margin: 0 6px; opacity: 0.55; font-weight: 400; }
+.tagline-sub  { font-weight: 500; opacity: 0.85; }
+
+/* On narrow screens drop the descriptor and keep just the brand mark
+   so it never crowds the avatar/notification buttons. */
+@media (max-width: 599px) {
+    .tagline-sep, .tagline-sub { display: none; }
+}
+</style>
