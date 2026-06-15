@@ -133,30 +133,70 @@
             </v-col>
         </v-row>
 
-        <!-- Top 10 + Low Performers side by side -->
+        <!-- Top · Average · Low Performers, side by side. Average scrolls
+             internally so its 40+ entries don't dominate page height.
+             All three cards share .perf-card so the chart slots are pinned
+             to the exact same height — no perceptible drift between them. -->
         <v-row dense>
-            <v-col cols="12" md="6">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden">
+            <v-col cols="12" md="4">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
                     <div class="chart-header px-4 pt-3 pb-2">
                         <div class="d-flex align-center gap-2">
                             <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
-                            <span class="text-body-2 font-weight-bold">Top 10 Provinces & Directors</span>
+                            <span class="text-body-2 font-weight-bold">Top Performers</span>
                         </div>
                         <div class="text-caption text-medium-emphasis">
                             Top 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
-                    <VueApexCharts
-                        type="bar"
-                        height="360"
-                        :options="top10Options"
-                        :series="top10Series"
-                        :key="`top10-${selectedYear}-${selectedTier}`"
-                    />
+                    <div class="perf-card-body">
+                        <VueApexCharts
+                            v-if="top10Data.names.length"
+                            type="bar"
+                            height="360"
+                            :options="top10Options"
+                            :series="top10Series"
+                            :key="`top10-${selectedYear}-${selectedTier}`"
+                        />
+                        <div v-else class="perf-empty">
+                            <v-icon size="48" color="blue-grey">mdi-podium-gold</v-icon>
+                            <div class="text-body-2 font-weight-medium">No Top Performers</div>
+                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        </div>
+                    </div>
                 </v-card>
             </v-col>
-            <v-col cols="12" md="6">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden">
+            <v-col cols="12" md="4">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
+                    <div class="chart-header px-4 pt-3 pb-2">
+                        <div class="d-flex align-center gap-2">
+                            <v-icon size="15" color="warning">mdi-trending-neutral</v-icon>
+                            <span class="text-body-2 font-weight-bold">Average Performers</span>
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                            Middle 60% of each tier · {{ tierLabel }} · {{ selectedYear }}
+                        </div>
+                    </div>
+                    <div class="perf-card-body">
+                        <div v-if="avgData.names.length" class="avg-chart-scroll">
+                            <VueApexCharts
+                                type="bar"
+                                :height="avgChartHeight"
+                                :options="avgOptions"
+                                :series="avgSeries"
+                                :key="`avg-${selectedYear}-${selectedTier}-${selectedCategory}`"
+                            />
+                        </div>
+                        <div v-else class="perf-empty">
+                            <v-icon size="48" color="blue-grey">mdi-trending-neutral</v-icon>
+                            <div class="text-body-2 font-weight-medium">No Average Performers</div>
+                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        </div>
+                    </div>
+                </v-card>
+            </v-col>
+            <v-col cols="12" md="4">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
                     <div class="chart-header px-4 pt-3 pb-2">
                         <div class="d-flex align-center gap-2">
                             <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
@@ -166,18 +206,20 @@
                             Bottom 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
-                    <VueApexCharts
-                        v-if="underData.names.length"
-                        type="bar"
-                        height="360"
-                        :options="underOptions"
-                        :series="underSeries"
-                        :key="`under-${selectedYear}-${selectedTier}`"
-                    />
-                    <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
-                        <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
-                        <div class="text-body-2 font-weight-medium">No Low Performers</div>
-                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                    <div class="perf-card-body">
+                        <VueApexCharts
+                            v-if="underData.names.length"
+                            type="bar"
+                            height="360"
+                            :options="underOptions"
+                            :series="underSeries"
+                            :key="`under-${selectedYear}-${selectedTier}`"
+                        />
+                        <div v-else class="perf-empty">
+                            <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
+                            <div class="text-body-2 font-weight-medium">No Low Performers</div>
+                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        </div>
                     </div>
                 </v-card>
             </v-col>
@@ -735,9 +777,13 @@ const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c'
 const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '—');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
-// Top 10 by the active score (total or category subtotal). Excludes unranked.
+// Top Performers = anyone with bucket=Top in the current filter (sorted desc).
+// Mirrors underData below so both charts always show the matching 20% of each tier.
 const top10Data = computed(() => {
-    const slice = rankedOnly.value.slice(0, 10);
+    const slice = rankedOnly.value
+        .filter(s => s.bucket === 'Top')
+        .slice()
+        .sort((a, b) => getScore(b) - getScore(a));
     return {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => getScore(s)),
@@ -750,6 +796,21 @@ const top10Data = computed(() => {
 const underData = computed(() => {
     const slice = rankedOnly.value
         .filter(s => s.bucket === 'Low')
+        .slice()
+        .sort((a, b) => getScore(b) - getScore(a));
+    return {
+        names:     slice.map(s => s.province),
+        scores:    slice.map(s => getScore(s)),
+        directors: slice.map(s => s.director || '—'),
+        buckets:   slice.map(s => s.bucket),
+    };
+});
+
+// Average Performers = anyone with bucket=Average in the current filter (sorted desc).
+// Same shape as top10Data/underData so the makeHorizOptions helper just works.
+const avgData = computed(() => {
+    const slice = rankedOnly.value
+        .filter(s => s.bucket === 'Average')
         .slice()
         .sort((a, b) => getScore(b) - getScore(a));
     return {
@@ -804,6 +865,12 @@ const top10Options = computed(() => makeHorizOptions(top10Data.value));
 const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
 const underOptions = computed(() => makeHorizOptions(underData.value));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
+const avgOptions   = computed(() => makeHorizOptions(avgData.value));
+const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
+
+// ~26px per bar keeps labels legible — Average can have 40+ entries at All Tiers,
+// so a fixed 360px would squash bars to a few pixels each.
+const avgChartHeight = computed(() => Math.max(360, avgData.value.names.length * 26 + 40));
 
 // ── Trend view: weighted score per province across years ──────────────────
 const TREND_LIMIT = 15;
@@ -1147,4 +1214,31 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory, selectedIsland, s
 .filter-select :deep(.v-field__input)       { font-size: 14px; padding-top: 6px; }
 .filter-select :deep(.v-field__label)       { font-size: 13px; }
 .filter-select :deep(.v-field__append-inner) { padding-top: 8px; }
+
+/* Top / Average / Low performer cards — header + a fixed-height chart slot.
+   Pinning the slot to exactly 360px guarantees all three cards match in
+   total height regardless of bar count or whether the x-axis is visible. */
+.perf-card-body {
+    height: 360px;
+    overflow: hidden;
+    position: relative;
+}
+.perf-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+/* Average can have 40+ bars; render the chart at its natural height and
+   scroll within the 360px slot. */
+.avg-chart-scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.avg-chart-scroll::-webkit-scrollbar         { width: 8px; }
+.avg-chart-scroll::-webkit-scrollbar-thumb   { background: #cbd5e1; border-radius: 4px; }
+.avg-chart-scroll::-webkit-scrollbar-track   { background: transparent; }
 </style>
