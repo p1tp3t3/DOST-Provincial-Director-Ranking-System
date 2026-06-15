@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Helpers\CSVToDFHelper;
 use App\Models\KPI;
 use App\Models\Province;
 use Illuminate\Database\Seeder;
@@ -74,7 +73,7 @@ class KPIScoreSeeder extends Seeder
 
         $kpiIdByCode = KPI::pluck('id', 'code')->toArray();
 
-        $rows            = CSVToDFHelper::get_df('kpi-scores.csv');
+        $rows            = require __DIR__ . '/data/kpi-scores.php';
         $batch           = [];
         $provincialBatch = [];
         $missedProv      = [];

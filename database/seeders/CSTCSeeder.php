@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Helpers\CSVToDFHelper;
 use App\Models\KPI;
 use App\Models\Profile;
 use App\Models\Province;
@@ -16,8 +15,8 @@ class CSTCSeeder extends Seeder
 
     public function run(): void
     {
-        $directorRows = CSVToDFHelper::get_df('cstc-directors.csv');
-        $kpiRows      = CSVToDFHelper::get_df('cstc-kpi-scores.csv');
+        $directorRows = require __DIR__ . '/data/cstc-directors.php';
+        $kpiRows      = require __DIR__ . '/data/cstc-kpi-scores.php';
 
         // The CSTC clusters now live in the Large tier, so look them up by name.
         $provinces = Province::whereIn('name', self::CLUSTERS)->get()->keyBy('name');
@@ -103,7 +102,7 @@ class CSTCSeeder extends Seeder
         $this->command->info("CSTC KPI scores inserted: " . count($batch));
 
         // Create employees (skip if already seeded for that province)
-        $employeeRows   = CSVToDFHelper::get_df('cstc-employees.csv');
+        $employeeRows   = require __DIR__ . '/data/cstc-employees.php';
         $seededProvinces = DB::table('user_province')
             ->join('users', 'users.id', '=', 'user_province.user_id')
             ->where('users.role', 'employee')

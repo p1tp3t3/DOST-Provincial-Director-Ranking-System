@@ -2,6 +2,121 @@
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3">
 
+        <!-- Sticky filter bar — single compact row of dropdowns + view toggle,
+             shown identically across all view modes (podium/table/trend/map). -->
+        <div class="dashboard-sticky-filters">
+            <div class="d-flex align-center gap-2 px-3 py-2 flex-wrap">
+                <v-select
+                    v-model="selectedTier"
+                    :items="tierSelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Tier"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                    @update:model-value="searchTerm = ''"
+                />
+                <v-select
+                    v-model="selectedIsland"
+                    :items="islandSelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Island"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                    @update:model-value="setIsland($event)"
+                />
+                <v-select
+                    v-model="selectedRegion"
+                    :items="regionOptions"
+                    item-title="label"
+                    item-value="value"
+                    label="Region"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--wide"
+                />
+                <v-select
+                    v-model="selectedCategory"
+                    :items="categorySelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Category"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                />
+                <v-select
+                    v-model="selectedYear"
+                    :items="available_years"
+                    label="Year"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--narrow"
+                />
+
+                <!-- Provinces multi-select only used by trend view -->
+                <v-autocomplete
+                    v-if="viewMode === 'trend' && trendProvinceList.length"
+                    v-model="selectedProvinces"
+                    :items="trendProvinceList"
+                    multiple
+                    density="compact"
+                    variant="outlined"
+                    label="Provinces"
+                    placeholder="Search provinces…"
+                    hide-details
+                    :menu-props="{ maxHeight: 320 }"
+                    class="filter-select filter-select--wide trend-province-select"
+                >
+                    <template #selection></template>
+
+                    <template #prepend-inner>
+                        <span v-if="selectedProvinces.length" class="d-inline-flex align-center text-caption" style="max-width:130px;">
+                            <span class="legend-dot mr-1 flex-shrink-0" :style="{ background: provinceColorMap[selectedProvinces[0]] }"></span>
+                            <span class="text-truncate">{{ trendSelectionLabel }}</span>
+                        </span>
+                    </template>
+
+                    <template #prepend-item>
+                        <v-list-item title="Select all" density="compact" @click="toggleSelectAllTrend">
+                            <template #prepend>
+                                <v-checkbox-btn
+                                    density="compact"
+                                    :model-value="allTrendSelected"
+                                    :indeterminate="someTrendSelected && !allTrendSelected"
+                                />
+                            </template>
+                        </v-list-item>
+                        <v-divider class="mt-1" />
+                    </template>
+
+                    <template #item="{ item, props: itemProps }">
+                        <v-list-item v-bind="itemProps" density="compact">
+                            <template #prepend="{ isSelected }">
+                                <v-checkbox-btn density="compact" :model-value="isSelected" />
+                                <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item.raw] }"></span>
+                            </template>
+                        </v-list-item>
+                    </template>
+                </v-autocomplete>
+
+                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
+                    <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
+                    <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
+                    <v-btn value="trend"  size="small" title="Trend view"><v-icon size="15">mdi-chart-line</v-icon></v-btn>
+                    <v-btn value="map"    size="small" title="Map view"><v-icon size="15">mdi-map-outline</v-icon></v-btn>
+                </v-btn-toggle>
+            </div>
+        </div>
+
         <!-- Stat Cards -->
         <v-row dense>
             <v-col cols="12" sm="3">
@@ -18,30 +133,70 @@
             </v-col>
         </v-row>
 
-        <!-- Top 10 + Low Performers side by side -->
+        <!-- Top · Average · Low Performers, side by side. Average scrolls
+             internally so its 40+ entries don't dominate page height.
+             All three cards share .perf-card so the chart slots are pinned
+             to the exact same height — no perceptible drift between them. -->
         <v-row dense>
-            <v-col cols="12" md="6">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden">
+            <v-col cols="12" md="4">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
                     <div class="chart-header px-4 pt-3 pb-2">
                         <div class="d-flex align-center gap-2">
                             <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
-                            <span class="text-body-2 font-weight-bold">Top 10 Provinces & Directors</span>
+                            <span class="text-body-2 font-weight-bold">Top Performers</span>
                         </div>
                         <div class="text-caption text-medium-emphasis">
                             Top 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
-                    <VueApexCharts
-                        type="bar"
-                        height="360"
-                        :options="top10Options"
-                        :series="top10Series"
-                        :key="`top10-${selectedYear}-${selectedTier}`"
-                    />
+                    <div class="perf-card-body">
+                        <VueApexCharts
+                            v-if="top10Data.names.length"
+                            type="bar"
+                            height="360"
+                            :options="top10Options"
+                            :series="top10Series"
+                            :key="`top10-${selectedYear}-${selectedTier}`"
+                        />
+                        <div v-else class="perf-empty">
+                            <v-icon size="48" color="blue-grey">mdi-podium-gold</v-icon>
+                            <div class="text-body-2 font-weight-medium">No Top Performers</div>
+                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        </div>
+                    </div>
                 </v-card>
             </v-col>
-            <v-col cols="12" md="6">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden">
+            <v-col cols="12" md="4">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
+                    <div class="chart-header px-4 pt-3 pb-2">
+                        <div class="d-flex align-center gap-2">
+                            <v-icon size="15" color="warning">mdi-trending-neutral</v-icon>
+                            <span class="text-body-2 font-weight-bold">Average Performers</span>
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                            Middle 60% of each tier · {{ tierLabel }} · {{ selectedYear }}
+                        </div>
+                    </div>
+                    <div class="perf-card-body">
+                        <div v-if="avgData.names.length" class="avg-chart-scroll">
+                            <VueApexCharts
+                                type="bar"
+                                :height="avgChartHeight"
+                                :options="avgOptions"
+                                :series="avgSeries"
+                                :key="`avg-${selectedYear}-${selectedTier}-${selectedCategory}`"
+                            />
+                        </div>
+                        <div v-else class="perf-empty">
+                            <v-icon size="48" color="blue-grey">mdi-trending-neutral</v-icon>
+                            <div class="text-body-2 font-weight-medium">No Average Performers</div>
+                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        </div>
+                    </div>
+                </v-card>
+            </v-col>
+            <v-col cols="12" md="4">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
                     <div class="chart-header px-4 pt-3 pb-2">
                         <div class="d-flex align-center gap-2">
                             <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
@@ -51,18 +206,20 @@
                             Bottom 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
-                    <VueApexCharts
-                        v-if="underData.names.length"
-                        type="bar"
-                        height="360"
-                        :options="underOptions"
-                        :series="underSeries"
-                        :key="`under-${selectedYear}-${selectedTier}`"
-                    />
-                    <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
-                        <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
-                        <div class="text-body-2 font-weight-medium">No Low Performers</div>
-                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                    <div class="perf-card-body">
+                        <VueApexCharts
+                            v-if="underData.names.length"
+                            type="bar"
+                            height="360"
+                            :options="underOptions"
+                            :series="underSeries"
+                            :key="`under-${selectedYear}-${selectedTier}`"
+                        />
+                        <div v-else class="perf-empty">
+                            <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
+                            <div class="text-body-2 font-weight-medium">No Low Performers</div>
+                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        </div>
                     </div>
                 </v-card>
             </v-col>
@@ -706,6 +863,23 @@ const tierCounts = computed(() => {
     return counts;
 });
 
+// Items for the dropdown filters in the sticky bar. Counts/weights are appended
+// to the label so users still see the same context as the old segmented buttons.
+const tierSelectItems = computed(() => [
+    { value: 'all', label: `All Tiers (${tierCounts.value.all ?? 0})` },
+    ...tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` })),
+]);
+
+const islandSelectItems = computed(() => [
+    { value: 'all', label: 'All Islands' },
+    ...ISLANDS.map(isl => ({ value: isl, label: isl })),
+]);
+
+const categorySelectItems = computed(() => [
+    { value: 'overall', label: 'Overall' },
+    ...categoryOptions.value.map(c => ({ value: c.value, label: `${c.label} (${c.weight})` })),
+]);
+
 const bucketCounts = computed(() => {
     const counts = { Top: 0, Average: 0, Low: 0 };
     for (const r of rankedScores.value) {
@@ -744,9 +918,13 @@ const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c'
 const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '—');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
-// Top 10 by the active score (total or category subtotal). Excludes unranked.
+// Top Performers = anyone with bucket=Top in the current filter (sorted desc).
+// Mirrors underData below so both charts always show the matching 20% of each tier.
 const top10Data = computed(() => {
-    const slice = rankedOnly.value.slice(0, 10);
+    const slice = rankedOnly.value
+        .filter(s => s.bucket === 'Top')
+        .slice()
+        .sort((a, b) => getScore(b) - getScore(a));
     return {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => getScore(s)),
@@ -759,6 +937,21 @@ const top10Data = computed(() => {
 const underData = computed(() => {
     const slice = rankedOnly.value
         .filter(s => s.bucket === 'Low')
+        .slice()
+        .sort((a, b) => getScore(b) - getScore(a));
+    return {
+        names:     slice.map(s => s.province),
+        scores:    slice.map(s => getScore(s)),
+        directors: slice.map(s => s.director || '—'),
+        buckets:   slice.map(s => s.bucket),
+    };
+});
+
+// Average Performers = anyone with bucket=Average in the current filter (sorted desc).
+// Same shape as top10Data/underData so the makeHorizOptions helper just works.
+const avgData = computed(() => {
+    const slice = rankedOnly.value
+        .filter(s => s.bucket === 'Average')
         .slice()
         .sort((a, b) => getScore(b) - getScore(a));
     return {
@@ -813,6 +1006,12 @@ const top10Options = computed(() => makeHorizOptions(top10Data.value));
 const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
 const underOptions = computed(() => makeHorizOptions(underData.value));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
+const avgOptions   = computed(() => makeHorizOptions(avgData.value));
+const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
+
+// ~26px per bar keeps labels legible — Average can have 40+ entries at All Tiers,
+// so a fixed 360px would squash bars to a few pixels each.
+const avgChartHeight = computed(() => Math.max(360, avgData.value.names.length * 26 + 40));
 
 // ── Trend view: weighted score per province across years ──────────────────
 const TREND_LIMIT = 15;
@@ -1143,4 +1342,54 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory, selectedIsland, s
 /* Keep the field a fixed single-line height regardless of selection count —
    selections are rendered as a text summary via prepend-inner instead of chips. */
 .trend-province-select :deep(.v-field__input) { flex-wrap: nowrap; }
+
+/* Sticky filter bar — pins the ranking's interactive controls just below the
+   app navbar (v-toolbar default height = 64px) so they stay reachable while
+   the user scrolls through the stat cards, charts, and leaderboard below. */
+.dashboard-sticky-filters {
+    position: sticky;
+    top: 64px;
+    z-index: 4;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Compact, single-line dropdown filters. Widths are tuned so the full row
+   (Tier · Island · Region · Category · Year · view toggle) fits on one line
+   at typical desktop widths, and wraps gracefully on narrow screens. */
+.filter-select               { width: 160px; flex-shrink: 0; }
+.filter-select--wide         { width: 220px; }
+.filter-select--narrow       { width: 110px; }
+.filter-select :deep(.v-field__input)       { font-size: 14px; padding-top: 6px; }
+.filter-select :deep(.v-field__label)       { font-size: 13px; }
+.filter-select :deep(.v-field__append-inner) { padding-top: 8px; }
+
+/* Top / Average / Low performer cards — header + a fixed-height chart slot.
+   Pinning the slot to exactly 360px guarantees all three cards match in
+   total height regardless of bar count or whether the x-axis is visible. */
+.perf-card-body {
+    height: 360px;
+    overflow: hidden;
+    position: relative;
+}
+.perf-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+/* Average can have 40+ bars; render the chart at its natural height and
+   scroll within the 360px slot. */
+.avg-chart-scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.avg-chart-scroll::-webkit-scrollbar         { width: 8px; }
+.avg-chart-scroll::-webkit-scrollbar-thumb   { background: #cbd5e1; border-radius: 4px; }
+.avg-chart-scroll::-webkit-scrollbar-track   { background: transparent; }
 </style>

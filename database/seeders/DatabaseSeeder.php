@@ -131,8 +131,8 @@ class DatabaseSeeder extends Seeder
     private function generate_users()
     {
         $provinces    = Province::all()->keyBy('name');
-        $directorRows = CSVToDFHelper::get_df('provincial-directors.csv');
-        $employeeRows = CSVToDFHelper::get_df('provincial-employees.csv');
+        $directorRows = require __DIR__ . '/data/provincial-directors.php';
+        $employeeRows = require __DIR__ . '/data/provincial-employees.php';
 
         // Group employees by province name
         $employeesByProvince = [];
@@ -274,7 +274,7 @@ class DatabaseSeeder extends Seeder
     // with 37 scored KPIs + 2 supporting input rows used to derive the % Delinquent SETUP KPI.
     private function generate_kpi()
     {
-        foreach (CSVToDFHelper::get_df('kpi-categories.csv') as $row) {
+        foreach (require __DIR__ . '/data/kpi-categories.php' as $row) {
             KPICategory::create([
                 'code'       => $row['code'],
                 'name'       => $row['name'],
@@ -285,7 +285,7 @@ class DatabaseSeeder extends Seeder
 
         $categoryIds = KPICategory::pluck('id', 'code')->toArray();
 
-        foreach (CSVToDFHelper::get_df('kpis.csv') as $row) {
+        foreach (require __DIR__ . '/data/kpis.php' as $row) {
             KPI::create([
                 'category_id'     => $categoryIds[$row['category_code']],
                 'code'            => $row['code'],
