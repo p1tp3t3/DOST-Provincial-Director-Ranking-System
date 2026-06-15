@@ -414,7 +414,7 @@ class UserController extends Controller
     public function get_users(?string $search = null, ?string $role = null)
     {
         $data = User::has('profile')
-                    ->with('profile')
+                    ->with(['profile', 'provinces', 'region'])
                     ->when($search, function ($q, $search) {
                         $q->where(function ($q) use ($search) {
                             $q->whereHas('profile', fn($p) =>

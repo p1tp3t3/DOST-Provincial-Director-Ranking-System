@@ -27,11 +27,14 @@ class KPIDataController extends Controller
             NULLIF(TRIM(IFNULL(pr.last_name,'')), '')
         )";
 
+        $directors = DB::table('user_province as up')
+            ->join('users as u', 'u.id', '=', 'up.user_id')
+            ->where('u.role', 'provincial_director')
+            ->select('up.province_id', 'up.user_id as director_id');
+
         $provinces = DB::table('provinces as p')
-            ->leftJoin('user_province as up', 'up.province_id', '=', 'p.id')
-            ->leftJoin('users as u', function ($j) {
-                $j->on('u.id', '=', 'up.user_id')->where('u.role', '=', 'provincial_director');
-            })
+            ->leftJoinSub($directors, 'd', 'd.province_id', '=', 'p.id')
+            ->leftJoin('users as u', 'u.id', '=', 'd.director_id')
             ->leftJoin('profiles as pr', 'pr.user_id', '=', 'u.id')
             ->select(
                 'p.id', 'p.name', 'p.category',

@@ -80,7 +80,7 @@ class SuperAdminReportController extends Controller
 
     private function get_recent_users(int $limit = 6): array
     {
-        return User::with(['profile', 'province'])
+        return User::with(['profile', 'provinces'])
                    ->latest('created_at')
                    ->limit($limit)
                    ->get()

@@ -14,7 +14,7 @@ class ProfileController extends Controller
     // ── View another user's profile ───────────────────────────────
     public function index(int $id)
     {
-        $user = User::with(['profile.employeeProfile', 'province'])->find($id);
+        $user = User::with(['profile.employeeProfile', 'provinces'])->find($id);
         if (!$user) abort(404);
 
         return inertia('Other/Profile/Main', [
@@ -25,7 +25,7 @@ class ProfileController extends Controller
     // ── Edit own profile ──────────────────────────────────────────
     public function edit()
     {
-        $user    = Auth::user()->load(['profile.employeeProfile', 'province']);
+        $user    = Auth::user()->load(['profile.employeeProfile', 'provinces']);
         $profile = $user->profile;
 
         $eduRaw  = $profile?->education_attainment;

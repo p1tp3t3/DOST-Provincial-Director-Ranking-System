@@ -19,6 +19,7 @@ import {
     RiFolder2Line,
     RiEdit2Fill,
     RiTable2,
+    RiRoadMapFill,
 } from '@remixicon/vue';
 
 const props = defineProps({
