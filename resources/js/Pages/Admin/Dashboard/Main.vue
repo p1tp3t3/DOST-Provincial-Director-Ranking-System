@@ -140,19 +140,25 @@
                     <div class="chart-header px-4 pt-3 pb-2">
                         <div class="d-flex align-center gap-2">
                             <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
-                            <span class="text-body-2 font-weight-bold">Top 10 Provinces & Directors</span>
+                            <span class="text-body-2 font-weight-bold">Top Performers</span>
                         </div>
                         <div class="text-caption text-medium-emphasis">
                             Top 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
                     <VueApexCharts
+                        v-if="top10Data.names.length"
                         type="bar"
                         height="360"
                         :options="top10Options"
                         :series="top10Series"
                         :key="`top10-${selectedYear}-${selectedTier}`"
                     />
+                    <div v-else class="d-flex flex-column align-center justify-center gap-2" style="height:360px;">
+                        <v-icon size="48" color="blue-grey">mdi-podium-gold</v-icon>
+                        <div class="text-body-2 font-weight-medium">No Top Performers</div>
+                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                    </div>
                 </v-card>
             </v-col>
             <v-col cols="12" md="6">
@@ -735,9 +741,13 @@ const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c'
 const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '—');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
-// Top 10 by the active score (total or category subtotal). Excludes unranked.
+// Top Performers = anyone with bucket=Top in the current filter (sorted desc).
+// Mirrors underData below so both charts always show the matching 20% of each tier.
 const top10Data = computed(() => {
-    const slice = rankedOnly.value.slice(0, 10);
+    const slice = rankedOnly.value
+        .filter(s => s.bucket === 'Top')
+        .slice()
+        .sort((a, b) => getScore(b) - getScore(a));
     return {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => getScore(s)),
