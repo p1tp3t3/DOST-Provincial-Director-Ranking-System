@@ -267,7 +267,7 @@ class RankingService
         $n      = count($ranked);
         $minN   = (int) config('ranking.min_group_size_for_buckets', 5);
         $topPct = (float) config('ranking.buckets.top_pct',   0.20);
-        $undPct = (float) config('ranking.buckets.under_pct', 0.20);
+        $undPct = (float) config('ranking.buckets.under_pct', 0.10);
 
         $useBuckets = $n >= $minN;
         $topCount   = 0;

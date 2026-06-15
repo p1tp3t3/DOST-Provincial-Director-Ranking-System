@@ -1,36 +1,7 @@
 <template>
     <div ref="wrapEl" class="ph-map-root">
-        <!-- Filter bar — Island / Region / Province, displayed like the other dashboard views -->
-        <div class="map-filter-bar" v-if="ready">
-            <div class="mfb-group">
-                <span class="mfb-label">Island</span>
-                <div class="mfb-seg">
-                    <button class="mfb-seg-btn" :class="{ active: selIsland === '' }" @click="selIsland = ''; onIslandChange()">All</button>
-                    <button v-for="i in ISLANDS" :key="i.value" class="mfb-seg-btn" :class="{ active: selIsland === i.value }" @click="selIsland = i.value; onIslandChange()">{{ i.label }}</button>
-                </div>
-            </div>
-            <div class="mfb-group">
-                <span class="mfb-label">Region</span>
-                <select v-model="selRegion" class="mfb-select" @change="onRegionChange">
-                    <option value="">All Regions</option>
-                    <option v-for="r in visibleRegions" :key="r.code" :value="r.code">{{ r.label }}</option>
-                </select>
-            </div>
-            <div class="mfb-group">
-                <span class="mfb-label">Province</span>
-                <select v-model="selProvince" class="mfb-select" @change="onProvinceChange">
-                    <option value="">All Provinces</option>
-                    <option v-for="p in visibleProvinces" :key="p.name" :value="p.name">{{ p.name }}</option>
-                </select>
-            </div>
-            <button class="mfb-reset" @click="resetView" title="Reset view">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
-                </svg>
-                <span>Reset</span>
-            </button>
-        </div>
-
+        <!-- Island / Region / Province filters are operated by the top sticky
+             filter bar in the parent dashboard. The map only renders here. -->
         <div class="ph-map-wrap">
         <div ref="mapEl" class="ph-map"></div>
 
@@ -328,7 +299,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -338,6 +309,14 @@ const props = defineProps({
     selectedYear:     { type: Number, default: null },
     selectedTier:     { type: String, default: 'all' },
     height:           { type: String, default: '460px' },
+    // External filter values driven by the dashboard's sticky filter bar.
+    // 'all' / '' maps to "no filter" — the watchers below translate dashboard
+    // formats ('Luzon', 'Region I', 'Bohol') to the map's internal formats
+    // ('luzon', region code 100000000, 'Bohol') and trigger the existing
+    // smart-fly logic so the map zooms to match the picked scope.
+    island:           { type: String, default: 'all' },
+    region:           { type: String, default: 'all' },
+    province:         { type: String, default: 'all' },
 });
 
 const GEO_TO_DB = {
@@ -831,22 +810,13 @@ const refreshStyle = () => {
     geoLayer.setStyle(f => styleFor(f, sm, selRegion.value, selProvince.value, selIsland.value));
 };
 
-// ── Region / Province dropdowns ───────────────────────────────────────────────
-const visibleRegions = computed(() =>
-    selIsland.value
-        ? regionList.value.filter(r => REGION_TO_ISLAND[r.code] === selIsland.value)
-        : regionList.value
-);
-
-const visibleProvinces = computed(() => {
-    if (selRegion.value) return provinces.filter(p => p.regionCode === Number(selRegion.value));
-    if (selIsland.value) return provinces.filter(p => REGION_TO_ISLAND[p.regionCode] === selIsland.value);
-    return provinces;
-});
-
-// ── Smart fly ─────────────────────────────────────────────────────────────────
+// ── Fly helpers ───────────────────────────────────────────────────────────────
 const HOME = { center: [12.2, 122.5], zoom: 5 };
 
+// smartFlyTo — used by FILTER-driven changes (Island/Region/Province from the
+// top sticky bar). If the target isn't currently visible, it first pulls back
+// to overview so the user gets visual context, then flies in. Acceptable
+// here because the user explicitly changed scope.
 const smartFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
     if (!map) return;
     map.stop();
@@ -864,6 +834,17 @@ const smartFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
             setTimeout(() => map.flyToBounds(targetBounds, { padding, maxZoom, duration: 1.1, easeLinearity: 0.22 }), 60);
         });
     }
+};
+
+// softFlyTo — used by CLICK-driven changes (clicking on a province/CSTC or
+// picking from the panel's expand-list). Pan/zoom directly to the target
+// without the overview detour — clicking a nearby province should feel like
+// a gentle slide-over, not a "zoom-out-then-back-in" flourish.
+const softFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
+    if (!map) return;
+    map.stop();
+    pendingFly = false;
+    map.flyToBounds(targetBounds, { padding, maxZoom, duration: 0.8, easeLinearity: 0.4 });
 };
 
 // ── Event handlers ────────────────────────────────────────────────────────────
@@ -922,6 +903,34 @@ const onProvinceChange = () => {
     if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
 };
 
+// ── External (dashboard sticky filter) → internal map state ───────────────────
+// Maps the dashboard's region-short-name back to its numeric PSGC code so the
+// existing handlers don't need to change. Built from REGION_LABELS once.
+const REGION_NAME_TO_CODE = Object.fromEntries(
+    Object.entries(REGION_LABELS).map(([code, label]) => [label.split(' — ')[0], Number(code)])
+);
+
+watch(() => props.island, (v) => {
+    const mapped = (v && v !== 'all') ? v.toLowerCase() : '';
+    if (selIsland.value === mapped) return;
+    selIsland.value = mapped;
+    if (ready.value) onIslandChange();
+});
+
+watch(() => props.region, (v) => {
+    const mapped = (v && v !== 'all') ? String(REGION_NAME_TO_CODE[v] ?? '') : '';
+    if (selRegion.value === mapped) return;
+    selRegion.value = mapped;
+    if (ready.value) onRegionChange();
+});
+
+watch(() => props.province, (v) => {
+    const mapped = (v && v !== 'all') ? v : '';
+    if (selProvince.value === mapped) return;
+    selProvince.value = mapped;
+    if (ready.value) onProvinceChange();
+});
+
 const selectRegionFromList = (code) => {
     const island = REGION_TO_ISLAND[code];
     if (island) selIsland.value = island;
@@ -934,7 +943,7 @@ const selectRegionFromList = (code) => {
     if (regionProvs.length) {
         let bounds = L.latLngBounds(regionProvs[0].bounds);
         for (const p of regionProvs.slice(1)) bounds.extend(p.bounds);
-        smartFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
+        softFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
     }
     regionListOpen.value = false;
 };
@@ -946,7 +955,7 @@ const selectProvinceFromList = (name) => {
     pendingFly = false;
     refreshStyle();
     panel.value = buildProvincePanel(name);
-    smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+    softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
     provinceListOpen.value = false;
 };
 
@@ -1059,7 +1068,7 @@ onMounted(async () => {
                 panel.value = buildProvincePanel(name);
 
                 const prov = provinces.find(p => p.name === name);
-                if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+                if (prov) softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
             });
         },
     }).addTo(map);
@@ -1113,7 +1122,7 @@ onMounted(async () => {
                 refreshCstcStyle();
                 panel.value = buildCstcPanel(cstcName);
                 const bounds = cstcData[cstcName];
-                if (bounds) smartFlyTo(bounds, { maxZoom: 13, padding: [50, 50] });
+                if (bounds) softFlyTo(bounds, { maxZoom: 13, padding: [50, 50] });
             });
         },
     });

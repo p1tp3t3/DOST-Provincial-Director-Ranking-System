@@ -50,10 +50,17 @@ const features = [
             <!-- Center: Main content -->
             <div class="left-section flex-grow-1 d-flex flex-column justify-center" style="position:relative;">
 
-                <!-- Badge -->
-                <div class="dost-badge mb-6">
-                    <v-icon size="13" color="white" class="mr-1">mdi-shield-star-outline</v-icon>
+                <!-- Badge — DOST logo on the left, then the text -->
+                <div class="dost-badge mb-3">
+                    <img src="/assets/logo.png" alt="DOST" class="dost-badge-logo mr-2" />
                     <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">Department of Science and Technology</span>
+                </div>
+
+                <!-- DOST tagline — the system signature; readable but not loud -->
+                <div class="text-white mb-6" style="font-size:0.92rem; letter-spacing:0.01em;">
+                    <span style="font-weight:800;">OneDOST4U</span>
+                    <span style="opacity:0.55; margin:0 6px;">—</span>
+                    <span style="opacity:0.85; font-weight:500;">Solutions and Opportunities for All</span>
                 </div>
 
                 <!-- Headline -->
@@ -204,6 +211,12 @@ const features = [
     border: 1px solid rgba(255,255,255,0.14);
     border-radius: 20px;
     padding: 5px 12px;
+}
+.dost-badge-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
 }
 
 /* Feature grid */
