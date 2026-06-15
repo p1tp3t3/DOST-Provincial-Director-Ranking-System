@@ -2,6 +2,121 @@
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3">
 
+        <!-- Sticky filter bar — single compact row of dropdowns + view toggle,
+             shown identically across all view modes (podium/table/trend/map). -->
+        <div class="dashboard-sticky-filters">
+            <div class="d-flex align-center gap-2 px-3 py-2 flex-wrap">
+                <v-select
+                    v-model="selectedTier"
+                    :items="tierSelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Tier"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                    @update:model-value="searchTerm = ''"
+                />
+                <v-select
+                    v-model="selectedIsland"
+                    :items="islandSelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Island"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                    @update:model-value="setIsland($event)"
+                />
+                <v-select
+                    v-model="selectedRegion"
+                    :items="regionOptions"
+                    item-title="label"
+                    item-value="value"
+                    label="Region"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--wide"
+                />
+                <v-select
+                    v-model="selectedCategory"
+                    :items="categorySelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Category"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                />
+                <v-select
+                    v-model="selectedYear"
+                    :items="available_years"
+                    label="Year"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--narrow"
+                />
+
+                <!-- Provinces multi-select only used by trend view -->
+                <v-autocomplete
+                    v-if="viewMode === 'trend' && trendProvinceList.length"
+                    v-model="selectedProvinces"
+                    :items="trendProvinceList"
+                    multiple
+                    density="compact"
+                    variant="outlined"
+                    label="Provinces"
+                    placeholder="Search provinces…"
+                    hide-details
+                    :menu-props="{ maxHeight: 320 }"
+                    class="filter-select filter-select--wide trend-province-select"
+                >
+                    <template #selection></template>
+
+                    <template #prepend-inner>
+                        <span v-if="selectedProvinces.length" class="d-inline-flex align-center text-caption" style="max-width:130px;">
+                            <span class="legend-dot mr-1 flex-shrink-0" :style="{ background: provinceColorMap[selectedProvinces[0]] }"></span>
+                            <span class="text-truncate">{{ trendSelectionLabel }}</span>
+                        </span>
+                    </template>
+
+                    <template #prepend-item>
+                        <v-list-item title="Select all" density="compact" @click="toggleSelectAllTrend">
+                            <template #prepend>
+                                <v-checkbox-btn
+                                    density="compact"
+                                    :model-value="allTrendSelected"
+                                    :indeterminate="someTrendSelected && !allTrendSelected"
+                                />
+                            </template>
+                        </v-list-item>
+                        <v-divider class="mt-1" />
+                    </template>
+
+                    <template #item="{ item, props: itemProps }">
+                        <v-list-item v-bind="itemProps" density="compact">
+                            <template #prepend="{ isSelected }">
+                                <v-checkbox-btn density="compact" :model-value="isSelected" />
+                                <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item.raw] }"></span>
+                            </template>
+                        </v-list-item>
+                    </template>
+                </v-autocomplete>
+
+                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
+                    <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
+                    <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
+                    <v-btn value="trend"  size="small" title="Trend view"><v-icon size="15">mdi-chart-line</v-icon></v-btn>
+                    <v-btn value="map"    size="small" title="Map view"><v-icon size="15">mdi-map-outline</v-icon></v-btn>
+                </v-btn-toggle>
+            </div>
+        </div>
+
         <!-- Stat Cards -->
         <v-row dense>
             <v-col cols="12" sm="3">
@@ -116,147 +231,6 @@
                                     <span class="legend-dot" style="background:#94a3b8;"></span>
                                     <span class="text-caption text-medium-emphasis">Pending ({{ unrankedProvinces.length }})</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <v-divider />
-
-                    <!-- Tier segmented + Table/Podium view toggle -->
-                    <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap">
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Tier</span>
-                            <div class="segmented category-segmented">
-                                <button class="segmented-btn" :class="{ active: selectedTier === 'all' }" @click="selectedTier = 'all'; searchTerm = ''">
-                                    All <span class="seg-count seg-count--all">{{ tierCounts.all }}</span>
-                                </button>
-                                <button
-                                    v-for="t in tiers"
-                                    :key="t.value"
-                                    class="segmented-btn"
-                                    :class="['category-btn-' + t.value, { active: selectedTier === t.value }]"
-                                    @click="selectedTier = t.value; searchTerm = ''"
-                                >
-                                    {{ t.label }}
-                                    <span class="seg-count" :class="'seg-count--' + t.value">{{ tierCounts[t.value] ?? 0 }}</span>
-                                </button>
-                            </div>
-                        </div>
-                        <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
-                            <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
-                            <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
-                            <v-btn value="trend"  size="small" title="Trend view"><v-icon size="15">mdi-chart-line</v-icon></v-btn>
-                            <v-btn value="map"    size="small" title="Map view"><v-icon size="15">mdi-map-outline</v-icon></v-btn>
-                        </v-btn-toggle>
-                    </div>
-
-                    <!-- Island + Region filter row -->
-                    <div v-if="viewMode !== 'map'" class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Island</span>
-                            <div class="segmented">
-                                <button class="segmented-btn" :class="{ active: selectedIsland === 'all' }" @click="setIsland('all')">All</button>
-                                <button
-                                    v-for="isl in ISLANDS" :key="isl"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedIsland === isl }"
-                                    @click="setIsland(isl)"
-                                >{{ isl }}</button>
-                            </div>
-                        </div>
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Region</span>
-                            <v-select
-                                v-model="selectedRegion"
-                                :items="regionOptions"
-                                item-title="label"
-                                item-value="value"
-                                density="compact"
-                                variant="outlined"
-                                hide-details
-                                style="min-width:220px;"
-                            />
-                        </div>
-                        <div v-if="viewMode === 'trend'" class="d-flex align-center gap-2">
-                            <v-autocomplete
-                                v-if="trendProvinceList.length"
-                                v-model="selectedProvinces"
-                                :items="trendProvinceList"
-                                multiple
-                                density="compact"
-                                variant="outlined"
-                                label="Provinces"
-                                placeholder="Search provinces…"
-                                hide-details
-                                :menu-props="{ maxHeight: 320 }"
-                                class="trend-province-select"
-                                style="min-width:220px; max-width:280px;"
-                            >
-                                <template #selection></template>
-
-                                <template #prepend-inner>
-                                    <span v-if="selectedProvinces.length" class="d-inline-flex align-center text-caption" style="max-width:130px;">
-                                        <span class="legend-dot mr-1 flex-shrink-0" :style="{ background: provinceColorMap[selectedProvinces[0]] }"></span>
-                                        <span class="text-truncate">{{ trendSelectionLabel }}</span>
-                                    </span>
-                                </template>
-
-                                <template #prepend-item>
-                                    <v-list-item title="Select all" density="compact" @click="toggleSelectAllTrend">
-                                        <template #prepend>
-                                            <v-checkbox-btn
-                                                density="compact"
-                                                :model-value="allTrendSelected"
-                                                :indeterminate="someTrendSelected && !allTrendSelected"
-                                            />
-                                        </template>
-                                    </v-list-item>
-                                    <v-divider class="mt-1" />
-                                </template>
-
-                                <template #item="{ item, props: itemProps }">
-                                    <v-list-item v-bind="itemProps" density="compact">
-                                        <template #prepend="{ isSelected }">
-                                            <v-checkbox-btn density="compact" :model-value="isSelected" />
-                                            <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item.raw] }"></span>
-                                        </template>
-                                    </v-list-item>
-                                </template>
-                            </v-autocomplete>
-                        </div>
-                    </div>
-
-                    <!-- Category segmented (Overall / CORE / FUNCTIONAL / SUPPORT) + Year segmented -->
-                    <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Category</span>
-                            <div class="segmented outcome-segmented">
-                                <button
-                                    class="segmented-btn"
-                                    :class="{ active: selectedCategory === 'overall' }"
-                                    @click="selectedCategory = 'overall'"
-                                >Overall</button>
-                                <button
-                                    v-for="c in categoryOptions" :key="c.value"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedCategory === c.value }"
-                                    @click="selectedCategory = c.value"
-                                >{{ c.label }} <span class="cat-weight">{{ c.weight }}</span></button>
-                            </div>
-                        </div>
-                        <span v-if="selectedCategory !== 'overall'" class="text-caption text-medium-emphasis">
-                            Ranking by <strong>{{ selectedCategory }}</strong> contribution
-                            <template v-if="selectedTier !== 'all'"> · re-bucketed within {{ tierLabel }}</template>
-                        </span>
-                        <div class="ml-auto d-flex align-center gap-2">
-                            <span class="filter-label">Year</span>
-                            <div class="segmented">
-                                <button
-                                    v-for="y in available_years" :key="y"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedYear === y }"
-                                    @click="selectedYear = y"
-                                >{{ y }}</button>
                             </div>
                         </div>
                     </div>
@@ -706,6 +680,23 @@ const tierCounts = computed(() => {
     return counts;
 });
 
+// Items for the dropdown filters in the sticky bar. Counts/weights are appended
+// to the label so users still see the same context as the old segmented buttons.
+const tierSelectItems = computed(() => [
+    { value: 'all', label: `All Tiers (${tierCounts.value.all ?? 0})` },
+    ...tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` })),
+]);
+
+const islandSelectItems = computed(() => [
+    { value: 'all', label: 'All Islands' },
+    ...ISLANDS.map(isl => ({ value: isl, label: isl })),
+]);
+
+const categorySelectItems = computed(() => [
+    { value: 'overall', label: 'Overall' },
+    ...categoryOptions.value.map(c => ({ value: c.value, label: `${c.label} (${c.weight})` })),
+]);
+
 const bucketCounts = computed(() => {
     const counts = { Top: 0, Average: 0, Low: 0 };
     for (const r of rankedScores.value) {
@@ -1133,4 +1124,27 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory, selectedIsland, s
 /* Keep the field a fixed single-line height regardless of selection count —
    selections are rendered as a text summary via prepend-inner instead of chips. */
 .trend-province-select :deep(.v-field__input) { flex-wrap: nowrap; }
+
+/* Sticky filter bar — pins the ranking's interactive controls just below the
+   app navbar (v-toolbar default height = 64px) so they stay reachable while
+   the user scrolls through the stat cards, charts, and leaderboard below. */
+.dashboard-sticky-filters {
+    position: sticky;
+    top: 64px;
+    z-index: 4;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Compact, single-line dropdown filters. Widths are tuned so the full row
+   (Tier · Island · Region · Category · Year · view toggle) fits on one line
+   at typical desktop widths, and wraps gracefully on narrow screens. */
+.filter-select               { width: 160px; flex-shrink: 0; }
+.filter-select--wide         { width: 220px; }
+.filter-select--narrow       { width: 110px; }
+.filter-select :deep(.v-field__input)       { font-size: 14px; padding-top: 6px; }
+.filter-select :deep(.v-field__label)       { font-size: 13px; }
+.filter-select :deep(.v-field__append-inner) { padding-top: 8px; }
 </style>
