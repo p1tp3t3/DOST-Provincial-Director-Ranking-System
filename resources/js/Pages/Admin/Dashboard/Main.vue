@@ -2,8 +2,10 @@
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3">
 
-        <!-- Sticky filter bar — single compact row of dropdowns + view toggle,
-             shown identically across all view modes (podium/table/trend/map). -->
+        <!-- Sticky filter shell — wraps the filter bar so we can pin them
+             together while keeping a visible white shelf between the navbar
+             and the bar itself when scrolled. -->
+        <div class="dashboard-sticky-shell">
         <div class="dashboard-sticky-filters">
             <div class="d-flex align-center gap-2 px-3 py-2 flex-wrap">
                 <v-select
@@ -18,6 +20,10 @@
                     class="filter-select"
                     @update:model-value="searchTerm = ''"
                 />
+
+                <v-divider vertical class="filter-divider" />
+
+                <!-- Geography group: Island → Region → Province cascade together -->
                 <v-select
                     v-model="selectedIsland"
                     :items="islandSelectItems"
@@ -40,7 +46,22 @@
                     variant="outlined"
                     hide-details
                     class="filter-select filter-select--wide"
+                    @update:model-value="setRegion($event)"
                 />
+                <v-select
+                    v-model="selectedProvince"
+                    :items="provinceOptions"
+                    item-title="label"
+                    item-value="value"
+                    label="Province"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--wide"
+                />
+
+                <v-divider vertical class="filter-divider" />
+
                 <v-select
                     v-model="selectedCategory"
                     :items="categorySelectItems"
@@ -116,6 +137,7 @@
                 </v-btn-toggle>
             </div>
         </div>
+        </div>
 
         <!-- Stat Cards -->
         <v-row dense>
@@ -174,7 +196,7 @@
                             <span class="text-body-2 font-weight-bold">Average Performers</span>
                         </div>
                         <div class="text-caption text-medium-emphasis">
-                            Middle 60% of each tier · {{ tierLabel }} · {{ selectedYear }}
+                            Middle 70% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
                     <div class="perf-card-body">
@@ -203,7 +225,7 @@
                             <span class="text-body-2 font-weight-bold">Low Performers</span>
                         </div>
                         <div class="text-caption text-medium-emphasis">
-                            Bottom 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
+                            Bottom 10% of each tier · {{ tierLabel }} · {{ selectedYear }}
                         </div>
                     </div>
                     <div class="perf-card-body">
@@ -247,7 +269,7 @@
                                             For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, FUNCTIONAL = 30%, SUPPORT = 10%.
                                         </div>
                                         <div class="text-caption opacity-70">
-                                            Provinces are ranked within their size tier. Top 20% by rank = Top Performers, next 60% = Average, bottom 20% = Low.
+                                            Provinces are ranked within their size tier. Top 20% by rank = Top Performers, next 70% = Average, bottom 10% = Low.
                                         </div>
                                     </div>
                                 </v-tooltip>
@@ -279,150 +301,15 @@
 
                     <v-divider />
 
-                    <!-- Tier segmented + Table/Podium view toggle -->
-                    <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap">
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Tier</span>
-                            <div class="segmented category-segmented">
-                                <button class="segmented-btn" :class="{ active: selectedTier === 'all' }" @click="selectedTier = 'all'; searchTerm = ''">
-                                    All <span class="seg-count seg-count--all">{{ tierCounts.all }}</span>
-                                </button>
-                                <button
-                                    v-for="t in tiers"
-                                    :key="t.value"
-                                    class="segmented-btn"
-                                    :class="['category-btn-' + t.value, { active: selectedTier === t.value }]"
-                                    @click="selectedTier = t.value; searchTerm = ''"
-                                >
-                                    {{ t.label }}
-                                    <span class="seg-count" :class="'seg-count--' + t.value">{{ tierCounts[t.value] ?? 0 }}</span>
-                                </button>
-                            </div>
-                        </div>
-                        <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
-                            <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
-                            <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
-                            <v-btn value="trend"  size="small" title="Trend view"><v-icon size="15">mdi-chart-line</v-icon></v-btn>
-                            <v-btn value="map"    size="small" title="Map view"><v-icon size="15">mdi-map-outline</v-icon></v-btn>
-                        </v-btn-toggle>
-                    </div>
+                    <!-- Unified view area — fixed height so switching between Podium,
+                         Table, Trend, and Map never shifts page layout. Each view sizes
+                         itself to fill (and scrolls internally if needed). -->
+                    <div class="lb-view-area">
 
-                    <!-- Island + Region filter row -->
-                    <div v-if="viewMode !== 'map'" class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Island</span>
-                            <div class="segmented">
-                                <button class="segmented-btn" :class="{ active: selectedIsland === 'all' }" @click="setIsland('all')">All</button>
-                                <button
-                                    v-for="isl in ISLANDS" :key="isl.value"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedIsland === isl.value }"
-                                    @click="setIsland(isl.value)"
-                                >{{ isl.label }}</button>
-                            </div>
-                        </div>
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Region</span>
-                            <v-select
-                                v-model="selectedRegion"
-                                :items="regionOptions"
-                                item-title="label"
-                                item-value="value"
-                                density="compact"
-                                variant="outlined"
-                                hide-details
-                                style="min-width:220px;"
-                            />
-                        </div>
-                        <div v-if="viewMode === 'trend'" class="d-flex align-center gap-2">
-                            <v-autocomplete
-                                v-show="trendProvinceList.length"
-                                v-model="selectedProvinces"
-                                :items="trendProvinceList"
-                                multiple
-                                density="compact"
-                                variant="outlined"
-                                label="Provinces"
-                                placeholder="Search provinces…"
-                                hide-details
-                                location="bottom start"
-                                :menu-props="{ maxHeight: 320 }"
-                                class="trend-province-select"
-                                style="min-width:220px; max-width:280px;"
-                            >
-                                <template #selection></template>
-
-                                <template #prepend-inner>
-                                    <span v-if="selectedProvinces.length" class="d-inline-flex align-center text-caption" style="max-width:130px;">
-                                        <span class="legend-dot mr-1 flex-shrink-0" :style="{ background: provinceColorMap[selectedProvinces[0]] }"></span>
-                                        <span class="text-truncate">{{ trendSelectionLabel }}</span>
-                                    </span>
-                                </template>
-
-                                <template #prepend-item>
-                                    <v-list-item title="Select all" density="compact" @click="toggleSelectAllTrend">
-                                        <template #prepend>
-                                            <v-checkbox-btn
-                                                density="compact"
-                                                :model-value="allTrendSelected"
-                                                :indeterminate="someTrendSelected && !allTrendSelected"
-                                            />
-                                        </template>
-                                    </v-list-item>
-                                    <v-divider class="mt-1" />
-                                </template>
-
-                                <template #item="{ item, props: itemProps }">
-                                    <v-list-item v-bind="itemProps" density="compact">
-                                        <template #prepend="{ isSelected }">
-                                            <v-checkbox-btn density="compact" :model-value="isSelected" />
-                                            <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item.raw] }"></span>
-                                        </template>
-                                    </v-list-item>
-                                </template>
-                            </v-autocomplete>
-                        </div>
-                    </div>
-
-                    <!-- Category segmented (Overall / CORE / FUNCTIONAL / SUPPORT) + Year segmented -->
-                    <div class="d-flex align-center gap-3 px-4 py-2 flex-wrap" style="border-top:1px solid rgba(0,0,0,0.06);">
-                        <div class="d-flex align-center gap-2">
-                            <span class="filter-label">Category</span>
-                            <div class="segmented outcome-segmented">
-                                <button
-                                    class="segmented-btn"
-                                    :class="{ active: selectedCategory === 'overall' }"
-                                    @click="selectedCategory = 'overall'"
-                                >Overall</button>
-                                <button
-                                    v-for="c in categoryOptions" :key="c.value"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedCategory === c.value }"
-                                    @click="selectedCategory = c.value"
-                                >{{ c.label }} <span class="cat-weight">{{ c.weight }}</span></button>
-                            </div>
-                        </div>
-                        <span v-if="selectedCategory !== 'overall'" class="text-caption text-medium-emphasis">
-                            Ranking by <strong>{{ selectedCategory }}</strong> contribution
-                            <template v-if="selectedTier !== 'all'"> · re-bucketed within {{ tierLabel }}</template>
-                        </span>
-                        <div class="ml-auto d-flex align-center gap-2">
-                            <span class="filter-label">Year</span>
-                            <div class="segmented">
-                                <button
-                                    v-for="y in available_years" :key="y"
-                                    class="segmented-btn"
-                                    :class="{ active: selectedYear === y }"
-                                    @click="selectedYear = y"
-                                >{{ y }}</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <v-divider />
-
-                    <!-- Search row (table view only) -->
-                    <div v-if="viewMode === 'table'" class="px-4 py-2 d-flex justify-end">
+                    <!-- Search row — visible for both Podium and Table views.
+                         Searching scrolls + pulses the matching province in place
+                         rather than filtering everything else away. -->
+                    <div v-if="viewMode === 'table' || viewMode === 'podium'" class="px-4 py-2 d-flex justify-end">
                         <v-text-field
                             v-model="searchTerm"
                             placeholder="Search province or director…"
@@ -435,15 +322,16 @@
                         />
                     </div>
 
-                    <!-- Table View -->
+                    <!-- Table View — note: NO :search prop. Search highlights the
+                         matching row in place instead of filtering everyone else out. -->
                     <v-data-table
                         v-if="viewMode === 'table'"
                         :headers="tableHeaders"
                         :items="rankedScores"
-                        :search="searchTerm"
+                        :row-props="tableRowProps"
                         density="compact"
                         fixed-header
-                        height="460"
+                        height="492"
                         hide-default-footer
                         :items-per-page="-1"
                         class="leaderboard-table"
@@ -532,7 +420,7 @@
                         <VueApexCharts
                             v-if="trendSeries.length"
                             type="line"
-                            height="420"
+                            height="500"
                             :options="trendOptions"
                             :series="trendSeries"
                         />
@@ -549,7 +437,10 @@
                             :trends="trendsByProvince"
                             :selected-year="selectedYear"
                             :selected-tier="selectedTier"
-                            height="calc(100vh - 360px)"
+                            :island="selectedIsland"
+                            :region="selectedRegion"
+                            :province="selectedProvince"
+                            height="540px"
                         />
                     </div>
 
@@ -566,7 +457,7 @@
                         <div class="d-flex gap-5">
                             <div ref="podiumStageRef" class="podium-stage">
                                 <div class="podium-items">
-                                    <div v-if="top3[0]" class="podium-item">
+                                    <div v-if="top3[0]" class="podium-item" :class="rowHighlightClass(top3[0].province)" :data-province="top3[0].province">
                                         <div class="podium-info">
                                             <v-icon color="amber-darken-1" size="26" class="mb-1">mdi-trophy</v-icon>
                                             <div class="podium-province"><a :href="`/province-directories/${top3[0].province_url_id}`" class="province-link">{{ top3[0].province }}</a></div>
@@ -578,7 +469,7 @@
                                             <span class="podium-rank-num">1st</span>
                                         </div>
                                     </div>
-                                    <div v-if="top3[1]" class="podium-item">
+                                    <div v-if="top3[1]" class="podium-item" :class="rowHighlightClass(top3[1].province)" :data-province="top3[1].province">
                                         <div class="podium-info">
                                             <div class="podium-province"><a :href="`/province-directories/${top3[1].province_url_id}`" class="province-link">{{ top3[1].province }}</a></div>
                                             <div v-if="top3[1].region" class="podium-region">{{ top3[1].region }}</div>
@@ -589,7 +480,7 @@
                                             <span class="podium-rank-num">2nd</span>
                                         </div>
                                     </div>
-                                    <div v-if="top3[2]" class="podium-item">
+                                    <div v-if="top3[2]" class="podium-item" :class="rowHighlightClass(top3[2].province)" :data-province="top3[2].province">
                                         <div class="podium-info">
                                             <div class="podium-province"><a :href="`/province-directories/${top3[2].province_url_id}`" class="province-link">{{ top3[2].province }}</a></div>
                                             <div v-if="top3[2].region" class="podium-region">{{ top3[2].region }}</div>
@@ -615,8 +506,14 @@
 
                             <v-divider vertical class="mx-1" />
 
-                            <div class="flex-1 podium-rest-scroll" :style="podiumStageHeight ? { maxHeight: podiumStageHeight + 'px' } : null">
-                                <div v-for="item in restList" :key="item.province" class="podium-rest-row">
+                            <div ref="podiumRestScrollRef" class="flex-1 podium-rest-scroll" :style="podiumStageHeight ? { maxHeight: podiumStageHeight + 'px' } : null">
+                                <div
+                                    v-for="item in restList"
+                                    :key="item.province"
+                                    class="podium-rest-row"
+                                    :class="rowHighlightClass(item.province)"
+                                    :data-province="item.province"
+                                >
                                     <span class="podium-rest-rank">#{{ item.rank }}</span>
                                     <div class="flex-1" style="min-width:0;">
                                         <div class="text-body-2 font-weight-medium text-truncate">
@@ -646,6 +543,8 @@
                             </div>
                         </div>
                     </div>
+
+                    </div><!-- /.lb-view-area -->
                 </v-card>
             </v-col>
         </v-row>
@@ -660,6 +559,7 @@ import VueApexCharts from 'vue3-apexcharts';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
 import { RiGroupLine, RiUserStarLine, RiCheckboxCircleLine, RiBuildingLine } from '@remixicon/vue';
+import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
 const props = defineProps({
     total_users:                { type: Number, default: 0 },
     active_reporting_provinces: { type: Number, default: 0 },
@@ -672,25 +572,49 @@ const props = defineProps({
     regions:                    { type: Array,  default: () => [] },
 });
 
-// Island groupings come from the `region.island_under` enum (luzon/visayas/mindanao).
-const ISLANDS = [
-    { value: 'luzon',    label: 'Luzon'    },
-    { value: 'visayas',  label: 'Visayas'  },
-    { value: 'mindanao', label: 'Mindanao' },
-];
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('all');
 const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'FUNCTIONAL' | 'SUPPORT'
 const selectedIsland   = ref('all');
 const selectedRegion   = ref('all');
+const selectedProvince = ref('all');
 const searchTerm       = ref('');
 const viewMode         = ref('podium');
 
+// Island/Region/Province cascade: changing a wider scope resets the narrower ones
+// so the user never sees a province option that doesn't belong to the chosen region.
 const setIsland = (island) => {
-    selectedIsland.value = island;
-    selectedRegion.value = 'all';
+    selectedIsland.value   = island;
+    selectedRegion.value   = 'all';
+    selectedProvince.value = 'all';
 };
+const setRegion = (region) => {
+    selectedRegion.value   = region;
+    selectedProvince.value = 'all';
+};
+
+const regionOptions = computed(() => {
+    const regions = selectedIsland.value === 'all'
+        ? REGIONS
+        : REGIONS.filter(r => r.island === selectedIsland.value);
+    return [{ value: 'all', label: 'All Regions' }, ...regions];
+});
+
+// Province options cascade off the current Island and Region selections.
+const provinceOptions = computed(() => {
+    const all = Object.entries(PROVINCE_REGIONS).map(([name, info]) => ({
+        value: name, label: name, region: info.region, island: info.island,
+    }));
+    let filtered = all;
+    if (selectedRegion.value !== 'all') {
+        filtered = filtered.filter(p => p.region === selectedRegion.value);
+    } else if (selectedIsland.value !== 'all') {
+        filtered = filtered.filter(p => p.island === selectedIsland.value);
+    }
+    filtered.sort((a, b) => a.label.localeCompare(b.label));
+    return [{ value: 'all', label: 'All Provinces' }, ...filtered];
+});
 
 const tiers = [
     { value: 'micro',  label: 'Micro'  },
@@ -720,7 +644,7 @@ const tierLabel = computed(() =>
 // tier when the user picks CORE / FUNCTIONAL / SUPPORT instead of Overall.
 // If config/ranking.php values change, update these to match.
 const BUCKET_TOP_PCT   = 0.20;
-const BUCKET_UNDER_PCT = 0.20;
+const BUCKET_UNDER_PCT = 0.10;
 const MIN_GROUP_FOR_BUCKETS = 5;
 
 const getScore = (row) =>
@@ -786,11 +710,14 @@ const mapAllTierRows = computed(() => {
     return out;
 });
 
-const mapFilteredScores = computed(() =>
-    selectedTier.value === 'all'
-        ? mapAllTierRows.value
-        : mapAllTierRows.value.filter(r => r.category === selectedTier.value)
-);
+const mapFilteredScores = computed(() => {
+    let rows = mapAllTierRows.value;
+    if (selectedTier.value !== 'all')     rows = rows.filter(r => r.category === selectedTier.value);
+    if (selectedIsland.value !== 'all')   rows = rows.filter(r => PROVINCE_REGIONS[r.province]?.island === selectedIsland.value);
+    if (selectedRegion.value !== 'all')   rows = rows.filter(r => PROVINCE_REGIONS[r.province]?.region === selectedRegion.value);
+    if (selectedProvince.value !== 'all') rows = rows.filter(r => r.province === selectedProvince.value);
+    return rows;
+});
 
 const trendsByProvince = computed(() => {
     const out = {};
@@ -817,10 +744,10 @@ const trendsByProvince = computed(() => {
 const baseRows = computed(() => {
     let rows = allTierRows.value;
     if (selectedIsland.value !== 'all') {
-        rows = rows.filter(r => r.island_under === selectedIsland.value);
+        rows = rows.filter(r => PROVINCE_REGIONS[r.province]?.island === selectedIsland.value);
     }
     if (selectedRegion.value !== 'all') {
-        rows = rows.filter(r => r.region_id === selectedRegion.value);
+        rows = rows.filter(r => r.region_name === selectedRegion.value);
     }
     return rows;
 });
@@ -919,7 +846,7 @@ const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] 
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
 // Top Performers = anyone with bucket=Top in the current filter (sorted desc).
-// Mirrors underData below so both charts always show the matching 20% of each tier.
+// Mirrors underData below — Top covers 20% of each tier while Low covers 10%.
 const top10Data = computed(() => {
     const slice = rankedOnly.value
         .filter(s => s.bucket === 'Top')
@@ -1016,17 +943,6 @@ const avgChartHeight = computed(() => Math.max(360, avgData.value.names.length *
 // ── Trend view: weighted score per province across years ──────────────────
 const TREND_LIMIT = 15;
 
-// Region dropdown narrows to the selected island's regions, plus "All".
-const regionOptions = computed(() => {
-    const regions = selectedIsland.value === 'all'
-        ? props.regions
-        : props.regions.filter(r => r.island_under === selectedIsland.value);
-    return [
-        { value: 'all', label: 'All Regions' },
-        ...regions.map(r => ({ value: r.id, label: r.name })),
-    ];
-});
-
 // Builds { years: [ascending...], provinceMap: { province: { year: score } } }
 // honoring the active Tier / Island / Region filters and the active score
 // (overall total or selected category subtotal).
@@ -1042,8 +958,8 @@ const trendData = computed(() => {
             for (const r of rows) {
                 if (!isRanked(r)) continue;
 
-                if (selectedIsland.value !== 'all' && r.island_under !== selectedIsland.value) continue;
-                if (selectedRegion.value !== 'all' && r.region_id !== selectedRegion.value) continue;
+                if (selectedIsland.value !== 'all' && PROVINCE_REGIONS[r.province]?.island !== selectedIsland.value) continue;
+                if (selectedRegion.value !== 'all' && r.region_name !== selectedRegion.value) continue;
 
                 if (!provinceMap[r.province]) provinceMap[r.province] = {};
                 provinceMap[r.province][year] = getScore(r);
@@ -1161,6 +1077,57 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory, selectedIsland, s
     if (podiumResizeObserver && podiumStageRef.value) {
         podiumResizeObserver.disconnect();
         podiumResizeObserver.observe(podiumStageRef.value);
+    }
+});
+
+// ── Search-as-spotlight ───────────────────────────────────────────────────────
+// Instead of filtering, search picks ONE row to spotlight: scroll the row into
+// view and pulse a highlight a few times before settling. Works for Table and
+// Podium. Match priority: province name prefix > province name substring >
+// director name substring — surfaces the most intuitive guess first.
+const podiumRestScrollRef = ref(null);
+
+const searchTarget = computed(() => {
+    const q = searchTerm.value?.trim().toLowerCase();
+    if (!q) return null;
+    const rows = rankedScores.value;
+    return (
+        rows.find(r => r.province.toLowerCase().startsWith(q))?.province ??
+        rows.find(r => r.province.toLowerCase().includes(q))?.province ??
+        rows.find(r => (r.director || '').toLowerCase().includes(q))?.province ??
+        null
+    );
+});
+
+const rowHighlightClass = (provinceName) =>
+    provinceName && provinceName === searchTarget.value ? 'search-highlight' : '';
+
+const tableRowProps = ({ item }) => ({
+    'data-province': item.province,
+    class: item.province === searchTarget.value ? 'search-highlight' : '',
+});
+
+// Restart the CSS animation on each new search by toggling the class off,
+// forcing a reflow, then on — otherwise the same .search-highlight class
+// just stays applied and the @keyframes never re-runs.
+const restartHighlightAnimation = (el) => {
+    if (!el) return;
+    el.classList.remove('search-highlight');
+    void el.offsetWidth;
+    el.classList.add('search-highlight');
+};
+
+// When the search target changes, find the matching DOM row (whether it's a
+// podium block, a podium-rest-row, or a data-table row), scroll it into view
+// smoothly, and re-trigger the pulse.
+watch(searchTarget, async (province) => {
+    if (!province) return;
+    await nextTick();
+    // querySelectorAll finds it in any view; one of these will match.
+    const targets = document.querySelectorAll(`[data-province="${CSS.escape(province)}"]`);
+    targets.forEach(restartHighlightAnimation);
+    if (targets[0]) {
+        targets[0].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     }
 });
 </script>
@@ -1343,28 +1310,91 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory, selectedIsland, s
    selections are rendered as a text summary via prepend-inner instead of chips. */
 .trend-province-select :deep(.v-field__input) { flex-wrap: nowrap; }
 
-/* Sticky filter bar — pins the ranking's interactive controls just below the
-   app navbar (v-toolbar default height = 64px) so they stay reachable while
-   the user scrolls through the stat cards, charts, and leaderboard below. */
-.dashboard-sticky-filters {
+/* Sticky filter shell — pins the filter bar just below the app navbar
+   (v-toolbar default height = 64px) and reserves a small white "shelf"
+   above the bar so it never reads as flush with the navbar when scrolled.
+   The negative margin-top swallows the page's py-5 (20px) top padding so
+   the gap above the bar at page top matches the 12px gap-3 below it. */
+.dashboard-sticky-shell {
     position: sticky;
     top: 64px;
     z-index: 4;
+    padding-top: 12px;
+    margin-top: -20px;
     background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* The filter bar — consistent with the white cards around it (border,
+   rounded corners, white background) but with a thin indigo top accent for
+   identity and a stronger drop shadow than the cards so it visibly "lifts"
+   above the page content when sticky. */
+.dashboard-sticky-filters {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-top: 2px solid #4f46e5;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.18),
+                0 2px 4px rgba(15, 23, 42, 0.06);
+}
+
+/* Unified view-area inside the leaderboard card. All four views (Podium,
+   Table, Trend, Map) live here and are sized to fill exactly 540px so the
+   card's overall height never changes when the user switches views — the
+   page below the leaderboard stays put, making comparison between views
+   "in place" rather than requiring a re-scroll each time. The Podium view
+   scrolls internally if its content exceeds the slot. */
+.lb-view-area {
+    height: 540px;
+    overflow: hidden;
+    position: relative;
+}
+.lb-view-area > div[class*="px-5 pt-3 pb-5"] {
+    height: 100%;
+    overflow-y: auto;
 }
 
 /* Compact, single-line dropdown filters. Widths are tuned so the full row
    (Tier · Island · Region · Category · Year · view toggle) fits on one line
-   at typical desktop widths, and wraps gracefully on narrow screens. */
+   at typical desktop widths, and wraps gracefully on narrow screens. We let
+   Vuetify handle field height + the floating-label notch — overriding the
+   internal padding or the notch ::before/::after misaligns the label and
+   makes the border appear to cut through the label text. */
 .filter-select               { width: 160px; flex-shrink: 0; }
 .filter-select--wide         { width: 220px; }
 .filter-select--narrow       { width: 110px; }
-.filter-select :deep(.v-field__input)       { font-size: 14px; padding-top: 6px; }
-.filter-select :deep(.v-field__label)       { font-size: 13px; }
-.filter-select :deep(.v-field__append-inner) { padding-top: 8px; }
+.filter-select :deep(.v-field__input) { font-size: 14px; }
+.filter-select :deep(.v-field__label) { font-size: 13px; }
+
+/* Thin slate divider between the Tier · Geography · Category groups in the
+   sticky filter bar — quietly signals that Island/Region/Province belong
+   together (they cascade) without adding background colour. */
+.filter-divider {
+    height: 32px;
+    align-self: center;
+    margin: 0 4px;
+    opacity: 0.6;
+}
+
+/* Search highlight — three amber pulses, then settles into a quiet indigo
+   tint so the searched province stays findable after the animation. Applied
+   to data-table rows, podium top-3 blocks, and podium-rest rows. */
+@keyframes search-pulse {
+    0%, 100% { background-color: rgba(245, 158, 11, 0.45); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+    50%      { background-color: rgba(245, 158, 11, 0.15); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.00); }
+}
+.search-highlight {
+    background-color: rgba(99, 102, 241, 0.16) !important;
+    animation: search-pulse 0.55s ease-in-out 3;
+    transition: background-color 0.25s ease;
+    border-radius: 6px;
+}
+/* v-data-table rows are <tr>s; the highlight applies to all cells inside */
+.leaderboard-table :deep(tr.search-highlight) td {
+    background-color: rgba(99, 102, 241, 0.14) !important;
+}
+.leaderboard-table :deep(tr.search-highlight) {
+    animation: search-pulse 0.55s ease-in-out 3;
+}
 
 /* Top / Average / Low performer cards — header + a fixed-height chart slot.
    Pinning the slot to exactly 360px guarantees all three cards match in

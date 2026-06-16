@@ -95,7 +95,7 @@ return new class extends Migration
         Schema::create('employee_profiles', function (Blueprint $table) {
             $table->foreignId('profile_id')->constrained('profiles');
             $table->string('position');
-            $table->enum('status', ['permanent', 'cos']);
+            $table->enum('status', ['permanent', 'cos', 'jo']);
             $table->json('work_specification');
         });
         

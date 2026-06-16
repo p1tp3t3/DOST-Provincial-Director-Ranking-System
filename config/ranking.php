@@ -6,10 +6,11 @@ return [
 
     // Performer bucket cutoffs by RANK within each province classification tier
     // (micro / small / medium / large). Per Ma'am Grace's directive, ranking is
-    // rank-based not score-based: the top 20% by rank get the Top label, etc.
+    // rank-based not score-based: the top 20% by rank get the Top label,
+    // the bottom 10% get the Low label, and everyone in between (70%) is Average.
     'buckets' => [
         'top_pct'   => 0.20,
-        'under_pct' => 0.20,
+        'under_pct' => 0.10,
     ],
 
     // If a tier has fewer than this many provinces with data for the year, skip

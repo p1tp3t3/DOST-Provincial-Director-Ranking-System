@@ -137,7 +137,7 @@ const categoryOptions = computed(() =>
 // to re-bucket within tier when the user picks a specific category. If the
 // thresholds in config/ranking.php change, update these to match.
 const BUCKET_TOP_PCT   = 0.20;
-const BUCKET_UNDER_PCT = 0.20;
+const BUCKET_UNDER_PCT = 0.10;
 const MIN_GROUP_FOR_BUCKETS = 5;
 
 const getScore = (row) =>
