@@ -22,3 +22,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Seed source data — CSV/Excel inputs stay on the contributor's machine.
+*.csv
+*.xlsx
+*.xls
