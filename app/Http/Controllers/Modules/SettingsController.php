@@ -9,7 +9,7 @@ class SettingsController extends Controller
 {
     public function index()
     {
-        $user    = Auth::user()->load(['profile', 'province']);
+        $user    = Auth::user()->load(['profile', 'provinces']);
         $profile = $user->profile;
 
         return inertia('Other/Settings/Main', [

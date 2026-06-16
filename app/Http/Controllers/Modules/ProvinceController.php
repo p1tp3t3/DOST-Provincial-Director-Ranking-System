@@ -9,6 +9,7 @@ use App\Http\Resources\ProvinceResource;
 use App\Models\KPI;
 use App\Models\KPICategory;
 use App\Models\Province;
+use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -17,7 +18,14 @@ use Illuminate\Support\Facades\DB;
 class ProvinceController extends Controller
 {
     public function index() {
-        $data = Province::with(['directorAssignments.profile', 'users'])->get();
+        $query = Province::with(['directorAssignments.profile', 'users']);
+
+        if (auth()->user()->role === 'regional_admin') {
+            $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
+            $query->whereIn('id', $region->provinces->pluck('id'));
+        }
+
+        $data = $query->get();
         return inertia("Other/Province/Main", [
             'provinces' => ProvinceResource::collection($data)
         ]);

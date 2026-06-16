@@ -104,10 +104,12 @@ const tabs = computed(() => {
             ];
         case 'regional_admin':
             return [
-                { name: 'Dashboard',       href: '/dashboard',                  icon: RiDashboard2Fill },
-                { name: 'Performance Map', href: '/regional-performance-map',   icon: RiRoadMapFill    },
-                { name: 'Reports',         href: '/regional-admin-report',      icon: RiFileChartFill  },
-                { name: 'My Profile',      href: '/profile',                    icon: RiUser2Fill      },
+                { name: 'Dashboard',            href: '/dashboard',                  icon: RiDashboard2Fill },
+                { name: 'Province Directories', href: '/province-directories',       icon: RiFolder2Fill    },
+                { name: 'Performance Map',       href: '/regional-performance-map',   icon: RiRoadMapFill    },
+                { name: 'Activity Logs',         href: '/activity-logs',              icon: RiListView       },
+                { name: 'Reports',               href: '/regional-admin-report',      icon: RiFileChartFill  },
+                { name: 'My Profile',            href: '/profile',                    icon: RiUser2Fill      },
             ];
         case 'employee':
             return [

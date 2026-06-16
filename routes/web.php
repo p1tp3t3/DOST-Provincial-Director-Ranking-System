@@ -119,6 +119,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
         Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
         Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
+        Route::get('/activity-logs',                 [ActivityLogController::class, 'index']);
+        Route::get('/activity-logs/report',          [ActivityLogController::class, 'generate_logs_report']);
     });
 
     // ── Provincial Admin only ─────────────────────────────────

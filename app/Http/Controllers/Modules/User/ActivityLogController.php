@@ -5,24 +5,37 @@ namespace App\Http\Controllers\Modules\User;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ActivityLogResource;
 use App\Models\ActivityLog;
+use App\Models\Region;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
 {
+    private function scopeToUser($query)
+    {
+        $user = auth()->user();
+
+        if ($user->role === 'regional_admin') {
+            $region      = Region::with('provinces')->findOrFail($user->region_id);
+            $provinceIds = $region->provinces->pluck('id')->toArray();
+            return $query->whereHas('user', fn($q) => $q->whereProvinceIn($provinceIds));
+        }
+
+        return $query->whereHas('user', function ($q) use ($user) {
+            if ($user->province_id) {
+                $q->whereProvince($user->province_id);
+            }
+        });
+    }
+
     public function index()
     {
-        $logs = ActivityLog::with('user.profile')
-                           ->whereHas('user', function ($query) {
-                               if (auth()->user()->province_id) {
-                                   $query->whereProvince(auth()->user()->province_id);
-                               }
-                           })
+        $logs = $this->scopeToUser(ActivityLog::with('user.profile'))
                            ->latest('created_at')
                            ->paginate(20);
 
         return inertia('Other/ActivityLogs/Main', [
-            'logs' => ActivityLogResource::collection($logs),
+            'logs' => ActivityLogResource::collection($logs)->response()->getData(true),
         ]);
     }
 
@@ -37,12 +50,7 @@ class ActivityLogController extends Controller
         // Prevent Inertia from intercepting the response
         abort_if($request->header('X-Inertia'), 422, 'Use direct GET request for file downloads.');
 
-        $query = ActivityLog::with('user.profile')
-            ->whereHas('user', function ($q) {
-                if (auth()->user()->province_id) {
-                    $q->whereProvince(auth()->user()->province_id);
-                }
-            })
+        $query = $this->scopeToUser(ActivityLog::with('user.profile'))
             ->whereDate('created_at', '>=', $request->date_from)
             ->whereDate('created_at', '<=', $request->date_to)
             ->latest('created_at');
