@@ -26,3 +26,11 @@ __pycache__/
 
 # Large hero background video — kept local, served at /assets/hero.mp4 (landing falls back to an animated background if absent)
 /public/assets/hero.mp4
+
+# Seed source data — CSV/Excel inputs stay on the contributor's machine. The
+# seeded data lives in database/seeders/data/*.php now (committed). Keeping
+# the source spreadsheets out of git prevents accidental upload of PII and
+# avoids large binary blobs in history.
+*.csv
+*.xlsx
+*.xls
