@@ -302,6 +302,7 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { REGION_LABELS } from '@/Data/mapRegions';
 
 const props = defineProps({
     scores:           { type: Array,  default: () => [] },
