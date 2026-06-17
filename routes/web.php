@@ -87,12 +87,16 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/kpi-data/{director}/{year}',            [KPIDataController::class, 'update']);
     });
 
+    // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────
+    Route::middleware('role:super_admin,provincial_admin,regional_admin')->group(function () {
+        Route::get('/activity-logs',        [ActivityLogController::class, 'index']);
+        Route::get('/activity-logs/report', [ActivityLogController::class, 'generate_logs_report']);
+    });
+
     // ── Super Admin + Provincial Admin ─────────────────────────
     Route::middleware('role:super_admin,provincial_admin')->group(function () {
         Route::get('/users',                                           [UserController::class, 'index']);
         Route::patch('/users/{id}/toggle-activation',                  [UserController::class, 'toggle_activation']);
-        Route::get('/activity-logs',                                   [ActivityLogController::class, 'index']);
-        Route::get('/activity-logs/report',                            [ActivityLogController::class, 'generate_logs_report']);
 
         Route::get('/users/create',                                    [UserController::class, 'manual_registration_index']);
         Route::post('/users/store',                                    [UserController::class, 'store']);
@@ -119,8 +123,6 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
         Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
         Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
-        Route::get('/activity-logs',                 [ActivityLogController::class, 'index']);
-        Route::get('/activity-logs/report',          [ActivityLogController::class, 'generate_logs_report']);
     });
 
     // ── Provincial Admin only ─────────────────────────────────
