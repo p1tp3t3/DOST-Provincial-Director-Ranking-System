@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
         self::generate_kpi();
         $this->call(KPIScoreSeeder::class);
         $this->call(CSTCSeeder::class);
+        $this->call(LinkageSeeder::class);
+        $this->call(FacebookPostSeeder::class);
         ActivityLog::factory(100)->create();
     }
 
