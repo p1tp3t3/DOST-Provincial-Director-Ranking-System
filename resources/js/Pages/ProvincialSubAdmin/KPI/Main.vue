@@ -117,7 +117,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(kpi, idx) in cat.kpis" :key="kpi.id" class="kpi-row" :class="{ 'kpi-row--input-only': !kpi.is_scored }">
+                        <tr v-for="(kpi, idx) in cat.kpis" :key="kpi.id" class="kpi-row" :class="{ 'kpi-row--input-only': !kpi.is_scored, 'kpi-row--modular': isModular(kpi.code) }">
                             <td class="text-caption text-medium-emphasis text-center">{{ idx + 1 }}</td>
                             <td class="text-body-2 py-2" style="line-height:1.45;">
                                 <div class="d-flex align-center gap-2 flex-wrap">
@@ -125,9 +125,16 @@
                                     <v-chip v-if="kpi.inverse_scoring" size="x-small" variant="tonal" color="orange" class="font-weight-medium">Inverse</v-chip>
                                     <v-chip v-if="!kpi.is_scored" size="x-small" variant="tonal" color="blue-grey" class="font-weight-medium">Input only</v-chip>
                                     <v-chip v-if="kpi.derivation_type === 'delinquent_ratio'" size="x-small" variant="tonal" color="indigo" class="font-weight-medium">Auto-derived</v-chip>
+                                    <v-chip v-if="isModular(kpi.code)" size="x-small" variant="tonal" color="teal" class="font-weight-medium">
+                                        <v-icon size="12" start>mdi-shield-check-outline</v-icon>
+                                        Record-based
+                                    </v-chip>
                                 </div>
                                 <div v-if="kpi.derivation_type === 'delinquent_ratio'" class="text-caption text-medium-emphasis mt-1">
                                     Computed from <em>ongoing</em> and <em>delinquent</em> SETUP counts below.
+                                </div>
+                                <div v-if="isModular(kpi.code)" class="text-caption text-medium-emphasis mt-1">
+                                    Accomplishment is the live record count from the linked module — cannot be typed.
                                 </div>
                             </td>
                             <td class="text-caption text-medium-emphasis text-center">
@@ -146,7 +153,19 @@
                                 />
                             </td>
                             <td>
+                                <button
+                                    v-if="isModular(kpi.code)"
+                                    type="button"
+                                    class="modular-count"
+                                    @click="openModule(kpi.code)"
+                                    :title="`Open ${kpi.name} records`"
+                                >
+                                    <v-icon size="14" class="modular-count__icon">mdi-counter</v-icon>
+                                    <span class="modular-count__value">{{ kpi.accomplished || 0 }}</span>
+                                    <v-icon size="14" class="modular-count__chevron">mdi-arrow-top-right</v-icon>
+                                </button>
                                 <v-text-field
+                                    v-else
                                     v-model="kpi.accomplished"
                                     :placeholder="kpi.derivation_type ? 'n/a' : ''"
                                     :disabled="kpi.derivation_type === 'delinquent_ratio'"
@@ -193,13 +212,23 @@ import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
-    director:        { type: Object, default: () => ({}) },
-    year:            { type: Number, default: null },
-    available_years: { type: Array,  default: () => [] },
-    director_years:  { type: Array,  default: () => [] },
-    kpi_categories:  { type: Array,  default: () => [] },
-    no_director:     { type: Boolean, default: false },
+    director:          { type: Object, default: () => ({}) },
+    year:              { type: Number, default: null },
+    available_years:   { type: Array,  default: () => [] },
+    director_years:    { type: Array,  default: () => [] },
+    kpi_categories:    { type: Array,  default: () => [] },
+    modular_kpi_codes: { type: Object, default: () => ({}) },
+    no_director:       { type: Boolean, default: false },
 });
+
+const isModular = (code) => Object.prototype.hasOwnProperty.call(props.modular_kpi_codes, code);
+
+const openModule = (code) => {
+    const base = props.modular_kpi_codes[code];
+    if (!base) return;
+    if (isDirty.value && !confirm('You have unsaved changes. Discard and open the module?')) return;
+    router.visit(`${base}/${props.director.id}/${selectedYear.value}`);
+};
 
 const selectedYear = ref(props.year);
 
@@ -318,6 +347,55 @@ watch(() => props.year, (y) => { selectedYear.value = y; });
     vertical-align: middle;
 }
 .kpi-row--input-only { background: #fafbfc; }
+.kpi-row--modular { background: #f0fdfa; }
+
+.modular-count {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 32px;
+    padding: 4px 12px;
+    background: #ffffff;
+    border: 1px solid #14b8a6;
+    border-radius: 8px;
+    color: #0f766e;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    text-align: left;
+}
+.modular-count:hover {
+    background: #ccfbf1;
+    border-color: #0d9488;
+    color: #134e4a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(13, 148, 136, 0.18), 0 1px 2px rgba(13, 148, 136, 0.1);
+}
+.modular-count:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(13, 148, 136, 0.18);
+}
+.modular-count:focus-visible {
+    outline: 2px solid #0d9488;
+    outline-offset: 2px;
+}
+.modular-count__icon { color: #0d9488; flex-shrink: 0; }
+.modular-count__value {
+    flex-grow: 1;
+    text-align: center;
+    font-size: 14px;
+    text-decoration: underline;
+    text-decoration-color: rgba(13, 148, 136, 0.4);
+    text-underline-offset: 3px;
+}
+.modular-count:hover .modular-count__value { text-decoration-color: #0d9488; }
+.modular-count__chevron { color: #0d9488; flex-shrink: 0; transition: transform 0.15s ease; }
+.modular-count:hover .modular-count__chevron { transform: translate(2px, -2px); }
 .kpi-input :deep(.v-field) {
     background: #fff;
     border-radius: 6px;

@@ -19,6 +19,14 @@ use Illuminate\Support\Facades\DB;
 // Province Directories page (which stays read-only).
 class KPIDataController extends Controller
 {
+    // KPI codes whose accomplishment is derived from a dedicated record module.
+    // For these, the matrix form must NOT write the accomplishment field —
+    // the module (e.g. LinkageController) is the sole source of truth.
+    private const MODULAR_KPI_CODES = [
+        'func_linkages_established' => '/linkages',
+        'supp_facebook_posts'       => '/facebook-posts',
+    ];
+
     public function index()
     {
         $directorNameSql = "CONCAT_WS(' ',
@@ -123,19 +131,20 @@ class KPIDataController extends Controller
             : '—';
 
         return inertia('Admin/KpiData/Edit', [
-            'province'        => [
+            'province'           => [
                 'id'       => Crypt::encrypt($province->id),
                 'name'     => $province->name,
                 'category' => $province->category,
             ],
-            'director'        => [
+            'director'           => [
                 'id'   => $director->id,
                 'name' => $directorName ?: '—',
             ],
-            'year'            => (int) $year,
-            'available_years' => $availableYears,
-            'director_years'  => $directorYears,
-            'kpi_categories'  => $categories,
+            'year'               => (int) $year,
+            'available_years'    => $availableYears,
+            'director_years'     => $directorYears,
+            'kpi_categories'     => $categories,
+            'modular_kpi_codes'  => self::MODULAR_KPI_CODES,
         ]);
     }
 
@@ -151,10 +160,36 @@ class KPIDataController extends Controller
         $director = User::where('id', $directorId)
             ->where('role', 'provincial_director')->firstOrFail();
 
-        DB::transaction(function () use ($request, $director, $year) {
+        $modularKpiIds = KPI::whereIn('code', array_keys(self::MODULAR_KPI_CODES))->pluck('id')->all();
+
+        DB::transaction(function () use ($request, $director, $year, $modularKpiIds) {
             foreach ($request->input('values') as $row) {
                 $target       = $this->normalizeInput($row['target']       ?? null);
                 $accomplished = $this->normalizeInput($row['accomplished'] ?? null);
+                $isModular    = in_array((int) $row['kpi_id'], $modularKpiIds, true);
+
+                // For modular KPIs, accomplishment is owned by the module — never
+                // touch it from this form. Only target is editable here.
+                if ($isModular) {
+                    if ($target === null) {
+                        // Leave row alone if it exists (module may have set accomplished);
+                        // only clear the target.
+                        ProvincialDirectorKPI::where('provincial_director_id', $director->id)
+                            ->where('kpi_id', $row['kpi_id'])
+                            ->where('year', $year)
+                            ->update(['target' => null]);
+                        continue;
+                    }
+                    ProvincialDirectorKPI::updateOrCreate(
+                        [
+                            'provincial_director_id' => $director->id,
+                            'kpi_id'                 => $row['kpi_id'],
+                            'year'                   => $year,
+                        ],
+                        ['target' => $target]
+                    );
+                    continue;
+                }
 
                 // Empty target AND accomplished → delete the row to keep the table tidy
                 if ($target === null && $accomplished === null) {
@@ -240,12 +275,13 @@ class KPIDataController extends Controller
             : '—';
 
         return inertia('ProvincialSubAdmin/KPI/Main', [
-            'director'        => ['id' => $director->id, 'name' => $directorName ?: '—'],
-            'year'            => (int) $year,
-            'available_years' => $availableYears,
-            'director_years'  => $directorYears,
-            'kpi_categories'  => $categories,
-            'no_director'     => false,
+            'director'          => ['id' => $director->id, 'name' => $directorName ?: '—'],
+            'year'              => (int) $year,
+            'available_years'   => $availableYears,
+            'director_years'    => $directorYears,
+            'kpi_categories'    => $categories,
+            'modular_kpi_codes' => self::MODULAR_KPI_CODES,
+            'no_director'       => false,
         ]);
     }
 
@@ -266,10 +302,33 @@ class KPIDataController extends Controller
             'values.*.accomplished' => ['nullable', 'string', 'max:255'],
         ]);
 
-        DB::transaction(function () use ($request, $director, $year) {
+        $modularKpiIds = KPI::whereIn('code', array_keys(self::MODULAR_KPI_CODES))->pluck('id')->all();
+
+        DB::transaction(function () use ($request, $director, $year, $modularKpiIds) {
             foreach ($request->input('values') as $row) {
                 $target       = $this->normalizeInput($row['target']       ?? null);
                 $accomplished = $this->normalizeInput($row['accomplished'] ?? null);
+                $isModular    = in_array((int) $row['kpi_id'], $modularKpiIds, true);
+
+                if ($isModular) {
+                    if ($target === null) {
+                        ProvincialDirectorKPI::query()
+                            ->where('provincial_director_id', $director->id)
+                            ->where('kpi_id', $row['kpi_id'])
+                            ->where('year', $year)
+                            ->update(['target' => null]);
+                        continue;
+                    }
+                    ProvincialDirectorKPI::updateOrCreate(
+                        [
+                            'provincial_director_id' => $director->id,
+                            'kpi_id'                 => $row['kpi_id'],
+                            'year'                   => $year,
+                        ],
+                        ['target' => $target]
+                    );
+                    continue;
+                }
 
                 if ($target === null && $accomplished === null) {
                     ProvincialDirectorKPI::query()
