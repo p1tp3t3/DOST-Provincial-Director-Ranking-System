@@ -80,11 +80,13 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         Route::get('/admins', [UserController::class, 'admin_index']);
 
-        // KPI Data Editor — central place for super admin to maintain target/accomplished
-        // values per province per year. Province directory pages remain read-only.
-        Route::get('/kpi-data',                              [KPIDataController::class, 'index']);
-        Route::get('/kpi-data/{id}/{year?}',                 [KPIDataController::class, 'edit']);
-        Route::put('/kpi-data/{director}/{year}',            [KPIDataController::class, 'update']);
+    });
+
+    // ── KPI Data Editor: Super Admin + Sub Admin ───────────────
+    Route::middleware('role:super_admin,sub_admin')->group(function () {
+        Route::get('/kpi-data',                   [KPIDataController::class, 'index']);
+        Route::get('/kpi-data/{id}/{year?}',      [KPIDataController::class, 'edit']);
+        Route::put('/kpi-data/{director}/{year}', [KPIDataController::class, 'update']);
     });
 
     // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────

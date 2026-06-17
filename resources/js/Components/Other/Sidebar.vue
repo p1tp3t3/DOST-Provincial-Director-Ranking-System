@@ -70,7 +70,7 @@ const tabs = computed(() => {
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
-                { name: 'KPI Management', href: '/kpi', icon: RiTable2 },
+                { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
                 { name: 'Reports',              href: '/sub-admin-report',              icon: RiFileChartFill  },
             ];
