@@ -104,10 +104,24 @@ class DashboardController extends Controller
 
     private function sub_admin_dashboard()
     {
-        return inertia('SubAdmin/Dashboard/Main', [
-            'total_directors' => User::where('role', 'provincial_director')->count(),
-            'total_employees' => User::where('role', 'employee')->count(),
-            'total_provinces' => Province::count(),
+        $payload = self::build_ranking_payload();
+
+        $latestYear      = $payload['available_years'][0] ?? null;
+        $activeProvinces = $latestYear
+            ? DB::table('provincial_director_kpis as pk')
+                ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
+                ->join('user_province as up', 'up.user_id', '=', 'u.id')
+                ->where('pk.year', $latestYear)
+                ->distinct()->count('up.province_id')
+            : 0;
+
+        return inertia('Admin/Dashboard/Main', [
+            'total_provinces'            => Province::count(),
+            'total_users'                => User::count(),
+            'total_directors'            => User::where('role', 'provincial_director')->count(),
+            'total_employees'            => User::where('role', 'employee')->count(),
+            'active_reporting_provinces' => $activeProvinces,
+            ...$payload,
         ]);
     }
 
