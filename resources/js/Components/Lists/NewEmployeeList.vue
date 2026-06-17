@@ -81,8 +81,8 @@ const filtered = computed(() => {
     const q = search.value.toLowerCase().trim();
     if (!q) return props.employees;
     return props.employees.filter(e =>
-        e.name?.toLowerCase().includes(q) ||
-        e.id?.toLowerCase().includes(q)   ||
+        e.name?.toLowerCase().includes(q)                        ||
+        e.dost_employee_id?.toString().toLowerCase().includes(q) ||
         e.position?.toLowerCase().includes(q)
     );
 });

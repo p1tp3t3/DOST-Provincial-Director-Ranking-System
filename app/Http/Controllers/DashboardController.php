@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KPI;
+use App\Models\ActivityLog;
 use App\Models\KPICategory;
 use App\Models\Province;
 use App\Models\Region;
@@ -127,18 +127,98 @@ class DashboardController extends Controller
 
     private function provincial_admin_dashboard()
     {
-        return inertia('ProvincialAdmin/Dashboard/Main', [
-            'total_employees' => User::where('role', 'employee')
-                ->whereProvince(auth()->user()->province_id)->count(),
-        ]);
+        $payload = self::build_province_payload(auth()->user()->province_id);
+
+        return inertia('ProvincialAdmin/Dashboard/Main', $payload);
     }
 
     private function provincial_sub_admin_dashboard()
     {
-        return inertia('ProvincialSubAdmin/Dashboard/Main', [
-            'total_employees' => User::where('role', 'employee')
-                ->whereProvince(auth()->user()->province_id)->count(),
-        ]);
+        $payload = self::build_province_payload(auth()->user()->province_id);
+        unset($payload['recent_logs']);
+
+        return inertia('ProvincialSubAdmin/Dashboard/Main', $payload);
+    }
+
+    // Shared province-level dashboard payload used by both provincial_admin and
+    // provincial_sub_admin. Returns employees, director, ranking, and recent logs
+    // for the given province.
+    private static function build_province_payload(int $provinceId): array
+    {
+        $employees = User::where('role', 'employee')
+            ->whereProvince($provinceId)
+            ->with('profile')
+            ->get()
+            ->map(fn($e) => [
+                'id'               => $e->id,
+                'dost_employee_id' => $e->dost_employee_id,
+                'name'             => trim(implode(' ', array_filter([
+                    $e->profile?->first_name,
+                    $e->profile?->middle_name ? $e->profile->middle_name[0] . '.' : null,
+                    $e->profile?->last_name,
+                ]))),
+                'position'        => $e->profile?->position ?? '—',
+                'profile_picture' => $e->profile?->profile_picture,
+            ]);
+
+        $director = User::where('role', 'provincial_director')
+            ->whereProvince($provinceId)
+            ->with('profile')
+            ->first();
+
+        $svc             = new RankingService();
+        $availableYears  = $svc->availableYears();
+        $latestYear      = $availableYears[0] ?? null;
+        $provinceRanking = null;
+
+        if ($latestYear) {
+            $yearData = $svc->rankByYear($latestYear);
+            foreach ($yearData as $rows) {
+                foreach ($rows as $row) {
+                    if (isset($row['province_id']) && $row['province_id'] === $provinceId) {
+                        $provinceRanking = $row;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        $recentLogs = ActivityLog::with('user.profile')
+            ->whereHas('user', fn($q) => $q->whereProvince($provinceId))
+            ->latest('created_at')
+            ->take(10)
+            ->get()
+            ->map(fn($log) => [
+                'id'          => $log->id,
+                'name'        => trim(implode(' ', array_filter([
+                    $log->user?->profile?->first_name,
+                    $log->user?->profile?->last_name,
+                ]))),
+                'role'        => $log->user?->role,
+                'type'        => $log->type,
+                'description' => $log->description,
+                'created_at'  => $log->created_at,
+            ]);
+
+        return [
+            'total_employees'  => $employees->count(),
+            'employees'        => $employees,
+            'director'         => $director ? [
+                'id'               => $director->id,
+                'dost_employee_id' => $director->dost_employee_id,
+                'name'             => trim(implode(' ', array_filter([
+                    $director->profile?->prefix,
+                    $director->profile?->first_name,
+                    $director->profile?->middle_name,
+                    $director->profile?->last_name,
+                    $director->profile?->suffix,
+                ]))),
+                'profile_picture'  => $director->profile?->profile_picture,
+            ] : null,
+            'province_ranking' => $provinceRanking,
+            'latest_year'      => $latestYear,
+            'recent_logs'      => $recentLogs,
+        ];
     }
 
     private function director_dashboard()

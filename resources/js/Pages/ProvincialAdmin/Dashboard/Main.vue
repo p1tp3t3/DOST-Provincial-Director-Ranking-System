@@ -1,138 +1,243 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
-        <div class="grid gap-4 w-full">
+    <div class="d-flex flex-column gap-4 w-full">
 
-            <!-- Director Info + KPI Stats -->
-            <v-row>
-                <v-col cols="12" md="4">
-                    <DirectorInfoCard :director="director" />
-                </v-col>
-                <v-col cols="12" md="8">
-                    <v-row>
-                        <v-col cols="12" sm="6">
-                            <QuantityCard title="Total Users" :quantity="1" :icon="RiGroup2Line" color="indigo" />
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                            <QuantityCard title="Active Users" :quantity="2" :icon="RiUserFollowFill" color="success" />
-                        </v-col>
-                    </v-row>
-                </v-col>
-            </v-row>
-
-            <!-- Charts Row -->
-            <v-row dense>
-                <v-col cols="12" md="15" class="d-flex">
-                    <LineGraphCard
-                        class="flex-grow-1"
-                        title="Monthly User Logins"
-                        :labelX="trendChart.labels"
-                        :data="trendChart.series"
-                    />
-                </v-col>
-            </v-row>
-            <!-- Employees -->
-            <v-card class="elevation-1 border-0 rounded-md">
-                <div class="d-flex align-center justify-space-between px-5 pt-4 pb-3">
-                    <div>
-                        <div class="text-subtitle-2 font-weight-bold">Employees</div>
-                        <div class="text-caption text-medium-emphasis">Provincial employees under this office</div>
+        <!-- Row 1: Director Info + Stat Cards -->
+        <v-row>
+            <v-col cols="12" md="4">
+                <DirectorInfoCard v-if="director" :director="directorCard" />
+                <v-card v-else border elevation="0" rounded="lg" class="h-100 d-flex align-center justify-center" style="min-height:164px;">
+                    <div class="text-center text-medium-emphasis pa-6">
+                        <v-icon size="40" color="blue-grey" class="mb-2">mdi-account-off-outline</v-icon>
+                        <div class="text-body-2">No director assigned to this province</div>
                     </div>
-                    <v-chip size="small" variant="tonal" color="primary">{{ mockEmployees.length }} Employees</v-chip>
-                </div>
-                <v-divider></v-divider>
-                <div class="pa-4">
-                    <NewEmployeeList :employees="mockEmployees" />
-                </div>
-            </v-card>
+                </v-card>
+            </v-col>
+            <v-col cols="12" md="8">
+                <v-row dense>
+                    <v-col cols="12" sm="6">
+                        <QuantityCard title="Total Employees" :quantity="total_employees" :icon="RiGroup2Line" color="indigo" />
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                        <v-card class="w-full border-0 elevation-1 rounded-md">
+                            <div style="border-left:5px solid #ca8a04;">
+                                <v-card-item class="py-4 px-4">
+                                    <div class="d-flex align-center justify-space-between">
+                                        <div>
+                                            <div class="text-caption font-weight-bold text-uppercase mb-1 text-black">Province Rank</div>
+                                            <div class="text-h4 font-weight-black text-slate-800">
+                                                {{ province_ranking?.rank ? `#${province_ranking.rank}` : '—' }}
+                                            </div>
+                                            <div class="d-flex align-center gap-1 mt-1">
+                                                <span v-if="latest_year" class="text-caption text-medium-emphasis">{{ latest_year }}</span>
+                                                <v-chip v-if="province_ranking?.category" size="x-small" :color="tierColor(province_ranking.category)" variant="tonal" class="text-uppercase">
+                                                    {{ province_ranking.category }}
+                                                </v-chip>
+                                            </div>
+                                        </div>
+                                        <v-avatar color="amber-lighten-5" size="40" rounded="lg">
+                                            <component :is="RiMedalLine" class="text-amber-darken-1 w-5 h-5" />
+                                        </v-avatar>
+                                    </div>
+                                </v-card-item>
+                            </div>
+                        </v-card>
+                    </v-col>
+                    <v-col cols="12" sm="6" class="mt-2 mt-sm-2">
+                        <v-card class="w-full border-0 elevation-1 rounded-md">
+                            <div style="border-left:5px solid #3f51b5;">
+                                <v-card-item class="py-4 px-4">
+                                    <div class="d-flex align-center justify-space-between">
+                                        <div>
+                                            <div class="text-caption font-weight-bold text-uppercase mb-1 text-black">KPI Score</div>
+                                            <div class="text-h4 font-weight-black" :style="{ color: province_ranking?.total_pct != null ? bucketHex(province_ranking.bucket) : '#1e293b' }">
+                                                {{ province_ranking?.total_pct != null ? `${province_ranking.total_pct.toFixed(1)}%` : '—' }}
+                                            </div>
+                                        </div>
+                                        <v-avatar color="indigo-lighten-5" size="40" rounded="lg">
+                                            <component :is="RiListCheck3" class="text-indigo-darken-1 w-5 h-5" />
+                                        </v-avatar>
+                                    </div>
+                                </v-card-item>
+                            </div>
+                        </v-card>
+                    </v-col>
+                    <v-col cols="12" sm="6" class="mt-2 mt-sm-2">
+                        <v-card class="w-full border-0 elevation-1 rounded-md">
+                            <div :style="{ borderLeft: `5px solid ${bucketHex(province_ranking?.bucket)}` }">
+                                <v-card-item class="py-4 px-4">
+                                    <div class="d-flex align-center justify-space-between">
+                                        <div>
+                                            <div class="text-caption font-weight-bold text-uppercase mb-1 text-black">Performer Level</div>
+                                            <v-chip v-if="province_ranking?.bucket" size="large" variant="tonal" :color="bucketHex(province_ranking.bucket)" class="font-weight-bold mt-1">
+                                                {{ province_ranking.bucket }}
+                                            </v-chip>
+                                            <div v-else class="text-h4 font-weight-black text-slate-800">—</div>
+                                        </div>
+                                        <v-avatar color="indigo-lighten-5" size="40" rounded="lg">
+                                            <component :is="RiUserStarFill" class="text-indigo-darken-1 w-5 h-5" />
+                                        </v-avatar>
+                                    </div>
+                                </v-card-item>
+                            </div>
+                        </v-card>
+                    </v-col>
+                </v-row>
+            </v-col>
+        </v-row>
 
-        </div>
+        <!-- Row 2: KPI Category Breakdown (only when ranked data is available) -->
+        <v-card v-if="province_ranking && province_ranking.status === 'ranked'" border elevation="0" rounded="lg">
+            <div class="px-4 pt-3 pb-2 d-flex align-center justify-space-between">
+                <div class="d-flex align-center gap-2">
+                    <v-icon size="15" color="indigo">mdi-chart-bar</v-icon>
+                    <span class="text-body-2 font-weight-bold">KPI Category Breakdown</span>
+                    <v-chip v-if="latest_year" size="x-small" color="primary" variant="tonal">{{ latest_year }}</v-chip>
+                </div>
+                <div class="d-flex align-center gap-2 text-caption text-medium-emphasis">
+                    Rank #{{ province_ranking.rank }} · {{ province_ranking.total_pct.toFixed(2) }}% overall
+                </div>
+            </div>
+            <v-divider />
+            <div class="pa-4">
+                <v-row>
+                    <v-col v-for="cat in kpiCategories" :key="cat.code" cols="12" md="4">
+                        <div class="d-flex align-center justify-space-between mb-1">
+                            <span class="text-caption font-weight-medium">
+                                {{ cat.label }}
+                                <span class="text-disabled ml-1">{{ cat.weight }}</span>
+                            </span>
+                            <span class="text-caption font-weight-bold" :style="{ color: bucketHex(province_ranking.bucket) }">
+                                {{ (province_ranking.subtotals_pct[cat.code] ?? 0).toFixed(1) }}%
+                            </span>
+                        </div>
+                        <v-progress-linear
+                            :model-value="province_ranking.subtotals_pct[cat.code] ?? 0"
+                            color="indigo"
+                            height="8"
+                            rounded
+                            bg-color="grey-lighten-3"
+                        />
+                    </v-col>
+                </v-row>
+            </div>
+        </v-card>
+
+        <!-- No ranking notice (when no ranking data exists) -->
+        <v-alert v-else-if="!province_ranking || province_ranking.status !== 'ranked'" type="info" variant="tonal" density="compact" class="text-body-2">
+            No KPI ranking data found for {{ latest_year ?? 'this year' }}. Rankings appear once a provincial director submits their KPI data.
+        </v-alert>
+
+        <!-- Row 3: Employees -->
+        <v-card class="elevation-1 border-0 rounded-md">
+            <div class="d-flex align-center justify-space-between px-5 pt-4 pb-3">
+                <div>
+                    <div class="text-subtitle-2 font-weight-bold">Employees</div>
+                    <div class="text-caption text-medium-emphasis">Provincial employees under this office</div>
+                </div>
+                <v-chip size="small" variant="tonal" color="primary">{{ employees.length }} Employees</v-chip>
+            </div>
+            <v-divider />
+            <div class="pa-4">
+                <NewEmployeeList :employees="employees" />
+            </div>
+        </v-card>
+
+        <!-- Row 4: Recent Activity -->
+        <v-card border elevation="0" rounded="lg">
+            <div class="px-4 pt-3 pb-2 d-flex align-center gap-2">
+                <v-icon size="15" color="indigo">mdi-clock-outline</v-icon>
+                <span class="text-body-2 font-weight-bold">Recent Activity</span>
+            </div>
+            <v-divider />
+            <div v-if="recent_logs.length" class="pa-4 d-flex flex-column gap-3">
+                <div v-for="log in recent_logs" :key="log.id" class="d-flex align-start gap-3">
+                    <v-avatar size="32" :color="roleColor(log.role)" rounded="lg" class="flex-shrink-0 mt-1">
+                        <span class="avatar-initials">{{ roleInitials(log.role) }}</span>
+                    </v-avatar>
+                    <div class="flex-1 min-w-0">
+                        <div class="d-flex align-center gap-2 flex-wrap">
+                            <span class="text-body-2 font-weight-medium">{{ log.name || 'System' }}</span>
+                            <v-chip size="x-small" variant="tonal" :color="logTypeColor(log.type)">{{ log.type }}</v-chip>
+                        </div>
+                        <div class="text-caption text-medium-emphasis">{{ log.description }}</div>
+                        <div class="text-caption text-disabled mt-1">{{ formatDate(log.created_at) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="pa-6 text-center text-medium-emphasis">
+                <v-icon size="32" color="blue-grey" class="mb-2">mdi-clock-outline</v-icon>
+                <div class="text-body-2">No recent activity logged</div>
+            </div>
+        </v-card>
+
+    </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import LineGraphCard from '@/Components/Cards/LineGraphCard.vue';
-import PieChartCard from '@/Components/Cards/PieChartCard.vue';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import DirectorInfoCard from '@/Components/Cards/DirectorInfoCard.vue';
-import KpiOutcomeList from '@/Components/Lists/KpiOutcomeList.vue';
 import NewEmployeeList from '@/Components/Lists/NewEmployeeList.vue';
 import {
-    RiCheckDoubleLine,
-    RiAlertLine,
-    RiListCheck3,
-    RiMedalLine,
     RiGroup2Line,
-    RiUserFollowFill,
+    RiMedalLine,
+    RiListCheck3,
     RiUserStarFill,
 } from '@remixicon/vue';
 
-defineProps({
-    total_employees: { type: Number, default: 0 },
+const props = defineProps({
+    total_employees:  { type: Number,      default: 0 },
+    employees:        { type: Array,       default: () => [] },
+    director:         { type: Object,      default: null },
+    province_ranking: { type: Object,      default: null },
+    latest_year:      { type: Number,      default: null },
+    recent_logs:      { type: Array,       default: () => [] },
 });
 
-// Provincial director (mock — replace with backend props when ready)
-const director = ref({
-    name:              'Maria Cristina B. Dela Cruz',
-    id:                'DOST-XI-2019-0042',
-    province:          'Davao del Norte',
-    length_of_service: 7,
-    kpi_score:         97,
-});
+const kpiCategories = [
+    { code: 'CORE',       label: 'Core',       weight: '60%' },
+    { code: 'FUNCTIONAL', label: 'Functional', weight: '30%' },
+    { code: 'SUPPORT',    label: 'Support',    weight: '10%' },
+];
 
-// KPI summary stats (mock — replace with backend props when ready)
-const kpiStats = ref({
-    outcomes_met:     10,
-    outcomes_not_met:  2,
-    total_indicators: 12,
-    met_rate:         83,
-});
-
-// Monthly KPI trend
-const trendChart = ref({
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    series: [
-        { name: 'KPI Score', data: [78, 81, 80, 85, 83, 88, 90, 87, 92, 89, 91, 97] },
-        { name: 'Target',    data: [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80] },
-    ]
-});
-
-// Pie chart
-const outcomePie = computed(() => ({
-    series: [kpiStats.value.outcomes_met, kpiStats.value.outcomes_not_met],
-    labels: ['Met', 'Not Met'],
-    colors: ['#4CAF50', '#F44336'],
+const directorCard = computed(() => ({
+    user_id:           props.director?.id ?? null,
+    name:              props.director?.name ?? '—',
+    id:                props.director?.dost_employee_id ?? '—',
+    province:          props.province_ranking?.province ?? '—',
+    profile_picture:   props.director?.profile_picture ?? null,
+    kpi_score:         props.province_ranking?.total_pct ?? 0,
 }));
 
-// KPI outcomes (mock — replace with backend data when ready)
-const kpiOutcomes = ref([
-    { title: 'Conduct of S&T trainings and workshops',           target: '4 trainings',   actual: '4 trainings',  met: true  },
-    { title: 'Number of SETUP beneficiaries assisted',           target: '10 firms',      actual: '12 firms',     met: true  },
-    { title: 'Technology transfer activities implemented',       target: '3 activities',  actual: '3 activities', met: true  },
-    { title: 'Research and development projects completed',      target: '2 projects',    actual: '2 projects',   met: true  },
-    { title: 'Percentage of budget utilization',                 target: '90%',           actual: '93%',          met: true  },
-    { title: 'Submission of reports on time',                    target: '100%',          actual: '100%',         met: true  },
-    { title: 'Number of science scholars monitored',             target: '25 scholars',   actual: '24 scholars',  met: false },
-    { title: 'Industry cluster engagement activities conducted', target: '6 activities',  actual: '4 activities', met: false },
-    { title: 'Stakeholder satisfaction rating',                  target: '4.5 / 5.0',    actual: '4.7 / 5.0',    met: true  },
-    { title: 'Coordination meetings with LGUs held',             target: '4 meetings',    actual: '4 meetings',   met: true  },
-    { title: 'Conduct of barangay-level science activities',     target: '3 activities',  actual: '3 activities', met: true  },
-    { title: 'Submission of provincial S&T plan',                target: '1 plan',        actual: '1 plan',       met: true  },
-]);
+const bucketHex  = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' }[b] ?? '#64748b');
+const tierColor  = (c) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[c] ?? 'grey');
 
-// Employees — view only (mock — replace with backend data when ready)
-const mockEmployees = ref([
-    { name: 'Rosa L. Aguilar',     id: 'DOST-XI-EMP-0021', position: 'Science Research Analyst'    },
-    { name: 'Dante M. Borja',      id: 'DOST-XI-EMP-0034', position: 'Administrative Officer'      },
-    { name: 'Claire B. Camposano', id: 'DOST-XI-EMP-0047', position: 'Project Development Officer' },
-    { name: 'Felix R. Dalisay',    id: 'DOST-XI-EMP-0058', position: 'Science Research Specialist' },
-    { name: 'Marites G. Estrada',  id: 'DOST-XI-EMP-0063', position: 'Accountant III'              },
-    { name: 'Arnold T. Fuentes',   id: 'DOST-XI-EMP-0072', position: 'Engineer II'                 },
-    { name: 'Jenny P. Gomez',      id: 'DOST-XI-EMP-0081', position: 'IT Officer I'                },
-    { name: 'Rodel C. Hidalgo',    id: 'DOST-XI-EMP-0095', position: 'Administrative Aide VI'      },
-]);
+const roleColor   = (role) => ({ provincial_director: 'indigo', employee: 'teal', provincial_sub_admin: 'deep-purple', provincial_admin: 'blue' }[role] ?? 'grey');
+const roleInitials = (role) => ({ provincial_director: 'PD', employee: 'EMP', provincial_sub_admin: 'PSA', provincial_admin: 'PA' }[role] ?? '?');
 
-const onEditOutcome = (outcome) => {
-    console.log('Edit outcome:', outcome);
+const logTypeColor = (type) => {
+    const t = (type ?? '').toLowerCase();
+    if (t.includes('create') || t.includes('register')) return 'success';
+    if (t.includes('delete') || t.includes('remove'))   return 'error';
+    if (t.includes('update') || t.includes('edit'))     return 'warning';
+    if (t.includes('login')  || t.includes('logout'))   return 'blue';
+    return 'grey';
+};
+
+const formatDate = (date) => {
+    if (!date) return '';
+    const d    = new Date(date);
+    const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diff < 60)    return 'Just now';
+    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return d.toLocaleDateString();
 };
 </script>
+
+<style scoped>
+.text-slate-800   { color: #1e293b !important; }
+.avatar-initials  { font-size: 0.62rem; font-weight: 700; color: white; }
+</style>
