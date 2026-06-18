@@ -185,7 +185,6 @@ const roleOptions = [
     { label: 'Sub Admin',              value: 'sub_admin'              },
     { label: 'Regional Admin',         value: 'regional_admin'         },
     { label: 'Provincial Admin',       value: 'provincial_admin'       },
-    { label: 'Provincial Sub Admin',   value: 'provincial_sub_admin'   },
 ];
 
 const filtered = computed(() => props.list.data);
@@ -215,7 +214,6 @@ const roleLabel = (role) => {
         sub_admin:            'Sub Admin',
         regional_admin:       'Regional Admin',
         provincial_admin:     'Provincial Admin',
-        provincial_sub_admin: 'Provincial Sub Admin',
     };
     return map[role] ?? role;
 };
@@ -226,7 +224,6 @@ const roleColor = (role) => {
         sub_admin:            'indigo',
         regional_admin:       'orange',
         provincial_admin:     'teal',
-        provincial_sub_admin: 'cyan',
     };
     return map[role] ?? 'grey';
 };
@@ -237,7 +234,6 @@ const roleIcon = (role) => {
         sub_admin:            'mdi-shield-account-outline',
         regional_admin:       'mdi-map-marker-radius-outline',
         provincial_admin:     'mdi-account-cog-outline',
-        provincial_sub_admin: 'mdi-account-settings-outline',
     };
     return map[role] ?? 'mdi-account-outline';
 };

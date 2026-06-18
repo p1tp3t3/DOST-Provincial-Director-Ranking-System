@@ -80,7 +80,6 @@
         .role-super_admin          { background:#e0e7ff; color:#3730a3; }
         .role-sub_admin            { background:#f3e8ff; color:#6b21a8; }
         .role-provincial_admin     { background:#ccfbf1; color:#065f46; }
-        .role-provincial_sub_admin { background:#cffafe; color:#0e7490; }
         .role-provincial_director  { background:#dbeafe; color:#1e40af; }
         .role-employee             { background:#dcfce7; color:#166534; }
         .type-login    { background:#dcfce7; color:#166534; }
@@ -131,7 +130,6 @@
             <td><div class="card-val">{{ $us['super_admin'] }}</div><div class="card-lbl">Super Admins</div></td>
             <td><div class="card-val">{{ $us['sub_admin'] }}</div><div class="card-lbl">Sub Admins</div></td>
             <td><div class="card-val">{{ $us['provincial_admin'] }}</div><div class="card-lbl">Prov. Admins</div></td>
-            <td><div class="card-val">{{ $us['provincial_sub_admin'] }}</div><div class="card-lbl">Prov. Sub Admins</div></td>
             <td><div class="card-val">{{ $us['provincial_director'] }}</div><div class="card-lbl">Directors</div></td>
             <td><div class="card-val">{{ $us['employee'] }}</div><div class="card-lbl">Employees</div></td>
         </tr>
@@ -144,7 +142,6 @@
             ['label' => 'Super Admin',          'key' => 'super_admin',          'color' => '#3730a3'],
             ['label' => 'Sub Admin',             'key' => 'sub_admin',            'color' => '#6b21a8'],
             ['label' => 'Provincial Admin',      'key' => 'provincial_admin',     'color' => '#065f46'],
-            ['label' => 'Provincial Sub Admin',  'key' => 'provincial_sub_admin', 'color' => '#0e7490'],
             ['label' => 'Provincial Director',   'key' => 'provincial_director',  'color' => '#1e40af'],
             ['label' => 'Employee',              'key' => 'employee',             'color' => '#166534'],
         ];

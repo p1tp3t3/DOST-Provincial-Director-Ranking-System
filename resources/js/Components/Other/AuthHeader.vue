@@ -57,7 +57,6 @@ const ROLE_LABELS = {
     sub_admin:            'Sub Administrator',
     regional_admin:       'Regional Administrator',
     provincial_admin:     'Provincial Administrator',
-    provincial_sub_admin: 'Provincial Sub Administrator',
     provincial_director:  'Provincial Director',
     employee:             'Employee',
 };
@@ -68,7 +67,7 @@ const roleLabel = computed(() => {
     if (!base) return '';
     if (authUser.value?.role === 'regional_admin' && reg) return `${base} of ${reg}`;
     if (authUser.value?.role === 'provincial_director' && prov) return `${base} of ${prov}`;
-    if (prov && ['provincial_admin', 'provincial_sub_admin', 'employee'].includes(authUser.value?.role)) return `${base} (${prov})`;
+    if (prov && ['provincial_admin', 'employee'].includes(authUser.value?.role)) return `${base} (${prov})`;
     return base;
 });
 

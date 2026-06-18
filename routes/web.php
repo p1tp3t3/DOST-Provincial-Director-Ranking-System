@@ -24,6 +24,17 @@ Route::get('/', fn() => inertia('Landing/Welcome', [
     'canRegister' => Route::has('register'),
 ]))->name('home');
 
+// ── Public: interactive map ────────────────────────────────────
+Route::get('/map', fn() => inertia('Landing/Map', [
+    'canLogin' => Route::has('login'),
+]))->name('map');
+
+// ── Public: blog detail ────────────────────────────────────────
+Route::get('/blog/{slug}', fn(string $slug) => inertia('Landing/Blog', [
+    'slug'     => $slug,
+    'canLogin' => Route::has('login'),
+]))->name('blog.show');
+
 // ── Public: maintenance notice ─────────────────────────────────
 Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
 
@@ -133,20 +144,20 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/provincial-admin-report/export', [ProvincialAdminReportController::class, 'export']);
     });
 
-    // ── Provincial Sub Admin only ──────────────────────────────
-    Route::middleware('role:provincial_sub_admin')->group(function () {
+    // ── Provincial Admin only (KPI editor) ────────────────────
+    Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-kpi/{year?}',          [KPIDataController::class, 'provincial_index']);
         Route::put('/provincial-kpi/{director}/{year}', [KPIDataController::class, 'provincial_update']);
     });
 
-    // ── Provincial Sub Admin + Provincial Admin ────────────────
-    Route::middleware('role:provincial_sub_admin,provincial_admin')->group(function () {
+    // ── Provincial Admin (report) ──────────────────────────────
+    Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-sub-admin-report',        [ProvincialSubAdminReportController::class, 'index']);
         Route::get('/provincial-sub-admin-report/export', [ProvincialSubAdminReportController::class, 'export']);
     });
 
-    // ── Sub Admin + Provincial Admin + Provincial Sub Admin + Provincial Director ──
-    Route::middleware('role:sub_admin,provincial_admin,provincial_sub_admin,provincial_director')->group(function () {
+    // ── Sub Admin + Provincial Admin + Provincial Director ─────
+    Route::middleware('role:sub_admin,provincial_admin,provincial_director')->group(function () {
         Route::get('/employees', [EmployeeController::class, 'index']);
     });
 });

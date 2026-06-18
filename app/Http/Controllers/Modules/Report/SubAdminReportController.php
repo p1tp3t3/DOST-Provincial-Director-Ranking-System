@@ -82,7 +82,6 @@ class SubAdminReportController extends Controller
             'total'                => User::count(),
             'provincial_admin'     => $counts['provincial_admin']     ?? 0,
             'provincial_director'  => $counts['provincial_director']  ?? 0,
-            'provincial_sub_admin' => $counts['provincial_sub_admin'] ?? 0,
             'employee'             => $counts['employee']             ?? 0,
             'provinces'            => Province::count(),
         ];

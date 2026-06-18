@@ -38,8 +38,8 @@ class ProfileViewMiddleware
             abort(404);
         }
 
-        // Provincial admin, sub admin, director → anyone in the same province
-        if (in_array($authUser->role, ['provincial_admin', 'provincial_sub_admin', 'provincial_director'])) {
+        // Provincial admin, director → anyone in the same province
+        if (in_array($authUser->role, ['provincial_admin', 'provincial_director'])) {
             if ($targetUser->province_id === $authUser->province_id) {
                 return $next($request);
             }

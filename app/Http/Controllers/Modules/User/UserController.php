@@ -41,7 +41,7 @@ class UserController extends Controller
         $user = User::with('profile')->findOrFail($id);
 
         $validated = $request->validate([
-            'role'                  => ['required', 'in:super_admin,sub_admin,provincial_admin,provincial_sub_admin,provincial_director,employee'],
+            'role'                  => ['required', 'in:super_admin,sub_admin,provincial_admin,provincial_director,employee'],
             'province_id'           => ['nullable', 'exists:provinces,id'],
             'dost_employee_id'      => ['nullable', 'string', 'unique:users,dost_employee_id,' . $id],
             'username'              => ['required', 'string', 'unique:users,username,' . $id],
@@ -110,7 +110,7 @@ class UserController extends Controller
         $role   = $request->input('role');
 
         $admins = User::with(['profile', 'provinces', 'region'])
-                      ->whereIn('role', ['super_admin', 'sub_admin', 'regional_admin', 'provincial_admin', 'provincial_sub_admin'])
+                      ->whereIn('role', ['super_admin', 'sub_admin', 'regional_admin', 'provincial_admin'])
                       ->when($search, function ($q, $search) {
                           $q->where(function ($q) use ($search) {
                               $q->whereHas('profile', fn($p) =>

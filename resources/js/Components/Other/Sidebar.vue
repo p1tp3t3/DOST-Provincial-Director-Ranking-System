@@ -37,7 +37,6 @@ const getRoleLabel = () => {
         'super_admin':        'System Administrator',
         'sub_admin':          'Sub Administrator',
         'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
-        'provincial_sub_admin':   `Provincial Sub Administrator of ${authUser.value?.province?.name}`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
         'regional_admin':     `Regional Administrator of ${authUser.value?.region?.name}`,
         'employee':           `Employee at ${authUser.value?.province?.name}`,
@@ -80,20 +79,15 @@ const tabs = computed(() => {
                 {
                     name: 'User Management', icon: RiUser2Fill,
                     children: [
-                        { name: 'User List',         href: '/users',          icon: RiTeamFill    },
-                        { name: 'User Registration', href: '/users/create',   icon: RiUserAddLine },
-                        { name: 'Auto User Generator', href: '/users/auto-generator',   icon: RiFile2Fill },
+                        { name: 'User List',           href: '/users',                 icon: RiTeamFill    },
+                        { name: 'User Registration',   href: '/users/create',          icon: RiUserAddLine },
+                        { name: 'Auto User Generator', href: '/users/auto-generator',  icon: RiFile2Fill   },
                     ]
                 },
-                { name: 'Activity Logs', href: '/activity-logs', icon: RiListView },
-                { name: 'Reports', href: '/provincial-admin-report', icon: RiBarChart2Fill },
-            ];
-        case 'provincial_sub_admin':
-            return [
-                { name: 'Dashboard',   href: '/dashboard',                  icon: RiDashboard2Fill },
-                { name: 'Employees',   href: '/employees',                  icon: RiTeamFill       },
-                { name: 'KPI Editor',  href: '/provincial-kpi',             icon: RiEdit2Fill      },
-                { name: 'Reports',     href: '/provincial-sub-admin-report', icon: RiFileList3Fill  },
+                { name: 'KPI Data Editor', href: '/provincial-kpi', icon: RiEdit2Fill },
+                { name: 'Employees',        href: '/employees',       icon: RiTeamFill  },
+                { name: 'Activity Logs',    href: '/activity-logs',   icon: RiListView  },
+                { name: 'Reports',          href: '/provincial-admin-report', icon: RiBarChart2Fill },
             ];
         case 'provincial_director':
             return [

@@ -202,9 +202,6 @@ class DatabaseSeeder extends Seeder
             // Create Provincial Admin (no real data available)
             $provincialAdmin = User::factory()->create(['role' => 'provincial_admin']);
             $provincialAdmin->provinces()->attach($province->id);
-
-            $provincialSubAdmin = User::factory()->create(['role' => 'provincial_sub_admin']);
-            $provincialSubAdmin->provinces()->attach($province->id);
         }
     }
 

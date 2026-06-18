@@ -98,7 +98,6 @@ class ProvincialAdminReportController extends Controller
             'employees'  => $byRole['employee']              ?? 0,
             'directors'  => $byRole['provincial_director']   ?? 0,
             'admins'     => $byRole['provincial_admin']      ?? 0,
-            'sub_admins' => $byRole['provincial_sub_admin']  ?? 0,
             'permanent'  => $byStatus['permanent']           ?? 0,
             'cos'        => $byStatus['cos']                 ?? 0,
             'jo'         => $byStatus['jo']                  ?? 0,

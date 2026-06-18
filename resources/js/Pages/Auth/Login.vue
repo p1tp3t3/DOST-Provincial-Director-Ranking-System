@@ -54,6 +54,8 @@ const features = [
                 <div class="dost-badge mb-3">
                     <img src="/assets/logo.png" alt="DOST" class="dost-badge-logo mr-2" />
                     <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">Department of Science and Technology</span>
+                    <span class="text-white" style="font-size:0.68rem; opacity:0.45; margin:0 6px;">·</span>
+                    <span class="text-white" style="font-size:0.68rem; opacity:0.75; letter-spacing:0.06em; text-transform:uppercase;">Developed by Region IX</span>
                 </div>
 
                 <!-- DOST tagline — the system signature; readable but not loud -->
@@ -128,12 +130,11 @@ const features = [
 
                     <!-- Footer text -->
                     <div class="text-center">
-                        <div class="d-flex align-center justify-center gap-1 mb-1">
-                            <v-icon size="12" color="grey">mdi-shield-check-outline</v-icon>
-                            <span class="text-caption text-medium-emphasis">Protected by enterprise-grade security</span>
-                        </div>
                         <div class="text-caption text-medium-emphasis">
                             © {{ new Date().getFullYear() }} PDRIS · Department of Science and Technology
+                        </div>
+                        <div class="text-caption text-medium-emphasis" style="opacity:0.7;">
+                            Developed by Region IX
                         </div>
                     </div>
 

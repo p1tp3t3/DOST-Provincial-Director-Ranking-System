@@ -214,8 +214,8 @@ const directorCard = computed(() => ({
 const bucketHex  = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' }[b] ?? '#64748b');
 const tierColor  = (c) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[c] ?? 'grey');
 
-const roleColor   = (role) => ({ provincial_director: 'indigo', employee: 'teal', provincial_sub_admin: 'deep-purple', provincial_admin: 'blue' }[role] ?? 'grey');
-const roleInitials = (role) => ({ provincial_director: 'PD', employee: 'EMP', provincial_sub_admin: 'PSA', provincial_admin: 'PA' }[role] ?? '?');
+const roleColor   = (role) => ({ provincial_director: 'indigo', employee: 'teal', provincial_admin: 'blue' }[role] ?? 'grey');
+const roleInitials = (role) => ({ provincial_director: 'PD', employee: 'EMP', provincial_admin: 'PA' }[role] ?? '?');
 
 const logTypeColor = (type) => {
     const t = (type ?? '').toLowerCase();

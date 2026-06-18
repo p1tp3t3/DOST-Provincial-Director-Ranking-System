@@ -79,7 +79,6 @@
             <td><div class="card-box"><div class="num">{{ $user_stats['provinces'] }}</div><div class="lbl">Provinces</div></div></td>
             <td><div class="card-box"><div class="num">{{ $user_stats['provincial_director'] }}</div><div class="lbl">Directors</div></div></td>
             <td><div class="card-box"><div class="num">{{ $user_stats['provincial_admin'] }}</div><div class="lbl">Prov. Admins</div></div></td>
-            <td><div class="card-box"><div class="num">{{ $user_stats['provincial_sub_admin'] }}</div><div class="lbl">Sub Admins</div></div></td>
             <td><div class="card-box"><div class="num">{{ $user_stats['employee'] }}</div><div class="lbl">Employees</div></div></td>
             <td><div class="card-box"><div class="num">{{ $user_stats['total'] }}</div><div class="lbl">Total Users</div></div></td>
         </tr>

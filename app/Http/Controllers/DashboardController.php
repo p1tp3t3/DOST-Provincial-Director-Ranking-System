@@ -20,7 +20,6 @@ class DashboardController extends Controller
             case 'sub_admin':             return self::sub_admin_dashboard();
             case 'regional_admin':        return self::regional_admin_dashboard();
             case 'provincial_admin':      return self::provincial_admin_dashboard();
-            case 'provincial_sub_admin':  return self::provincial_sub_admin_dashboard();
             case 'provincial_director':   return self::director_dashboard();
             case 'employee':              return self::employee_dashboard();
         }
@@ -132,17 +131,8 @@ class DashboardController extends Controller
         return inertia('ProvincialAdmin/Dashboard/Main', $payload);
     }
 
-    private function provincial_sub_admin_dashboard()
-    {
-        $payload = self::build_province_payload(auth()->user()->province_id);
-        unset($payload['recent_logs']);
-
-        return inertia('ProvincialSubAdmin/Dashboard/Main', $payload);
-    }
-
-    // Shared province-level dashboard payload used by both provincial_admin and
-    // provincial_sub_admin. Returns employees, director, ranking, and recent logs
-    // for the given province.
+    // Shared province-level dashboard payload used by provincial_admin.
+    // Returns employees, director, ranking, and recent logs for the given province.
     private static function build_province_payload(int $provinceId): array
     {
         $employees = User::where('role', 'employee')
@@ -223,20 +213,44 @@ class DashboardController extends Controller
 
     private function director_dashboard()
     {
+        $user     = auth()->user();
+        $province = $user->province;
+
+        $provinceIds = null;
+        $myRegion    = null;
+        if ($province?->region_id) {
+            $region      = Region::with('provinces')->find($province->region_id);
+            $myRegion    = $region?->name;
+            $provinceIds = $region?->provinces->pluck('id')->toArray();
+        }
+
+        $payload = self::build_province_payload($user->province_id);
+        unset($payload['recent_logs']);
+
         return inertia('ProvincialDirector/Dasbboard/Main', [
-            'total_employees' => User::where('role', 'employee')
-                ->whereProvince(auth()->user()->province_id)->count(),
+            ...$payload,
+            'my_region'   => $myRegion,
+            ...self::build_ranking_payload($provinceIds),
         ]);
     }
 
     private function employee_dashboard()
     {
         $user     = auth()->user();
-        $province = $user->province?->name;
+        $province = $user->province;
+
+        $provinceIds = null;
+        $myRegion    = null;
+        if ($province?->region_id) {
+            $region      = Region::with('provinces')->find($province->region_id);
+            $myRegion    = $region?->name;
+            $provinceIds = $region?->provinces->pluck('id')->toArray();
+        }
 
         return inertia('Employee/Dashboard/Main', [
-            'my_province' => $province,
-            ...self::build_ranking_payload(),
+            'my_province' => $province?->name,
+            'my_region'   => $myRegion,
+            ...self::build_ranking_payload($provinceIds),
         ]);
     }
 
@@ -245,9 +259,8 @@ class DashboardController extends Controller
         $user        = auth()->user();
         $region      = Region::with('provinces')->findOrFail($user->region_id);
         $provinceIds = $region->provinces->pluck('id')->toArray();
-        $payload     = self::build_ranking_payload($provinceIds);
 
-        $latestYear      = $payload['available_years'][0] ?? null;
+        $latestYear      = (new RankingService())->availableYears()[0] ?? null;
         $activeProvinces = $latestYear
             ? DB::table('provincial_director_kpis as pk')
                 ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
@@ -257,14 +270,15 @@ class DashboardController extends Controller
                 ->distinct()->count('up.province_id')
             : 0;
 
-        return inertia('Admin/Dashboard/Main', [
-            'region_name'                 => $region->name,
-            'total_provinces'             => count($provinceIds),
-            'total_users'                 => User::whereProvinceIn($provinceIds)->count(),
-            'total_directors'             => User::where('role', 'provincial_director')->whereProvinceIn($provinceIds)->count(),
-            'total_employees'             => User::where('role', 'employee')->whereProvinceIn($provinceIds)->count(),
-            'active_reporting_provinces'  => $activeProvinces,
-            ...$payload,
+        return inertia('RegionalAdmin/Dashboard/Main', [
+            'region_name'                => $region->name,
+            'region_id'                  => $region->id,
+            'total_provinces'            => count($provinceIds),
+            'total_users'                => User::whereProvinceIn($provinceIds)->count(),
+            'total_directors'            => User::where('role', 'provincial_director')->whereProvinceIn($provinceIds)->count(),
+            'total_employees'            => User::where('role', 'employee')->whereProvinceIn($provinceIds)->count(),
+            'active_reporting_provinces' => $activeProvinces,
+            ...self::build_ranking_payload(),
         ]);
     }
 

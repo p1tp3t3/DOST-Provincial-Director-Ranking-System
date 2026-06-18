@@ -275,7 +275,7 @@ const testProvinces = [
 
 const testUserStats = {
     total: 156, provinces: 8, provincial_admin: 10, provincial_director: 7,
-    provincial_sub_admin: 5, employee: 86,
+    employee: 86,
 };
 
 const testDirectorRankings = [
@@ -326,7 +326,6 @@ const summaryCards = computed(() => [
     { label: 'Total Provinces',   value: us.value.provinces,           color: 'teal',    icon: 'mdi-map-outline'               },
     { label: 'Directors',         value: us.value.provincial_director, color: 'blue',    icon: 'mdi-account-tie-outline'       },
     { label: 'Provincial Admins', value: us.value.provincial_admin,    color: 'indigo',  icon: 'mdi-account-cog-outline'       },
-    { label: 'Sub Admins',        value: us.value.provincial_sub_admin,color: 'purple',  icon: 'mdi-account-settings-outline'  },
     { label: 'Employees',         value: us.value.employee,            color: 'success', icon: 'mdi-account-outline'           },
     { label: 'Total Users',       value: us.value.total,              color: 'primary', icon: 'mdi-account-group-outline'     },
 ]);
@@ -384,12 +383,12 @@ const rateColor = (rate) => rate >= 90 ? 'success' : rate >= 75 ? 'warning' : 'e
 
 const roleColor = (r) => ({
     super_admin: 'indigo', sub_admin: 'purple', provincial_admin: 'teal',
-    provincial_sub_admin: 'cyan', provincial_director: 'blue', employee: 'success',
+    provincial_director: 'blue', employee: 'success',
 }[r] ?? 'grey');
 
 const roleLabel = (r) => ({
     super_admin: 'Super Admin', sub_admin: 'Sub Admin',
-    provincial_admin: 'Prov. Admin', provincial_sub_admin: 'Prov. Sub Admin',
+    provincial_admin: 'Prov. Admin',
     provincial_director: 'Director', employee: 'Employee',
 }[r] ?? r);
 

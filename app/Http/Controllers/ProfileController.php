@@ -56,7 +56,7 @@ class ProfileController extends Controller
         $user    = Auth::user()->load(['profile.employeeProfile']);
         $profile = $this->getOrCreateProfile($user);
 
-        $adminRoles      = ['super_admin', 'sub_admin', 'regional_admin', 'provincial_admin', 'provincial_sub_admin'];
+        $adminRoles      = ['super_admin', 'sub_admin', 'regional_admin', 'provincial_admin'];
         $restrictedRoles = ['employee', 'provincial_director'];
 
         if (in_array($user->role, $restrictedRoles)) {
