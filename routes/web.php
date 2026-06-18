@@ -25,6 +25,17 @@ Route::get('/', fn() => inertia('Landing/Welcome', [
     'canRegister' => Route::has('register'),
 ]))->name('home');
 
+// ── Public: interactive map ────────────────────────────────────
+Route::get('/map', fn() => inertia('Landing/Map', [
+    'canLogin' => Route::has('login'),
+]))->name('map');
+
+// ── Public: blog detail ────────────────────────────────────────
+Route::get('/blog/{slug}', fn(string $slug) => inertia('Landing/Blog', [
+    'slug'     => $slug,
+    'canLogin' => Route::has('login'),
+]))->name('blog.show');
+
 // ── Public: maintenance notice ─────────────────────────────────
 Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
 
