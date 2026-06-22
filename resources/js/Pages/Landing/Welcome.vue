@@ -373,11 +373,13 @@ const sampleDirector = computed(() => {
                     </p>
                 </div>
 
-                <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div v-for="f in features" :key="f.title" class="feature reveal">
-                        <div class="feat-icon"><component :is="f.icon" class="w-6 h-6" /></div>
-                        <h3 class="mt-5 text-xl font-bold text-slate-900">{{ f.title }}</h3>
-                        <p class="mt-2 text-slate-600 leading-relaxed text-base">{{ f.text }}</p>
+                <div class="mt-14 grid md:grid-cols-2 gap-x-10 gap-y-6">
+                    <div v-for="f in features" :key="f.title" class="feature-row reveal">
+                        <div class="feature-row-icon"><component :is="f.icon" class="w-7 h-7" /></div>
+                        <div class="feature-row-body">
+                            <h3 class="feature-row-title">{{ f.title }}</h3>
+                            <p class="feature-row-text">{{ f.text }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -736,16 +738,20 @@ const sampleDirector = computed(() => {
 .btn-primary-lg:hover { background: var(--dost-700); transform: translateY(-1px); }
 
 /* ── Features ────────────────────────────────────────────────────────────── */
-.feature {
-    border: 1px solid #e7edf4; border-radius: 18px; padding: 28px; background: #fff;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+.feature-row {
+    display: flex; align-items: flex-start; gap: 18px;
+    padding: 22px 20px; border-radius: 16px;
+    transition: background .18s ease;
 }
-.feature:hover { border-color: var(--dost-line); box-shadow: 0 12px 30px rgba(11,87,168,.10); transform: translateY(-2px); }
-.feat-icon {
-    width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
-    background: var(--dost-tint); color: var(--dost); transition: background .15s ease, color .15s ease;
+.feature-row:hover { background: var(--dost-tint); }
+.feature-row-icon {
+    width: 58px; height: 58px; flex-shrink: 0; border-radius: 16px;
+    display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, var(--dost) 0%, #56b3f5 100%);
+    box-shadow: 0 8px 20px rgba(11,87,168,.30);
 }
-.feature:hover .feat-icon { background: var(--dost); color: #fff; }
+.feature-row-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; }
+.feature-row-text  { margin-top: 7px; font-size: 1.05rem; line-height: 1.65; color: #475569; }
 
 /* ── Blog cards ──────────────────────────────────────────────────────────── */
 .blog-card-img {
