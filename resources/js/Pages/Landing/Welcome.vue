@@ -342,17 +342,15 @@ const sampleDirector = computed(() => {
                         <span class="scoring-head-title">Scoring Framework</span>
                         <span class="scoring-head-sub">37 indicators · 3 functions · 83 provinces</span>
                     </div>
-                    <div class="scoring-row">
-                        <div class="scoring-row-top"><span>Core Functions</span><span class="scoring-pct">60%</span></div>
-                        <div class="scoring-track"><div class="scoring-fill" style="width:60%; background:linear-gradient(90deg, var(--dost), #56b3f5);"></div></div>
+                    <div class="scoring-keys">
+                        <span class="scoring-key"><span class="scoring-dot" style="background:#0b57a8;"></span>Core Functions <b>60%</b></span>
+                        <span class="scoring-key"><span class="scoring-dot" style="background:#2079c4;"></span>Functional Functions <b>30%</b></span>
+                        <span class="scoring-key"><span class="scoring-dot" style="background:#3f93e0;"></span>Support Functions <b>10%</b></span>
                     </div>
-                    <div class="scoring-row">
-                        <div class="scoring-row-top"><span>Functional Functions</span><span class="scoring-pct">30%</span></div>
-                        <div class="scoring-track"><div class="scoring-fill" style="width:30%; background:linear-gradient(90deg, var(--dost-600), #7cc4ff);"></div></div>
-                    </div>
-                    <div class="scoring-row">
-                        <div class="scoring-row-top"><span>Support Functions</span><span class="scoring-pct">10%</span></div>
-                        <div class="scoring-track"><div class="scoring-fill" style="width:10%; background:linear-gradient(90deg, var(--dost-700), #9fd2ff);"></div></div>
+                    <div class="scoring-stack">
+                        <div class="scoring-seg" style="width:60%; background:#0b57a8;"><span>60%</span></div>
+                        <div class="scoring-seg" style="width:30%; background:#2079c4;"><span>30%</span></div>
+                        <div class="scoring-seg" style="width:10%; background:#3f93e0;"><span>10%</span></div>
                     </div>
                 </div>
 
@@ -880,10 +878,20 @@ const sampleDirector = computed(() => {
 .scoring-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
 .scoring-head-title { font-size: 1.12rem; font-weight: 800; color: var(--dost-navy); }
 .scoring-head-sub   { font-size: .92rem; font-weight: 600; color: #64748b; }
-.scoring-row + .scoring-row { margin-top: 16px; }
-.scoring-row-top { display: flex; justify-content: space-between; font-size: .98rem; font-weight: 600; color: #334155; margin-bottom: 7px; }
-.scoring-pct { color: var(--dost); font-weight: 800; }
-.scoring-track { height: 12px; border-radius: 999px; background: #eef3fa; overflow: hidden; }
-.scoring-fill  { height: 100%; border-radius: 999px; }
+.scoring-keys { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
+.scoring-key  { display: inline-flex; align-items: center; gap: 7px; font-size: .98rem; font-weight: 600; color: #334155; }
+.scoring-key b { color: var(--dost-navy); font-weight: 800; margin-left: 2px; }
+.scoring-dot  { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+.scoring-stack {
+    display: flex; height: 46px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 6px 16px rgba(11,87,168,.18);
+}
+.scoring-seg {
+    display: flex; align-items: center; justify-content: center; min-width: 0;
+    color: #fff; font-weight: 800; font-size: .98rem; text-shadow: 0 1px 2px rgba(0,0,0,.28);
+    transition: filter .15s ease;
+}
+.scoring-seg + .scoring-seg { box-shadow: inset 1px 0 0 rgba(255,255,255,.3); }
+.scoring-seg:hover { filter: brightness(1.07); }
 
 </style>
