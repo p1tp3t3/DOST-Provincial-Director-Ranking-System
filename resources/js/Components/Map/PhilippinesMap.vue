@@ -305,6 +305,14 @@ import 'leaflet/dist/leaflet.css';
 
 const props = defineProps({
     scores:           { type: Array,  default: () => [] },
+    // Broader pool used to compute Island / Region rankings. When the caller
+    // narrows `scores` by island or region (e.g. dashboard's geo filter), the
+    // map would otherwise rank a single island as "#1 of 1". Callers should
+    // pass an array filtered only by tier/category so an island's rank is
+    // always taken against all 3 islands, and a region's rank against every
+    // region in its island. Falls back to `scores` so existing callers that
+    // don't supply this prop continue to work.
+    rankingPool:      { type: Array,  default: null },
     trends:           { type: Object, default: () => ({}) },  // province name → [{year, total_pct, bucket, ...}]
     selectedYear:     { type: Number, default: null },
     selectedTier:     { type: String, default: 'all' },
@@ -385,6 +393,24 @@ const ISLANDS = [
     { value: 'visayas',  label: 'Visayas'  },
     { value: 'mindanao', label: 'Mindanao' },
 ];
+
+// CSTC clusters are first-class peers of provinces inside the ranking data, but
+// they don't have province features in the basemap (NCR has no province polygons
+// at all; ZCIC and Davao City overlap their parent province polygons). This
+// lookup lets region/island aggregates, the region panel, and the geo-filter
+// styling treat clusters as members of their parent region.
+const CSTC_REGION_CODE = {
+    'CAMANAVA':    1300000000,  // NCR
+    'MUNTAPARLAS': 1300000000,
+    'PAMAMAZON':   1300000000,
+    'PAMAMARISAN': 1300000000,
+    'ZCIC':         900000000,  // Region IX — Zamboanga Peninsula
+    'Davao City':  1100000000,  // Region XI — Davao Region
+};
+const cstcNamesForRegion = (regionCode) =>
+    Object.entries(CSTC_REGION_CODE)
+        .filter(([, code]) => code === regionCode)
+        .map(([name]) => name);
 
 // The province's bucket (Top / Average / Under) drives color for individual
 // provinces, matching RankingService's rank-percentile bucketing. For
@@ -540,15 +566,35 @@ const buildProvincePanel = (geoName) => {
     };
 };
 
-// Average score per island across the 3 major islands, sorted desc.
+// The pool used to compute Island/Region rankings. Falls back to `scores` if
+// the caller didn't pass a separate `rankingPool` (back-compat with callers
+// that don't narrow the scores prop by geo).
+const rankingPool = () => props.rankingPool ?? props.scores;
+
+// Average score per island across the 3 major islands, sorted desc. Always
+// computed on the broader rankingPool so an island's rank reflects its place
+// among ALL islands, never just the ones surviving the dashboard's geo filter.
 const computeIslandRanking = () => {
-    const sm = scoreMap();
+    const pool = rankingPool();
+    const poolByProvince = {};
+    for (const s of pool) poolByProvince[s.province] = s;
+
     const buckets = new Map();
     for (const p of provinces) {
         const island = REGION_TO_ISLAND[p.regionCode];
         if (!island) continue;
         const dbName = GEO_TO_DB[p.name] ?? p.name;
-        const entry  = sm[dbName];
+        const entry  = poolByProvince[dbName];
+        if (!entry) continue;
+        if (!buckets.has(island)) buckets.set(island, []);
+        buckets.get(island).push(entry.score);
+    }
+    // Include CSTC clusters in their parent island's bucket — Luzon's average
+    // shouldn't silently exclude NCR just because NCR has no province polygons.
+    for (const [cstcName, regionCode] of Object.entries(CSTC_REGION_CODE)) {
+        const island = REGION_TO_ISLAND[regionCode];
+        if (!island) continue;
+        const entry = poolByProvince[cstcName];
         if (!entry) continue;
         if (!buckets.has(island)) buckets.set(island, []);
         buckets.get(island).push(entry.score);
@@ -572,14 +618,26 @@ const buildIslandPanel = (islandValue) => {
 
     const islandProvs = provinces.filter(p => islandRegionCodes.includes(p.regionCode));
     const islandProvNames = islandProvs.map(p => GEO_TO_DB[p.name] ?? p.name);
-    const islandScores    = props.scores.filter(s => islandProvNames.includes(s.province));
+    // CSTC clusters belonging to any of this island's regions count as island
+    // members too (e.g. NCR's clusters under Luzon). Without this, Luzon would
+    // skip NCR's scores in every aggregate on the panel.
+    const islandCstcNames = Object.entries(CSTC_REGION_CODE)
+        .filter(([, code]) => islandRegionCodes.includes(code))
+        .map(([name]) => name);
+    const islandMemberNames = [...islandProvNames, ...islandCstcNames];
+    const islandScores = props.scores.filter(s => islandMemberNames.includes(s.province));
 
-    const regionCount = new Set(
-        islandProvs
-            .filter(p => islandProvNames.includes(GEO_TO_DB[p.name] ?? p.name))
-            .filter(p => islandScores.some(s => s.province === (GEO_TO_DB[p.name] ?? p.name)))
-            .map(p => p.regionCode)
-    ).size;
+    const presentRegionCodes = new Set();
+    for (const p of islandProvs) {
+        if (islandScores.some(s => s.province === (GEO_TO_DB[p.name] ?? p.name))) {
+            presentRegionCodes.add(p.regionCode);
+        }
+    }
+    for (const [cstcName, code] of Object.entries(CSTC_REGION_CODE)) {
+        if (!islandRegionCodes.includes(code)) continue;
+        if (islandScores.some(s => s.province === cstcName)) presentRegionCodes.add(code);
+    }
+    const regionCount = presentRegionCodes.size;
 
     const allRegions = islandRegionCodes
         .filter(code => REGION_LABELS[code])
@@ -587,7 +645,9 @@ const buildIslandPanel = (islandValue) => {
             const regProvNames = provinces
                 .filter(p => p.regionCode === code)
                 .map(p => GEO_TO_DB[p.name] ?? p.name);
-            const regScores = props.scores.filter(s => regProvNames.includes(s.province));
+            const regCstcNames = cstcNamesForRegion(code);
+            const regMembers   = [...regProvNames, ...regCstcNames];
+            const regScores = props.scores.filter(s => regMembers.includes(s.province));
             const avg = regScores.length
                 ? Math.round(regScores.reduce((a, s) => a + s.score, 0) / regScores.length * 10) / 10
                 : null;
@@ -636,16 +696,31 @@ const buildIslandPanel = (islandValue) => {
 };
 
 // Average score per region across all regions present on the map, sorted desc.
-// Used to compute a region's rank among its peers in the same filter context.
+// Uses the broader rankingPool — same reason as island ranking: a region's
+// rank should reflect every region in the country (or every region in its
+// island when the caller narrows by island), not just the regions surviving
+// the current Region/Province filter.
 const computeRegionRanking = () => {
-    const sm = scoreMap();
+    const pool = rankingPool();
+    const poolByProvince = {};
+    for (const s of pool) poolByProvince[s.province] = s;
+
     const buckets = new Map();
     for (const p of provinces) {
         const dbName = GEO_TO_DB[p.name] ?? p.name;
-        const entry  = sm[dbName];
+        const entry  = poolByProvince[dbName];
         if (!entry) continue;
         if (!buckets.has(p.regionCode)) buckets.set(p.regionCode, []);
         buckets.get(p.regionCode).push(entry.score);
+    }
+    // Pull CSTC clusters into their parent region's bucket too — without this,
+    // NCR (which has no provinces in the basemap) would never appear in the
+    // ranking and its region panel would show rank = null.
+    for (const [cstcName, regionCode] of Object.entries(CSTC_REGION_CODE)) {
+        const entry = poolByProvince[cstcName];
+        if (!entry) continue;
+        if (!buckets.has(regionCode)) buckets.set(regionCode, []);
+        buckets.get(regionCode).push(entry.score);
     }
     const arr = [];
     for (const [code, scores] of buckets.entries()) {
@@ -664,9 +739,17 @@ const buildRegionPanel = (regionCode) => {
     const sm = scoreMap();
     const regionProvs = provinces.filter(p => p.regionCode === regionCode);
     const regionProvNames = regionProvs.map(p => GEO_TO_DB[p.name] ?? p.name);
-    const regionScores = props.scores.filter(s => regionProvNames.includes(s.province));
 
-    const allProvinces = regionProvs.map(p => {
+    // Some regions also "own" CSTC clusters that sit outside the province
+    // layer — NCR is composed entirely of these. Include them as members so
+    // the region panel surfaces their score, count, best/worst, etc. instead
+    // of treating NCR as an empty region.
+    const regionCstcNames = cstcNamesForRegion(regionCode);
+    const memberNames     = [...regionProvNames, ...regionCstcNames];
+
+    const regionScores = props.scores.filter(s => memberNames.includes(s.province));
+
+    const provinceEntries = regionProvs.map(p => {
         const dbName = GEO_TO_DB[p.name] ?? p.name;
         const entry  = sm[dbName] ?? null;
         const info   = entry ? tierInfo(entry) : { color: '#94a3b8', label: 'No data' };
@@ -677,7 +760,20 @@ const buildRegionPanel = (regionCode) => {
             color:    info.color,
             tier:     info.label,
         };
-    }).sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+    });
+    const cstcEntries = regionCstcNames.map(name => {
+        const entry = sm[name] ?? null;
+        const info  = entry ? tierInfo(entry) : { color: '#94a3b8', label: 'No data' };
+        return {
+            name,
+            director: entry?.director ?? null,
+            score:    entry ? Math.round(entry.score * 100) / 100 : null,
+            color:    info.color,
+            tier:     info.label,
+        };
+    });
+    const allProvinces = [...provinceEntries, ...cstcEntries]
+        .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
 
     if (!regionScores.length) return {
         type: 'region', shortLabel, provinceCount: 0,
@@ -745,9 +841,23 @@ const buildCstcPanel = (cstcName) => {
 };
 
 // ── Style ─────────────────────────────────────────────────────────────────────
-const styleForCstc = (feature, sm) => {
-    const cstcName  = feature.properties.cstc;
-    const entry     = sm[cstcName] ?? null;
+const styleForCstc = (feature, sm, selReg, selIsl) => {
+    const cstcName       = feature.properties.cstc;
+    const entry          = sm[cstcName] ?? null;
+    const cstcRegionCode = CSTC_REGION_CODE[cstcName];
+    const cstcIsland     = REGION_TO_ISLAND[cstcRegionCode];
+
+    // Match the province layer's dimming logic: when the user filters to a
+    // specific region or island, clusters that don't belong there fade to the
+    // same neutral grey as out-of-scope provinces.
+    const hasRegFilter    = !!selReg;
+    const hasIslandFilter = !!selIsl;
+    const isInSelRegion   = hasRegFilter    && cstcRegionCode === Number(selReg);
+    const isInSelIsland   = hasIslandFilter && cstcIsland === selIsl;
+    if (hasRegFilter && !isInSelRegion)
+        return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
+    if (!hasRegFilter && hasIslandFilter && !isInSelIsland)
+        return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
 
     // CSTC clusters (e.g. Zamboanga City / ZCIC) overlap the province polygons in the
     // basemap — Zamboanga City's land is baked into Zamboanga del Sur. With no score in
@@ -759,13 +869,17 @@ const styleForCstc = (feature, sm) => {
     const baseColor = tierColor(entry);
     if (selCstc.value === cstcName)
         return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
+    // Lift in-scope clusters slightly when a region filter is active so the
+    // four NCR clusters (or ZCIC, or Davao City) read as "the highlighted set".
+    if (isInSelRegion)
+        return { fillColor: baseColor, weight: 1.6, color: '#fff', fillOpacity: 0.95 };
     return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.85 };
 };
 
 const refreshCstcStyle = () => {
     if (!cstcLayer) return;
     const sm = scoreMap();
-    cstcLayer.setStyle(f => styleForCstc(f, sm));
+    cstcLayer.setStyle(f => styleForCstc(f, sm, selRegion.value, selIsland.value));
 };
 
 const styleFor = (feature, sm, selReg, selProv, selIsl) => {
@@ -847,12 +961,39 @@ const softFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
     map.flyToBounds(targetBounds, { padding, maxZoom, duration: 0.8, easeLinearity: 0.4 });
 };
 
+// Compute leaflet bounds for a region. Most regions are the union of their
+// province polygons; NCR has no province polygons at all (and a couple of other
+// regions have CSTC clusters that aren't represented as provinces), so we union
+// in the CSTC bounds when the region has cluster members. Returns null if the
+// region has neither — caller decides what to do.
+const regionBounds = (code) => {
+    const regionProvs = provinces.filter(p => p.regionCode === code);
+    let b = null;
+    for (const p of regionProvs) {
+        if (!b) b = L.latLngBounds(p.bounds);
+        else    b.extend(p.bounds);
+    }
+    for (const name of cstcNamesForRegion(code)) {
+        const cb = cstcData[name];
+        if (!cb) continue;
+        if (!b) b = L.latLngBounds(cb.getSouthWest(), cb.getNorthEast());
+        else    b.extend(cb);
+    }
+    return b;
+};
+
+// NCR's bounding box is ~25 km across — zooming to maxZoom 8 (the default for
+// regions) would still show the whole of Luzon. Pick a tighter cap so users
+// actually see the four NCR clusters when they pick NCR from the filter bar.
+const regionMaxZoom = (code) => (code === 1300000000 ? 11 : 8);
+
 // ── Event handlers ────────────────────────────────────────────────────────────
 const onIslandChange = () => {
     selRegion.value = '';
     selProvince.value = '';
     pendingFly = false;
     refreshStyle();
+    refreshCstcStyle();
     if (!selIsland.value) { resetView(); return; }
 
     panel.value = buildIslandPanel(selIsland.value);
@@ -878,6 +1019,7 @@ const onRegionChange = () => {
     }
 
     refreshStyle();
+    refreshCstcStyle();
     if (!selRegion.value) {
         if (selIsland.value) { onIslandChange(); return; }
         resetView();
@@ -887,11 +1029,9 @@ const onRegionChange = () => {
     const code = Number(selRegion.value);
     panel.value = buildRegionPanel(code);
 
-    const regionProvs = provinces.filter(p => p.regionCode === code);
-    if (!regionProvs.length) return;
-    let bounds = L.latLngBounds(regionProvs[0].bounds);
-    for (const p of regionProvs.slice(1)) bounds.extend(p.bounds);
-    smartFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
+    const bounds = regionBounds(code);
+    if (!bounds) return;
+    smartFlyTo(bounds, { maxZoom: regionMaxZoom(code), padding: [30, 30] });
 };
 
 const onProvinceChange = () => {
@@ -938,13 +1078,10 @@ const selectRegionFromList = (code) => {
     selProvince.value = '';
     pendingFly = false;
     refreshStyle();
+    refreshCstcStyle();
     panel.value = buildRegionPanel(code);
-    const regionProvs = provinces.filter(p => p.regionCode === code);
-    if (regionProvs.length) {
-        let bounds = L.latLngBounds(regionProvs[0].bounds);
-        for (const p of regionProvs.slice(1)) bounds.extend(p.bounds);
-        softFlyTo(bounds, { maxZoom: 8, padding: [30, 30] });
-    }
+    const bounds = regionBounds(code);
+    if (bounds) softFlyTo(bounds, { maxZoom: regionMaxZoom(code), padding: [30, 30] });
     regionListOpen.value = false;
 };
 
@@ -1092,7 +1229,7 @@ onMounted(async () => {
 
     cstcLayer = L.geoJSON(cstcGeojson, {
         pane:  'cstcPane',
-        style: f => styleForCstc(f, csm),
+        style: f => styleForCstc(f, csm, selRegion.value, selIsland.value),
         onEachFeature: (feature, layer) => {
             const cstcName = feature.properties.cstc;
             const cityName = feature.properties.name;
@@ -1113,7 +1250,7 @@ onMounted(async () => {
                 e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
             });
             layer.on('mouseout', () => {
-                layer.setStyle(styleForCstc(layer.feature, scoreMap()));
+                layer.setStyle(styleForCstc(layer.feature, scoreMap(), selRegion.value, selIsland.value));
             });
 
             layer.on('click', () => {
