@@ -263,7 +263,7 @@ class MaintenanceController extends Controller
     private function dump_database_php(): string
     {
         $lines   = [];
-        $lines[] = '-- PDRIS System Export | Generated: ' . now()->toDateTimeString();
+        $lines[] = '-- PRISM System Export | Generated: ' . now()->toDateTimeString();
         $lines[] = '-- Database: ' . DB::getDatabaseName();
         $lines[] = '';
         $lines[] = 'SET FOREIGN_KEY_CHECKS=0;';

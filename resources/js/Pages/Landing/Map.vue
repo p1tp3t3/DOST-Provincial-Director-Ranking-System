@@ -10,7 +10,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head title="Interactive Map — DOST PSTD Ranking & Information System" />
+    <Head title="Interactive Map — DOST PRISM" />
 
     <div class="min-h-screen bg-white text-slate-800">
         <!-- ── Navbar ─────────────────────────────────────────────────────── -->
@@ -20,7 +20,7 @@ const year = new Date().getFullYear();
                     <a href="/" class="flex items-center gap-3">
                         <img src="/assets/logo.png" alt="DOST" class="w-10 h-10 rounded-lg object-contain" />
                         <div class="leading-tight">
-                            <div class="font-extrabold text-[#082f5f] text-lg tracking-tight">DOST PSTD</div>
+                            <div class="font-extrabold text-[#082f5f] text-lg tracking-tight">DOST PRISM</div>
                             <div class="text-[11px] text-slate-500 hidden sm:block">Ranking &amp; Information System</div>
                         </div>
                     </a>

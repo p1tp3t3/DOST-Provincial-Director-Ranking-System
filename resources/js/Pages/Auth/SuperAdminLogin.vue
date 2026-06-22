@@ -13,7 +13,7 @@
                     <img src="/assets/logo.png" alt="DOST" height="48"
                         style="filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));" />
                     <div class="text-left">
-                        <div class="text-h6 font-weight-bold text-white" style="line-height:1.2;">PDRIS</div>
+                        <div class="text-h6 font-weight-bold text-white" style="line-height:1.2;">PRISM</div>
                         <div class="text-caption text-white" style="opacity:.75;letter-spacing:.04em;">DOST Philippines</div>
                     </div>
                 </div>

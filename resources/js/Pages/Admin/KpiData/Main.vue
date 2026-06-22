@@ -15,7 +15,7 @@
                         </v-chip>
                     </template>
                     <div class="pa-1">
-                        <div class="font-weight-bold mb-1">PSTD Matrix Data Entry</div>
+                        <div class="font-weight-bold mb-1">PRISM Matrix Data Entry</div>
                         <div class="text-caption opacity-80">
                             Pick a province below to edit its target & accomplished values for each KPI by year. Changes here update the weighted ranking on the Dashboard and Map immediately. Province Directories stay read-only.
                         </div>

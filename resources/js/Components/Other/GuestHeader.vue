@@ -5,11 +5,11 @@
             <!-- Logo and Title -->
             <div class="flex items-center gap-4 mb-6 md:mb-0">
                 <div class="bg-blue-100 rounded-lg p-2">
-                    <img class="w-10 h-10 text-white"src="assets/logo.png" alt="PDRIS Logo" *\/>
+                    <img class="w-10 h-10 text-white"src="assets/logo.png" alt="PRISM Logo" *\/>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-indigo-900">DOST PDRIS</h1>
-                    <p class="text-xs text-gray-600">Department of Science and Technology Provincial Director Ranking Information System</p>
+                    <h1 class="text-2xl font-bold text-indigo-900">DOST PRISM</h1>
+                    <p class="text-xs text-gray-600">Department of Science and Technology Provincial Director Ranking and Information System for Management</p>
                 </div>
             </div>
 
