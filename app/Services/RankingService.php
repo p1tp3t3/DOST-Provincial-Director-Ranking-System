@@ -138,17 +138,49 @@ class RankingService
             ];
         }
 
+        // Peer-median target per KPI: lets a province with effort but a blank
+        // target still be scored against what its peers committed to, instead
+        // of being zeroed out for a data-entry omission. See scoreKpi() below.
+        $medianTargetByKpi = $this->computeMedianTargets($valuesByProvince);
+
         $records = [];
         foreach ($provinceMeta as $provinceId => $meta) {
             $records[] = $this->scoreProvince(
                 $provinceId, (array) $meta,
-                $valuesByProvince[$provinceId] ?? []
+                $valuesByProvince[$provinceId] ?? [],
+                $medianTargetByKpi
             );
         }
         return $records;
     }
 
-    private function scoreProvince(int $provinceId, array $meta, array $values): array
+    // Median submitted target per KPI, computed across all provinces that
+    // submitted a usable (>0) target for that KPI in the year. Used as a
+    // fallback so a province with accomplishments but no target gets scored
+    // against the peer benchmark instead of being marked No data.
+    private function computeMedianTargets(array $valuesByProvince): array
+    {
+        $byKpi = [];
+        foreach ($valuesByProvince as $rows) {
+            foreach ($rows as $kpiId => $row) {
+                $t = self::parseNumber($row['target'] ?? null);
+                if ($t !== null && $t > 0) {
+                    $byKpi[$kpiId][] = $t;
+                }
+            }
+        }
+        $medians = [];
+        foreach ($byKpi as $kpiId => $targets) {
+            sort($targets);
+            $n = count($targets);
+            $medians[$kpiId] = $n % 2 === 1
+                ? $targets[intdiv($n, 2)]
+                : ($targets[intdiv($n, 2) - 1] + $targets[intdiv($n, 2)]) / 2;
+        }
+        return $medians;
+    }
+
+    private function scoreProvince(int $provinceId, array $meta, array $values, array $medianTargetByKpi): array
     {
         $kpiScores  = [];
         $subtotals  = []; // category_id => float
@@ -160,7 +192,7 @@ class RankingService
             if (!$kpi['is_scored']) continue;
 
             $catCode = $this->kpiCategories[$kpi['category_id']]['code'];
-            $score   = $this->scoreKpi($kpiId, $kpi, $values);
+            $score   = $this->scoreKpi($kpiId, $kpi, $values, $medianTargetByKpi);
             $weighted = $score['score'] * (float) $kpi['weight'];
             $subtotals[$catCode] += $weighted;
 
@@ -208,7 +240,7 @@ class RankingService
     }
 
     // Returns ['score'=>float, 'actual_pct'=>?float, 'adjective_label'=>string]
-    private function scoreKpi(int $kpiId, array $kpi, array $values): array
+    private function scoreKpi(int $kpiId, array $kpi, array $values, array $medianTargetByKpi): array
     {
         // Derived KPI: % Delinquent SETUP = delinquent_count / ongoing_count * 100, inverse-scored
         if ($kpi['derivation_type'] === 'delinquent_ratio') {
@@ -229,6 +261,16 @@ class RankingService
         // Standard: % accomplishment = accomplished / target * 100
         $target = self::parseNumber($values[$kpiId]['target']       ?? null);
         $acc    = self::parseNumber($values[$kpiId]['accomplished'] ?? null);
+
+        // Effort credit: a province that delivered real work but left the
+        // target field blank should not be zeroed out. Score them against
+        // the peer-median target so the accomplishment still counts.
+        if (($target === null || $target <= 0) && $acc !== null && $acc > 0) {
+            $fallback = $medianTargetByKpi[$kpiId] ?? null;
+            if ($fallback !== null && $fallback > 0) {
+                $target = $fallback;
+            }
+        }
 
         if ($target === null || $target <= 0 || $acc === null) {
             return ['score' => 0.0, 'actual_pct' => null, 'adjective_label' => 'No data'];

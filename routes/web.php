@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPIDataController;
+use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
@@ -69,7 +71,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // ── Super Admin only ───────────────────────────────────────
     Route::middleware('super-admin')->group(function () {
-        Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::put('/users/{id}',    [UserController::class, 'update']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
         Route::get('/maintenance',                                    [MaintenanceController::class, 'index']);
         Route::post('/maintenance/backup',                            [MaintenanceController::class, 'create_backup']);
@@ -148,6 +151,23 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-kpi/{year?}',          [KPIDataController::class, 'provincial_index']);
         Route::put('/provincial-kpi/{director}/{year}', [KPIDataController::class, 'provincial_update']);
+    });
+
+    // ── Evidence-based KPI modules (Super Admin + Provincial Sub Admin) ──
+    // Each module backs a specific KPI. The accomplishment field for that KPI
+    // is locked and derived from the count of records here.
+    Route::middleware('role:super_admin,provincial_sub_admin')->group(function () {
+        // Linkages → func_linkages_established
+        Route::get('/linkages/{director}/{year}',                 [LinkageController::class, 'index']);
+        Route::post('/linkages/{director}/{year}',                [LinkageController::class, 'store']);
+        Route::put('/linkages/{director}/{year}/{linkage}',       [LinkageController::class, 'update']);
+        Route::delete('/linkages/{director}/{year}/{linkage}',    [LinkageController::class, 'destroy']);
+
+        // Facebook Posts → supp_facebook_posts
+        Route::get('/facebook-posts/{director}/{year}',              [FacebookPostController::class, 'index']);
+        Route::post('/facebook-posts/{director}/{year}',             [FacebookPostController::class, 'store']);
+        Route::put('/facebook-posts/{director}/{year}/{post}',       [FacebookPostController::class, 'update']);
+        Route::delete('/facebook-posts/{director}/{year}/{post}',    [FacebookPostController::class, 'destroy']);
     });
 
     // ── Provincial Admin (report) ──────────────────────────────
