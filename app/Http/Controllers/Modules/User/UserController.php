@@ -8,6 +8,7 @@ use App\Http\Requests\User\AdminRegistrationRequest;
 use App\Http\Requests\User\UserRegistrationRequest;
 use App\Http\Resources\UserResource;
 use App\Jobs\GenerateEmployeeAccount;
+use App\Models\ActivityLog;
 use App\Models\Province;
 use App\Jobs\VerifyCSVJob;
 use Illuminate\Support\Facades\Cache;
@@ -99,6 +100,41 @@ class UserController extends Controller
         }
 
         $user->update(['activate' => !$user->activate]);
+
+        return back();
+    }
+
+    public function destroy(int $id)
+    {
+        $user = User::with('profile')->findOrFail($id);
+
+        if ($user->id === Auth::id()) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 403);
+        }
+
+        DB::beginTransaction();
+        try {
+            $profile = $user->profile;
+            if ($profile) {
+                EmployeeProfile::where('profile_id', $profile->id)->delete();
+                $profile->delete();
+            }
+
+            // activity_logs.user_id is a non-nullable RESTRICT FK, so a user
+            // that has ever logged in / acted in the system can't be deleted
+            // while their own log rows still reference them.
+            ActivityLog::where('user_id', $user->id)->delete();
+
+            $user->delete();
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        // $user still holds the in-memory snapshot needed for the audit line.
+        ActivityLogHelper::deleteUser($user);
 
         return back();
     }

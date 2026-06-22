@@ -1,6 +1,6 @@
 ﻿<template>
     <Head title="Dashboard" />
-    <div class="d-flex flex-column gap-3">
+    <div class="d-flex flex-column gap-3 dashboard-root">
 
         <!-- Sticky filter shell — wraps the filter bar so we can pin them
              together while keeping a visible white shelf between the navbar
@@ -48,42 +48,7 @@
                     class="filter-select filter-select--wide"
                     @update:model-value="setRegion($event)"
                 />
-                <v-select
-                    v-model="selectedProvince"
-                    :items="provinceOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Province"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                    class="filter-select filter-select--wide"
-                />
-
-                <v-divider vertical class="filter-divider" />
-
-                <v-select
-                    v-model="selectedCategory"
-                    :items="categorySelectItems"
-                    item-title="label"
-                    item-value="value"
-                    label="Category"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                    class="filter-select"
-                />
-                <v-select
-                    v-model="selectedYear"
-                    :items="available_years"
-                    label="Year"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                    class="filter-select filter-select--narrow"
-                />
-
-                <!-- Provinces multi-select only used by trend view -->
+                <!-- Province slot: single-select for most views; multi-select checklist for trend view -->
                 <v-autocomplete
                     v-if="viewMode === 'trend' && trendProvinceList.length"
                     v-model="selectedProvinces"
@@ -128,6 +93,41 @@
                         </v-list-item>
                     </template>
                 </v-autocomplete>
+                <v-select
+                    v-else
+                    v-model="selectedProvince"
+                    :items="provinceOptions"
+                    item-title="label"
+                    item-value="value"
+                    label="Province"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--wide"
+                />
+
+                <v-divider vertical class="filter-divider" />
+
+                <v-select
+                    v-model="selectedCategory"
+                    :items="categorySelectItems"
+                    item-title="label"
+                    item-value="value"
+                    label="Category"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select"
+                />
+                <v-select
+                    v-model="selectedYear"
+                    :items="available_years"
+                    label="Year"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    class="filter-select filter-select--narrow"
+                />
 
                 <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
                     <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
@@ -139,108 +139,44 @@
         </div>
         </div>
 
-        <!-- Stat Cards -->
+        <!-- Performance Distribution — one bell-curve card replaces the
+             three Top/Average/Low cards. The histogram bars give per-bin
+             detail (tooltip lists the provinces in each 5% band) and the
+             smooth area overlay is the Gaussian fitted to the actual mean
+             and standard deviation, so the card always reads as a bell. -->
         <v-row dense>
-            <v-col cols="12" sm="3">
-                <QuantityCard title="Total Provinces"            :quantity="total_provinces"            :icon="RiBuildingLine"      color="indigo" />
-            </v-col>
-            <v-col cols="12" sm="3">
-                <QuantityCard title="Provincial Directors"       :quantity="total_directors"            :icon="RiUserStarLine"      color="indigo" />
-            </v-col>
-            <v-col cols="12" sm="3">
-                <QuantityCard title="Total Employees"            :quantity="total_employees"            :icon="RiGroupLine"         color="indigo" />
-            </v-col>
-            <v-col cols="12" sm="3">
-                <QuantityCard title="Active Reporting Provinces" :quantity="active_reporting_provinces" :icon="RiCheckboxCircleLine" color="indigo" />
-            </v-col>
-        </v-row>
-
-        <!-- Top · Average · Low Performers, side by side. Average scrolls
-             internally so its 40+ entries don't dominate page height.
-             All three cards share .perf-card so the chart slots are pinned
-             to the exact same height — no perceptible drift between them. -->
-        <v-row dense>
-            <v-col cols="12" md="4">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
-                    <div class="chart-header px-4 pt-3 pb-2">
-                        <div class="d-flex align-center gap-2">
-                            <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
-                            <span class="text-body-2 font-weight-bold">Top Performers</span>
+            <v-col cols="12">
+                <v-card border elevation="0" rounded="lg" class="overflow-hidden bell-card">
+                    <div class="chart-header px-4 pt-3 pb-2 d-flex align-center justify-space-between flex-wrap gap-2">
+                        <div>
+                            <div class="d-flex align-center gap-2">
+                                <v-icon size="15" color="indigo">mdi-chart-bell-curve</v-icon>
+                                <span class="text-body-2 font-weight-bold">Performance Distribution</span>
+                            </div>
+                            <div class="text-caption text-medium-emphasis">
+                                Weighted score across ranked provinces · 5% bins · Gaussian fit
+                            </div>
                         </div>
-                        <div class="text-caption text-medium-emphasis">
-                            Top 20% of each tier · {{ tierLabel }} · {{ selectedYear }}
+                        <div v-if="distributionData" class="d-flex align-center gap-2 flex-wrap">
+                            <v-chip size="x-small" variant="tonal" color="indigo">μ {{ distributionData.stats.mean.toFixed(1) }}%</v-chip>
+                            <v-chip size="x-small" variant="tonal" color="blue-grey">σ {{ distributionData.stats.sd.toFixed(1) }}%</v-chip>
+                            <v-chip size="x-small" variant="tonal" color="blue-grey">median {{ distributionData.stats.median.toFixed(1) }}%</v-chip>
+                            <v-chip size="x-small" variant="tonal" color="blue-grey">n {{ distributionData.stats.n }}</v-chip>
                         </div>
                     </div>
-                    <div class="perf-card-body">
+                    <div class="bell-card-body">
                         <VueApexCharts
-                            v-if="top10Data.names.length"
-                            type="bar"
-                            height="360"
-                            :options="top10Options"
-                            :series="top10Series"
-                            :key="`top10-${selectedYear}-${selectedTier}`"
+                            v-if="distributionData"
+                            type="line"
+                            height="380"
+                            :options="bellCurveOptions"
+                            :series="bellCurveSeries"
+                            :key="`bell-${selectedYear}-${selectedTier}-${selectedCategory}-${selectedIsland}-${selectedRegion}`"
                         />
-                        <div v-else class="perf-empty">
-                            <v-icon size="48" color="blue-grey">mdi-podium-gold</v-icon>
-                            <div class="text-body-2 font-weight-medium">No Top Performers</div>
-                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
-                        </div>
-                    </div>
-                </v-card>
-            </v-col>
-            <v-col cols="12" md="4">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
-                    <div class="chart-header px-4 pt-3 pb-2">
-                        <div class="d-flex align-center gap-2">
-                            <v-icon size="15" color="warning">mdi-trending-neutral</v-icon>
-                            <span class="text-body-2 font-weight-bold">Average Performers</span>
-                        </div>
-                        <div class="text-caption text-medium-emphasis">
-                            Middle 70% of each tier · {{ tierLabel }} · {{ selectedYear }}
-                        </div>
-                    </div>
-                    <div class="perf-card-body">
-                        <div v-if="avgData.names.length" class="avg-chart-scroll">
-                            <VueApexCharts
-                                type="bar"
-                                :height="avgChartHeight"
-                                :options="avgOptions"
-                                :series="avgSeries"
-                                :key="`avg-${selectedYear}-${selectedTier}-${selectedCategory}`"
-                            />
-                        </div>
-                        <div v-else class="perf-empty">
-                            <v-icon size="48" color="blue-grey">mdi-trending-neutral</v-icon>
-                            <div class="text-body-2 font-weight-medium">No Average Performers</div>
-                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
-                        </div>
-                    </div>
-                </v-card>
-            </v-col>
-            <v-col cols="12" md="4">
-                <v-card border elevation="0" rounded="lg" class="overflow-hidden perf-card">
-                    <div class="chart-header px-4 pt-3 pb-2">
-                        <div class="d-flex align-center gap-2">
-                            <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
-                            <span class="text-body-2 font-weight-bold">Low Performers</span>
-                        </div>
-                        <div class="text-caption text-medium-emphasis">
-                            Bottom 10% of each tier · {{ tierLabel }} · {{ selectedYear }}
-                        </div>
-                    </div>
-                    <div class="perf-card-body">
-                        <VueApexCharts
-                            v-if="underData.names.length"
-                            type="bar"
-                            height="360"
-                            :options="underOptions"
-                            :series="underSeries"
-                            :key="`under-${selectedYear}-${selectedTier}`"
-                        />
-                        <div v-else class="perf-empty">
-                            <v-icon size="48" color="success">mdi-check-decagram-outline</v-icon>
-                            <div class="text-body-2 font-weight-medium">No Low Performers</div>
-                            <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                        <div v-else class="bell-empty">
+                            <v-icon size="48" color="blue-grey">mdi-chart-bell-curve</v-icon>
+                            <div class="text-body-2 font-weight-medium">No ranked provinces</div>
+                            <div class="text-caption text-medium-emphasis">Filter selection has no provinces with rankings yet</div>
                         </div>
                     </div>
                 </v-card>
@@ -323,7 +259,9 @@
                     </div>
 
                     <!-- Table View — note: NO :search prop. Search highlights the
-                         matching row in place instead of filtering everyone else out. -->
+                         matching row in place instead of filtering everyone else out.
+                         Height = .lb-view-area (600) − search row (52) so the table
+                         fills the leaderboard card exactly. -->
                     <v-data-table
                         v-if="viewMode === 'table'"
                         :headers="tableHeaders"
@@ -331,7 +269,7 @@
                         :row-props="tableRowProps"
                         density="compact"
                         fixed-header
-                        height="492"
+                        height="548"
                         hide-default-footer
                         :items-per-page="-1"
                         class="leaderboard-table"
@@ -415,12 +353,12 @@
                         </template>
                     </v-data-table>
 
-                    <!-- Trend View -->
+                    <!-- Trend View — chart height = .lb-view-area (600) − pt-3 pb-5 (32). -->
                     <div v-else-if="viewMode === 'trend'" class="px-4 pt-3 pb-5">
                         <VueApexCharts
                             v-if="trendSeries.length"
                             type="line"
-                            height="500"
+                            height="568"
                             :options="trendOptions"
                             :series="trendSeries"
                         />
@@ -429,18 +367,19 @@
                         </div>
                     </div>
 
-                    <!-- Map View -->
+                    <!-- Map View — fills .lb-view-area (600) since the wrapper is pa-0. -->
                     <div v-else-if="viewMode === 'map'" class="pa-0">
                         <PhilippinesMap
                             key="ph-map-dashboard"
                             :scores="mapFilteredScores"
+                            :ranking-pool="mapRankingPool"
                             :trends="trendsByProvince"
                             :selected-year="selectedYear"
                             :selected-tier="selectedTier"
                             :island="selectedIsland"
                             :region="selectedRegion"
                             :province="selectedProvince"
-                            height="540px"
+                            height="600px"
                         />
                     </div>
 
@@ -556,9 +495,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
-import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
-import { RiGroupLine, RiUserStarLine, RiCheckboxCircleLine, RiBuildingLine } from '@remixicon/vue';
 import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
 
 const props = defineProps({
@@ -718,6 +655,17 @@ const mapFilteredScores = computed(() => {
     return rows;
 });
 
+// Broader pool for rank computations inside PhilippinesMap. Filtered only by
+// tier+category — never by island/region/province — so the map's Island
+// Average "#K of N" chip compares across all 3 islands (and Regional Average
+// compares across every region) regardless of how the user has narrowed the
+// dashboard's geo filter.
+const mapRankingPool = computed(() => {
+    let rows = mapAllTierRows.value;
+    if (selectedTier.value !== 'all') rows = rows.filter(r => r.category === selectedTier.value);
+    return rows;
+});
+
 const trendsByProvince = computed(() => {
     const out = {};
     for (const [year, tierData] of Object.entries(props.rankings_by_year)) {
@@ -844,100 +792,228 @@ const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c'
 const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '—');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
-// Top Performers = anyone with bucket=Top in the current filter (sorted desc).
-// Mirrors underData below — Top covers 20% of each tier while Low covers 10%.
-const top10Data = computed(() => {
-    const slice = rankedOnly.value
-        .filter(s => s.bucket === 'Top')
-        .slice()
-        .sort((a, b) => getScore(b) - getScore(a));
-    return {
-        names:     slice.map(s => s.province),
-        scores:    slice.map(s => getScore(s)),
-        directors: slice.map(s => s.director || '—'),
-        buckets:   slice.map(s => s.bucket),
-    };
-});
+// ── Bell-curve distribution ───────────────────────────────────────────────
+// Bins every ranked province by weighted score into 5% bands and fits a
+// Gaussian (using the actual sample mean + stddev) on top. The histogram
+// bars carry the per-bin facts (count, dominant bucket, province list in
+// the tooltip) and the smooth area is what makes the card read as a bell.
+const BELL_BIN_SIZE = 5;
 
-// Low Performers = anyone with bucket=Low in the current filter (sorted desc)
-const underData = computed(() => {
-    const slice = rankedOnly.value
-        .filter(s => s.bucket === 'Low')
-        .slice()
-        .sort((a, b) => getScore(b) - getScore(a));
-    return {
-        names:     slice.map(s => s.province),
-        scores:    slice.map(s => getScore(s)),
-        directors: slice.map(s => s.director || '—'),
-        buckets:   slice.map(s => s.bucket),
-    };
-});
-
-// Average Performers = anyone with bucket=Average in the current filter (sorted desc).
-// Same shape as top10Data/underData so the makeHorizOptions helper just works.
-const avgData = computed(() => {
-    const slice = rankedOnly.value
-        .filter(s => s.bucket === 'Average')
-        .slice()
-        .sort((a, b) => getScore(b) - getScore(a));
-    return {
-        names:     slice.map(s => s.province),
-        scores:    slice.map(s => getScore(s)),
-        directors: slice.map(s => s.director || '—'),
-        buckets:   slice.map(s => s.bucket),
-    };
-});
-
-const tooltipHtml = (data, i) => {
-    const score = (data.scores[i] ?? 0).toFixed(2);
-    const dir   = data.directors[i] ?? '—';
-    const name  = data.names[i]     ?? '';
-    const bk    = data.buckets[i]   ?? '—';
-    const color = bucketColor(bk);
-    const label = selectedCategory.value === 'overall' ? 'weighted score' : `${selectedCategory.value} contribution`;
-    return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:200px;">
-                <div style="font-weight:700;margin-bottom:4px;">${name}</div>
-                <div style="color:#64748b;margin-bottom:2px;">Director: ${dir}</div>
-                <div style="color:#64748b;margin-bottom:6px;">Performer: ${bucketDisplay(bk)}</div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
-                    <strong style="color:${color};">${score}% ${label}</strong>
-                </div>
-            </div>`;
+const dominantBucketColor = (bin) => {
+    const { Top, Average, Low } = bin.buckets;
+    const max = Math.max(Top, Average, Low);
+    if (!max) return '#94a3b8';
+    if (Top === max)     return '#15803d';
+    if (Low === max)     return '#b91c1c';
+    return '#ca8a04';
 };
 
-const makeHorizOptions = (data) => {
-    const max = Math.max(...data.scores, 0);
-    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
+const distributionData = computed(() => {
+    const all = rankedOnly.value;
+    if (!all.length) return null;
+
+    const binCount = Math.ceil(100 / BELL_BIN_SIZE);
+    const bins = Array.from({ length: binCount }, (_, i) => ({
+        from:    i * BELL_BIN_SIZE,
+        to:      (i + 1) * BELL_BIN_SIZE,
+        center:  i * BELL_BIN_SIZE + BELL_BIN_SIZE / 2,
+        count:   0,
+        buckets: { Top: 0, Average: 0, Low: 0 },
+        provinces: [],
+    }));
+
+    const scores = [];
+    for (const r of all) {
+        const score = getScore(r);
+        scores.push(score);
+        const idx = Math.min(binCount - 1, Math.max(0, Math.floor(score / BELL_BIN_SIZE)));
+        bins[idx].count++;
+        bins[idx].provinces.push({ name: r.province, score, bucket: r.bucket });
+        if (r.bucket && bins[idx].buckets[r.bucket] !== undefined) {
+            bins[idx].buckets[r.bucket]++;
+        }
+    }
+    for (const b of bins) b.provinces.sort((a, b) => b.score - a.score);
+
+    const n = scores.length;
+    const mean = scores.reduce((a, b) => a + b, 0) / n;
+    const variance = scores.reduce((acc, s) => acc + (s - mean) ** 2, 0) / Math.max(1, n - 1);
+    // Floor at 1 so a degenerate single-cluster sample still produces a
+    // visible curve instead of a spike that overflows the chart.
+    const sd = Math.max(1, Math.sqrt(variance));
+
+    const sorted = [...scores].sort((a, b) => a - b);
+    const median = n % 2 === 0
+        ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+        : sorted[Math.floor(n / 2)];
+
+    // Scale the unit-density Gaussian by N * bin_width so it shares the
+    // histogram's y-axis (counts of provinces) without a secondary axis.
+    const curve = [];
+    for (let x = 0; x <= 100; x += 1) {
+        const density = (1 / (sd * Math.sqrt(2 * Math.PI))) *
+                        Math.exp(-Math.pow(x - mean, 2) / (2 * sd * sd));
+        curve.push({ x, y: density * n * BELL_BIN_SIZE });
+    }
+
     return {
-        chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
-                 animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
-        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
-        colors: data.buckets.map(bucketColor),
+        bins, curve,
+        stats: { n, mean, sd, median, min: sorted[0], max: sorted[n - 1] },
+    };
+});
+
+const bellCurveSeries = computed(() => {
+    const data = distributionData.value;
+    if (!data) return [];
+    return [
+        {
+            name: 'Provinces in range',
+            type: 'column',
+            data: data.bins.map(b => ({
+                x: b.center,
+                y: b.count,
+                fillColor: dominantBucketColor(b),
+            })),
+        },
+        {
+            name: 'Distribution fit',
+            type: 'area',
+            data: data.curve.map(p => ({ x: p.x, y: p.y })),
+        },
+    ];
+});
+
+const bellCurveOptions = computed(() => {
+    const data = distributionData.value;
+    if (!data) return {};
+    const { stats } = data;
+    const maxY = Math.max(
+        ...data.bins.map(b => b.count),
+        ...data.curve.map(p => p.y),
+        1,
+    );
+    return {
+        chart: {
+            type: 'line',
+            toolbar: { show: false },
+            fontFamily: 'inherit',
+            stacked: false,
+            animations: { enabled: true, speed: 600 },
+        },
+        // Bars get fillColor per data point; the line color here drives the area.
+        colors: ['#94a3b8', '#4f46e5'],
+        stroke: { curve: 'smooth', width: [0, 2.5] },
+        fill: {
+            opacity: [1, 0.25],
+            type:    ['solid', 'gradient'],
+            gradient: {
+                shade: 'light',
+                shadeIntensity: 0.35,
+                opacityFrom: 0.4,
+                opacityTo: 0.05,
+                stops: [0, 100],
+            },
+        },
+        plotOptions: { bar: { columnWidth: '80%', borderRadius: 3 } },
+        markers: { size: 0 },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: v => v || '',
+            offsetY: -4,
+            style: { fontSize: '11px', colors: ['#334155'], fontWeight: '600' },
+            background: { enabled: false },
+        },
         legend: { show: false },
-        grid: { borderColor: '#f1f5f9',
-                xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
-                padding: { left: 0, right: 12, top: -8, bottom: 0 } },
-        dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
-                      style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: 0, max: computedMax,
-                 labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
-                 axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 115 } },
-        tooltip: { theme: 'light', custom: ({ dataPointIndex }) => tooltipHtml(data, dataPointIndex) },
+        grid: {
+            borderColor: '#f1f5f9',
+            xaxis: { lines: { show: false } },
+            yaxis: { lines: { show: true } },
+            padding: { left: 8, right: 16, top: 8, bottom: 4 },
+        },
+        xaxis: {
+            type: 'numeric',
+            min: 0,
+            max: 100,
+            tickAmount: 10,
+            title: {
+                text: 'Weighted Score (%)',
+                style: { fontSize: '12px', fontFamily: 'inherit', color: '#64748b', fontWeight: '500' },
+            },
+            labels: {
+                formatter: v => `${Math.round(v)}%`,
+                style: { fontSize: '12px', fontFamily: 'inherit', colors: '#64748b' },
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            crosshairs: { show: false },
+        },
+        yaxis: {
+            min: 0,
+            max: Math.ceil(maxY * 1.18),
+            forceNiceScale: true,
+            title: {
+                text: 'Number of Provinces',
+                style: { fontSize: '12px', fontFamily: 'inherit', color: '#64748b', fontWeight: '500' },
+            },
+            labels: {
+                formatter: v => Math.round(v),
+                style: { fontSize: '12px', fontFamily: 'inherit', colors: '#64748b' },
+            },
+        },
+        annotations: {
+            xaxis: [{
+                x: stats.mean,
+                strokeDashArray: 5,
+                borderColor: '#0f172a',
+                borderWidth: 1.5,
+                label: {
+                    text: `μ ${stats.mean.toFixed(1)}%`,
+                    position: 'top',
+                    orientation: 'horizontal',
+                    offsetY: -2,
+                    style: {
+                        color: '#0f172a',
+                        background: '#fff',
+                        fontFamily: 'inherit',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        padding: { left: 6, right: 6, top: 2, bottom: 2 },
+                    },
+                },
+            }],
+        },
+        tooltip: {
+            theme: 'light',
+            shared: false,
+            intersect: true,
+            custom: ({ seriesIndex, dataPointIndex }) => {
+                if (seriesIndex !== 0) return '';
+                const bin = data.bins[dataPointIndex];
+                if (!bin || !bin.count) {
+                    return `<div style="padding:8px 12px;font-family:inherit;font-size:12px;color:#64748b;">
+                        ${bin?.from ?? 0}–${bin?.to ?? 0}% · no provinces
+                    </div>`;
+                }
+                const rows = bin.provinces.slice(0, 8).map(p =>
+                    `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11.5px;line-height:1.6;">
+                        <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${bucketColor(p.bucket)};margin-right:6px;vertical-align:middle;"></span>${p.name}</span>
+                        <span style="font-family:var(--font-num,monospace);color:#334155;">${p.score.toFixed(1)}%</span>
+                    </div>`
+                ).join('');
+                const more = bin.provinces.length > 8
+                    ? `<div style="font-size:11px;color:#64748b;margin-top:4px;">+${bin.provinces.length - 8} more…</div>`
+                    : '';
+                return `<div style="padding:10px 12px;font-family:inherit;min-width:240px;">
+                    <div style="font-weight:600;margin-bottom:6px;color:#0f172a;">
+                        ${bin.from}–${bin.to}% · ${bin.count} province${bin.count === 1 ? '' : 's'}
+                    </div>
+                    ${rows}${more}
+                </div>`;
+            },
+        },
     };
-};
-
-const top10Options = computed(() => makeHorizOptions(top10Data.value));
-const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
-const underOptions = computed(() => makeHorizOptions(underData.value));
-const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
-const avgOptions   = computed(() => makeHorizOptions(avgData.value));
-const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
-
-// ~26px per bar keeps labels legible — Average can have 40+ entries at All Tiers,
-// so a fixed 360px would squash bars to a few pixels each.
-const avgChartHeight = computed(() => Math.max(360, avgData.value.names.length * 26 + 40));
+});
 
 // ── Trend view: weighted score per province across years ──────────────────
 const TREND_LIMIT = 15;
@@ -1034,14 +1110,14 @@ const trendOptions = computed(() => ({
     stroke: { curve: 'smooth', width: 2.5 },
     markers: { size: 4 },
     xaxis: { categories: trendData.value.years,
-             title: { text: 'Year', style: { fontSize: '11px', fontFamily: 'inherit' } },
-             labels: { style: { fontSize: '11px', fontFamily: 'inherit' } } },
+             title: { text: 'Year', style: { fontSize: '14px', fontFamily: 'inherit', fontWeight: '600' } },
+             labels: { style: { fontSize: '14px', fontFamily: 'inherit' } } },
     yaxis: { min: 0, max: 100,
-             title: { text: 'Weighted Score (%)', style: { fontSize: '11px', fontFamily: 'inherit' } },
-             labels: { formatter: v => `${v}%`, style: { fontSize: '11px', fontFamily: 'inherit' } } },
+             title: { text: 'Weighted Score (%)', style: { fontSize: '14px', fontFamily: 'inherit', fontWeight: '600' } },
+             labels: { formatter: v => `${v}%`, style: { fontSize: '14px', fontFamily: 'inherit' } } },
     grid: { borderColor: '#f1f5f9' },
-    legend: { position: 'bottom', fontSize: '11px', fontFamily: 'inherit', showForSingleSeries: true,
-              markers: { size: 6 }, itemMargin: { horizontal: 8, vertical: 4 } },
+    legend: { position: 'bottom', fontSize: '14px', fontFamily: 'inherit', showForSingleSeries: true,
+              markers: { size: 8 }, itemMargin: { horizontal: 10, vertical: 6 } },
     tooltip: { y: { formatter: v => v == null ? '—' : `${v.toFixed(2)}%` } },
 }));
 
@@ -1133,6 +1209,108 @@ watch(searchTarget, async (province) => {
 </script>
 
 <style scoped>
+/* ── Type system ───────────────────────────────────────────────────────────
+   Two families, both loaded at modest weights only (max 600) so nothing on
+   the page reads as heavy/blocky — this is the look most modern SaaS
+   dashboards have settled on (Linear, Vercel, Stripe, Plane).
+
+   • Inter (text) — every word on the page. 400 for body, 500 for table
+     headers / chip labels / sub-headers, 600 only for the strongest
+     hierarchy (section titles, KPI values). Nothing 700+. The taller
+     x-height and humanist proportions keep dense rows legible without
+     having to lean on weight to create emphasis.
+   • IBM Plex Mono (numeric) — ranks, percentages, breakdown scores. Plex
+     Mono reads more like a corporate report than a code editor (less of
+     the JetBrains "developer" feel), and its tabular numerals keep number
+     columns from jittering between rows.
+
+   We then *cap* weight on bold utility classes inside the dashboard so the
+   inherited Vuetify `font-weight-bold` (700) and `font-weight-black` (900)
+   that exist throughout the template land at 600 instead. This is the
+   single biggest change in feel — no thick text anywhere. */
+.dashboard-root {
+    --font-text: 'Inter', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-num:  'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    font-family: var(--font-text);
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #1f2937;
+}
+
+/* Cap weight across the dashboard. font-weight-bold (700) → 600,
+   font-weight-black (900) → 600. Keeps hierarchy distinguishable from
+   normal text without anything ever crossing into "thick". */
+.dashboard-root :deep(.font-weight-bold),
+.dashboard-root :deep(b),
+.dashboard-root :deep(strong) { font-weight: 600 !important; }
+.dashboard-root :deep(.font-weight-black) { font-weight: 600 !important; }
+.dashboard-root :deep(.font-weight-medium) { font-weight: 500 !important; }
+
+/* Section titles (Top / Average / Low Performers, PSTD Ranking Matrix,
+   podium banner) — semibold + tighter tracking, but still Inter, so they
+   sit in the same family as the rows beneath them. */
+.dashboard-root .chart-header :deep(.font-weight-bold),
+.dashboard-root .podium-banner :deep(.text-body-2),
+.dashboard-root :deep(.qc-value) {
+    font-weight: 600 !important;
+    letter-spacing: -0.005em;
+}
+
+/* The three sizes used most: text-h4 (KPI values), text-body-2 (section
+   titles, table cells), text-caption (subtitles, metadata). Hold them to
+   600/500/400 respectively — gives a 3-step hierarchy without ever going
+   heavy. */
+.dashboard-root :deep(.text-h4),
+.dashboard-root :deep(.text-h5),
+.dashboard-root :deep(.text-h6) {
+    font-weight: 600 !important;
+    letter-spacing: -0.015em;
+}
+
+/* Tone down the podium — the gold/silver/bronze blocks were the heaviest
+   text on the page. 500/600 weights here keep the visual order (1st bigger
+   than 2nd bigger than 3rd) but lose the "shouty" feel. */
+.dashboard-root .podium-province { font-weight: 600; letter-spacing: -0.01em; }
+.dashboard-root .podium-region   { font-weight: 400; }
+.dashboard-root .podium-score    { font-weight: 600; letter-spacing: -0.02em; }
+.dashboard-root .podium-rank-num { font-weight: 500; letter-spacing: 0.02em; }
+
+/* Numeric family — ranks, percentages, score breakdowns. Tabular nums +
+   `zero` (slashed zero) keep number columns aligned and readable. */
+.dashboard-root .rank-medal,
+.dashboard-root .podium-rest-rank,
+.dashboard-root .breakdown-score,
+.dashboard-root .score-pct,
+.dashboard-root .score-counts,
+.dashboard-root .cat-cell,
+.dashboard-root :deep(.qc-subtitle) {
+    font-family: var(--font-num);
+    font-feature-settings: 'tnum', 'zero';
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+/* Table headers — small caps treatment via uppercase + tracking, NOT bold.
+   This is the clean way to separate header from body in a dense table
+   without resorting to heavy weight. */
+.dashboard-root .leaderboard-table :deep(thead th) {
+    font-family: var(--font-text);
+    font-weight: 500 !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+/* QuantityCard title — same small-caps treatment so the KPI cards visually
+   echo the table header style. */
+.dashboard-root :deep(.qc-title) {
+    font-weight: 500 !important;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+
 .filter-label {
     font-size: 13px;
     font-weight: 700;
@@ -1243,11 +1421,15 @@ watch(searchTarget, async (province) => {
 .podium-rest-rank { width: 36px; text-align: right; flex-shrink: 0; font-size: 14px; color: #64748b; font-weight: 700; }
 .podium-rest-scroll { overflow-y: auto; }
 
-.podium-breakdown { display: flex; gap: 20px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
+.podium-breakdown { display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
 .breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.breakdown-row    { display: flex; align-items: center; gap: 8px; cursor: default; }
-.breakdown-label  { font-size: 13px; font-weight: 600; color: #475569; width: 120px; flex-shrink: 0; white-space: nowrap; }
-.breakdown-score  { font-size: 14px; font-weight: 700; width: 64px; text-align: right; flex-shrink: 0; margin-left: auto; }
+.breakdown-row    { display: flex; align-items: center; gap: 6px; cursor: default; }
+/* Label width tuned so the longest label ("FUNCTIONAL") fits at 13px without
+   crowding the score. Was 120px which overflowed when the podium-stage
+   shrinks (42% width) — that's what was pushing the SUPPORT row off-screen
+   or causing horizontal overflow per column. */
+.breakdown-label  { font-size: 13px; font-weight: 600; color: #475569; width: 78px; flex-shrink: 0; white-space: nowrap; }
+.breakdown-score  { font-size: 14px; font-weight: 700; min-width: 50px; text-align: right; flex-shrink: 0; margin-left: auto; }
 
 .score-text { display: flex; flex-direction: column; line-height: 1.25; }
 .score-pct  { font-size: 18px; font-weight: 700; white-space: nowrap; }
@@ -1279,12 +1461,16 @@ watch(searchTarget, async (province) => {
     line-height: 1.5;
 }
 
-.score-cell { display: flex; align-items: center; gap: 10px; width: 330px; flex-shrink: 0; }
+/* Widened from 330 → 380 because the elderly-friendly font override
+   (.score-cell .score-counts → 15px) made "CORE X · FUNC X · SUPP X"
+   exceed the original 210px text slot and truncate to "SUP...".
+   Score-text widened in lockstep so all three category values fit. */
+.score-cell { display: flex; align-items: center; gap: 10px; width: 380px; flex-shrink: 0; }
 .score-cell .score-track { flex: unset; width: 105px; flex-shrink: 0; }
-.score-cell .score-text  { width: 210px; flex-shrink: 0; }
+.score-cell .score-text  { width: 260px; flex-shrink: 0; }
 .score-cell .score-pct   { font-size: 15px; }
 .score-cell .score-counts { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
-.podium-rest-cell { width: 330px; }
+.podium-rest-cell { width: 380px; }
 
 /* Tighten the province dropdown's menu rows so more items fit without scrolling */
 .trend-province-select :deep(.v-list-item) { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
@@ -1296,15 +1482,52 @@ watch(searchTarget, async (province) => {
    Higher-up reviewers need larger, higher-contrast text. These lift Vuetify's
    utility text and dense components inside the dashboard without reflowing the
    layout. Scoped, so they don't leak to other pages. */
-.text-caption { font-size: 13px !important; line-height: 1.45 !important; }
-.text-body-2  { font-size: 15px !important; line-height: 1.45 !important; }
+.text-caption        { font-size: 16px !important; line-height: 1.5 !important; }
+.text-body-2         { font-size: 18px !important; line-height: 1.5 !important; }
+.text-body-1         { font-size: 20px !important; line-height: 1.5 !important; }
+.text-subtitle-2     { font-size: 18px !important; line-height: 1.5 !important; }
+.text-subtitle-1     { font-size: 20px !important; line-height: 1.5 !important; }
+.text-h6             { font-size: 1.6rem  !important; line-height: 1.35 !important; }
+.text-h5             { font-size: 1.9rem  !important; line-height: 1.3  !important; }
+.text-h4             { font-size: 2.75rem !important; line-height: 1.2  !important; }
+.text-h3             { font-size: 3.25rem !important; line-height: 1.15 !important; }
+
+/* Chips, list items, buttons */
 .leaderboard-table :deep(.v-chip),
-:deep(.v-chip--size-x-small) { font-size: 12.5px !important; }
-:deep(.v-chip--size-small)   { font-size: 13.5px !important; }
-/* Selected value shown in the Region select / Search field */
-:deep(.v-field__input) { font-size: 15px; }
-:deep(.v-field__input input)::placeholder { font-size: 14px; }
+:deep(.v-chip--size-x-small) { font-size: 15px !important; }
+:deep(.v-chip--size-small)   { font-size: 17px !important; }
+:deep(.v-list-item-title)    { font-size: 17px !important; }
+:deep(.v-btn--size-small)    { font-size: 15px !important; }
+:deep(.v-btn--size-x-small)  { font-size: 13.5px !important; }
+:deep(.v-btn)                { font-size: 16px !important; }
+
+/* Form fields (filter selects, search input, etc.) */
+:deep(.v-field__input)                    { font-size: 18px; }
+:deep(.v-field__input input)::placeholder { font-size: 17px; }
+:deep(.v-field__label)                    { font-size: 16px; }
+
+/* Data tables (PSTD ranking matrix) */
+:deep(.v-data-table) { font-size: 17px !important; }
+:deep(.v-data-table th) { font-size: 14px !important; }
+
+/* Local font-size declarations sprinkled through the file — push them up too */
+.cat-weight   { font-size: 15px !important; }
+.score-cell .score-pct    { font-size: 19px !important; }
+.score-cell .score-counts { font-size: 15px !important; }
+
 .trend-province-select :deep(.v-selection-control__wrapper) { width: 28px; height: 28px; }
+.trend-province-select :deep(.v-list-item-title) { font-size: 17px !important; }
+
+/* Filter bar input/label overrides take precedence over the generic ones above */
+.filter-select :deep(.v-field__input) { font-size: 17px !important; }
+.filter-select :deep(.v-field__label) { font-size: 16px !important; }
+
+/* QuantityCard title overline-style label needs more breathing room at the
+   larger size — and the number itself wants to stand out as the headline */
+:deep(.v-card-subtitle.text-caption) {
+    font-size: 14px !important;
+    letter-spacing: 0.08em !important;
+}
 
 /* Keep the field a fixed single-line height regardless of selection count —
    selections are rendered as a text summary via prepend-inner instead of chips. */
@@ -1338,13 +1561,18 @@ watch(searchTarget, async (province) => {
 }
 
 /* Unified view-area inside the leaderboard card. All four views (Podium,
-   Table, Trend, Map) live here and are sized to fill exactly 540px so the
+   Table, Trend, Map) live here and are sized to fill a fixed height so the
    card's overall height never changes when the user switches views — the
    page below the leaderboard stays put, making comparison between views
    "in place" rather than requiring a re-scroll each time. The Podium view
-   scrolls internally if its content exceeds the slot. */
+   scrolls internally if its content exceeds the slot.
+
+   Height bumped from 540 → 600 so the third (SUPPORT) row of the podium
+   category breakdown stays visible without scrolling. With the elderly-
+   friendly font scaling, banner + podium-info + 210px gold block + 3
+   breakdown rows + paddings clears 540 and was clipping SUPPORT. */
 .lb-view-area {
-    height: 540px;
+    height: 600px;
     overflow: hidden;
     position: relative;
 }
@@ -1362,8 +1590,6 @@ watch(searchTarget, async (province) => {
 .filter-select               { width: 160px; flex-shrink: 0; }
 .filter-select--wide         { width: 220px; }
 .filter-select--narrow       { width: 110px; }
-.filter-select :deep(.v-field__input) { font-size: 14px; }
-.filter-select :deep(.v-field__label) { font-size: 13px; }
 
 /* Thin slate divider between the Tier · Geography · Category groups in the
    sticky filter bar — quietly signals that Island/Region/Province belong
@@ -1396,15 +1622,15 @@ watch(searchTarget, async (province) => {
     animation: search-pulse 0.55s ease-in-out 3;
 }
 
-/* Top / Average / Low performer cards — header + a fixed-height chart slot.
-   Pinning the slot to exactly 360px guarantees all three cards match in
-   total height regardless of bar count or whether the x-axis is visible. */
-.perf-card-body {
-    height: 360px;
+/* Performance Distribution card — fixed chart slot keeps page layout stable
+   regardless of how many provinces are ranked in the active filter. */
+.bell-card-body {
+    height: 380px;
     overflow: hidden;
     position: relative;
+    padding: 4px 4px 0;
 }
-.perf-empty {
+.bell-empty {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -1412,14 +1638,4 @@ watch(searchTarget, async (province) => {
     justify-content: center;
     gap: 8px;
 }
-/* Average can have 40+ bars; render the chart at its natural height and
-   scroll within the 360px slot. */
-.avg-chart-scroll {
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-.avg-chart-scroll::-webkit-scrollbar         { width: 8px; }
-.avg-chart-scroll::-webkit-scrollbar-thumb   { background: #cbd5e1; border-radius: 4px; }
-.avg-chart-scroll::-webkit-scrollbar-track   { background: transparent; }
 </style>

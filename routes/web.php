@@ -70,7 +70,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // ── Super Admin only ───────────────────────────────────────
     Route::middleware('super-admin')->group(function () {
-        Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::put('/users/{id}',    [UserController::class, 'update']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
         Route::get('/maintenance',                                    [MaintenanceController::class, 'index']);
         Route::post('/maintenance/backup',                            [MaintenanceController::class, 'create_backup']);
