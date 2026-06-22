@@ -50,14 +50,14 @@ const features = [
             <!-- Center: Main content -->
             <div class="left-section flex-grow-1 d-flex flex-column justify-center" style="position:relative;">
 
-                <!-- Badge - PRISM system brand -->
-                <div class="dost-badge mb-3">
-                    <img src="/assets/logo.png" alt="PRISM" class="dost-badge-logo mr-2" />
-                    <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">PRISM</span>
+                <!-- PRISM system brand -->
+                <div class="prism-badge mb-4">
+                    <img src="/assets/logo.png" alt="PRISM" class="prism-badge-logo" />
+                    <span class="prism-badge-text">PRISM</span>
                 </div>
 
                 <!-- PRISM full name -->
-                <div class="text-white mb-6" style="font-size:0.92rem; letter-spacing:0.01em; opacity:0.85; font-weight:500;">
+                <div class="prism-fullname mb-7">
                     Provincial Director Ranking and Information System for Management
                 </div>
 
@@ -215,6 +215,39 @@ const features = [
     height: 18px;
     object-fit: contain;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+
+/* PRISM brand lockup (center) */
+.prism-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px;
+    padding: 9px 22px 9px 12px;
+}
+.prism-badge-logo {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+.prism-badge-text {
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    line-height: 1;
+}
+.prism-fullname {
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+    max-width: 440px;
+    opacity: 0.92;
 }
 
 /* Feature grid */
