@@ -234,9 +234,9 @@ const sampleDirector = computed(() => {
                 <!-- Stats strip -->
                 <div class="hero-stats">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div v-for="s in stats" :key="s.label" class="text-center">
-                            <div class="text-4xl font-extrabold text-white">{{ s.value }}</div>
-                            <div class="text-base font-medium mt-1" style="color:#bcd6f2">{{ s.label }}</div>
+                        <div v-for="s in stats" :key="s.label" class="hero-stat">
+                            <div class="hero-stat-num">{{ s.value }}</div>
+                            <div class="hero-stat-label">{{ s.label }}</div>
                         </div>
                     </div>
                 </div>
@@ -336,6 +336,26 @@ const sampleDirector = computed(() => {
                     the system empowers DOST management to identify top performers, surface areas
                     for improvement, and track progress over time.
                 </p>
+
+                <div class="scoring-card reveal">
+                    <div class="scoring-head">
+                        <span class="scoring-head-title">Scoring Framework</span>
+                        <span class="scoring-head-sub">37 indicators · 3 functions · 83 provinces</span>
+                    </div>
+                    <div class="scoring-row">
+                        <div class="scoring-row-top"><span>Core Functions</span><span class="scoring-pct">60%</span></div>
+                        <div class="scoring-track"><div class="scoring-fill" style="width:60%; background:linear-gradient(90deg, var(--dost), #56b3f5);"></div></div>
+                    </div>
+                    <div class="scoring-row">
+                        <div class="scoring-row-top"><span>Functional Functions</span><span class="scoring-pct">30%</span></div>
+                        <div class="scoring-track"><div class="scoring-fill" style="width:30%; background:linear-gradient(90deg, var(--dost-600), #7cc4ff);"></div></div>
+                    </div>
+                    <div class="scoring-row">
+                        <div class="scoring-row-top"><span>Support Functions</span><span class="scoring-pct">10%</span></div>
+                        <div class="scoring-track"><div class="scoring-fill" style="width:10%; background:linear-gradient(90deg, var(--dost-700), #9fd2ff);"></div></div>
+                    </div>
+                </div>
+
                 <div class="mt-10 flex justify-center">
                     <a v-if="canLogin" href="/login" class="inline-flex items-center gap-2 btn-primary-lg">
                         Access the System <RiArrowRightLine class="w-5 h-5" />
@@ -651,7 +671,12 @@ const sampleDirector = computed(() => {
 .hero-stats { position: relative; z-index: 3; border-top: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); }
 
 /* ── Shared ──────────────────────────────────────────────────────────────── */
-.eyebrow { font-size: 15px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dost); }
+.eyebrow {
+    display: inline-block; font-size: 13px; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--dost);
+    background: var(--dost-tint); border: 1px solid var(--dost-line);
+    padding: 6px 14px; border-radius: 999px;
+}
 .section-title { margin-top: 8px; font-size: clamp(2rem, 3vw, 2.6rem); font-weight: 800; color: #0f172a; line-height: 1.15; }
 .section-lead { margin-top: 16px; font-size: 1.25rem; line-height: 1.75; color: #475569; max-width: 44rem; }
 
@@ -799,7 +824,7 @@ const sampleDirector = computed(() => {
         radial-gradient(55% 60% at 18% 0%, rgba(86,179,245,.20), transparent 70%),
         radial-gradient(45% 55% at 85% 8%, rgba(124,196,255,.16), transparent 70%);
 }
-.eyebrow--on-dark { color: #8ec5ff; }
+.eyebrow--on-dark { color: #cfe6ff; background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22); }
 .mvm-title { margin-top: 8px; font-size: clamp(2rem, 3vw, 2.6rem); font-weight: 800; color: #fff; line-height: 1.15; }
 .mvm-sub   { margin-top: 14px; font-size: 1.2rem; line-height: 1.7; color: #c6dbf3; }
 .mvm-grid  { margin-top: 48px; display: grid; gap: 22px; grid-template-columns: repeat(3, 1fr); }
@@ -822,5 +847,40 @@ const sampleDirector = computed(() => {
 }
 .mvm-label { margin-top: 18px; font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8ec5ff; }
 .mvm-text  { margin-top: 8px; font-size: 1.02rem; line-height: 1.7; color: #e7eefb; }
+
+/* ── Hero entrance + stat cards ──────────────────────────────────────────── */
+.hero-badge, .hero-tagline, .hero-title, .hero-sub {
+    animation: heroIn .85s cubic-bezier(.22,1,.36,1) both;
+}
+.hero-tagline { animation-delay: .08s; }
+.hero-title   { animation-delay: .16s; }
+.hero-sub     { animation-delay: .26s; }
+@keyframes heroIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .hero-badge, .hero-tagline, .hero-title, .hero-sub { animation: none; }
+}
+.hero-stat {
+    text-align: center; padding: 16px 8px; border-radius: 14px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    transition: background .2s ease, transform .2s ease, border-color .2s ease;
+}
+.hero-stat:hover { background: rgba(255,255,255,.12); border-color: rgba(142,197,255,.45); transform: translateY(-3px); }
+.hero-stat-num   { font-size: 2.3rem; font-weight: 800; color: #fff; line-height: 1; }
+.hero-stat-label { margin-top: 6px; font-size: .95rem; font-weight: 500; color: #bcd6f2; }
+
+/* ── Scoring framework card ──────────────────────────────────────────────── */
+.scoring-card {
+    margin-top: 44px; text-align: left; background: #fff;
+    border: 1px solid #e2ecf7; border-radius: 20px; padding: 26px 28px;
+    box-shadow: 0 20px 50px rgba(11,87,168,.10);
+}
+.scoring-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.scoring-head-title { font-size: 1.12rem; font-weight: 800; color: var(--dost-navy); }
+.scoring-head-sub   { font-size: .92rem; font-weight: 600; color: #64748b; }
+.scoring-row + .scoring-row { margin-top: 16px; }
+.scoring-row-top { display: flex; justify-content: space-between; font-size: .98rem; font-weight: 600; color: #334155; margin-bottom: 7px; }
+.scoring-pct { color: var(--dost); font-weight: 800; }
+.scoring-track { height: 12px; border-radius: 999px; background: #eef3fa; overflow: hidden; }
+.scoring-fill  { height: 100%; border-radius: 999px; }
 
 </style>
