@@ -205,7 +205,7 @@ const sampleDirector = computed(() => {
             <div class="hero-veil"></div>
 
             <div class="hero-inner">
-                <div class="max-w-4xl mx-auto px-4 sm:px-6 py-24 lg:py-36 text-center text-white">
+                <div class="hero-content max-w-4xl mx-auto px-4 sm:px-6 py-8 text-center text-white">
                     <div class="hero-badge mx-auto">
                         <img src="/assets/logo.png" alt="DOST" class="hero-badge-logo" />
                         Department of Science and Technology
@@ -612,6 +612,8 @@ const sampleDirector = computed(() => {
 /* ── Hero ────────────────────────────────────────────────────────────────── */
 .hero {
     position: relative; overflow: hidden;
+    min-height: calc(100vh - 4rem);   /* fill the viewport below the sticky navbar */
+    display: flex; flex-direction: column;
     background: linear-gradient(135deg, var(--dost-navy) 0%, var(--dost) 65%, var(--dost-navy) 100%);
 }
 .hero-video {
@@ -634,7 +636,8 @@ const sampleDirector = computed(() => {
     position: absolute; inset: 0; z-index: 2; pointer-events: none;
     background: linear-gradient(180deg, rgba(8,47,95,.86) 0%, rgba(8,47,95,.46) 40%, rgba(8,47,95,.54) 68%, rgba(6,31,64,.92) 100%);
 }
-.hero-inner { position: relative; z-index: 3; }
+.hero-inner { position: relative; z-index: 3; flex: 1; display: flex; flex-direction: column; }
+.hero-content { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
 
 .hero-badge {
     display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px;
