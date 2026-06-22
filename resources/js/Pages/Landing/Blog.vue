@@ -20,7 +20,7 @@ const allPosts = [
             'The Department of Science and Technology (DOST) has officially launched a comprehensive new performance evaluation framework for Provincial Science and Technology Directors (PSTDs) across the Philippines. The framework introduces 37 structured key performance indicators (KPIs) designed to provide a more holistic, evidence-based assessment of each director\'s contributions to science and technology in their respective provinces.',
             'The 37 indicators are organized into three functional areas: Core Functions (weighted at 60%), which covers the primary S&T mandate of each provincial office; Functional Functions (30%), which assesses administrative and coordination effectiveness; and Support Functions (10%), which evaluates auxiliary activities that contribute to the overall performance of the provincial S&T office.',
             'DOST Secretary emphasized that the new framework reflects the agency\'s commitment to transparency and accountability. "We want every Provincial S&T Director to know exactly how they are being measured, and we want the public to trust that our evaluations are fair, consistent, and grounded in real data," the Secretary said during the launch event.',
-            'The framework will be implemented starting Fiscal Year 2025 and will feed directly into the PSTD Ranking & Information System, which provides real-time rankings and dashboards accessible to authorized DOST personnel. Provincial directors will receive detailed scorecards at the end of each evaluation period to guide their improvement efforts.',
+            'The framework will be implemented starting Fiscal Year 2025 and will feed directly into the PRISM, which provides real-time rankings and dashboards accessible to authorized DOST personnel. Provincial directors will receive detailed scorecards at the end of each evaluation period to guide their improvement efforts.',
             'Training sessions for regional directors and evaluation officers are scheduled throughout the third quarter of 2025 to ensure a smooth rollout of the new framework nationwide.',
         ],
     },
@@ -32,7 +32,7 @@ const allPosts = [
         title:   'FY 2024 PSTD Rankings Now Available on the Information System',
         excerpt: 'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, functional, and support functions.',
         body: [
-            'DOST is pleased to announce that the Fiscal Year 2024 rankings of all Provincial Science and Technology Directors (PSTDs) are now available on the PSTD Ranking & Information System. The rankings cover all 83 provinces and clusters across the three island groups of the Philippines — Luzon, Visayas, and Mindanao.',
+            'DOST is pleased to announce that the Fiscal Year 2024 rankings of all Provincial Science and Technology Directors (PSTDs) are now available on the PRISM. The rankings cover all 83 provinces and clusters across the three island groups of the Philippines — Luzon, Visayas, and Mindanao.',
             'This year\'s rankings reflect performance data collected and validated throughout FY 2024, covering all 37 performance indicators across Core, Functional, and Support functions. Provinces are evaluated both individually and within their classification tier — whether large, medium, or small — to ensure fair comparisons across different contexts.',
             'The FY 2024 results show notable improvements in several regions, particularly in the Visayas group, where a number of provincial offices posted their highest scores in three years. DOST Regional Directors credit the improvement to increased collaboration, better data reporting practices, and targeted capacity-building programs conducted during the year.',
             'Authorized DOST personnel can access the full rankings dashboard, which includes podium views, sortable data tables, year-over-year trend charts, and a color-coded performance map. Individual province scorecards are also available for download.',
@@ -50,7 +50,7 @@ const allPosts = [
             'The Department of Science and Technology recently convened the 2025 Regional S&T Directors Summit, bringing together officials from all 16 regional offices, provincial directors, and central office representatives. The summit, held over two days, focused on strategies for improving science and technology service delivery at the provincial level and strengthening the capacity of provincial S&T directorates.',
             'A key agenda item was the rollout plan for the updated PSTD performance evaluation framework. Regional directors engaged in breakout sessions to discuss implementation challenges, data collection protocols, and best practices for supporting provincial offices in meeting the new KPI standards.',
             'The summit also featured presentations from top-performing provincial directors, who shared the strategies that contributed to their high rankings in FY 2023. Themes included proactive stakeholder engagement, improved data management systems, and stronger collaboration with local government units and academic institutions.',
-            'Participants also reviewed the capabilities of the PSTD Ranking & Information System, with a live demonstration of the new dashboard features including the interactive performance map, trend analysis charts, and the province directory module.',
+            'Participants also reviewed the capabilities of the PRISM, with a live demonstration of the new dashboard features including the interactive performance map, trend analysis charts, and the province directory module.',
             'The event concluded with a commitment from all regional directors to cascade the summit\'s outcomes to their provincial offices and to submit quarterly progress reports through the information system. The next summit is tentatively scheduled for the fourth quarter of 2025.',
         ],
     },
@@ -62,7 +62,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head :title="post ? `${post.title} — DOST PSTD` : 'Blog — DOST PSTD'" />
+    <Head :title="post ? `${post.title} — DOST PRISM` : 'Blog — DOST PRISM'" />
 
     <div class="min-h-screen bg-white text-slate-800">
 
@@ -73,7 +73,7 @@ const year = new Date().getFullYear();
                     <a href="/" class="flex items-center gap-3">
                         <img src="/assets/logo.png" alt="DOST" class="w-10 h-10 rounded-lg object-contain" />
                         <div class="leading-tight">
-                            <div class="font-extrabold text-[#082f5f] text-lg tracking-tight">DOST PSTD</div>
+                            <div class="font-extrabold text-[#082f5f] text-lg tracking-tight">DOST PRISM</div>
                             <div class="text-[11px] text-slate-500 hidden sm:block">Ranking &amp; Information System</div>
                         </div>
                     </a>
@@ -139,7 +139,7 @@ const year = new Date().getFullYear();
             <!-- ── Related posts ──────────────────────────────────────────── -->
             <section class="bg-slate-50 py-16">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                    <h2 class="text-xl font-bold text-slate-900 mb-8">More from DOST PSTD</h2>
+                    <h2 class="text-xl font-bold text-slate-900 mb-8">More from DOST PRISM</h2>
                     <div class="grid sm:grid-cols-2 gap-6">
                         <a v-for="r in related" :key="r.slug" :href="`/blog/${r.slug}`" class="related-card">
                             <div class="related-img">

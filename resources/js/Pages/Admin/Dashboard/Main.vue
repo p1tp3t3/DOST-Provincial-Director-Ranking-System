@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3 dashboard-root">
 
@@ -152,27 +152,195 @@
                             <div class="d-flex align-center gap-2">
                                 <v-icon size="15" color="indigo">mdi-chart-bell-curve</v-icon>
                                 <span class="text-body-2 font-weight-bold">Performance Distribution</span>
-                            </div>
-                            <div class="text-caption text-medium-emphasis">
-                                Weighted score across ranked provinces · 5% bins · Gaussian fit
+                                <v-tooltip location="bottom" max-width="340">
+                                    <template #activator="{ props: tip }">
+                                        <v-icon v-bind="tip" size="14" color="blue-grey" class="cursor-pointer">mdi-information-outline</v-icon>
+                                    </template>
+                                    <div class="pa-2 text-caption">
+                                        Every ranked province is sorted by overall standing and split into three groups: the top 20% (Top), the middle 70% (Average), and the bottom 10% (Low). Use the toggle to view this as proportional bars or a bell curve. Hover a group to list its provinces; click to keep it open.
+                                    </div>
+                                </v-tooltip>
                             </div>
                         </div>
                         <div v-if="distributionData" class="d-flex align-center gap-2 flex-wrap">
-                            <v-chip size="x-small" variant="tonal" color="indigo">μ {{ distributionData.stats.mean.toFixed(1) }}%</v-chip>
-                            <v-chip size="x-small" variant="tonal" color="blue-grey">σ {{ distributionData.stats.sd.toFixed(1) }}%</v-chip>
-                            <v-chip size="x-small" variant="tonal" color="blue-grey">median {{ distributionData.stats.median.toFixed(1) }}%</v-chip>
-                            <v-chip size="x-small" variant="tonal" color="blue-grey">n {{ distributionData.stats.n }}</v-chip>
+                            <v-btn-toggle
+                                v-model="chartView"
+                                density="compact"
+                                variant="outlined"
+                                divided
+                                mandatory
+                                color="indigo"
+                                class="bell-view-toggle mr-1"
+                            >
+                                <v-btn value="bars" size="small" prepend-icon="mdi-chart-bar">Bars</v-btn>
+                                <v-btn value="bell" size="small" prepend-icon="mdi-chart-bell-curve">Bell</v-btn>
+                            </v-btn-toggle>
+                            <v-chip size="x-small" variant="tonal" color="indigo">Average score {{ distributionData.stats.mean.toFixed(1) }}%</v-chip>
+                            <v-chip size="x-small" variant="tonal" color="blue-grey">{{ distributionData.stats.n }} provinces</v-chip>
                         </div>
                     </div>
                     <div class="bell-card-body">
-                        <VueApexCharts
-                            v-if="distributionData"
-                            type="line"
-                            height="380"
-                            :options="bellCurveOptions"
-                            :series="bellCurveSeries"
-                            :key="`bell-${selectedYear}-${selectedTier}-${selectedCategory}-${selectedIsland}-${selectedRegion}`"
-                        />
+                        <!-- Bars view: Top / Average / Low performer charts (per-tier buckets) -->
+                        <div v-if="distributionData && chartView === 'bars'" class="perf-row">
+                            <div class="perf-col">
+                                <div class="perf-col-head">
+                                    <div class="d-flex align-center gap-2">
+                                        <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
+                                        <span class="text-body-2 font-weight-bold">Top Performers</span>
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis">Top 20% of each tier · {{ top10Data.names.length }} {{ top10Data.names.length === 1 ? 'province' : 'provinces' }}</div>
+                                </div>
+                                <div class="perf-col-body">
+                                    <VueApexCharts
+                                        v-if="top10Data.names.length"
+                                        type="bar"
+                                        height="340"
+                                        :options="top10Options"
+                                        :series="top10Series"
+                                        :key="`top10-${selectedYear}-${selectedTier}-${selectedCategory}`"
+                                    />
+                                    <div v-else class="perf-empty">
+                                        <v-icon size="40" color="blue-grey">mdi-podium-gold</v-icon>
+                                        <div class="text-body-2 font-weight-medium">No Top Performers</div>
+                                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="perf-col">
+                                <div class="perf-col-head">
+                                    <div class="d-flex align-center gap-2">
+                                        <v-icon size="15" color="warning">mdi-trending-neutral</v-icon>
+                                        <span class="text-body-2 font-weight-bold">Average Performers</span>
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis">Middle 70% of each tier · {{ avgData.names.length }} {{ avgData.names.length === 1 ? 'province' : 'provinces' }}</div>
+                                </div>
+                                <div class="perf-col-body">
+                                    <div v-if="avgData.names.length" class="avg-chart-scroll">
+                                        <VueApexCharts
+                                            type="bar"
+                                            :height="avgChartHeight"
+                                            :options="avgOptions"
+                                            :series="avgSeries"
+                                            :key="`avg-${selectedYear}-${selectedTier}-${selectedCategory}`"
+                                        />
+                                    </div>
+                                    <div v-else class="perf-empty">
+                                        <v-icon size="40" color="blue-grey">mdi-trending-neutral</v-icon>
+                                        <div class="text-body-2 font-weight-medium">No Average Performers</div>
+                                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="perf-col">
+                                <div class="perf-col-head">
+                                    <div class="d-flex align-center gap-2">
+                                        <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
+                                        <span class="text-body-2 font-weight-bold">Low Performers</span>
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis">Bottom 10% of each tier · {{ underData.names.length }} {{ underData.names.length === 1 ? 'province' : 'provinces' }}</div>
+                                </div>
+                                <div class="perf-col-body">
+                                    <VueApexCharts
+                                        v-if="underData.names.length"
+                                        type="bar"
+                                        height="340"
+                                        :options="underOptions"
+                                        :series="underSeries"
+                                        :key="`under-${selectedYear}-${selectedTier}-${selectedCategory}`"
+                                    />
+                                    <div v-else class="perf-empty">
+                                        <v-icon size="40" color="success">mdi-check-decagram-outline</v-icon>
+                                        <div class="text-body-2 font-weight-medium">No Low Performers</div>
+                                        <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Bell view: shaded curve + hover/lock side list -->
+                        <div v-else-if="distributionData" class="bell-layout">
+                            <div class="bell-wrap">
+                                <svg class="bell-svg" :viewBox="`0 0 ${bellCurve.W} ${bellCurve.H}`" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient
+                                            v-for="r in bellCurve.regions"
+                                            :key="`grad-${r.key}`"
+                                            :id="`bellgrad-${r.key}`"
+                                            x1="0" y1="0" x2="0.35" y2="1"
+                                        >
+                                            <stop offset="0%" :stop-color="r.color" />
+                                            <stop offset="100%" :stop-color="r.light" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path
+                                        v-for="r in bellCurve.regions"
+                                        :key="r.key"
+                                        :d="r.path"
+                                        :fill="`url(#bellgrad-${r.key})`"
+                                        :fill-opacity="!activeRegionKey ? 0.82 : (activeRegionKey === r.key ? 0.95 : 0.38)"
+                                    />
+                                    <line
+                                        v-for="(dv, i) in bellCurve.dividers"
+                                        :key="i"
+                                        :x1="dv.x" :y1="dv.y1" :x2="dv.x" :y2="dv.y2"
+                                        stroke="#ffffff" stroke-width="1.5" stroke-dasharray="5 4"
+                                        opacity="0.85" vector-effect="non-scaling-stroke"
+                                    />
+                                    <path :d="bellCurve.strokePath" fill="none" stroke="#0f172a" stroke-width="2" opacity="0.45" vector-effect="non-scaling-stroke" />
+                                    <line x1="0" :y1="bellCurve.baseY" :x2="bellCurve.W" :y2="bellCurve.baseY" stroke="#e2e8f0" stroke-width="1" vector-effect="non-scaling-stroke" />
+                                    <rect
+                                        v-for="r in bellCurve.regions"
+                                        :key="'hit-' + r.key"
+                                        :x="r.x0" y="0" :width="r.w" :height="bellCurve.H"
+                                        fill="transparent" pointer-events="all" style="cursor:pointer;"
+                                        @mouseenter="onRegionEnter(r.key)"
+                                        @mouseleave="onRegionLeave"
+                                        @click="onRegionClick(r.key)"
+                                    />
+                                </svg>
+                                <div class="bell-region-labels">
+                                    <div
+                                        v-for="r in bellCurve.regions"
+                                        :key="r.key"
+                                        class="bell-region-label"
+                                        :class="{ 'is-active': activeRegionKey === r.key }"
+                                        :style="{ left: r.leftPct + '%' }"
+                                        @mouseenter="onRegionEnter(r.key)"
+                                        @mouseleave="onRegionLeave"
+                                        @click="onRegionClick(r.key)"
+                                    >
+                                        <span class="brl-name" :style="{ color: r.color }">{{ r.band.label }}</span>
+                                        <span class="brl-pct">{{ r.band.pct }}%</span>
+                                        <span class="brl-count">{{ r.band.count }} {{ r.band.count === 1 ? 'province' : 'provinces' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bell-side">
+                                <template v-if="activeRegion">
+                                    <div class="bell-side-head">
+                                        <span class="bell-side-dot" :style="{ background: activeRegion.color }"></span>
+                                        <span class="bell-side-title">{{ activeRegion.label }}</span>
+                                        <span class="bell-side-meta">{{ activeRegion.count }} · {{ activeRegion.pct }}%</span>
+                                        <v-icon v-if="lockedRegion === activeRegion.key" size="13" color="indigo" class="ml-auto">mdi-lock</v-icon>
+                                    </div>
+                                    <div class="bell-side-list">
+                                        <div
+                                            v-for="(p, i) in (activeRegion.provinces || [])"
+                                            :key="p.name"
+                                            class="bell-side-row"
+                                        >
+                                            <span class="rank">{{ i + 1 }}</span>
+                                            <span class="name">{{ p.name }}</span>
+                                            <span class="score">{{ p.score.toFixed(1) }}%</span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div v-else class="bell-side-empty">
+                                    <v-icon size="22" color="blue-grey">mdi-gesture-tap</v-icon>
+                                    <div>Hover a group to list its provinces</div>
+                                    <div class="hint">Click to keep it open</div>
+                                </div>
+                            </div>
+                        </div>
                         <div v-else class="bell-empty">
                             <v-icon size="48" color="blue-grey">mdi-chart-bell-curve</v-icon>
                             <div class="text-body-2 font-weight-medium">No ranked provinces</div>
@@ -192,7 +360,7 @@
                         <div class="d-flex align-center justify-space-between flex-wrap gap-3 mb-2">
                             <div class="d-flex align-center gap-2">
                                 <v-icon size="15" color="indigo">mdi-trophy-outline</v-icon>
-                                <span class="text-body-2 font-weight-bold">PSTD Ranking Matrix</span>
+                                <span class="text-body-2 font-weight-bold">PRISM Ranking Matrix</span>
                                 <v-tooltip location="bottom" max-width="360">
                                     <template #activator="{ props: tip }">
                                         <v-chip v-bind="tip" size="x-small" variant="tonal" color="blue-grey" prepend-icon="mdi-information-outline" class="cursor-pointer">
@@ -200,7 +368,7 @@
                                         </v-chip>
                                     </template>
                                     <div class="pa-1">
-                                        <div class="font-weight-bold mb-1">Weighted PSTD Matrix Score</div>
+                                        <div class="font-weight-bold mb-1">Weighted PRISM Matrix Score</div>
                                         <div class="text-caption mb-2 opacity-80">
                                             For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, FUNCTIONAL = 30%, SUPPORT = 10%.
                                         </div>
@@ -216,15 +384,15 @@
                             </div>
                             <div class="d-flex align-center gap-3 flex-wrap">
                                 <div class="d-flex align-center gap-1">
-                                    <span class="legend-dot" style="background:#15803d;"></span>
+                                    <span class="legend-dot" style="background:#ca8a04;"></span>
                                     <span class="text-caption text-medium-emphasis">Top ({{ bucketCounts.Top }})</span>
                                 </div>
                                 <div class="d-flex align-center gap-1">
-                                    <span class="legend-dot" style="background:#ca8a04;"></span>
+                                    <span class="legend-dot" style="background:#64748b;"></span>
                                     <span class="text-caption text-medium-emphasis">Average ({{ bucketCounts.Average }})</span>
                                 </div>
                                 <div class="d-flex align-center gap-1">
-                                    <span class="legend-dot" style="background:#b91c1c;"></span>
+                                    <span class="legend-dot" style="background:#9a3412;"></span>
                                     <span class="text-caption text-medium-emphasis">Low ({{ bucketCounts.Low }})</span>
                                 </div>
                                 <div v-if="unrankedProvinces.length" class="d-flex align-center gap-1">
@@ -468,7 +636,7 @@
                                     </v-chip>
                                     <div class="score-cell podium-rest-cell">
                                         <div class="score-track">
-                                            <div class="score-fill" :style="{ width: `${Math.min(getScore(item), 100)}%`, background: bucketColor(item.bucket) }" />
+                                            <div class="score-fill" :style="{ width: `${Math.min(getScore(item), 100)}%`, background: bucketBar(item.bucket) }" />
                                         </div>
                                         <div class="score-text">
                                             <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
@@ -789,232 +957,241 @@ const tableHeaders = computed(() => {
     return selectedTier.value === 'all' ? cols.filter(c => c.key !== 'bucket') : cols;
 });
 
-const bucketColor = (b) => ({ Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' }[b] ?? '#64748b');
+// Gold / silver / bronze — matching the podium so the whole dashboard's
+// Top / Average / Low colours are consistent.
+const bucketColor = (b) => ({ Top: '#ca8a04', Average: '#64748b', Low: '#9a3412' }[b] ?? '#94a3b8');
+// Lighter "glow" end of each colour. Gold and silver lift only to a saturated
+// tone (not washed out to near-white) so they match bronze's gentler fade.
+const bucketLight = (b) => ({ Top: '#eab308', Average: '#94a3b8', Low: '#c2410c' }[b] ?? '#cbd5e1');
+// Gradient fill for score bars — solid colour -> glow tone, like the podium.
+const bucketBar = (b) => `linear-gradient(90deg, ${bucketColor(b)}, ${bucketLight(b)})`;
 const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '—');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
-// ── Bell-curve distribution ───────────────────────────────────────────────
-// Bins every ranked province by weighted score into 5% bands and fits a
-// Gaussian (using the actual sample mean + stddev) on top. The histogram
-// bars carry the per-bin facts (count, dominant bucket, province list in
-// the tooltip) and the smooth area is what makes the card read as a bell.
-const BELL_BIN_SIZE = 5;
-
-const dominantBucketColor = (bin) => {
-    const { Top, Average, Low } = bin.buckets;
-    const max = Math.max(Top, Average, Low);
-    if (!max) return '#94a3b8';
-    if (Top === max)     return '#15803d';
-    if (Low === max)     return '#b91c1c';
-    return '#ca8a04';
-};
+// ── Performance groups (20 / 70 / 10) ──────────────────────────────────────
+// Provinces are grouped by their per-tier ranking bucket (Top 20% / Average 70%
+// / Low 10% of each size tier) — the same buckets the leaderboard and the bar
+// view use, so the bell and bars always show identical counts. BAND_DEFS.pct is
+// the intended split (used for the bell's shaded areas and the labels); province
+// counts are whatever the per-tier integer split produces.
+const BAND_DEFS = [
+    { key: 'Low',     color: '#9a3412', pct: 10 },
+    { key: 'Average', color: '#64748b', pct: 70 },
+    { key: 'Top',     color: '#ca8a04', pct: 20 },
+];
 
 const distributionData = computed(() => {
-    const all = rankedOnly.value;
-    if (!all.length) return null;
+    // Use the per-tier buckets already on each row (Top 20% / Average 70% /
+    // Low 10% of each size tier) — the same buckets the bar view and leaderboard
+    // use — so the bell and bars always show identical counts.
+    const ranked = rankedOnly.value;
+    if (!ranked.length) return null;
+    const n    = ranked.length;
+    const mean = ranked.reduce((acc, r) => acc + getScore(r), 0) / n;
 
-    const binCount = Math.ceil(100 / BELL_BIN_SIZE);
-    const bins = Array.from({ length: binCount }, (_, i) => ({
-        from:    i * BELL_BIN_SIZE,
-        to:      (i + 1) * BELL_BIN_SIZE,
-        center:  i * BELL_BIN_SIZE + BELL_BIN_SIZE / 2,
-        count:   0,
-        buckets: { Top: 0, Average: 0, Low: 0 },
-        provinces: [],
+    const counts = { Top: 0, Average: 0, Low: 0 };
+    for (const r of ranked) {
+        if (counts[r.bucket] !== undefined) counts[r.bucket]++;
+    }
+
+    const listFor = (key) => ranked
+        .filter(r => r.bucket === key)
+        .map(r => ({ name: r.province, score: getScore(r) }))
+        .sort((a, b) => b.score - a.score);
+
+    // Below the minimum group size assignBuckets leaves buckets null; show one
+    // neutral full-width band so a tiny filter selection still reads sensibly.
+    if (!(counts.Top + counts.Average + counts.Low)) {
+        return {
+            stats: { n, mean },
+            bands: [{
+                key: 'All', label: 'All provinces', color: '#94a3b8',
+                count: n, pct: 100, width: 100, note: 'too few to rank into groups',
+                provinces: listFor(null),
+            }],
+        };
+    }
+
+    const bands = BAND_DEFS.map(d => ({
+        key:       d.key,
+        label:     d.key,
+        color:     d.color,
+        count:     counts[d.key],
+        pct:       d.pct,
+        provinces: listFor(d.key),
     }));
 
-    const scores = [];
-    for (const r of all) {
-        const score = getScore(r);
-        scores.push(score);
-        const idx = Math.min(binCount - 1, Math.max(0, Math.floor(score / BELL_BIN_SIZE)));
-        bins[idx].count++;
-        bins[idx].provinces.push({ name: r.province, score, bucket: r.bucket });
-        if (r.bucket && bins[idx].buckets[r.bucket] !== undefined) {
-            bins[idx].buckets[r.bucket]++;
-        }
+    return { stats: { n, mean }, bands };
+});
+
+// SVG geometry for the bell: a standard-normal curve whose AREA is split into
+// Low (bottom 10%), Average (middle 70%) and Top (top 20%) at the 10th & 80th
+// percentiles, so the three shaded regions always cover 100% of the curve. The
+// x-axis is relative standing (low -> high), deliberately not weighted score.
+const bellCurve = computed(() => {
+    const d = distributionData.value;
+    if (!d) return null;
+
+    const W = 1000, H = 320;
+    const padX = 18, padTop = 26, padBottom = 14;
+    const zMin = -3.4, zMax = 3.4;
+    const B1 = -1.2816, B2 = 0.8416;          // 10th & 80th percentile of N(0,1)
+    const dens  = (z) => Math.exp(-(z * z) / 2);
+    const xOf   = (z) => padX + ((z - zMin) / (zMax - zMin)) * (W - 2 * padX);
+    const yOf   = (v) => (H - padBottom) - v * (H - padTop - padBottom);
+    const baseY = yOf(0);
+
+    const N = 200;
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+        const z = zMin + (i / N) * (zMax - zMin);
+        pts.push({ z, x: xOf(z), y: yOf(dens(z)) });
     }
-    for (const b of bins) b.provinces.sort((a, b) => b.score - a.score);
+    const strokePath = 'M ' + pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ');
 
-    const n = scores.length;
-    const mean = scores.reduce((a, b) => a + b, 0) / n;
-    const variance = scores.reduce((acc, s) => acc + (s - mean) ** 2, 0) / Math.max(1, n - 1);
-    // Floor at 1 so a degenerate single-cluster sample still produces a
-    // visible curve instead of a spike that overflows the chart.
-    const sd = Math.max(1, Math.sqrt(variance));
-
-    const sorted = [...scores].sort((a, b) => a - b);
-    const median = n % 2 === 0
-        ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
-        : sorted[Math.floor(n / 2)];
-
-    // Scale the unit-density Gaussian by N * bin_width so it shares the
-    // histogram's y-axis (counts of provinces) without a secondary axis.
-    const curve = [];
-    for (let x = 0; x <= 100; x += 1) {
-        const density = (1 / (sd * Math.sqrt(2 * Math.PI))) *
-                        Math.exp(-Math.pow(x - mean, 2) / (2 * sd * sd));
-        curve.push({ x, y: density * n * BELL_BIN_SIZE });
-    }
-
-    return {
-        bins, curve,
-        stats: { n, mean, sd, median, min: sorted[0], max: sorted[n - 1] },
+    const areaPath = (zLo, zHi) => {
+        const inner = pts.filter(p => p.z > zLo && p.z < zHi)
+            .map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
+        const top = [
+            `${xOf(zLo).toFixed(1)} ${yOf(dens(zLo)).toFixed(1)}`,
+            ...inner,
+            `${xOf(zHi).toFixed(1)} ${yOf(dens(zHi)).toFixed(1)}`,
+        ];
+        return `M ${xOf(zLo).toFixed(1)} ${baseY.toFixed(1)} L ${top.join(' L ')} L ${xOf(zHi).toFixed(1)} ${baseY.toFixed(1)} Z`;
     };
+
+    const byKey  = Object.fromEntries(d.bands.map(b => [b.key, b]));
+    const single = d.bands.length === 1;       // fallback: too few to rank
+
+    const defs = single
+        ? [{ key: 'All', color: '#94a3b8', zLo: zMin, zHi: zMax }]
+        : [
+            { key: 'Low',     color: '#9a3412', zLo: zMin, zHi: B1 },
+            { key: 'Average', color: '#64748b', zLo: B1,   zHi: B2 },
+            { key: 'Top',     color: '#ca8a04', zLo: B2,   zHi: zMax },
+        ];
+
+    const regions = defs.map(r => ({
+        key:     r.key,
+        color:   r.color,
+        light:   bucketLight(r.key),
+        path:    areaPath(r.zLo, r.zHi),
+        x0:      xOf(r.zLo),
+        w:       xOf(r.zHi) - xOf(r.zLo),
+        leftPct: (xOf((r.zLo + r.zHi) / 2) / W) * 100,
+        band:    byKey[r.key] ?? byKey.All,
+    }));
+
+    const dividers = single ? [] : [B1, B2].map(z => ({
+        x: xOf(z), y1: yOf(dens(z)), y2: baseY,
+    }));
+
+    return { W, H, baseY, strokePath, regions, dividers };
 });
 
-const bellCurveSeries = computed(() => {
-    const data = distributionData.value;
-    if (!data) return [];
-    return [
-        {
-            name: 'Provinces in range',
-            type: 'column',
-            data: data.bins.map(b => ({
-                x: b.center,
-                y: b.count,
-                fillColor: dominantBucketColor(b),
-            })),
-        },
-        {
-            name: 'Distribution fit',
-            type: 'area',
-            data: data.curve.map(p => ({ x: p.x, y: p.y })),
-        },
-    ];
-});
+// Which display: 'bars' (proportional 20/70/10 blocks) or 'bell' (shaded curve).
+// Both views show the same Top/Average/Low data and share the side list below.
+const chartView = ref('bell');
 
-const bellCurveOptions = computed(() => {
-    const data = distributionData.value;
-    if (!data) return {};
-    const { stats } = data;
-    const maxY = Math.max(
-        ...data.bins.map(b => b.count),
-        ...data.curve.map(p => p.y),
-        1,
-    );
+// Region interaction: hovering a region/block previews its provinces in the side
+// list; clicking locks it open (click the same one again, or another, to change).
+// The locked region survives mouse-leave.
+const hoveredRegion = ref(null);
+const lockedRegion  = ref(null);
+const activeRegionKey = computed(() => lockedRegion.value ?? hoveredRegion.value);
+// Resolve straight from the bands so the side list works in either view.
+const activeRegion = computed(() =>
+    distributionData.value?.bands.find(b => b.key === activeRegionKey.value) ?? null,
+);
+const onRegionEnter = (key) => { hoveredRegion.value = key; };
+const onRegionLeave = ()    => { hoveredRegion.value = null; };
+const onRegionClick = (key) => {
+    lockedRegion.value = lockedRegion.value === key ? null : key;
+};
+
+// ── Bars view: Top / Average / Low performer charts ─────────────────────────
+// Each lists the provinces in that bucket as a horizontal bar of their weighted
+// score. Buckets are per-tier (Top 20% / Average 70% / Low 10% of each size
+// tier), matching the "of each tier" subtitles.
+const perfSlice = (bucket) => {
+    const slice = rankedOnly.value
+        .filter(s => s.bucket === bucket)
+        .slice()
+        .sort((a, b) => getScore(b) - getScore(a));
     return {
-        chart: {
-            type: 'line',
-            toolbar: { show: false },
-            fontFamily: 'inherit',
-            stacked: false,
-            animations: { enabled: true, speed: 600 },
-        },
-        // Bars get fillColor per data point; the line color here drives the area.
-        colors: ['#94a3b8', '#4f46e5'],
-        stroke: { curve: 'smooth', width: [0, 2.5] },
+        names:     slice.map(s => s.province),
+        scores:    slice.map(s => getScore(s)),
+        directors: slice.map(s => s.director || '—'),
+        buckets:   slice.map(s => s.bucket),
+    };
+};
+const top10Data = computed(() => perfSlice('Top'));
+const avgData   = computed(() => perfSlice('Average'));
+const underData = computed(() => perfSlice('Low'));
+
+const perfTooltip = (data, i) => {
+    const score = (data.scores[i] ?? 0).toFixed(2);
+    const dir   = data.directors[i] ?? '—';
+    const name  = data.names[i]     ?? '';
+    const bk    = data.buckets[i]   ?? '—';
+    const color = bucketColor(bk);
+    const label = selectedCategory.value === 'overall' ? 'weighted score' : `${selectedCategory.value} contribution`;
+    return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:200px;">
+                <div style="font-weight:700;margin-bottom:4px;">${name}</div>
+                <div style="color:#64748b;margin-bottom:2px;">Director: ${dir}</div>
+                <div style="color:#64748b;margin-bottom:6px;">Performer: ${bucketDisplay(bk)}</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+                    <strong style="color:${color};">${score}% ${label}</strong>
+                </div>
+            </div>`;
+};
+
+const makeHorizOptions = (data) => {
+    const max = Math.max(...data.scores, 0);
+    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
+    return {
+        chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
+                 animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
+        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
+        colors: data.buckets.map(bucketColor),
         fill: {
-            opacity: [1, 0.25],
-            type:    ['solid', 'gradient'],
+            type: 'gradient',
             gradient: {
-                shade: 'light',
-                shadeIntensity: 0.35,
-                opacityFrom: 0.4,
-                opacityTo: 0.05,
+                type: 'horizontal',
+                shadeIntensity: 0,
+                gradientToColors: data.buckets.map(bucketLight),
+                inverseColors: false,
+                opacityFrom: 1,
+                opacityTo: 1,
                 stops: [0, 100],
             },
         },
-        plotOptions: { bar: { columnWidth: '80%', borderRadius: 3 } },
-        markers: { size: 0 },
-        dataLabels: {
-            enabled: true,
-            enabledOnSeries: [0],
-            formatter: v => v || '',
-            offsetY: -4,
-            style: { fontSize: '11px', colors: ['#334155'], fontWeight: '600' },
-            background: { enabled: false },
-        },
         legend: { show: false },
-        grid: {
-            borderColor: '#f1f5f9',
-            xaxis: { lines: { show: false } },
-            yaxis: { lines: { show: true } },
-            padding: { left: 8, right: 16, top: 8, bottom: 4 },
-        },
-        xaxis: {
-            type: 'numeric',
-            min: 0,
-            max: 100,
-            tickAmount: 10,
-            title: {
-                text: 'Weighted Score (%)',
-                style: { fontSize: '12px', fontFamily: 'inherit', color: '#64748b', fontWeight: '500' },
-            },
-            labels: {
-                formatter: v => `${Math.round(v)}%`,
-                style: { fontSize: '12px', fontFamily: 'inherit', colors: '#64748b' },
-            },
-            axisBorder: { show: false },
-            axisTicks: { show: false },
-            crosshairs: { show: false },
-        },
-        yaxis: {
-            min: 0,
-            max: Math.ceil(maxY * 1.18),
-            forceNiceScale: true,
-            title: {
-                text: 'Number of Provinces',
-                style: { fontSize: '12px', fontFamily: 'inherit', color: '#64748b', fontWeight: '500' },
-            },
-            labels: {
-                formatter: v => Math.round(v),
-                style: { fontSize: '12px', fontFamily: 'inherit', colors: '#64748b' },
-            },
-        },
-        annotations: {
-            xaxis: [{
-                x: stats.mean,
-                strokeDashArray: 5,
-                borderColor: '#0f172a',
-                borderWidth: 1.5,
-                label: {
-                    text: `μ ${stats.mean.toFixed(1)}%`,
-                    position: 'top',
-                    orientation: 'horizontal',
-                    offsetY: -2,
-                    style: {
-                        color: '#0f172a',
-                        background: '#fff',
-                        fontFamily: 'inherit',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        padding: { left: 6, right: 6, top: 2, bottom: 2 },
-                    },
-                },
-            }],
-        },
-        tooltip: {
-            theme: 'light',
-            shared: false,
-            intersect: true,
-            custom: ({ seriesIndex, dataPointIndex }) => {
-                if (seriesIndex !== 0) return '';
-                const bin = data.bins[dataPointIndex];
-                if (!bin || !bin.count) {
-                    return `<div style="padding:8px 12px;font-family:inherit;font-size:12px;color:#64748b;">
-                        ${bin?.from ?? 0}–${bin?.to ?? 0}% · no provinces
-                    </div>`;
-                }
-                const rows = bin.provinces.slice(0, 8).map(p =>
-                    `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11.5px;line-height:1.6;">
-                        <span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${bucketColor(p.bucket)};margin-right:6px;vertical-align:middle;"></span>${p.name}</span>
-                        <span style="font-family:var(--font-num,monospace);color:#334155;">${p.score.toFixed(1)}%</span>
-                    </div>`
-                ).join('');
-                const more = bin.provinces.length > 8
-                    ? `<div style="font-size:11px;color:#64748b;margin-top:4px;">+${bin.provinces.length - 8} more…</div>`
-                    : '';
-                return `<div style="padding:10px 12px;font-family:inherit;min-width:240px;">
-                    <div style="font-weight:600;margin-bottom:6px;color:#0f172a;">
-                        ${bin.from}–${bin.to}% · ${bin.count} province${bin.count === 1 ? '' : 's'}
-                    </div>
-                    ${rows}${more}
-                </div>`;
-            },
-        },
+        grid: { borderColor: '#f1f5f9',
+                xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
+                padding: { left: 0, right: 12, top: -8, bottom: 0 } },
+        dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
+                      style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
+        xaxis: { categories: data.names, min: 0, max: computedMax,
+                 labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
+                 axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 115 } },
+        tooltip: { theme: 'light', custom: ({ dataPointIndex }) => perfTooltip(data, dataPointIndex) },
     };
-});
+};
+
+const top10Options = computed(() => makeHorizOptions(top10Data.value));
+const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
+const underOptions = computed(() => makeHorizOptions(underData.value));
+const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
+const avgOptions   = computed(() => makeHorizOptions(avgData.value));
+const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
+
+// ~26px per bar keeps labels legible — Average can have 40+ entries at All Tiers,
+// so a fixed height would squash bars; render at natural height and scroll.
+const avgChartHeight = computed(() => Math.max(340, avgData.value.names.length * 26 + 40));
+
 
 // ── Trend view: weighted score per province across years ──────────────────
 const TREND_LIMIT = 15;
@@ -1248,7 +1425,7 @@ watch(searchTarget, async (province) => {
 .dashboard-root :deep(.font-weight-black) { font-weight: 600 !important; }
 .dashboard-root :deep(.font-weight-medium) { font-weight: 500 !important; }
 
-/* Section titles (Top / Average / Low Performers, PSTD Ranking Matrix,
+/* Section titles (Top / Average / Low Performers, PRISM Ranking Matrix,
    podium banner) — semibold + tighter tracking, but still Inter, so they
    sit in the same family as the rows beneath them. */
 .dashboard-root .chart-header :deep(.font-weight-bold),
@@ -1374,6 +1551,7 @@ watch(searchTarget, async (province) => {
 
 .chart-header { border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .legend-dot   { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.legend-dot--sm { width: 8px; height: 8px; }
 
 .leaderboard-table :deep(tr) { cursor: default; }
 
@@ -1506,7 +1684,7 @@ watch(searchTarget, async (province) => {
 :deep(.v-field__input input)::placeholder { font-size: 17px; }
 :deep(.v-field__label)                    { font-size: 16px; }
 
-/* Data tables (PSTD ranking matrix) */
+/* Data tables (PRISM ranking matrix) */
 :deep(.v-data-table) { font-size: 17px !important; }
 :deep(.v-data-table th) { font-size: 14px !important; }
 
@@ -1625,7 +1803,7 @@ watch(searchTarget, async (province) => {
 /* Performance Distribution card — fixed chart slot keeps page layout stable
    regardless of how many provinces are ranked in the active filter. */
 .bell-card-body {
-    height: 380px;
+    height: 416px;
     overflow: hidden;
     position: relative;
     padding: 4px 4px 0;
@@ -1638,4 +1816,137 @@ watch(searchTarget, async (province) => {
     justify-content: center;
     gap: 8px;
 }
+
+/* Performance bell — a normal curve whose area is shaded into Low 10% /
+   Average 70% / Top 20% at the 10th and 80th percentiles, with a hover/lock
+   side list of the provinces in each region. */
+.bell-layout {
+    display: flex;
+    height: 100%;
+}
+.bell-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 6px 6px 8px 10px;
+}
+.bell-svg {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    display: block;
+}
+.bell-region-labels {
+    position: relative;
+    height: 64px;
+    margin-top: 2px;
+    padding-bottom: 4px;
+}
+.bell-region-label {
+    position: absolute;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .1s ease;
+}
+.bell-region-label.is-active { transform: translateX(-50%) scale(1.06); }
+.brl-name  { font-size: 13px; font-weight: 700; }
+.brl-pct   { font-size: 20px; font-weight: 800; color: #0f172a; }
+.brl-count { font-size: 11px; color: #64748b; }
+
+/* Bars view: Top / Average / Low performer columns (toggle alternative to bell). */
+.perf-row {
+    display: flex;
+    height: 100%;
+}
+.perf-col {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 8px 6px;
+}
+.perf-col + .perf-col {
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.perf-col-head { padding: 2px 2px 4px; }
+.perf-col-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+.perf-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+}
+.avg-chart-scroll {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.avg-chart-scroll::-webkit-scrollbar       { width: 8px; }
+.avg-chart-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.avg-chart-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Compact bar/bell toggle */
+.bell-view-toggle { height: 28px; }
+.bell-view-toggle :deep(.v-btn) { text-transform: none; letter-spacing: 0; }
+
+.bell-side {
+    flex: 0 0 248px;
+    width: 248px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    padding: 8px 4px 8px 12px;
+}
+.bell-side-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 6px 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.bell-side-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.bell-side-title { font-size: 13px; font-weight: 700; }
+.bell-side-meta  { font-size: 11px; color: #64748b; }
+.bell-side-list  { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding-right: 2px; }
+.bell-side-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.bell-side-row:hover { background: rgba(99, 102, 241, 0.07); }
+.bell-side-row .rank  { width: 20px; text-align: right; color: #94a3b8; font-size: 11px; flex-shrink: 0; }
+.bell-side-row .name  { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bell-side-row .score { font-variant-numeric: tabular-nums; color: #475569; flex-shrink: 0; }
+.bell-side-empty {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 12px;
+}
+.bell-side-empty .hint { font-size: 11px; opacity: 0.8; }
 </style>

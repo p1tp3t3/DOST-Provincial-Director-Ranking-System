@@ -22,7 +22,7 @@ const features = [
 </script>
 
 <template>
-    <Head title="Sign In — PDRIS" />
+    <Head title="Sign In — PRISM" />
 
     <div class="login-root">
 
@@ -40,9 +40,9 @@ const features = [
                     <img src="/assets/logo.png" alt="DOST" class="logo-img" />
                 </div>
                 <div>
-                    <div class="text-h6 font-weight-black text-white" style="letter-spacing:0.05em;">PDRIS</div>
+                    <div class="text-h6 font-weight-black text-white" style="letter-spacing:0.05em;">PRISM</div>
                     <div class="text-white" style="font-size:0.65rem; opacity:0.65; line-height:1.5; text-transform:uppercase; letter-spacing:0.06em;">
-                        Provincial Director Ranking Information System
+                        Provincial Director Ranking and Information System for Management
                     </div>
                 </div>
             </div>
@@ -102,7 +102,7 @@ const features = [
                     <div class="d-flex d-md-none align-center justify-center gap-3 mb-8">
                         <img src="/assets/logo.png" alt="DOST" style="width:44px;height:44px;object-fit:contain;" />
                         <div>
-                            <div class="text-h6 font-weight-black" style="color:#0047ab;">PDRIS</div>
+                            <div class="text-h6 font-weight-black" style="color:#0047ab;">PRISM</div>
                             <div class="text-caption text-medium-emphasis">Provincial Director Ranking IS</div>
                         </div>
                     </div>
@@ -131,7 +131,7 @@ const features = [
                     <!-- Footer text -->
                     <div class="text-center">
                         <div class="text-caption text-medium-emphasis">
-                            © {{ new Date().getFullYear() }} PDRIS · Department of Science and Technology
+                            © {{ new Date().getFullYear() }} PRISM · Department of Science and Technology
                         </div>
                         <div class="text-caption text-medium-emphasis" style="opacity:0.7;">
                             Developed by Region IX

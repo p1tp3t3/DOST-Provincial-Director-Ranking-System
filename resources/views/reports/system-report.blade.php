@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>System Report — PDRIS</title>
+    <title>System Report — PRISM</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DejaVu Sans',Arial,sans-serif; font-size:10px; color:#1e293b; background:#fff; }
@@ -110,7 +110,7 @@
             <tr>
                 <td style="vertical-align:top;">
                     <h1>System Report</h1>
-                    <div class="sub">Director Ranking Information System &mdash; DOST Philippines</div>
+                    <div class="sub">PRISM &mdash; DOST Philippines</div>
                 </td>
                 <td class="meta" style="vertical-align:top;">
                     <div>Period: {{ $date_from }} &mdash; {{ $date_to }}</div>
@@ -249,7 +249,7 @@
     <div class="footer">
         <table>
             <tr>
-                <td>DOST &mdash; Director Ranking Information System</td>
+                <td>DOST &mdash; PRISM</td>
                 <td style="text-align:right;">Confidential &mdash; For Internal Use Only</td>
             </tr>
         </table>

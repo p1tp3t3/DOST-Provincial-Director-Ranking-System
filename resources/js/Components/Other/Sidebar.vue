@@ -175,15 +175,15 @@ const onSubNavLeave = (el) => {
              :class="isOpen ? 'justify-between' : 'justify-center'">
             <div v-if="isOpen" class="flex items-center gap-3 overflow-hidden">
                 <div class="logo-box flex-shrink-0">
-                    <img src="/assets/logo.png" alt="PDRIS Logo" class="w-8 h-8">
+                    <img src="/assets/logo.png" alt="PRISM Logo" class="w-8 h-8">
                 </div>
                 <div class="leading-tight overflow-hidden">
-                    <div class="font-bold text-sm whitespace-nowrap">PDRIS</div>
+                    <div class="font-bold text-sm whitespace-nowrap">PRISM</div>
                     <div class="text-xs text-blue-300 whitespace-nowrap">Admin Panel</div>
                 </div>
             </div>
             <div v-else class="logo-box">
-                <img src="/assets/logo.png" alt="PDRIS Logo" class="w-8 h-8">
+                <img src="/assets/logo.png" alt="PRISM Logo" class="w-8 h-8">
             </div>
         </div>
 

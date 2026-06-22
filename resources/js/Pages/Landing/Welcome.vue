@@ -16,9 +16,9 @@ defineProps({
 });
 
 const stats = [
-    { value: '16',  label: 'Regions Covered' },
+    { value: '17',  label: 'Regions Covered' },
     { value: '83',  label: 'Provinces & Clusters' },
-    { value: '3',   label: 'Island Groups' },
+    { value: '3',   label: 'Categories' },
     { value: '37',  label: 'Performance KPIs' },
 ];
 
@@ -40,7 +40,7 @@ const features = [
       text: 'Explore the country province-by-province. Drill into a region or island and read each area at a glance through clear color coding.' },
     { icon: RiBuilding2Line, title: 'Province Directories',
       text: 'Browse every province\'s profile — its provincial S&T director, staff, classification tier, and region — in one organized place.' },
-    { icon: RiTrophyLine, title: 'PSTD Ranking Matrix',
+    { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
       text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Functional (30%), and Support (10%) functions, with adjective ratings.' },
     { icon: RiBarChart2Line, title: 'Regional Analytics',
       text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
@@ -176,7 +176,7 @@ const sampleDirector = computed(() => {
 </script>
 
 <template>
-    <Head title="Welcome — DOST PSTD Ranking & Information System" />
+    <Head title="Welcome — DOST PRISM" />
 
     <div class="landing min-h-screen bg-white text-slate-800">
 
@@ -187,7 +187,7 @@ const sampleDirector = computed(() => {
                     <a href="/" class="flex items-center gap-3" style="text-decoration:none">
                         <img src="/assets/logo.png" alt="DOST" class="w-10 h-10 rounded-lg object-contain" />
                         <div class="leading-tight">
-                            <div class="font-extrabold dost-ink text-lg tracking-tight">DOST PSTD</div>
+                            <div class="font-extrabold dost-ink text-lg tracking-tight">DOST PRISM</div>
                             <div class="text-[13px] text-slate-500 hidden sm:block">Ranking &amp; Information System</div>
                             <div class="text-[11px] text-slate-400 hidden sm:block">Developed by Region IX</div>
                         </div>
@@ -246,8 +246,8 @@ const sampleDirector = computed(() => {
                         <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
                     </div>
                     <h1 class="hero-title">
-                        Provincial S&amp;T Director
-                        <span class="hero-title-accent">Ranking &amp; Information System</span>
+                        Provincial Director
+                        <span class="hero-title-accent">Ranking &amp; Information System for Management</span>
                     </h1>
                     <p class="hero-sub mx-auto">
                         A transparent, evidence-based platform that scores and ranks Provincial Science &amp; Technology
@@ -315,13 +315,13 @@ const sampleDirector = computed(() => {
         <section id="system" class="py-24 lg:py-32 bg-slate-50">
             <div class="reveal max-w-4xl mx-auto px-4 sm:px-6 text-center">
                 <div class="eyebrow">The System</div>
-                <h2 class="section-title">PSTD Ranking &amp; Information System</h2>
+                <h2 class="section-title">PRISM</h2>
                 <p class="section-lead mx-auto">
-                    The PSTD Ranking &amp; Information System is DOST's centralized platform for monitoring,
+                    The PRISM is DOST's centralized platform for monitoring,
                     evaluating, and ranking Provincial Science &amp; Technology Directors across the Philippines.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
-                    Covering all 83 provinces and clusters across 16 regions, the system uses a structured
+                    Covering all 83 provinces and clusters across 17 regions, the system uses a structured
                     scoring framework with 37 performance indicators grouped into three function areas —
                     Core, Functional, and Support — to produce transparent, evidence-based rankings.
                 </p>
@@ -470,7 +470,7 @@ const sampleDirector = computed(() => {
                 <div class="reveal flex items-end justify-between mb-12">
                     <div>
                         <div class="eyebrow">News &amp; Updates</div>
-                        <h2 class="section-title">Latest from DOST PSTD</h2>
+                        <h2 class="section-title">Latest from DOST PRISM</h2>
                     </div>
                 </div>
 
@@ -522,7 +522,7 @@ const sampleDirector = computed(() => {
                     <div class="md:col-span-2">
                         <div class="flex items-center gap-3">
                             <img src="/assets/logo.png" alt="DOST" class="w-9 h-9 rounded-lg object-contain bg-white p-0.5" />
-                            <span class="font-bold text-white text-lg">DOST PSTD Ranking &amp; Information System</span>
+                            <span class="font-bold text-white text-lg">DOST PRISM</span>
                         </div>
                         <p class="mt-4 text-base max-w-md leading-relaxed" style="color:#9fb6d4">
                             An initiative of the Department of Science and Technology to promote excellence,

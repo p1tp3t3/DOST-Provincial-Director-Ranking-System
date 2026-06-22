@@ -40,12 +40,12 @@ class PasswordRecoveryController extends Controller
             $link = route('password.recovery.form', ['token' => $token]);
 
             Mail::raw(
-                "PDRIS Password Recovery\n\n" .
+                "PRISM Password Recovery\n\n" .
                 "You requested to reset your password. Click the link below:\n\n" .
                 "{$link}\n\n" .
                 "This link expires in 1 hour.\n" .
                 "If you did not request this, please ignore this email.",
-                fn($msg) => $msg->to($user->email)->subject('Password Reset Link — PDRIS')
+                fn($msg) => $msg->to($user->email)->subject('Password Reset Link — PRISM')
             );
         }
 
