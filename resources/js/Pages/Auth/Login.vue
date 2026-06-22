@@ -22,7 +22,7 @@ const features = [
 </script>
 
 <template>
-    <Head title="Sign In — PRISM" />
+    <Head title="Sign In - PRISM" />
 
     <div class="login-root">
 
@@ -50,16 +50,16 @@ const features = [
             <!-- Center: Main content -->
             <div class="left-section flex-grow-1 d-flex flex-column justify-center" style="position:relative;">
 
-                <!-- Badge — DOST logo on the left, then the text -->
+                <!-- Badge - DOST logo on the left, then the text -->
                 <div class="dost-badge mb-3">
                     <img src="/assets/logo.png" alt="DOST" class="dost-badge-logo mr-2" />
                     <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">Department of Science and Technology</span>
                 </div>
 
-                <!-- DOST tagline — the system signature; readable but not loud -->
+                <!-- DOST tagline - the system signature; readable but not loud -->
                 <div class="text-white mb-6" style="font-size:0.92rem; letter-spacing:0.01em;">
                     <span style="font-weight:800;">OneDOST4U</span>
-                    <span style="opacity:0.55; margin:0 6px;">—</span>
+                    <span style="opacity:0.55; margin:0 6px;">-</span>
                     <span style="opacity:0.85; font-weight:500;">Solutions and Opportunities for All</span>
                 </div>
 
@@ -71,7 +71,7 @@ const features = [
                     Empowering provincial directors through transparent, evidence-based performance evaluation and recognition.
                 </div>
 
-                <!-- Features — 2 column grid -->
+                <!-- Features - 2 column grid -->
                 <div class="feat-grid">
                     <div
                         v-for="feat in features"
@@ -333,7 +333,7 @@ const features = [
     .left-section:last-child {
         border-right: none;
     }
-    /* Hide center & bottom sections on tablet — show only logo bar */
+    /* Hide center & bottom sections on tablet - show only logo bar */
     .left-section.flex-grow-1,
     .left-section:not(:first-child) {
         display: none !important;

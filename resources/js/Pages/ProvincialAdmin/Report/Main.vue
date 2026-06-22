@@ -5,7 +5,7 @@
         <div class="d-flex align-center justify-space-between flex-wrap gap-2">
             <div>
                 <div class="text-h6 font-weight-bold">
-                    {{ province?.name ?? 'Province' }} — Report
+                    {{ province?.name ?? 'Province' }} - Report
                 </div>
                 <div class="text-caption text-medium-emphasis">
                     Employee summary, director KPI, and activity overview
@@ -101,7 +101,7 @@
                                         <v-avatar color="success-lighten-5" size="28" rounded="sm">
                                             <v-icon color="success" size="14">mdi-account-outline</v-icon>
                                         </v-avatar>
-                                        <span class="text-body-2 font-weight-medium">{{ e.name || '—' }}</span>
+                                        <span class="text-body-2 font-weight-medium">{{ e.name || '-' }}</span>
                                     </div>
                                 </td>
                                 <td class="text-caption text-medium-emphasis">{{ e.dost_id }}</td>
@@ -251,7 +251,7 @@
                 <tbody>
                     <tr v-for="log in recentLogs" :key="log.id">
                         <td>
-                            <div class="text-body-2 font-weight-medium">{{ log.name || '—' }}</div>
+                            <div class="text-body-2 font-weight-medium">{{ log.name || '-' }}</div>
                             <div class="text-caption text-medium-emphasis">{{ log.dost_id }}</div>
                         </td>
                         <td>

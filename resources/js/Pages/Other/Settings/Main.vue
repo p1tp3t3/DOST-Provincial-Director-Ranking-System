@@ -62,7 +62,7 @@
                                         <v-chip v-if="row.chip" size="x-small" :color="row.chipColor" variant="tonal" class="font-weight-medium text-capitalize">
                                             {{ row.value }}
                                         </v-chip>
-                                        <span v-else>{{ row.value || '—' }}</span>
+                                        <span v-else>{{ row.value || '-' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -188,7 +188,7 @@
                     </v-card>
                 </div>
 
-                <!-- ── Admin — System Info ─── -->
+                <!-- ── Admin - System Info ─── -->
                 <div v-else-if="active === 'system'">
                     <v-card border elevation="0" rounded="lg">
                         <div class="px-5 pt-4 pb-3 d-flex align-center gap-2">
@@ -278,7 +278,7 @@ const accountRows = computed(() => {
 
 // ── System info rows ──────────────────────────────────────────
 const systemRows = [
-    { label: 'Application', value: 'PRISM — Provincial Director Ranking and Information System for Management' },
+    { label: 'Application', value: 'PRISM - Provincial Director Ranking and Information System for Management' },
     { label: 'Framework',   value: 'Laravel 11 + Inertia.js + Vue 3' },
     { label: 'Environment', value: import.meta.env.MODE === 'production' ? 'Production' : 'Development' },
 ];

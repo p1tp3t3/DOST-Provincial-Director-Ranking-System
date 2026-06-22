@@ -1,4 +1,4 @@
-﻿<template>
+<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -20,7 +20,7 @@
                                 </v-avatar>
                                 <div class="flex-1-1">
                                     <div class="text-subtitle-2 font-weight-bold">Full System Export</div>
-                                    <div class="text-caption text-medium-emphasis">Export the entire project — source code, database, and configuration — as a ZIP archive</div>
+                                    <div class="text-caption text-medium-emphasis">Export the entire project - source code, database, and configuration - as a ZIP archive</div>
                                 </div>
                             </div>
                             <v-divider></v-divider>

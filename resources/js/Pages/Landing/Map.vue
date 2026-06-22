@@ -10,7 +10,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head title="Interactive Map — DOST PRISM" />
+    <Head title="Interactive Map - DOST PRISM" />
 
     <div class="min-h-screen bg-white text-slate-800">
         <!-- ── Navbar ─────────────────────────────────────────────────────── -->
@@ -40,7 +40,7 @@ const year = new Date().getFullYear();
                     <div class="eyebrow">Interactive Map</div>
                     <h2 class="section-title">Explore the Philippines by region</h2>
                     <p class="section-lead">
-                        Every province is color-coded by its region across the three island groups —
+                        Every province is color-coded by its region across the three island groups -
                         Luzon, Visayas, and Mindanao. Hover to identify a province, click to see the
                         other provinces in its region, or use the legend to jump straight to a region.
                     </p>

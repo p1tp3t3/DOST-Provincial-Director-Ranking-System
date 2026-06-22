@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
         <div class="grid gap-4 w-full">
 
@@ -71,7 +71,7 @@ defineProps({
     total_employees: { type: Number, default: 0 },
 });
 
-// Provincial director (mock — replace with backend props when ready)
+// Provincial director (mock - replace with backend props when ready)
 const director = ref({
     name:              'Maria Cristina B. Dela Cruz',
     id:                'DOST-XI-2019-0042',
@@ -80,7 +80,7 @@ const director = ref({
     kpi_score:         97,
 });
 
-// KPI summary stats (mock — replace with backend props when ready)
+// KPI summary stats (mock - replace with backend props when ready)
 const kpiStats = ref({
     outcomes_met:     10,
     outcomes_not_met:  2,
@@ -104,7 +104,7 @@ const outcomePie = computed(() => ({
     colors: ['#4CAF50', '#F44336'],
 }));
 
-// KPI outcomes (mock — replace with backend data when ready)
+// KPI outcomes (mock - replace with backend data when ready)
 const kpiOutcomes = ref([
     { title: 'Conduct of S&T trainings and workshops',           target: '4 trainings',   actual: '4 trainings',  met: true  },
     { title: 'Number of SETUP beneficiaries assisted',           target: '10 firms',      actual: '12 firms',     met: true  },
@@ -120,7 +120,7 @@ const kpiOutcomes = ref([
     { title: 'Submission of provincial S&T plan',                target: '1 plan',        actual: '1 plan',       met: true  },
 ]);
 
-// Employees — view only (mock — replace with backend data when ready)
+// Employees - view only (mock - replace with backend data when ready)
 const mockEmployees = ref([
     { name: 'Rosa L. Aguilar',     id: 'DOST-XI-EMP-0021', position: 'Science Research Analyst'    },
     { name: 'Dante M. Borja',      id: 'DOST-XI-EMP-0034', position: 'Administrative Officer'      },

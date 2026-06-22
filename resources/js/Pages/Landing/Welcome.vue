@@ -28,18 +28,18 @@ const pillars = [
     { icon: RiLightbulbLine, title: 'Technology Transfer',
       text: 'Bridging the gap between science and industry by transferring proven technologies to communities and enterprises.' },
     { icon: RiLeafLine, title: 'S&T Services',
-      text: 'Delivering science and technology services — from metrology to S&T scholarships — to every corner of the Philippines.' },
+      text: 'Delivering science and technology services - from metrology to S&T scholarships - to every corner of the Philippines.' },
     { icon: RiTeamLine, title: 'Human Capital',
       text: 'Nurturing the next generation of Filipino scientists, engineers, and innovators through grants and training programs.' },
 ];
 
 const features = [
     { icon: RiDashboard3Line, title: 'Performance Dashboard',
-      text: 'See PSTD rankings four ways — an awards podium, a sortable table, year-over-year trends, and a live map — all filterable by tier, region, island, and category.' },
+      text: 'See PSTD rankings four ways - an awards podium, a sortable table, year-over-year trends, and a live map - all filterable by tier, region, island, and category.' },
     { icon: RiMapPin2Line, title: 'Interactive Maps',
       text: 'Explore the country province-by-province. Drill into a region or island and read each area at a glance through clear color coding.' },
     { icon: RiBuilding2Line, title: 'Province Directories',
-      text: 'Browse every province\'s profile — its provincial S&T director, staff, classification tier, and region — in one organized place.' },
+      text: 'Browse every province\'s profile - its provincial S&T director, staff, classification tier, and region - in one organized place.' },
     { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
       text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Functional (30%), and Support (10%) functions, with adjective ratings.' },
     { icon: RiBarChart2Line, title: 'Regional Analytics',
@@ -146,7 +146,7 @@ const sampleDirector = computed(() => {
 </script>
 
 <template>
-    <Head title="Welcome — DOST PRISM" />
+    <Head title="Welcome - DOST PRISM" />
 
     <div ref="rootEl" class="landing min-h-screen bg-white text-slate-800">
 
@@ -214,7 +214,7 @@ const sampleDirector = computed(() => {
                     </div>
                     <div class="hero-tagline">
                         <span class="hero-tagline-mark">OneDOST4U</span>
-                        <span class="hero-tagline-sep">—</span>
+                        <span class="hero-tagline-sep">-</span>
                         <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
                     </div>
                     <h1 class="hero-title">
@@ -223,7 +223,7 @@ const sampleDirector = computed(() => {
                     </h1>
                     <p class="hero-sub mx-auto">
                         A transparent, evidence-based platform that scores and ranks Provincial Science &amp; Technology
-                        Directors across the Philippines — driving excellence in regional S&amp;T leadership.
+                        Directors across the Philippines - driving excellence in regional S&amp;T leadership.
                     </p>
                     <div class="mt-10 flex flex-wrap justify-center gap-3">
                         <a href="#about"  class="btn-hero-light">Learn More <RiArrowRightLine class="w-5 h-5" /></a>
@@ -328,8 +328,8 @@ const sampleDirector = computed(() => {
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Covering all 83 provinces and clusters across 17 regions, the system uses a structured
-                    scoring framework with 37 performance indicators grouped into three function areas —
-                    Core, Functional, and Support — to produce transparent, evidence-based rankings.
+                    scoring framework with 37 performance indicators grouped into three function areas -
+                    Core, Functional, and Support - to produce transparent, evidence-based rankings.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Designed to promote excellence and accountability in regional S&amp;T leadership,
@@ -392,7 +392,7 @@ const sampleDirector = computed(() => {
                     <div class="eyebrow">Interactive Map</div>
                     <h2 class="section-title">Explore the Philippines by region</h2>
                     <p class="section-lead">
-                        Every province is color-coded by its region across the three island groups —
+                        Every province is color-coded by its region across the three island groups -
                         Luzon, Visayas, and Mindanao. Click any province to see its details.
                     </p>
                 </div>

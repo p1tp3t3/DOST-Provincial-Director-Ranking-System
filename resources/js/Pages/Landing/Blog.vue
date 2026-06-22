@@ -32,8 +32,8 @@ const allPosts = [
         title:   'FY 2024 PSTD Rankings Now Available on the Information System',
         excerpt: 'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, functional, and support functions.',
         body: [
-            'DOST is pleased to announce that the Fiscal Year 2024 rankings of all Provincial Science and Technology Directors (PSTDs) are now available on the PRISM. The rankings cover all 83 provinces and clusters across the three island groups of the Philippines — Luzon, Visayas, and Mindanao.',
-            'This year\'s rankings reflect performance data collected and validated throughout FY 2024, covering all 37 performance indicators across Core, Functional, and Support functions. Provinces are evaluated both individually and within their classification tier — whether large, medium, or small — to ensure fair comparisons across different contexts.',
+            'DOST is pleased to announce that the Fiscal Year 2024 rankings of all Provincial Science and Technology Directors (PSTDs) are now available on the PRISM. The rankings cover all 83 provinces and clusters across the three island groups of the Philippines - Luzon, Visayas, and Mindanao.',
+            'This year\'s rankings reflect performance data collected and validated throughout FY 2024, covering all 37 performance indicators across Core, Functional, and Support functions. Provinces are evaluated both individually and within their classification tier - whether large, medium, or small - to ensure fair comparisons across different contexts.',
             'The FY 2024 results show notable improvements in several regions, particularly in the Visayas group, where a number of provincial offices posted their highest scores in three years. DOST Regional Directors credit the improvement to increased collaboration, better data reporting practices, and targeted capacity-building programs conducted during the year.',
             'Authorized DOST personnel can access the full rankings dashboard, which includes podium views, sortable data tables, year-over-year trend charts, and a color-coded performance map. Individual province scorecards are also available for download.',
             'The FY 2024 rankings will serve as the baseline for the new performance evaluation framework launching in FY 2025. Provincial directors are encouraged to review their scorecards and coordinate with their regional offices to identify priority areas for improvement.',
@@ -62,7 +62,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head :title="post ? `${post.title} — DOST PRISM` : 'Blog — DOST PRISM'" />
+    <Head :title="post ? `${post.title} - DOST PRISM` : 'Blog - DOST PRISM'" />
 
     <div class="min-h-screen bg-white text-slate-800">
 

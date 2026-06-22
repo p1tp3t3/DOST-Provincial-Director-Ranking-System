@@ -24,7 +24,7 @@
                         :color="tierChipColor(myRankEntry.score)"
                         prepend-icon="mdi-map-marker-outline"
                     >
-                        {{ myRankEntry.province }} — Rank #{{ myRank }}
+                        {{ myRankEntry.province }} - Rank #{{ myRank }}
                     </v-chip>
                     <v-chip size="small" variant="tonal" color="indigo" prepend-icon="mdi-calendar">
                         {{ selectedYear }}
@@ -379,7 +379,7 @@ const top10Data = computed(() => {
 
 const tooltipHtml = (data, i) => {
     const score = data.scores[i]    ?? 0;
-    const dir   = data.directors[i] ?? '—';
+    const dir   = data.directors[i] ?? '-';
     const name  = data.names[i]     ?? '';
     const cnt   = data.counts[i]    ?? 0;
     const color = tierColor(score);
@@ -430,7 +430,7 @@ const top10Options = computed(() => {
 
 const top10Series = computed(() => [{ name: 'KPI Score', data: top10Data.value.scores }]);
 
-// Donut chart — tier distribution
+// Donut chart - tier distribution
 const pieSeries = computed(() => {
     const scores = filteredScores.value.map(s => s.score);
     return [

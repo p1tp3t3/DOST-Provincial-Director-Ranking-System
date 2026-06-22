@@ -55,9 +55,9 @@
                             <span class="text-body-2 font-weight-medium">{{ admin.name }}</span>
                         </div>
                     </td>
-                    <td class="text-body-2 text-medium-emphasis">{{ admin.username ?? '—' }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ admin.username ?? '-' }}</td>
                     <td class="text-body-2">{{ admin.email }}</td>
-                    <td class="text-body-2 text-medium-emphasis">{{ admin.province ?? '—' }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ admin.province ?? '-' }}</td>
                     <td class="text-center">
                         <v-chip
                             size="small"

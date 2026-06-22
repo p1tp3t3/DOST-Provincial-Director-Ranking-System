@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div class="w-full">
 
         <!-- Back -->
@@ -22,7 +22,7 @@
                         <v-img :src="`/profile-picture?filename=${profile?.profile_picture}`" alt="Admin"></v-img>
                     </v-avatar>
                     <div>
-                        <div class="text-h6 font-weight-bold">{{ profile.name || '—' }}</div>
+                        <div class="text-h6 font-weight-bold">{{ profile.name || '-' }}</div>
                         <div class="d-flex align-center gap-2 mt-1 flex-wrap">
                             <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
                                 {{ roleLabel }}
@@ -69,7 +69,7 @@
                                             {{ row.value }}
                                         </v-chip>
                                     </template>
-                                    <template v-else>{{ row.value || '—' }}</template>
+                                    <template v-else>{{ row.value || '-' }}</template>
                                 </div>
                             </div>
                         </div>
@@ -138,7 +138,7 @@ const roleLabels = {
     provincial_director:  'Provincial Director',
     employee:             'Employee',
 };
-const roleLabel = computed(() => roleLabels[profile.value.role] ?? profile.value.role ?? '—');
+const roleLabel = computed(() => roleLabels[profile.value.role] ?? profile.value.role ?? '-');
 
 const avatarPalette = ['primary', 'indigo', 'deep-purple', 'teal', 'blue-darken-2', 'cyan-darken-2'];
 const initials      = computed(() => {

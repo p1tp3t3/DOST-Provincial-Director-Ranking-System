@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
         <div class="grid gap-4 w-full">
 
@@ -124,7 +124,7 @@ const props = defineProps({
     total_employees: { type: Number, default: 0 },
 });
 
-// ── Director profile (mock — replace with backend prop) ──────────
+// ── Director profile (mock - replace with backend prop) ──────────
 const director = ref({
     name:              'Maria Cristina B. Dela Cruz',
     id:                'DOST-XI-2019-0042',

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
         <div class="grid gap-4 w-full">
 
@@ -204,7 +204,7 @@ const applyFilters = () => {
     }, { preserveState: true, replace: true });
 };
 
-// KPI summary stats (mock — replace with backend props when ready)
+// KPI summary stats (mock - replace with backend props when ready)
 const kpiStats = ref({
     met_rate:    87,
     avg_score:   91,
@@ -220,7 +220,7 @@ const trendChart = ref({
     ]
 });
 
-// Director rankings (mock — replace with backend data when ready)
+// Director rankings (mock - replace with backend data when ready)
 const mockRankings = ref([
     { name: 'Maria Cristina B. Dela Cruz', id: 'DOST-XI-2019-0042', province: 'Davao del Norte',   score: 97, met: 11, total: 12 },
     { name: 'Jose Ramon T. Villanueva',    id: 'DOST-XI-2017-0011', province: 'Davao del Sur',     score: 94, met: 10, total: 12 },
@@ -238,7 +238,7 @@ const scoreColor = (score) => {
     return 'error';
 };
 
-// Pie chart — derived from rankings so it always stays in sync
+// Pie chart - derived from rankings so it always stays in sync
 const performancePie = computed(() => {
     const excellent        = mockRankings.value.filter(d => d.score >= 85).length;
     const good             = mockRankings.value.filter(d => d.score >= 70 && d.score < 85).length;
