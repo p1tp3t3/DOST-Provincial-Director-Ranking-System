@@ -203,7 +203,7 @@
                 <tr>
                     <td style="vertical-align:top;">
                         <h1>Activity Logs Report</h1>
-                        <div class="subtitle">Director Ranking Information System &mdash; DOST</div>
+                        <div class="subtitle">PRISM &mdash; DOST</div>
                     </td>
                     <td style="text-align:right; vertical-align:top;" class="meta">
                         <div>Generated: {{ $generated }}</div>
@@ -286,7 +286,7 @@
     <div class="footer">
         <table>
             <tr>
-                <td style="text-align:left;">DOST &mdash; Director Ranking Information System</td>
+                <td style="text-align:left;">DOST &mdash; PRISM</td>
                 <td style="text-align:right;">Confidential &mdash; For Internal Use Only</td>
             </tr>
         </table>

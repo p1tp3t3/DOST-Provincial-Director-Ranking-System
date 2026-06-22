@@ -15,6 +15,6 @@
         <li><strong>DOST ID:</strong> {{ $dost_id }}</li>
         <li><strong>Password:</strong> {{ $password }}</li>
     </ul>
-    <p>Please log in to the Director Ranking Information System and change your password as soon as possible.</p>
+    <p>Please log in to the PRISM and change your password as soon as possible.</p>
 </body>
 </html>

@@ -9,14 +9,19 @@ export const NIR_CODE = 1800000000; // Negros Island Region (PSGC Region XVIII)
 
 // GeoJSON province name (adm2_en) → canonical DB / display name.
 export const GEO_TO_DB = {
-    'Cebu':            'Cebu Province',
-    'Cotabato':        'Cotabato (North)',
-    'Samar':           'Samar (Western Samar)',
-    'Dinagat Islands': 'Dinagat Island',
+    'Cebu':                              'Cebu Province',
+    'Cotabato':                          'Cotabato (North)',
+    'Samar':                             'Samar (Western Samar)',
+    'Dinagat Islands':                   'Dinagat Island',
+    'City of Isabela (Not a Province)':  'Isabela City',
 };
 
 // Non-province polygons in the basemap we never render as provinces.
-export const SKIP = (name) => !name || name.includes('Not a Province') || name.includes('NCR,');
+// City of Isabela is technically "Not a Province" in the GeoJSON but is a real
+// geographic entity in Region IX that should appear on the map.
+export const SKIP = (name) => !name
+    || name.includes('NCR,')
+    || (name.includes('Not a Province') && !name.startsWith('City of Isabela'));
 
 // adm1_psgc overrides so the basemap matches the DOST region scheme rather than
 // the GeoJSON's PSGC vintage.

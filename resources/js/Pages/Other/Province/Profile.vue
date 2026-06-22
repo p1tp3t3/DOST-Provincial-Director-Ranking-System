@@ -1,4 +1,4 @@
-﻿<template>
+<template>
         <div class="d-flex flex-column gap-3">
 
             <!-- Breadcrumb -->
@@ -103,7 +103,7 @@
                 <div class="d-flex align-center justify-space-between gap-3 px-4 pt-3 pb-3 flex-wrap">
                     <div class="d-flex align-center gap-2 flex-wrap">
                         <div class="text-subtitle-2 font-weight-bold">Key Performance Indicators</div>
-                        <v-chip size="x-small" variant="tonal" color="indigo">PSTD Matrix</v-chip>
+                        <v-chip size="x-small" variant="tonal" color="indigo">PRISM Matrix</v-chip>
                         <v-chip size="x-small" variant="tonal" color="blue-grey">{{ totalScoredKpis }} KPIs</v-chip>
                     </div>
 

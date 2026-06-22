@@ -1,5 +1,5 @@
 // Static island-group / region lookup for provinces, used to filter the
-// PSTD Ranking Matrix trend chart on the dashboard. Province names must
+// PRISM Ranking Matrix trend chart on the dashboard. Province names must
 // match the `provinces.name` column.
 
 export const ISLANDS = ['Luzon', 'Visayas', 'Mindanao'];
