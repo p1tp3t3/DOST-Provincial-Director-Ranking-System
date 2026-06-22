@@ -1,7 +1,7 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import RegionInfoMap from '@/Components/Map/RegionInfoMap.vue';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
     RiTrophyLine, RiMapPin2Line, RiBuilding2Line, RiBarChart2Line,
     RiLineChartLine, RiGroupLine, RiDashboard3Line,
@@ -77,23 +77,19 @@ const blogs = [
 
 const year = new Date().getFullYear();
 const mobileOpen = ref(false);
+const rootEl = ref(null);
 
-const heroImages = [
-    '/assets/hero/pic1.png',
-    '/assets/hero/pic2.png',
-    '/assets/hero/pic3.png',
-];
-const currentSlide = ref(0);
-let slideInterval = null;
-
+// Reveal-on-scroll. .reveal-on is added only after JS confirms it can run, so
+// without scripting the content stays fully visible (graceful degradation).
 onMounted(() => {
-    slideInterval = setInterval(() => {
-        currentSlide.value = (currentSlide.value + 1) % heroImages.length;
-    }, 4000);
-});
-
-onUnmounted(() => {
-    clearInterval(slideInterval);
+    if (typeof IntersectionObserver === 'undefined' || !rootEl.value) return;
+    rootEl.value.classList.add('reveal-on');
+    const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+            if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+        }
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    rootEl.value.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 });
 
 const selectedProvince = ref(null);
@@ -152,7 +148,7 @@ const sampleDirector = computed(() => {
 <template>
     <Head title="Welcome — DOST PRISM" />
 
-    <div class="landing min-h-screen bg-white text-slate-800">
+    <div ref="rootEl" class="landing min-h-screen bg-white text-slate-800">
 
         <!-- ── Navbar ──────────────────────────────────────────────────────── -->
         <header style="z-index: 100;" class="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-200">
@@ -196,13 +192,15 @@ const sampleDirector = computed(() => {
 
         <!-- ── Hero ───────────────────────────────────────────────────────── -->
         <section class="hero">
-            <img
-                v-for="(src, i) in heroImages"
-                :key="src"
-                :src="src"
-                :class="['hero-slide', { 'hero-slide--active': i === currentSlide }]"
-                alt=""
-            />
+            <video
+                class="hero-video"
+                src="/assets/hero/hero.mp4"
+                poster="/assets/hero/pic1.png"
+                autoplay
+                loop
+                muted
+                playsinline
+            ></video>
             <div class="hero-anim"></div>
             <div class="hero-veil"></div>
 
@@ -262,23 +260,23 @@ const sampleDirector = computed(() => {
                             scientific progress through research and development, technology transfer, and science
                             education. With offices in every region, DOST brings science closer to every Filipino.
                         </p>
-                        <div class="mt-8 grid sm:grid-cols-2 gap-4">
-                            <div class="about-card">
-                                <div class="about-card-label">Vision</div>
-                                <p class="mt-1 text-base text-slate-600 leading-relaxed">
-                                    Science and Technology for a globally competitive and sustainable Philippines.
-                                </p>
+                        <div class="mt-8 flex flex-wrap gap-x-10 gap-y-4">
+                            <div class="about-fact">
+                                <span class="about-fact-num">1958</span>
+                                <span class="about-fact-label">Established</span>
                             </div>
-                            <div class="about-card">
-                                <div class="about-card-label">Mission</div>
-                                <p class="mt-1 text-base text-slate-600 leading-relaxed">
-                                    Provide central direction and coordination of S&amp;T efforts for maximum economic and social benefit.
-                                </p>
+                            <div class="about-fact">
+                                <span class="about-fact-num">17</span>
+                                <span class="about-fact-label">Regional Offices</span>
+                            </div>
+                            <div class="about-fact">
+                                <span class="about-fact-num">RA 2067</span>
+                                <span class="about-fact-label">Science Act of 1958</span>
                             </div>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div v-for="p in pillars" :key="p.title" class="pillar-card">
+                        <div v-for="p in pillars" :key="p.title" class="pillar-card reveal">
                             <div class="pillar-icon">
                                 <component :is="p.icon" class="w-6 h-6" />
                             </div>
@@ -291,6 +289,35 @@ const sampleDirector = computed(() => {
         </section>
 
         <!-- ── About the System ───────────────────────────────────────────── -->
+        <!-- ── Mandate · Mission · Vision ─────────────────────────────────── -->
+        <section class="mvm">
+            <div class="mvm-glow" aria-hidden="true"></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 relative">
+                <div class="text-center max-w-2xl mx-auto reveal">
+                    <div class="eyebrow eyebrow--on-dark">Our Foundation</div>
+                    <h2 class="mvm-title">Mandate, Mission &amp; Vision</h2>
+                    <p class="mvm-sub">The guiding principles of the Department of Science and Technology.</p>
+                </div>
+                <div class="mvm-grid">
+                    <article class="mvm-card reveal reveal--d1">
+                        <div class="mvm-icon"><RiBuilding2Line class="w-6 h-6" /></div>
+                        <h3 class="mvm-label">Mandate</h3>
+                        <p class="mvm-text">Provide central direction, leadership and coordination of scientific and technological efforts and ensure that the results therefrom are geared and utilized in areas of maximum economic and social benefits for the people.</p>
+                    </article>
+                    <article class="mvm-card mvm-card--accent reveal reveal--d2">
+                        <div class="mvm-icon"><RiLightbulbLine class="w-6 h-6" /></div>
+                        <h3 class="mvm-label">Mission</h3>
+                        <p class="mvm-text">To direct, lead, and coordinate the country's scientific, technological, and innovative efforts geared towards maximum economic and social benefits for the people.</p>
+                    </article>
+                    <article class="mvm-card reveal reveal--d3">
+                        <div class="mvm-icon"><RiGlobalLine class="w-6 h-6" /></div>
+                        <h3 class="mvm-label">Vision</h3>
+                        <p class="mvm-text">DOST as the leading enabler and provider of science, technology, and innovation (STI) explicit solutions towards national development.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
         <section id="system" class="py-24 lg:py-32 bg-slate-50">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
                 <div class="eyebrow">The System</div>
@@ -329,7 +356,7 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div v-for="f in features" :key="f.title" class="feature">
+                    <div v-for="f in features" :key="f.title" class="feature reveal">
                         <div class="feat-icon"><component :is="f.icon" class="w-6 h-6" /></div>
                         <h3 class="mt-5 text-xl font-bold text-slate-900">{{ f.title }}</h3>
                         <p class="mt-2 text-slate-600 leading-relaxed text-base">{{ f.text }}</p>
@@ -454,7 +481,7 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <article v-for="b in blogs" :key="b.title" class="blog-card" @click="router.visit(`/blog/${b.slug}`)" style="cursor:pointer">
+                    <article v-for="b in blogs" :key="b.title" class="blog-card reveal" @click="router.visit(`/blog/${b.slug}`)" style="cursor:pointer">
                         <div class="blog-card-img">
                             <img :src="b.image" :alt="b.title" />
                         </div>
@@ -567,11 +594,10 @@ const sampleDirector = computed(() => {
     position: relative; overflow: hidden;
     background: linear-gradient(135deg, var(--dost-navy) 0%, var(--dost) 65%, var(--dost-navy) 100%);
 }
-.hero-slide {
+.hero-video {
     position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-    z-index: 0; opacity: 0; transition: opacity 1.2s ease-in-out;
+    z-index: 0;
 }
-.hero-slide--active { opacity: 1; }
 .hero-anim {
     position: absolute; inset: -20%; z-index: 1; opacity: .25; pointer-events: none;
     background-image:
@@ -586,7 +612,7 @@ const sampleDirector = computed(() => {
 }
 .hero-veil {
     position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: rgba(0,0,0,.80);
+    background: linear-gradient(180deg, rgba(8,47,95,.86) 0%, rgba(8,47,95,.46) 40%, rgba(8,47,95,.54) 68%, rgba(6,31,64,.92) 100%);
 }
 .hero-inner { position: relative; z-index: 3; }
 
@@ -739,5 +765,62 @@ const sampleDirector = computed(() => {
 
 /* ── Map wrapper ─────────────────────────────────────────────────────────── */
 .map-wrapper { position: relative; }
+
+/* ── Smooth in-page scrolling ────────────────────────────────────────────── */
+:global(html) { scroll-behavior: smooth; }
+
+/* ── Reveal on scroll ────────────────────────────────────────────────────── */
+.reveal-on .reveal {
+    opacity: 0; transform: translateY(26px);
+    transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1);
+    will-change: opacity, transform;
+}
+.reveal-on .reveal.is-visible { opacity: 1; transform: none; }
+.reveal--d1 { transition-delay: .08s; }
+.reveal--d2 { transition-delay: .18s; }
+.reveal--d3 { transition-delay: .28s; }
+@media (prefers-reduced-motion: reduce) {
+    .reveal-on .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+/* ── About key facts ─────────────────────────────────────────────────────── */
+.about-fact { display: flex; flex-direction: column; }
+.about-fact-num { font-size: 1.65rem; font-weight: 800; color: var(--dost-navy); line-height: 1; }
+.about-fact-label { margin-top: 5px; font-size: .9rem; font-weight: 600; color: #64748b; }
+
+/* ── Mandate · Mission · Vision ──────────────────────────────────────────── */
+.mvm {
+    position: relative; overflow: hidden; padding: 88px 0 96px;
+    background: linear-gradient(160deg, var(--dost-navy) 0%, var(--dost-700) 55%, var(--dost-navy-2) 100%);
+}
+.mvm-glow {
+    position: absolute; inset: -25% -10% auto -10%; height: 75%; pointer-events: none;
+    background:
+        radial-gradient(55% 60% at 18% 0%, rgba(86,179,245,.20), transparent 70%),
+        radial-gradient(45% 55% at 85% 8%, rgba(124,196,255,.16), transparent 70%);
+}
+.eyebrow--on-dark { color: #8ec5ff; }
+.mvm-title { margin-top: 8px; font-size: clamp(2rem, 3vw, 2.6rem); font-weight: 800; color: #fff; line-height: 1.15; }
+.mvm-sub   { margin-top: 14px; font-size: 1.2rem; line-height: 1.7; color: #c6dbf3; }
+.mvm-grid  { margin-top: 48px; display: grid; gap: 22px; grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .mvm-grid { grid-template-columns: 1fr; } }
+.mvm-card {
+    position: relative; border-radius: 20px; padding: 30px 28px 32px;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(6px); box-shadow: 0 20px 50px rgba(3,17,38,.35);
+    transition: transform .25s ease, box-shadow .25s ease, background .25s ease, border-color .25s ease;
+}
+.mvm-card:hover {
+    transform: translateY(-6px); background: rgba(255,255,255,.11);
+    border-color: rgba(142,197,255,.5); box-shadow: 0 28px 64px rgba(3,17,38,.5);
+}
+.mvm-card--accent { background: rgba(142,197,255,.12); border-color: rgba(142,197,255,.4); }
+.mvm-icon {
+    width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center;
+    color: #fff; background: linear-gradient(135deg, var(--dost) 0%, #56b3f5 100%);
+    box-shadow: 0 8px 20px rgba(11,87,168,.45);
+}
+.mvm-label { margin-top: 18px; font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8ec5ff; }
+.mvm-text  { margin-top: 8px; font-size: 1.02rem; line-height: 1.7; color: #e7eefb; }
 
 </style>
