@@ -40,9 +40,9 @@ const features = [
                     <img src="/assets/logo.png" alt="DOST" class="logo-img" />
                 </div>
                 <div>
-                    <div class="text-h6 font-weight-black text-white" style="letter-spacing:0.05em;">PRISM</div>
+                    <div class="text-white font-weight-black" style="font-size:1.05rem; line-height:1.2; letter-spacing:0.02em;">Department of Science and Technology</div>
                     <div class="text-white" style="font-size:0.65rem; opacity:0.65; line-height:1.5; text-transform:uppercase; letter-spacing:0.06em;">
-                        Provincial Director Ranking and Information System for Management
+                        OneDOST4U - Solutions and Opportunities for All
                     </div>
                 </div>
             </div>
@@ -50,17 +50,15 @@ const features = [
             <!-- Center: Main content -->
             <div class="left-section flex-grow-1 d-flex flex-column justify-center" style="position:relative;">
 
-                <!-- Badge - DOST logo on the left, then the text -->
+                <!-- Badge - PRISM system brand -->
                 <div class="dost-badge mb-3">
-                    <img src="/assets/logo.png" alt="DOST" class="dost-badge-logo mr-2" />
-                    <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">Department of Science and Technology</span>
+                    <img src="/assets/logo.png" alt="PRISM" class="dost-badge-logo mr-2" />
+                    <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">PRISM</span>
                 </div>
 
-                <!-- DOST tagline - the system signature; readable but not loud -->
-                <div class="text-white mb-6" style="font-size:0.92rem; letter-spacing:0.01em;">
-                    <span style="font-weight:800;">OneDOST4U</span>
-                    <span style="opacity:0.55; margin:0 6px;">-</span>
-                    <span style="opacity:0.85; font-weight:500;">Solutions and Opportunities for All</span>
+                <!-- PRISM full name -->
+                <div class="text-white mb-6" style="font-size:0.92rem; letter-spacing:0.01em; opacity:0.85; font-weight:500;">
+                    Provincial Director Ranking and Information System for Management
                 </div>
 
                 <!-- Headline -->
