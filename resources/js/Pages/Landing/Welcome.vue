@@ -78,6 +78,18 @@ const blogs = [
 const year = new Date().getFullYear();
 const mobileOpen = ref(false);
 
+// Smoothly scrolls to an in-page section, offsetting for the sticky header.
+const scrollToSection = (id, event) => {
+    event?.preventDefault();
+    const el = document.getElementById(id);
+    if (!el) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const headerOffset = 72;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
+    mobileOpen.value = false;
+};
+
 const heroImages = [
     '/assets/hero/pic1.png',
     '/assets/hero/pic2.png',
@@ -85,15 +97,29 @@ const heroImages = [
 ];
 const currentSlide = ref(0);
 let slideInterval = null;
+let revealObserver = null;
 
 onMounted(() => {
     slideInterval = setInterval(() => {
         currentSlide.value = (currentSlide.value + 1) % heroImages.length;
     }, 4000);
+
+    // Reveal each section as it scrolls into view; sections animate once, then stay visible.
+    revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
 });
 
 onUnmounted(() => {
     clearInterval(slideInterval);
+    revealObserver?.disconnect();
 });
 
 const selectedProvince = ref(null);
@@ -168,11 +194,11 @@ const sampleDirector = computed(() => {
                     </a>
 
                     <nav class="hidden md:flex items-center gap-1">
-                        <a href="#about"    class="nav-link">About</a>
-                        <a href="#system"   class="nav-link">The System</a>
-                        <a href="#features" class="nav-link">Features</a>
-                        <a href="#map"      class="nav-link">Map</a>
-                        <a href="#news"     class="nav-link">News</a>
+                        <a href="#about"    class="nav-link" @click="scrollToSection('about', $event)">About</a>
+                        <a href="#system"   class="nav-link" @click="scrollToSection('system', $event)">The System</a>
+                        <a href="#features" class="nav-link" @click="scrollToSection('features', $event)">Features</a>
+                        <a href="#map"      class="nav-link" @click="scrollToSection('map', $event)">Map</a>
+                        <a href="#news"     class="nav-link" @click="scrollToSection('news', $event)">News</a>
                         <a v-if="canLogin" href="/login" class="ml-2 btn-primary">Sign In</a>
                     </nav>
 
@@ -184,11 +210,11 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <div v-if="mobileOpen" class="md:hidden pb-4 flex flex-col gap-1">
-                    <a href="#about"    class="nav-link" @click="mobileOpen=false">About</a>
-                    <a href="#system"   class="nav-link" @click="mobileOpen=false">The System</a>
-                    <a href="#features" class="nav-link" @click="mobileOpen=false">Features</a>
-                    <a href="#map"      class="nav-link" @click="mobileOpen=false">Map</a>
-                    <a href="#news"     class="nav-link" @click="mobileOpen=false">News</a>
+                    <a href="#about"    class="nav-link" @click="scrollToSection('about', $event)">About</a>
+                    <a href="#system"   class="nav-link" @click="scrollToSection('system', $event)">The System</a>
+                    <a href="#features" class="nav-link" @click="scrollToSection('features', $event)">Features</a>
+                    <a href="#map"      class="nav-link" @click="scrollToSection('map', $event)">Map</a>
+                    <a href="#news"     class="nav-link" @click="scrollToSection('news', $event)">News</a>
                     <a v-if="canLogin" href="/login" class="btn-primary text-center mt-1" @click="mobileOpen=false">Sign In</a>
                 </div>
             </div>
@@ -227,10 +253,6 @@ const sampleDirector = computed(() => {
                         A transparent, evidence-based platform that scores and ranks Provincial Science &amp; Technology
                         Directors across the Philippines — driving excellence in regional S&amp;T leadership.
                     </p>
-                    <div class="mt-10 flex flex-wrap justify-center gap-3">
-                        <a href="#about"  class="btn-hero-light">Learn More <RiArrowRightLine class="w-5 h-5" /></a>
-                        <a href="/map"    class="btn-hero-ghost"><RiGlobalLine class="w-5 h-5" /> Explore the Map</a>
-                    </div>
                 </div>
 
                 <!-- Stats strip -->
@@ -249,35 +271,34 @@ const sampleDirector = computed(() => {
         <section id="about" class="py-20 lg:py-28">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
                 <div class="grid lg:grid-cols-2 gap-16 items-center">
-                    <div>
+                    <div class="reveal">
                         <div class="eyebrow">About the Agency</div>
                         <h2 class="section-title">Department of Science and Technology</h2>
                         <p class="section-lead">
-                            The Department of Science and Technology (DOST) is the primary government agency in the Philippines
-                            responsible for the coordination and implementation of science, technology, and innovation (STI)
-                            to support national development.
-                        </p>
-                        <p class="mt-4 text-lg text-slate-600 leading-relaxed">
-                            Founded in 1958 and reorganized under Republic Act No. 2067, DOST drives the country's
-                            scientific progress through research and development, technology transfer, and science
-                            education. With offices in every region, DOST brings science closer to every Filipino.
+                            The Department of Science and Technology (DOST) is the premiere science and technology body in the country charged with the twin mandate of providing central direction, leadership and coordination of all scientific and technological activities, and of formulating policies, programs and projects to support national development.
                         </p>
                         <div class="mt-8 grid sm:grid-cols-2 gap-4">
                             <div class="about-card">
                                 <div class="about-card-label">Vision</div>
                                 <p class="mt-1 text-base text-slate-600 leading-relaxed">
-                                    Science and Technology for a globally competitive and sustainable Philippines.
+                                    DOST as the leading enabler and provider of science, technology, and innovation (STI) explicit solutions towards national development.
                                 </p>
                             </div>
                             <div class="about-card">
                                 <div class="about-card-label">Mission</div>
                                 <p class="mt-1 text-base text-slate-600 leading-relaxed">
-                                    Provide central direction and coordination of S&amp;T efforts for maximum economic and social benefit.
+                                    To direct, lead, and coordinate the country's scientific, technological, and innovative efforts geared towards maximum economic and social benefits for the people.
+                                </p>
+                            </div>
+                            <div class="about-card">
+                                <div class="about-card-label">Mandate</div>
+                                <p class="mt-1 text-base text-slate-600 leading-relaxed">
+                                    Provide central direction, leadership and coordination of scientific and technological efforts and ensure that the results therefrom are geared and utilized in areas of maximum economic and social benefits for the people. 
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="reveal reveal-stagger grid grid-cols-2 gap-4">
                         <div v-for="p in pillars" :key="p.title" class="pillar-card">
                             <div class="pillar-icon">
                                 <component :is="p.icon" class="w-6 h-6" />
@@ -292,7 +313,7 @@ const sampleDirector = computed(() => {
 
         <!-- ── About the System ───────────────────────────────────────────── -->
         <section id="system" class="py-24 lg:py-32 bg-slate-50">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <div class="reveal max-w-4xl mx-auto px-4 sm:px-6 text-center">
                 <div class="eyebrow">The System</div>
                 <h2 class="section-title">PSTD Ranking &amp; Information System</h2>
                 <p class="section-lead mx-auto">
@@ -320,7 +341,7 @@ const sampleDirector = computed(() => {
         <!-- ── Features ───────────────────────────────────────────────────── -->
         <section id="features" class="py-20 lg:py-28">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="max-w-2xl mx-auto text-center">
+                <div class="reveal max-w-2xl mx-auto text-center">
                     <div class="eyebrow">What's Inside</div>
                     <h2 class="section-title">Everything the system offers</h2>
                     <p class="section-lead mx-auto">
@@ -328,7 +349,7 @@ const sampleDirector = computed(() => {
                     </p>
                 </div>
 
-                <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="reveal reveal-stagger mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div v-for="f in features" :key="f.title" class="feature">
                         <div class="feat-icon"><component :is="f.icon" class="w-6 h-6" /></div>
                         <h3 class="mt-5 text-xl font-bold text-slate-900">{{ f.title }}</h3>
@@ -341,7 +362,7 @@ const sampleDirector = computed(() => {
         <!-- ── Interactive Map ───────────────────────────────────────────────── -->
         <section id="map" class="py-20 lg:py-28 bg-slate-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="max-w-2xl">
+                <div class="reveal max-w-2xl">
                     <div class="eyebrow">Interactive Map</div>
                     <h2 class="section-title">Explore the Philippines by region</h2>
                     <p class="section-lead">
@@ -351,7 +372,7 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <!-- Map wrapper -->
-                <div class="mt-8 map-wrapper rounded-2xl bg-white border border-slate-200 shadow-xl p-3 sm:p-4">
+                <div class="reveal mt-8 map-wrapper rounded-2xl bg-white border border-slate-200 shadow-xl p-3 sm:p-4">
                     <RegionInfoMap height="620px" :hide-panel="true" :panel-width="360" @province-selected="onProvinceSelected">
                         <!-- Panel lives inside RegionInfoMap's root so it's visible in fullscreen -->
                         <template #default>
@@ -446,14 +467,14 @@ const sampleDirector = computed(() => {
         <!-- ── News & Updates ─────────────────────────────────────────────── -->
         <section id="news" class="py-20 lg:py-28">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="flex items-end justify-between mb-12">
+                <div class="reveal flex items-end justify-between mb-12">
                     <div>
                         <div class="eyebrow">News &amp; Updates</div>
                         <h2 class="section-title">Latest from DOST PSTD</h2>
                     </div>
                 </div>
 
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="reveal reveal-stagger grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <article v-for="b in blogs" :key="b.title" class="blog-card" @click="router.visit(`/blog/${b.slug}`)" style="cursor:pointer">
                         <div class="blog-card-img">
                             <img :src="b.image" :alt="b.title" />
@@ -479,7 +500,7 @@ const sampleDirector = computed(() => {
         <!-- ── CTA ────────────────────────────────────────────────────────── -->
         <section class="py-16 lg:py-20">
             <div class="max-w-5xl mx-auto px-4 sm:px-6">
-                <div class="cta">
+                <div class="reveal cta">
                     <RiGroupLine class="w-12 h-12 mx-auto" style="color:#bcd6f2" />
                     <h2 class="mt-4 text-4xl lg:text-5xl font-extrabold text-white">Ready to dive into the rankings?</h2>
                     <p class="mt-3 text-xl max-w-2xl mx-auto" style="color:#cfe0f5">
@@ -554,7 +575,8 @@ const sampleDirector = computed(() => {
     padding: 8px 14px; border-radius: 8px; font-size: 16px; font-weight: 600;
     color: #475569; transition: all .15s ease; text-decoration: none !important;
 }
-.nav-link:hover { color: var(--dost); background: var(--dost-tint); }
+.nav-link:hover  { color: var(--dost); background: var(--dost-tint); }
+.nav-link:active { transform: scale(.96); }
 .btn-primary {
     display: inline-block; padding: 10px 22px; border-radius: 10px; font-size: 16px; font-weight: 700;
     color: #fff; background: var(--dost); box-shadow: 0 2px 8px rgba(11,87,168,.25); transition: background .15s ease;
@@ -589,6 +611,21 @@ const sampleDirector = computed(() => {
     background: rgba(0,0,0,.80);
 }
 .hero-inner { position: relative; z-index: 3; }
+
+/* Page-load entrance — hero content fades/slides in, staggered top to bottom */
+.hero-badge, .hero-tagline, .hero-title, .hero-sub, .hero-cta-row {
+    opacity: 0;
+    animation: heroEnter .8s cubic-bezier(.16,.84,.44,1) both;
+}
+.hero-badge    { animation-delay: .05s; }
+.hero-tagline  { animation-delay: .15s; }
+.hero-title    { animation-delay: .25s; }
+.hero-sub      { animation-delay: .38s; }
+.hero-cta-row  { animation-delay: .5s; }
+@keyframes heroEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
 .hero-badge {
     display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px;
@@ -739,5 +776,32 @@ const sampleDirector = computed(() => {
 
 /* ── Map wrapper ─────────────────────────────────────────────────────────── */
 .map-wrapper { position: relative; }
+
+/* ── Scroll reveal ───────────────────────────────────────────────────────── */
+.reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity .7s cubic-bezier(.16,.84,.44,1), transform .7s cubic-bezier(.16,.84,.44,1);
+}
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Grid children fade in one after another once the parent becomes visible */
+.reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+}
+.reveal-stagger.is-visible > * { opacity: 1; transform: translateY(0); }
+.reveal-stagger.is-visible > *:nth-child(1) { transition-delay: .05s; }
+.reveal-stagger.is-visible > *:nth-child(2) { transition-delay: .12s; }
+.reveal-stagger.is-visible > *:nth-child(3) { transition-delay: .19s; }
+.reveal-stagger.is-visible > *:nth-child(4) { transition-delay: .26s; }
+.reveal-stagger.is-visible > *:nth-child(5) { transition-delay: .33s; }
+.reveal-stagger.is-visible > *:nth-child(6) { transition-delay: .40s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-badge, .hero-tagline, .hero-title, .hero-sub, .hero-cta-row { animation: none; opacity: 1; }
+    .reveal, .reveal-stagger > * { opacity: 1; transform: none; transition: none; }
+}
 
 </style>

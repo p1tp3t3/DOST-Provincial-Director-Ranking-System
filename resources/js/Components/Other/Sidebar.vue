@@ -11,14 +11,12 @@ import {
     RiFileList3Fill,
     RiFolder2Fill,
     RiUserAddLine,
-    RiListCheck3,
     RiAdminFill,
     RiListView,
     RiFile2Fill,
     RiBarChart2Fill,
     RiFolder2Line,
     RiEdit2Fill,
-    RiTable2,
     RiRoadMapFill,
 } from '@remixicon/vue';
 
@@ -36,9 +34,9 @@ const getRoleLabel = () => {
     const label = {
         'super_admin':        'System Administrator',
         'sub_admin':          'Sub Administrator',
+        'regional_admin':     `Regional Administrator of ${authUser.value?.region?.name}`,
         'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
-        'regional_admin':     `Regional Administrator of ${authUser.value?.region?.name}`,
         'employee':           `Employee at ${authUser.value?.province?.name}`,
     };
     return label[authUser.value?.role] || '';
@@ -94,7 +92,7 @@ const tabs = computed(() => {
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
                 { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
                 { name: 'Employees', href: '/employees', icon: RiTeamFill       },
-                { name: 'Reports',   href: '/report',    icon: RiFileList3Fill  },
+                { name: 'Reports',   href: '/provincial-director-report',    icon: RiFileList3Fill  },
             ];
         case 'regional_admin':
             return [
@@ -111,8 +109,6 @@ const tabs = computed(() => {
                 { name: 'My Profile',href: `/profile/${authUser.value?.id}`,   icon: RiUser2Fill      },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
             ];
-        default:
-            return [];
     }
 });
 
@@ -143,8 +139,6 @@ watchEffect(() => {
 });
 
 const navigateTo = (href) => router.visit(href);
-const navigateProfile = () => router.visit(`/profile/${authUser.value.id}`);
-const handleLogout = () => router.post('/logout');
 
 const onSubNavEnter = (el) => {
     el.style.height = '0';
@@ -167,17 +161,6 @@ const onSubNavLeave = (el) => {
     el.style.opacity = '0';
 };
 
-const avatarSrc = computed(() => {
-    const pic = authUser.value?.profile?.profile_picture;
-    return pic ? `/profile-picture?filename=${encodeURIComponent(pic)}` : null;
-});
-
-const sidebarInitials = computed(() => {
-    const u = authUser.value;
-    const first = u?.profile?.first_name?.[0] ?? '';
-    const last  = u?.profile?.last_name?.[0]  ?? '';
-    return (first + last).toUpperCase() || u?.username?.[0]?.toUpperCase() || '?';
-});
 </script>
 
 <template>

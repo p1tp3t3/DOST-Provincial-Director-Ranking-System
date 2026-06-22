@@ -156,6 +156,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/provincial-sub-admin-report/export', [ProvincialSubAdminReportController::class, 'export']);
     });
 
+    Route::middleware('role:provincial_director')->group(function () {
+        Route::get('/provincial-director-report',        [ProvincialSubAdminReportController::class, 'index']);
+        Route::get('/provincial-director-report/export', [ProvincialSubAdminReportController::class, 'export']);
+    });
+
     // ── Sub Admin + Provincial Admin + Provincial Director ─────
     Route::middleware('role:sub_admin,provincial_admin,provincial_director')->group(function () {
         Route::get('/employees', [EmployeeController::class, 'index']);
