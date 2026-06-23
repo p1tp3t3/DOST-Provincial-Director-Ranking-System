@@ -8,8 +8,8 @@ return [
         'sort_order' => '1',
     ],
     [
-        'code' => 'FUNCTIONAL',
-        'name' => 'Functional',
+        'code' => 'STRATEGIC',
+        'name' => 'Strategic',
         'weight' => '0.3000',
         'sort_order' => '2',
     ],

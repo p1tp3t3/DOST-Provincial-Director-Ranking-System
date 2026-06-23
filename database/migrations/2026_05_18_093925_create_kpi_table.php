@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 3 official PSTD matrix categories: CORE (0.6), FUNCTIONAL (0.3), SUPPORT (0.1)
+        // 3 official PSTD matrix categories: CORE (0.6), STRATEGIC (0.3), SUPPORT (0.1)
         Schema::create('kpi_categories', function (Blueprint $table) {
             $table->id();
             $table->string('code', 20)->unique();

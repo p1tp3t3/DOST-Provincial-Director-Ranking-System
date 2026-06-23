@@ -283,6 +283,14 @@
             </div>
         </transition>
 
+        <!-- Reset view -->
+        <button class="reset-btn" @click="resetView" title="Reset map">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+        </button>
+
         <!-- Fullscreen toggle -->
         <button class="fs-btn" @click="toggleFullscreen" :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
             <svg v-if="!isFullscreen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -438,11 +446,11 @@ const scoreColor = (score) => {
     return '#9a3412';                    // bronze
 };
 
-// Full per-category breakdown for the side panel. Always returns CORE → FUNCTIONAL
+// Full per-category breakdown for the side panel. Always returns CORE → STRATEGIC
 // → SUPPORT in matrix-weight order, with isStrongest/isWeakest flags so the
 // panel can mark the leader and laggard with arrow markers.
-const CATEGORY_FULL_NAMES = { CORE: 'Core', FUNCTIONAL: 'Functional', SUPPORT: 'Support' };
-const CATEGORY_ORDER      = ['CORE', 'FUNCTIONAL', 'SUPPORT'];
+const CATEGORY_FULL_NAMES = { CORE: 'Core', STRATEGIC: 'Strategic', SUPPORT: 'Support' };
+const CATEGORY_ORDER      = ['CORE', 'STRATEGIC', 'SUPPORT'];
 const categoryBreakdown = (entry) => {
     if (!entry?.subtotals_pct) return [];
     const list = CATEGORY_ORDER
@@ -1041,13 +1049,41 @@ const onRegionChange = () => {
     smartFlyTo(bounds, { maxZoom: regionMaxZoom(code), padding: [30, 30] });
 };
 
+// Resolve a province/cluster name to its CSTC city footprint. The former CSTCs
+// (CAMANAVA, PAMAMAZON, PAMAMARISAN, MUNTAPARLAS, ZCIC, Davao City) are now
+// classified as Large and appear in the province list, but they're city clusters
+// rather than province polygons, so they must zoom via cstcData. Matching is
+// case-tolerant because the rankings data and the geojson `cstc` may differ.
+const findCstc = (name) => {
+    if (!name) return null;
+    if (cstcData[name]) return { key: name, bounds: cstcData[name] };
+    const lower = name.toLowerCase();
+    const key = Object.keys(cstcData).find(k => k.toLowerCase() === lower);
+    return key ? { key, bounds: cstcData[key] } : null;
+};
+
 const onProvinceChange = () => {
     pendingFly = false;
-    refreshStyle();
-    if (!selProvince.value) { panel.value = null; return; }
-    panel.value = buildProvincePanel(selProvince.value);
+    if (!selProvince.value) { selCstc.value = ''; refreshStyle(); refreshCstcStyle(); panel.value = null; return; }
+
     const prov = provinces.find(p => p.name === selProvince.value);
-    if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+    if (prov) {
+        selCstc.value = '';
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildProvincePanel(selProvince.value);
+        smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+        return;
+    }
+    const cstc = findCstc(selProvince.value);
+    if (cstc) {
+        selCstc.value = cstc.key;
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildCstcPanel(cstc.key);
+        smartFlyTo(cstc.bounds, { maxZoom: 13, padding: [40, 40] });
+        return;
+    }
+    refreshStyle();
+    panel.value = buildProvincePanel(selProvince.value);
 };
 
 // ── External (dashboard sticky filter) → internal map state ───────────────────
@@ -1093,14 +1129,25 @@ const selectRegionFromList = (code) => {
 };
 
 const selectProvinceFromList = (name) => {
-    const prov = provinces.find(p => p.name === name);
-    if (!prov) return;
     selProvince.value = name;
     pendingFly = false;
-    refreshStyle();
-    panel.value = buildProvincePanel(name);
-    softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
-    provinceListOpen.value = false;
+    const prov = provinces.find(p => p.name === name);
+    if (prov) {
+        selCstc.value = '';
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildProvincePanel(name);
+        softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+        provinceListOpen.value = false;
+        return;
+    }
+    const cstc = findCstc(name);
+    if (cstc) {
+        selCstc.value = cstc.key;
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildCstcPanel(cstc.key);
+        softFlyTo(cstc.bounds, { maxZoom: 13, padding: [40, 40] });
+        provinceListOpen.value = false;
+    }
 };
 
 const resetView = () => {
@@ -1534,10 +1581,23 @@ onBeforeUnmount(() => {
 .fs-btn:hover { background: #f1f5f9; color: #1e293b; }
 .fs-btn svg   { width: 16px; height: 16px; }
 
+.reset-btn {
+    position: absolute; top: 10px; right: 50px; z-index: 1000;
+    width: 32px; height: 32px; padding: 6px;
+    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0; border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: #475569;
+    backdrop-filter: blur(4px); transition: background 0.15s, color 0.15s;
+}
+.reset-btn:hover { background: #f1f5f9; color: #1e293b; }
+.reset-btn svg   { width: 16px; height: 16px; }
+
 .ph-map-wrap:fullscreen .map-nav,
 .ph-map-wrap:-webkit-full-screen .map-nav { top: 14px; left: 14px; }
 .ph-map-wrap:fullscreen .fs-btn,
 .ph-map-wrap:-webkit-full-screen .fs-btn  { top: 14px; right: 14px; }
+.ph-map-wrap:fullscreen .reset-btn,
+.ph-map-wrap:-webkit-full-screen .reset-btn  { top: 14px; right: 54px; }
 .ph-map-wrap:fullscreen .map-info-panel,
 .ph-map-wrap:-webkit-full-screen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
 .ph-map-wrap:fullscreen .map-province-list-panel,

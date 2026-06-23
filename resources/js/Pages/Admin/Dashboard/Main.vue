@@ -156,8 +156,18 @@
                                     <template #activator="{ props: tip }">
                                         <v-icon v-bind="tip" size="14" color="blue-grey" class="cursor-pointer">mdi-information-outline</v-icon>
                                     </template>
-                                    <div class="pa-2 text-caption">
-                                        Every ranked province is sorted by overall standing and split into three groups: the top 20% (Top), the middle 70% (Average), and the bottom 10% (Low). Use the toggle to view this as proportional bars or a bell curve. Hover a group to list its provinces; click to keep it open.
+                                    <div class="pa-2">
+                                        <div class="font-weight-bold mb-1">Performance Distribution</div>
+                                        <div class="text-caption mb-2" style="opacity:.85;">Ranked provinces split into three groups by overall standing:</div>
+                                        <ul class="text-caption" style="margin:0; padding-left:16px; list-style:disc; line-height:1.7;">
+                                            <li><b>Top</b> - best 20% of provinces</li>
+                                            <li><b>Average</b> - middle 70%</li>
+                                            <li><b>Low</b> - bottom 10%</li>
+                                        </ul>
+                                        <div class="text-caption mt-2" style="opacity:.75; line-height:1.6;">
+                                            <div><b>Bars / Bell</b> toggle shows the same data two ways.</div>
+                                            <div>Hover a group to list its provinces; click to keep it open.</div>
+                                        </div>
                                     </div>
                                 </v-tooltip>
                             </div>
@@ -193,7 +203,7 @@
                                     <VueApexCharts
                                         v-if="top10Data.names.length"
                                         type="bar"
-                                        height="340"
+                                        height="500"
                                         :options="top10Options"
                                         :series="top10Series"
                                         :key="`top10-${selectedYear}-${selectedTier}-${selectedCategory}`"
@@ -242,7 +252,7 @@
                                     <VueApexCharts
                                         v-if="underData.names.length"
                                         type="bar"
-                                        height="340"
+                                        height="500"
                                         :options="underOptions"
                                         :series="underSeries"
                                         :key="`under-${selectedYear}-${selectedTier}-${selectedCategory}`"
@@ -366,14 +376,29 @@
                                             Scoring
                                         </v-chip>
                                     </template>
-                                    <div class="pa-1">
+                                    <div class="pa-2" style="max-width:340px;">
                                         <div class="font-weight-bold mb-1">Weighted PRISM Matrix Score</div>
-                                        <div class="text-caption mb-2 opacity-80">
-                                            For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, FUNCTIONAL = 30%, SUPPORT = 10%.
-                                        </div>
-                                        <div class="text-caption opacity-70">
-                                            Provinces are ranked within their size tier. Top 20% by rank = Top Performers, next 70% = Average, bottom 10% = Low.
-                                        </div>
+
+                                        <div class="text-caption font-weight-medium mt-1">How each of the 37 KPIs is scored</div>
+                                        <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
+                                            <li>Accomplishment % vs target becomes an adjective rating</li>
+                                            <li>Outstanding 1.0 &middot; Very Satisfactory 0.8 &middot; Satisfactory 0.6</li>
+                                            <li>Average 0.4 &middot; Unsatisfactory 0.2 &middot; Poor 0.0</li>
+                                            <li>That rating is multiplied by the KPI's weight</li>
+                                        </ul>
+
+                                        <div class="text-caption font-weight-medium mt-2">Category weights</div>
+                                        <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
+                                            <li><b>CORE</b> 60%</li>
+                                            <li><b>STRATEGIC</b> 30%</li>
+                                            <li><b>SUPPORT</b> 10%</li>
+                                        </ul>
+
+                                        <div class="text-caption font-weight-medium mt-2">Ranking &amp; tiers</div>
+                                        <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
+                                            <li>Ranked within size tier (Micro / Small / Medium / Large)</li>
+                                            <li>Top 20% = Top &middot; Middle 70% = Average &middot; Bottom 10% = Low</li>
+                                        </ul>
                                     </div>
                                 </v-tooltip>
                                 <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
@@ -495,9 +520,9 @@
                             </span>
                             <span v-else class="text-caption text-disabled">-</span>
                         </template>
-                        <template #item.functional="{ item }">
-                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">
-                                {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }}%
+                        <template #item.strategic="{ item }">
+                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'STRATEGIC' }">
+                                {{ item.subtotals_pct.STRATEGIC.toFixed(1) }}%
                             </span>
                             <span v-else class="text-caption text-disabled">-</span>
                         </template>
@@ -602,7 +627,7 @@
                                 <!-- Top 3 category-subtotal breakdown -->
                                 <div v-if="top3.length" class="podium-breakdown">
                                     <div v-for="(p, idx) in top3" :key="p.province" class="breakdown-col">
-                                        <div v-for="cat in ['CORE','FUNCTIONAL','SUPPORT']" :key="cat" class="breakdown-row">
+                                        <div v-for="cat in ['CORE','STRATEGIC','SUPPORT']" :key="cat" class="breakdown-row">
                                             <span class="breakdown-label">{{ cat }}</span>
                                             <span class="breakdown-score">{{ p.subtotals_pct[cat].toFixed(1) }}%</span>
                                         </div>
@@ -620,7 +645,7 @@
                                     :class="rowHighlightClass(item.province)"
                                     :data-province="item.province"
                                 >
-                                    <span class="podium-rest-rank">#{{ item.rank }}</span>
+                                    <span class="podium-rest-rank">{{ isRanked(item) ? '#' + item.rank : '-' }}</span>
                                     <div class="flex-1" style="min-width:0;">
                                         <div class="text-body-2 font-weight-medium text-truncate">
                                             <a :href="`/province-directories/${item.province_url_id}`" class="province-link">{{ item.province }}</a>
@@ -634,13 +659,16 @@
                                         {{ item.category }}
                                     </v-chip>
                                     <div class="score-cell podium-rest-cell">
-                                        <div class="score-track">
-                                            <div class="score-fill" :style="{ width: `${Math.min(getScore(item), 100)}%`, background: bucketBar(item.bucket) }" />
-                                        </div>
-                                        <div class="score-text">
-                                            <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
-                                            <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · FUNC {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
-                                        </div>
+                                        <template v-if="isRanked(item)">
+                                            <div class="score-track">
+                                                <div class="score-fill" :style="{ width: `${Math.min(getScore(item), 100)}%`, background: bucketBar(item.bucket) }" />
+                                            </div>
+                                            <div class="score-text">
+                                                <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
+                                                <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · STRAT {{ item.subtotals_pct.STRATEGIC.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
+                                            </div>
+                                        </template>
+                                        <span v-else class="text-caption text-disabled" style="margin:auto;">No data</span>
                                     </div>
                                 </div>
                                 <div v-if="!restList.length" class="text-center py-8 text-caption text-medium-emphasis">
@@ -678,7 +706,7 @@ const props = defineProps({
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('all');
-const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'FUNCTIONAL' | 'SUPPORT'
+const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'STRATEGIC' | 'SUPPORT'
 const selectedIsland   = ref('all');
 const selectedRegion   = ref('all');
 const selectedProvince = ref('all');
@@ -744,7 +772,7 @@ const tierLabel = computed(() =>
 
 // Rank-percentile bucketing matches RankingService::rankAndBucket on the backend.
 // Mirrored client-side so the Category filter can re-bucket within the active
-// tier when the user picks CORE / FUNCTIONAL / SUPPORT instead of Overall.
+// tier when the user picks CORE / STRATEGIC / SUPPORT instead of Overall.
 // If config/ranking.php values change, update these to match.
 const BUCKET_TOP_PCT   = 0.20;
 const BUCKET_UNDER_PCT = 0.10;
@@ -929,12 +957,13 @@ const bucketCounts = computed(() => {
     return counts;
 });
 
-// Podium + rest list operate on RANKED rows only so unranked never appears on
-// the leader podium. Unranked provinces still show in the table at the bottom.
+// The podium shows only the top 3 RANKED provinces. The rest list mirrors the
+// table: ranked provinces #4 onward, then unranked / no-data provinces at the
+// bottom (shown with a "No data" placeholder) so nothing is hidden.
 const rankedOnly       = computed(() => rankedScores.value.filter(isRanked));
 const unrankedProvinces = computed(() => rankedScores.value.filter(r => !isRanked(r)));
 const top3     = computed(() => rankedOnly.value.slice(0, 3));
-const restList = computed(() => rankedOnly.value.slice(3));
+const restList = computed(() => [...rankedOnly.value.slice(3), ...unrankedProvinces.value]);
 
 // Performer (Top / Average / Low) is bucketed per-tier so it's only meaningful
 // when a single tier is selected. In the "All Tiers" view we hide the column
@@ -948,7 +977,7 @@ const tableHeaders = computed(() => {
         { title: 'Director', key: 'director', sortable: false },
         { title: 'Tier',     key: 'category', width: '90px',  align: 'center', sortable: true  },
         { title: 'CORE 60%', key: 'core',     width: '90px',  align: 'center', sortable: false },
-        { title: 'FUNC 30%', key: 'functional', width: '90px', align: 'center', sortable: false },
+        { title: 'STRAT 30%', key: 'strategic', width: '90px', align: 'center', sortable: false },
         { title: 'SUPP 10%', key: 'support',  width: '90px',  align: 'center', sortable: false },
         { title: 'Total',    key: 'total_pct', width: '110px', align: 'center', sortable: true  },
     ];
@@ -1145,13 +1174,13 @@ const perfTooltip = (data, i) => {
             </div>`;
 };
 
-const makeHorizOptions = (data) => {
+const makeHorizOptions = (data, big = false) => {
     const max = Math.max(...data.scores, 0);
     const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
                  animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
-        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
+        plotOptions: { bar: { horizontal: true, barHeight: big ? '82%' : '68%', borderRadius: big ? 4 : 3, distributed: true } },
         colors: data.buckets.map(bucketColor),
         fill: {
             type: 'gradient',
@@ -1170,18 +1199,18 @@ const makeHorizOptions = (data) => {
                 xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
                 padding: { left: 0, right: 12, top: -8, bottom: 0 } },
         dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
-                      style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
+                      style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
         xaxis: { categories: data.names, min: 0, max: computedMax,
-                 labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
+                 labels: { formatter: v => `${v}%`, style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
                  axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 115 } },
+        yaxis: { labels: { style: { fontSize: big ? '14px' : '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: big ? 150 : 115 } },
         tooltip: { theme: 'light', custom: ({ dataPointIndex }) => perfTooltip(data, dataPointIndex) },
     };
 };
 
-const top10Options = computed(() => makeHorizOptions(top10Data.value));
+const top10Options = computed(() => makeHorizOptions(top10Data.value, true));
 const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
-const underOptions = computed(() => makeHorizOptions(underData.value));
+const underOptions = computed(() => makeHorizOptions(underData.value, true));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
 const avgOptions   = computed(() => makeHorizOptions(avgData.value));
 const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
@@ -1601,7 +1630,7 @@ watch(searchTarget, async (province) => {
 .podium-breakdown { display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
 .breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 .breakdown-row    { display: flex; align-items: center; gap: 6px; cursor: default; }
-/* Label width tuned so the longest label ("FUNCTIONAL") fits at 13px without
+/* Label width tuned so the longest label ("STRATEGIC") fits at 13px without
    crowding the score. Was 120px which overflowed when the podium-stage
    shrinks (42% width) - that's what was pushing the SUPPORT row off-screen
    or causing horizontal overflow per column. */
@@ -1639,15 +1668,15 @@ watch(searchTarget, async (province) => {
 }
 
 /* Widened from 330 → 380 because the elderly-friendly font override
-   (.score-cell .score-counts → 15px) made "CORE X · FUNC X · SUPP X"
+   (.score-cell .score-counts → 15px) made "CORE X · STRAT X · SUPP X"
    exceed the original 210px text slot and truncate to "SUP...".
    Score-text widened in lockstep so all three category values fit. */
-.score-cell { display: flex; align-items: center; gap: 10px; width: 380px; flex-shrink: 0; }
+.score-cell { display: flex; align-items: center; gap: 10px; width: 420px; flex-shrink: 0; }
 .score-cell .score-track { flex: unset; width: 105px; flex-shrink: 0; }
-.score-cell .score-text  { width: 260px; flex-shrink: 0; }
+.score-cell .score-text  { width: 300px; flex-shrink: 0; }
 .score-cell .score-pct   { font-size: 15px; }
 .score-cell .score-counts { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
-.podium-rest-cell { width: 380px; }
+.podium-rest-cell { width: 420px; }
 
 /* Tighten the province dropdown's menu rows so more items fit without scrolling */
 .trend-province-select :deep(.v-list-item) { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
@@ -1802,7 +1831,7 @@ watch(searchTarget, async (province) => {
 /* Performance Distribution card - fixed chart slot keeps page layout stable
    regardless of how many provinces are ranked in the active filter. */
 .bell-card-body {
-    height: 416px;
+    height: 560px;
     overflow: hidden;
     position: relative;
     padding: 4px 4px 0;

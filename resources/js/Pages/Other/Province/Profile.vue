@@ -326,7 +326,7 @@ const accomplishedColor = (kpi) => {
 
 const CATEGORY_VISUALS = {
     CORE:       { icon: 'mdi-rocket-launch-outline', color: 'indigo' },
-    FUNCTIONAL: { icon: 'mdi-shield-outline',        color: 'teal' },
+    STRATEGIC: { icon: 'mdi-shield-outline',        color: 'teal' },
     SUPPORT:    { icon: 'mdi-cog-outline',           color: 'deep-purple' },
 };
 const categoryIcon   = (code) => CATEGORY_VISUALS[code]?.icon  ?? 'mdi-chart-bar';

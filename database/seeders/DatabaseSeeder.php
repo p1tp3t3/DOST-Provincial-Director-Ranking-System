@@ -220,7 +220,7 @@ class DatabaseSeeder extends Seeder
         return [$first, $middle, $last];
     }
 
-    // Seeds the new PSTD Ranking Matrix structure: 3 categories (CORE/FUNCTIONAL/SUPPORT)
+    // Seeds the new PSTD Ranking Matrix structure: 3 categories (CORE/STRATEGIC/SUPPORT)
     // with 37 scored KPIs + 2 supporting input rows used to derive the % Delinquent SETUP KPI.
     private function generate_kpi()
     {

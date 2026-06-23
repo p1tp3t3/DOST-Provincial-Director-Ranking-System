@@ -51,8 +51,8 @@ class RankingService
     //       <province_category> => [   // 'micro' | 'small' | 'medium' | 'large'
     //         {
     //           rank, bucket, province, category, director, total, total_pct, adjective_label,
-    //           subtotals: {CORE: float, FUNCTIONAL: float, SUPPORT: float},
-    //           subtotals_pct: {CORE: float, FUNCTIONAL: float, SUPPORT: float},
+    //           subtotals: {CORE: float, STRATEGIC: float, SUPPORT: float},
+    //           subtotals_pct: {CORE: float, STRATEGIC: float, SUPPORT: float},
     //           kpi_scores: [{kpi_id, score, weighted_score, actual_pct, adjective_label}]
     //         }, ...
     //       ]
@@ -287,7 +287,7 @@ class RankingService
     //     EXCLUDED from the bucket math — they shouldn't dilute N or steal an
     //     "Under" slot from a province that genuinely underperformed. They're
     //     appended at the end of the returned array with rank=null, bucket=null.
-    //   - Tiebreaker: total DESC, then CORE subtotal DESC, FUNCTIONAL DESC, SUPPORT DESC,
+    //   - Tiebreaker: total DESC, then CORE subtotal DESC, STRATEGIC DESC, SUPPORT DESC,
     //     then province name ASC (deterministic).
     //   - Bucketing rule: Top = round(N * top_pct, min 1), Under = round(N * under_pct, min 1),
     //     Average absorbs the remainder. Skipped entirely when N < min_group_size_for_buckets.
@@ -299,7 +299,7 @@ class RankingService
         usort($ranked, function ($a, $b) {
             $cmp = $b['total'] <=> $a['total'];
             if ($cmp !== 0) return $cmp;
-            foreach (['CORE', 'FUNCTIONAL', 'SUPPORT'] as $c) {
+            foreach (['CORE', 'STRATEGIC', 'SUPPORT'] as $c) {
                 $cmp = ($b['subtotals'][$c] ?? 0) <=> ($a['subtotals'][$c] ?? 0);
                 if ($cmp !== 0) return $cmp;
             }
