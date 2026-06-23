@@ -1,7 +1,7 @@
 // Shared region scheme for the Leaflet choropleth maps. Keyed by the GeoJSON's
 // adm1_psgc region code so any map can color/group provinces consistently with
 // the DOST scheme (NIR groups Negros + Siquijor; Sulu sits under Region IX;
-// BARMM is not a selectable region — it has no DOST PSTD provinces).
+// BARMM is not a selectable region - it has no DOST PSTD provinces).
 //
 // Keep this in sync with the backend Province::REGIONS and Data/provinceGeography.js.
 
@@ -34,23 +34,23 @@ export const REGION_CODE_OVERRIDE = {
 
 // Full label per region code.
 export const REGION_LABELS = {
-    100000000:  'Region I — Ilocos',
-    200000000:  'Region II — Cagayan Valley',
-    300000000:  'Region III — Central Luzon',
-    400000000:  'Region IV-A — CALABARZON',
-    1700000000: 'Region IV-B — MIMAROPA',
-    500000000:  'Region V — Bicol',
-    600000000:  'Region VI — Western Visayas',
-    700000000:  'Region VII — Central Visayas',
-    800000000:  'Region VIII — Eastern Visayas',
-    [NIR_CODE]: 'NIR — Negros Island Region',
-    900000000:  'Region IX — Zamboanga Peninsula',
-    1000000000: 'Region X — Northern Mindanao',
-    1100000000: 'Region XI — Davao Region',
-    1200000000: 'Region XII — SOCCSKSARGEN',
-    1400000000: 'CAR — Cordillera',
-    1600000000: 'Region XIII — Caraga',
-    1300000000: 'NCR — National Capital Region',
+    100000000:  'Region I - Ilocos',
+    200000000:  'Region II - Cagayan Valley',
+    300000000:  'Region III - Central Luzon',
+    400000000:  'Region IV-A - CALABARZON',
+    1700000000: 'Region IV-B - MIMAROPA',
+    500000000:  'Region V - Bicol',
+    600000000:  'Region VI - Western Visayas',
+    700000000:  'Region VII - Central Visayas',
+    800000000:  'Region VIII - Eastern Visayas',
+    [NIR_CODE]: 'NIR - Negros Island Region',
+    900000000:  'Region IX - Zamboanga Peninsula',
+    1000000000: 'Region X - Northern Mindanao',
+    1100000000: 'Region XI - Davao Region',
+    1200000000: 'Region XII - SOCCSKSARGEN',
+    1400000000: 'CAR - Cordillera',
+    1600000000: 'Region XIII - Caraga',
+    1300000000: 'NCR - National Capital Region',
 };
 
 // Short label (no descriptive suffix) for compact UI.
@@ -100,7 +100,7 @@ export const ISLAND_LABELS = { luzon: 'Luzon', visayas: 'Visayas', mindanao: 'Mi
 // Distinct color per region, grouped into island hue families so the three
 // island groups read as colour families at a glance.
 export const REGION_COLORS = {
-    // Luzon — blues / cyans / teals
+    // Luzon - blues / cyans / teals
     1300000000: '#6366f1', // NCR        indigo
     1400000000: '#0ea5e9', // CAR        sky
     100000000:  '#3b82f6', // Region I   blue
@@ -109,12 +109,12 @@ export const REGION_COLORS = {
     400000000:  '#0891b2', // Region IV-A cyan-600
     1700000000: '#14b8a6', // Region IV-B teal
     500000000:  '#0d9488', // Region V   teal-600
-    // Visayas — greens / limes
+    // Visayas - greens / limes
     600000000:  '#84cc16', // Region VI  lime
     700000000:  '#22c55e', // Region VII green
     800000000:  '#16a34a', // Region VIII green-600
     [NIR_CODE]: '#65a30d', // NIR        lime-600
-    // Mindanao — warm / purple
+    // Mindanao - warm / purple
     900000000:  '#f59e0b', // Region IX  amber
     1000000000: '#f97316', // Region X   orange
     1100000000: '#ef4444', // Region XI  red

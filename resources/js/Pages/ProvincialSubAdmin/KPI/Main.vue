@@ -134,12 +134,12 @@
                                     Computed from <em>ongoing</em> and <em>delinquent</em> SETUP counts below.
                                 </div>
                                 <div v-if="isModular(kpi.code)" class="text-caption text-medium-emphasis mt-1">
-                                    Accomplishment is the live record count from the linked module — cannot be typed.
+                                    Accomplishment is the live record count from the linked module - cannot be typed.
                                 </div>
                             </td>
                             <td class="text-caption text-medium-emphasis text-center">
                                 <span v-if="kpi.is_scored">{{ (kpi.weight * 100).toFixed(1) }}%</span>
-                                <span v-else>—</span>
+                                <span v-else>-</span>
                             </td>
                             <td>
                                 <v-text-field

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -279,7 +279,7 @@
                                         </v-avatar>
                                         <div>
                                             <div class="text-body-2 font-weight-bold">
-                                                {{ fullName || '— No name yet —' }}
+                                                {{ fullName || '- No name yet -' }}
                                             </div>
                                             <div class="text-caption text-medium-emphasis">
                                                 {{ form.username || 'username' }}
@@ -292,7 +292,7 @@
                                     <div v-for="item in previewItems" :key="item.label" class="d-flex align-center justify-space-between">
                                         <span class="text-caption text-medium-emphasis">{{ item.label }}</span>
                                         <span class="text-caption font-weight-medium" :class="item.value ? '' : 'text-medium-emphasis'">
-                                            {{ item.value || '—' }}
+                                            {{ item.value || '-' }}
                                         </span>
                                     </div>
                                 </div>

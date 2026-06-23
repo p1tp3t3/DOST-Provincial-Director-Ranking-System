@@ -1,4 +1,4 @@
-﻿<template>
+<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -124,7 +124,7 @@
                                             {{ roleLabel(u.role) }}
                                         </v-chip>
                                     </td>
-                                    <td class="text-caption text-medium-emphasis">{{ u.province ?? '—' }}</td>
+                                    <td class="text-caption text-medium-emphasis">{{ u.province ?? '-' }}</td>
                                     <td class="text-caption text-medium-emphasis">{{ u.registered }}</td>
                                 </tr>
                             </tbody>

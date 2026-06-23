@@ -1,4 +1,4 @@
-﻿<template>
+<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -32,7 +32,7 @@
                                         </v-icon>
                                     </v-avatar>
                                     <div>
-                                        <div class="text-subtitle-2 font-weight-bold">Step 1 — Read the Guidelines</div>
+                                        <div class="text-subtitle-2 font-weight-bold">Step 1 - Read the Guidelines</div>
                                         <div class="text-caption text-medium-emphasis">Review all requirements before proceeding</div>
                                     </div>
                                 </div>
@@ -117,7 +117,7 @@
                                             <v-icon :color="guidelinesRead ? 'indigo' : 'grey'" size="18">mdi-file-delimited-outline</v-icon>
                                         </v-avatar>
                                         <div>
-                                            <div class="text-subtitle-2 font-weight-bold">Step 2 — Upload CSV</div>
+                                            <div class="text-subtitle-2 font-weight-bold">Step 2 - Upload CSV</div>
                                             <div class="text-caption text-medium-emphasis">Upload your employee list for verification</div>
                                         </div>
                                     </div>
@@ -250,7 +250,7 @@
                     <div class="px-5 pt-4 pb-3 d-flex align-center justify-space-between flex-wrap gap-2">
                         <div>
                             <div class="text-subtitle-2 font-weight-bold">Review & Edit Results</div>
-                            <div class="text-caption text-medium-emphasis">Invalid rows are sorted to the top — fix errors, toggle rows, then commit</div>
+                            <div class="text-caption text-medium-emphasis">Invalid rows are sorted to the top - fix errors, toggle rows, then commit</div>
                         </div>
                         <div class="d-flex gap-2">
                             <v-btn size="x-small" variant="tonal" color="success" prepend-icon="mdi-check-all" @click="includeAll">Include All Valid</v-btn>
@@ -441,7 +441,7 @@
                     <v-divider></v-divider>
                     <div class="pa-4 d-flex align-center justify-space-between flex-wrap gap-2">
                         <div class="text-caption text-medium-emphasis">
-                            <strong>{{ includedCount }}</strong> row(s) selected — {{ invalidCount }} invalid row(s) excluded automatically
+                            <strong>{{ includedCount }}</strong> row(s) selected - {{ invalidCount }} invalid row(s) excluded automatically
                         </div>
                         <div class="d-flex gap-2">
                             <v-btn variant="text" size="small" color="medium-emphasis" @click="resetAll">Cancel</v-btn>
@@ -518,7 +518,7 @@ const guidelines = [
     'Ensure all employee data follows the required CSV template format. Download the template before filling in data.',
     'Required columns: first_name, middle_name, last_name, email, dost_id_number. All other columns are optional.',
     'Each row represents one employee. Avoid blank rows and do not repeat the header.',
-    'Duplicate emails or DOST IDs — within the CSV or already in the system — will be flagged as invalid.',
+    'Duplicate emails or DOST IDs - within the CSV or already in the system - will be flagged as invalid.',
     'After verification you can review, edit, or remove rows before committing to the database.',
     'Only rows marked as "included" will be committed. Invalid rows are excluded by default.',
 ];
@@ -573,7 +573,7 @@ const submitVerify = async () => {
             return;
         }
         const json = await res.json();
-        // Results returned immediately — no polling needed
+        // Results returned immediately - no polling needed
         loadReview(json.results);
     } catch {
         alert('Network error. Please try again.');
@@ -649,7 +649,7 @@ if (stored && storedVersion === LS_VERSION) {
         localStorage.removeItem(LS_KEY + '_version');
     }
 } else {
-    // Stale schema — discard and force a fresh verification
+    // Stale schema - discard and force a fresh verification
     localStorage.removeItem(LS_KEY);
     localStorage.removeItem(LS_KEY + '_version');
 }
@@ -669,9 +669,9 @@ const includedCount = computed(() => reviewRows.value.filter(r => r.include && !
 const hasErrors  = (row) => Object.keys(row.errors ?? {}).length > 0;
 const clearError = (row, field) => { if (row.errors) delete row.errors[field]; };
 
-// Invalid rows first, then new rows, then valid — each group filtered by search
+// Invalid rows first, then new rows, then valid - each group filtered by search
 const sortedFiltered = computed(() => {
-    sortVersion.value; // reactive dependency — re-runs when any toggle fires
+    sortVersion.value; // reactive dependency - re-runs when any toggle fires
     const q = reviewSearch.value.toLowerCase().trim();
     const match = (row) => {
         if (!q) return true;
@@ -698,7 +698,7 @@ const includeAll = () => {
 };
 
 const addRow = () => {
-    // New rows go to the top — prepend instead of push
+    // New rows go to the top - prepend instead of push
     reviewRows.value.unshift({
         _key:    rowKey++,
         include: true,

@@ -30,7 +30,7 @@
                         </v-avatar>
                         <div>
                             <div class="text-subtitle-1 font-weight-bold">Super Admin Console</div>
-                            <div class="text-caption text-medium-emphasis">Restricted access — authorized personnel only</div>
+                            <div class="text-caption text-medium-emphasis">Restricted access - authorized personnel only</div>
                         </div>
                     </div>
                 </div>

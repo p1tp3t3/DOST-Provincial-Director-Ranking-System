@@ -18,7 +18,7 @@ const allPosts = [
         excerpt: 'The Department of Science and Technology introduces an enhanced evaluation framework incorporating 37 key performance indicators to better assess the effectiveness of provincial S&T leadership.',
         body: [
             'The Department of Science and Technology (DOST) has officially launched a comprehensive new performance evaluation framework for Provincial Science and Technology Directors (PSTDs) across the Philippines. The framework introduces 37 structured key performance indicators (KPIs) designed to provide a more holistic, evidence-based assessment of each director\'s contributions to science and technology in their respective provinces.',
-            'The 37 indicators are organized into three functional areas: Core Functions (weighted at 60%), which covers the primary S&T mandate of each provincial office; Functional Functions (30%), which assesses administrative and coordination effectiveness; and Support Functions (10%), which evaluates auxiliary activities that contribute to the overall performance of the provincial S&T office.',
+            'The 37 indicators are organized into three categories: Core (weighted at 60%), which covers the primary S&T mandate of each provincial office; Functional (30%), which assesses administrative and coordination effectiveness; and Support (10%), which evaluates auxiliary activities that contribute to the overall performance of the provincial S&T office.',
             'DOST Secretary emphasized that the new framework reflects the agency\'s commitment to transparency and accountability. "We want every Provincial S&T Director to know exactly how they are being measured, and we want the public to trust that our evaluations are fair, consistent, and grounded in real data," the Secretary said during the launch event.',
             'The framework will be implemented starting Fiscal Year 2025 and will feed directly into the PRISM, which provides real-time rankings and dashboards accessible to authorized DOST personnel. Provincial directors will receive detailed scorecards at the end of each evaluation period to guide their improvement efforts.',
             'Training sessions for regional directors and evaluation officers are scheduled throughout the third quarter of 2025 to ensure a smooth rollout of the new framework nationwide.',
@@ -30,10 +30,10 @@ const allPosts = [
         tag:     'Updates',
         date:    'May 28, 2025',
         title:   'FY 2024 PSTD Rankings Now Available on the Information System',
-        excerpt: 'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, functional, and support functions.',
+        excerpt: 'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, functional, and support categories.',
         body: [
-            'DOST is pleased to announce that the Fiscal Year 2024 rankings of all Provincial Science and Technology Directors (PSTDs) are now available on the PRISM. The rankings cover all 83 provinces and clusters across the three island groups of the Philippines — Luzon, Visayas, and Mindanao.',
-            'This year\'s rankings reflect performance data collected and validated throughout FY 2024, covering all 37 performance indicators across Core, Functional, and Support functions. Provinces are evaluated both individually and within their classification tier — whether large, medium, or small — to ensure fair comparisons across different contexts.',
+            'DOST is pleased to announce that the Fiscal Year 2024 rankings of all Provincial Science and Technology Directors (PSTDs) are now available on the PRISM. The rankings cover all 83 provinces and clusters across the three island groups of the Philippines - Luzon, Visayas, and Mindanao.',
+            'This year\'s rankings reflect performance data collected and validated throughout FY 2024, covering all 37 performance indicators across Core, Functional, and Support categories. Provinces are evaluated both individually and within their classification tier - whether large, medium, or small - to ensure fair comparisons across different contexts.',
             'The FY 2024 results show notable improvements in several regions, particularly in the Visayas group, where a number of provincial offices posted their highest scores in three years. DOST Regional Directors credit the improvement to increased collaboration, better data reporting practices, and targeted capacity-building programs conducted during the year.',
             'Authorized DOST personnel can access the full rankings dashboard, which includes podium views, sortable data tables, year-over-year trend charts, and a color-coded performance map. Individual province scorecards are also available for download.',
             'The FY 2024 rankings will serve as the baseline for the new performance evaluation framework launching in FY 2025. Provincial directors are encouraged to review their scorecards and coordinate with their regional offices to identify priority areas for improvement.',
@@ -45,7 +45,7 @@ const allPosts = [
         tag:     'Events',
         date:    'May 15, 2025',
         title:   'Regional S&T Directors Summit: Highlights and Key Takeaways',
-        excerpt: 'Officials from all 16 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
+        excerpt: 'Officials from all 17 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
         body: [
             'The Department of Science and Technology recently convened the 2025 Regional S&T Directors Summit, bringing together officials from all 16 regional offices, provincial directors, and central office representatives. The summit, held over two days, focused on strategies for improving science and technology service delivery at the provincial level and strengthening the capacity of provincial S&T directorates.',
             'A key agenda item was the rollout plan for the updated PSTD performance evaluation framework. Regional directors engaged in breakout sessions to discuss implementation challenges, data collection protocols, and best practices for supporting provincial offices in meeting the new KPI standards.',
@@ -62,7 +62,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head :title="post ? `${post.title} — DOST PRISM` : 'Blog — DOST PRISM'" />
+    <Head :title="post ? post.title : 'Blog'" />
 
     <div class="min-h-screen bg-white text-slate-800">
 

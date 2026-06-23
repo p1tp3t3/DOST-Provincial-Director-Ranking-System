@@ -58,7 +58,7 @@
             <tr>
                 <td>
                     <h1>Provincial Director Rankings Report</h1>
-                    <div class="sub">PRISM &mdash; DOST Philippines</div>
+                    <div class="sub">PRISM - DOST Philippines</div>
                 </td>
                 <td class="meta">
                     <div>Year: {{ $year }}</div>
@@ -151,8 +151,8 @@
     <div class="footer">
         <table>
             <tr>
-                <td>DOST &mdash; PRISM</td>
-                <td style="text-align:right;">Confidential &mdash; For Internal Use Only</td>
+                <td>DOST - PRISM</td>
+                <td style="text-align:right;">Confidential - For Internal Use Only</td>
             </tr>
         </table>
     </div>

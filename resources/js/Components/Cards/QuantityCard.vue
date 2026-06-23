@@ -11,12 +11,12 @@ const props = defineProps({
     trend: { type: String, default: 'neutral' }, // 'up' | 'down' | 'neutral'
 });
 
-// Value text always stays neutral dark — the trend color belongs on the
+// Value text always stays neutral dark - the trend color belongs on the
 // subtitle (where the ▲/▼ delta lives), not on the name itself. This way
 // all four KPI cards present their headline name in the same visual register.
 const valueClass = computed(() => 'text-slate-800');
 
-// Only shrink to text-h5 for very long strings — most card values (Bukidnon,
+// Only shrink to text-h5 for very long strings - most card values (Bukidnon,
 // Medium, 63 of 81, Region IV-A) should render at the bigger text-h4 size so
 // the name reads as the visual focus of the card.
 const isLongString = computed(() =>
@@ -35,7 +35,7 @@ const highlightStyle = computed(() => {
     return { background: bgByColor[props.color] ?? bgByColor.indigo };
 });
 
-// Trend color is applied ONLY to the leading ▲/▼ arrow in the subtitle —
+// Trend color is applied ONLY to the leading ▲/▼ arrow in the subtitle -
 // not the whole "▲ 49.2% vs. 2024" line. Split it out so the rest stays
 // dark / default and only the arrow renders green (up) or red (down).
 const subtitleArrow = computed(() => {

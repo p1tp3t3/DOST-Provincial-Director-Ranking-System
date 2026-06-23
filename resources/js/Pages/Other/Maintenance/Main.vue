@@ -32,7 +32,7 @@
 
             <!-- Copyright -->
             <div class="text-caption mt-8" style="color:rgba(255,255,255,.3);">
-                &copy; {{ currentYear }} Department of Science and Technology — Philippines
+                &copy; {{ currentYear }} Department of Science and Technology - Philippines
             </div>
 
         </div>

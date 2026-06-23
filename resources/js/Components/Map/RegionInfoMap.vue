@@ -363,7 +363,7 @@ onMounted(async () => {
             const code        = feature.properties.adm1_psgc;
             const displayName  = GEO_TO_DB[name] ?? name;
 
-            // Permanent province name label — hidden until a region/island is selected
+            // Permanent province name label - hidden until a region/island is selected
             layer.bindTooltip(displayName, {
                 permanent:  true,
                 direction:  'center',
@@ -408,7 +408,7 @@ onBeforeUnmount(() => {
 .rmap      { width: 100%; height: 100%; }
 .rmap :deep(.leaflet-container) { background: #f1f5f9; font-family: inherit; }
 
-/* Controls — column stack anchored top-left */
+/* Controls - column stack anchored top-left */
 .rmap-controls {
     position: absolute; top: 14px; left: 14px; z-index: 500;
     display: flex; flex-direction: column; align-items: flex-start; gap: 6px; pointer-events: none;
@@ -432,7 +432,7 @@ onBeforeUnmount(() => {
 }
 .rmap-reset:hover { color: #1e3a8a; border-color: #cbd5e1; }
 
-/* Legend — inline in top controls row, drops down as a floating panel */
+/* Legend - inline in top controls row, drops down as a floating panel */
 .rmap-legend {
     position: relative; z-index: 600; pointer-events: auto;
 }
@@ -511,7 +511,7 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* ── Province panel — Google Maps style (light theme) ─────────────────────── */
+/* ── Province panel - Google Maps style (light theme) ─────────────────────── */
 .prov-panel {
     position: absolute;
     top: 12px; right: 12px; bottom: 12px;
@@ -530,7 +530,7 @@ onBeforeUnmount(() => {
     background: linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,.38) 100%);
 }
 
-/* Close button — sits on photo */
+/* Close button - sits on photo */
 .prov-close {
     position: absolute; top: 10px; right: 10px; z-index: 2;
     width: 30px; height: 30px; border-radius: 50%; border: none;

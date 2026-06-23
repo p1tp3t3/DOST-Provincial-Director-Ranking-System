@@ -26,7 +26,7 @@
                         :color="bucketChipColor(myEntry.bucket)"
                         prepend-icon="mdi-map-marker-outline"
                     >
-                        {{ myEntry.province }} — Rank #{{ myGlobalRank }}
+                        {{ myEntry.province }} - Rank #{{ myGlobalRank }}
                     </v-chip>
                     <v-chip size="small" variant="tonal" color="indigo" prepend-icon="mdi-calendar">
                         {{ selectedYear }}

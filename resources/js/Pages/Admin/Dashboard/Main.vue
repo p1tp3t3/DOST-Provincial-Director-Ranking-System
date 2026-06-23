@@ -1,8 +1,8 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3 dashboard-root">
 
-        <!-- Sticky filter shell — wraps the filter bar so we can pin them
+        <!-- Sticky filter shell - wraps the filter bar so we can pin them
              together while keeping a visible white shelf between the navbar
              and the bar itself when scrolled. -->
         <div class="dashboard-sticky-shell">
@@ -139,7 +139,7 @@
         </div>
         </div>
 
-        <!-- Performance Distribution — one bell-curve card replaces the
+        <!-- Performance Distribution - one bell-curve card replaces the
              three Top/Average/Low cards. The histogram bars give per-bin
              detail (tooltip lists the provinces in each 5% band) and the
              smooth area overlay is the Gaussian fitted to the actual mean
@@ -175,7 +175,6 @@
                                 <v-btn value="bars" size="small" prepend-icon="mdi-chart-bar">Bars</v-btn>
                                 <v-btn value="bell" size="small" prepend-icon="mdi-chart-bell-curve">Bell</v-btn>
                             </v-btn-toggle>
-                            <v-chip size="x-small" variant="tonal" color="indigo">Average score {{ distributionData.stats.mean.toFixed(1) }}%</v-chip>
                             <v-chip size="x-small" variant="tonal" color="blue-grey">{{ distributionData.stats.n }} provinces</v-chip>
                         </div>
                     </div>
@@ -405,12 +404,12 @@
 
                     <v-divider />
 
-                    <!-- Unified view area — fixed height so switching between Podium,
+                    <!-- Unified view area - fixed height so switching between Podium,
                          Table, Trend, and Map never shifts page layout. Each view sizes
                          itself to fill (and scrolls internally if needed). -->
                     <div class="lb-view-area">
 
-                    <!-- Search row — visible for both Podium and Table views.
+                    <!-- Search row - visible for both Podium and Table views.
                          Searching scrolls + pulses the matching province in place
                          rather than filtering everything else away. -->
                     <div v-if="viewMode === 'table' || viewMode === 'podium'" class="px-4 py-2 d-flex justify-end">
@@ -426,7 +425,7 @@
                         />
                     </div>
 
-                    <!-- Table View — note: NO :search prop. Search highlights the
+                    <!-- Table View - note: NO :search prop. Search highlights the
                          matching row in place instead of filtering everyone else out.
                          Height = .lb-view-area (600) − search row (52) so the table
                          fills the leaderboard card exactly. -->
@@ -443,7 +442,7 @@
                         class="leaderboard-table"
                     >
                         <template #item.rank="{ item }">
-                            <span v-if="!isRanked(item)" class="text-caption text-disabled">—</span>
+                            <span v-if="!isRanked(item)" class="text-caption text-disabled">-</span>
                             <span v-else-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
                             <span v-else-if="item.rank === 2" class="rank-medal rank-silver">2nd</span>
                             <span v-else-if="item.rank === 3" class="rank-medal rank-bronze">3rd</span>
@@ -460,7 +459,7 @@
                             <v-chip v-else-if="item.bucket" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium">
                                 {{ bucketDisplay(item.bucket) }}
                             </v-chip>
-                            <span v-else class="text-caption text-disabled">—</span>
+                            <span v-else class="text-caption text-disabled">-</span>
                         </template>
 
                         <template #item.province="{ item }">
@@ -494,26 +493,26 @@
                             <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'CORE' }">
                                 {{ item.subtotals_pct.CORE.toFixed(1) }}%
                             </span>
-                            <span v-else class="text-caption text-disabled">—</span>
+                            <span v-else class="text-caption text-disabled">-</span>
                         </template>
                         <template #item.functional="{ item }">
                             <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">
                                 {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }}%
                             </span>
-                            <span v-else class="text-caption text-disabled">—</span>
+                            <span v-else class="text-caption text-disabled">-</span>
                         </template>
                         <template #item.support="{ item }">
                             <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'SUPPORT' }">
                                 {{ item.subtotals_pct.SUPPORT.toFixed(1) }}%
                             </span>
-                            <span v-else class="text-caption text-disabled">—</span>
+                            <span v-else class="text-caption text-disabled">-</span>
                         </template>
 
                         <template #item.total_pct="{ item }">
                             <span v-if="isRanked(item)" class="score-pct cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'overall' }" :style="{ color: bucketColor(item.bucket) }">
                                 {{ item.total_pct.toFixed(2) }}%
                             </span>
-                            <span v-else class="text-caption text-disabled">—</span>
+                            <span v-else class="text-caption text-disabled">-</span>
                         </template>
 
                         <template #no-data>
@@ -521,7 +520,7 @@
                         </template>
                     </v-data-table>
 
-                    <!-- Trend View — chart height = .lb-view-area (600) − pt-3 pb-5 (32). -->
+                    <!-- Trend View - chart height = .lb-view-area (600) − pt-3 pb-5 (32). -->
                     <div v-else-if="viewMode === 'trend'" class="px-4 pt-3 pb-5">
                         <VueApexCharts
                             v-if="trendSeries.length"
@@ -535,7 +534,7 @@
                         </div>
                     </div>
 
-                    <!-- Map View — fills .lb-view-area (600) since the wrapper is pa-0. -->
+                    <!-- Map View - fills .lb-view-area (600) since the wrapper is pa-0. -->
                     <div v-else-if="viewMode === 'map'" class="pa-0">
                         <PhilippinesMap
                             key="ph-map-dashboard"
@@ -785,7 +784,7 @@ const assignBuckets = (sortedRows) => {
 
 // Pull this year's per-tier rankings from the controller payload, flatten into
 // one array with rank already assigned per tier. When "All" is selected we
-// resort globally by total_pct so the table is comparable across tiers — but
+// resort globally by total_pct so the table is comparable across tiers - but
 // the per-tier rank field is still useful so we surface it as `tier_rank`.
 const allTierRows = computed(() => {
     const yearData = props.rankings_by_year[selectedYear.value] ?? {};
@@ -825,7 +824,7 @@ const mapFilteredScores = computed(() => {
 });
 
 // Broader pool for rank computations inside PhilippinesMap. Filtered only by
-// tier+category — never by island/region/province — so the map's Island
+// tier+category - never by island/region/province - so the map's Island
 // Average "#K of N" chip compares across all 3 islands (and Regional Average
 // compares across every region) regardless of how the user has narrowed the
 // dashboard's geo filter.
@@ -887,7 +886,7 @@ const rankedScores = computed(() => {
     const tierRows = baseRows.value.filter(r => r.category === selectedTier.value);
 
     // Overall view: backend already excluded unranked from bucketing. Trust its
-    // ordering — unranked rows are appended at the end with null rank/bucket.
+    // ordering - unranked rows are appended at the end with null rank/bucket.
     if (isOverall) return tierRows;
 
     // Category view: re-sort + re-bucket only the ranked rows within the tier.
@@ -940,7 +939,7 @@ const restList = computed(() => rankedOnly.value.slice(3));
 
 // Performer (Top / Average / Low) is bucketed per-tier so it's only meaningful
 // when a single tier is selected. In the "All Tiers" view we hide the column
-// entirely — mixing buckets across tiers would put a SMALL "Top" below a
+// entirely - mixing buckets across tiers would put a SMALL "Top" below a
 // LARGE "Average" on the absolute % axis, which reads as inconsistent.
 const tableHeaders = computed(() => {
     const cols = [
@@ -957,20 +956,20 @@ const tableHeaders = computed(() => {
     return selectedTier.value === 'all' ? cols.filter(c => c.key !== 'bucket') : cols;
 });
 
-// Gold / silver / bronze — matching the podium so the whole dashboard's
+// Gold / silver / bronze - matching the podium so the whole dashboard's
 // Top / Average / Low colours are consistent.
 const bucketColor = (b) => ({ Top: '#ca8a04', Average: '#64748b', Low: '#9a3412' }[b] ?? '#94a3b8');
 // Lighter "glow" end of each colour. Gold and silver lift only to a saturated
 // tone (not washed out to near-white) so they match bronze's gentler fade.
 const bucketLight = (b) => ({ Top: '#eab308', Average: '#94a3b8', Low: '#c2410c' }[b] ?? '#cbd5e1');
-// Gradient fill for score bars — solid colour -> glow tone, like the podium.
+// Gradient fill for score bars - solid colour -> glow tone, like the podium.
 const bucketBar = (b) => `linear-gradient(90deg, ${bucketColor(b)}, ${bucketLight(b)})`;
-const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '—');
+const bucketDisplay = (b) => ({ Top: 'Top', Average: 'Average', Low: 'Low' }[b] ?? '-');
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
 
 // ── Performance groups (20 / 70 / 10) ──────────────────────────────────────
 // Provinces are grouped by their per-tier ranking bucket (Top 20% / Average 70%
-// / Low 10% of each size tier) — the same buckets the leaderboard and the bar
+// / Low 10% of each size tier) - the same buckets the leaderboard and the bar
 // view use, so the bell and bars always show identical counts. BAND_DEFS.pct is
 // the intended split (used for the bell's shaded areas and the labels); province
 // counts are whatever the per-tier integer split produces.
@@ -982,8 +981,8 @@ const BAND_DEFS = [
 
 const distributionData = computed(() => {
     // Use the per-tier buckets already on each row (Top 20% / Average 70% /
-    // Low 10% of each size tier) — the same buckets the bar view and leaderboard
-    // use — so the bell and bars always show identical counts.
+    // Low 10% of each size tier) - the same buckets the bar view and leaderboard
+    // use - so the bell and bars always show identical counts.
     const ranked = rankedOnly.value;
     if (!ranked.length) return null;
     const n    = ranked.length;
@@ -1121,7 +1120,7 @@ const perfSlice = (bucket) => {
     return {
         names:     slice.map(s => s.province),
         scores:    slice.map(s => getScore(s)),
-        directors: slice.map(s => s.director || '—'),
+        directors: slice.map(s => s.director || '-'),
         buckets:   slice.map(s => s.bucket),
     };
 };
@@ -1131,9 +1130,9 @@ const underData = computed(() => perfSlice('Low'));
 
 const perfTooltip = (data, i) => {
     const score = (data.scores[i] ?? 0).toFixed(2);
-    const dir   = data.directors[i] ?? '—';
+    const dir   = data.directors[i] ?? '-';
     const name  = data.names[i]     ?? '';
-    const bk    = data.buckets[i]   ?? '—';
+    const bk    = data.buckets[i]   ?? '-';
     const color = bucketColor(bk);
     const label = selectedCategory.value === 'overall' ? 'weighted score' : `${selectedCategory.value} contribution`;
     return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:200px;">
@@ -1188,7 +1187,7 @@ const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.v
 const avgOptions   = computed(() => makeHorizOptions(avgData.value));
 const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
 
-// ~26px per bar keeps labels legible — Average can have 40+ entries at All Tiers,
+// ~26px per bar keeps labels legible - Average can have 40+ entries at All Tiers,
 // so a fixed height would squash bars; render at natural height and scroll.
 const avgChartHeight = computed(() => Math.max(340, avgData.value.names.length * 26 + 40));
 
@@ -1244,7 +1243,7 @@ const provinceColorMap = computed(() => {
     return map;
 });
 
-// Provinces currently plotted, picked via the dropdown's checkboxes — only
+// Provinces currently plotted, picked via the dropdown's checkboxes - only
 // selected provinces are shown in the graph. Defaults to the top TREND_LIMIT
 // whenever the filtered province list changes.
 const selectedProvinces = ref([]);
@@ -1260,7 +1259,7 @@ const toggleSelectAllTrend = () => {
     selectedProvinces.value = allTrendSelected.value ? [] : [...trendProvinceList.value];
 };
 
-// Summary text shown inside the Provinces field — the field's own input is
+// Summary text shown inside the Provinces field - the field's own input is
 // reserved for the search query, so the selection summary is rendered
 // separately via the prepend-inner slot.
 const trendSelectionLabel = computed(() => {
@@ -1295,7 +1294,7 @@ const trendOptions = computed(() => ({
     grid: { borderColor: '#f1f5f9' },
     legend: { position: 'bottom', fontSize: '14px', fontFamily: 'inherit', showForSingleSeries: true,
               markers: { size: 8 }, itemMargin: { horizontal: 10, vertical: 6 } },
-    tooltip: { y: { formatter: v => v == null ? '—' : `${v.toFixed(2)}%` } },
+    tooltip: { y: { formatter: v => v == null ? '-' : `${v.toFixed(2)}%` } },
 }));
 
 // Match the right-side rest list's max height to the podium stage so the two
@@ -1337,7 +1336,7 @@ watch([viewMode, selectedYear, selectedTier, selectedCategory, selectedIsland, s
 // Instead of filtering, search picks ONE row to spotlight: scroll the row into
 // view and pulse a highlight a few times before settling. Works for Table and
 // Podium. Match priority: province name prefix > province name substring >
-// director name substring — surfaces the most intuitive guess first.
+// director name substring - surfaces the most intuitive guess first.
 const podiumRestScrollRef = ref(null);
 
 const searchTarget = computed(() => {
@@ -1361,7 +1360,7 @@ const tableRowProps = ({ item }) => ({
 });
 
 // Restart the CSS animation on each new search by toggling the class off,
-// forcing a reflow, then on — otherwise the same .search-highlight class
+// forcing a reflow, then on - otherwise the same .search-highlight class
 // just stays applied and the @keyframes never re-runs.
 const restartHighlightAnimation = (el) => {
     if (!el) return;
@@ -1388,15 +1387,15 @@ watch(searchTarget, async (province) => {
 <style scoped>
 /* ── Type system ───────────────────────────────────────────────────────────
    Two families, both loaded at modest weights only (max 600) so nothing on
-   the page reads as heavy/blocky — this is the look most modern SaaS
+   the page reads as heavy/blocky - this is the look most modern SaaS
    dashboards have settled on (Linear, Vercel, Stripe, Plane).
 
-   • Inter (text) — every word on the page. 400 for body, 500 for table
+   • Inter (text) - every word on the page. 400 for body, 500 for table
      headers / chip labels / sub-headers, 600 only for the strongest
      hierarchy (section titles, KPI values). Nothing 700+. The taller
      x-height and humanist proportions keep dense rows legible without
      having to lean on weight to create emphasis.
-   • IBM Plex Mono (numeric) — ranks, percentages, breakdown scores. Plex
+   • IBM Plex Mono (numeric) - ranks, percentages, breakdown scores. Plex
      Mono reads more like a corporate report than a code editor (less of
      the JetBrains "developer" feel), and its tabular numerals keep number
      columns from jittering between rows.
@@ -1404,7 +1403,7 @@ watch(searchTarget, async (province) => {
    We then *cap* weight on bold utility classes inside the dashboard so the
    inherited Vuetify `font-weight-bold` (700) and `font-weight-black` (900)
    that exist throughout the template land at 600 instead. This is the
-   single biggest change in feel — no thick text anywhere. */
+   single biggest change in feel - no thick text anywhere. */
 .dashboard-root {
     --font-text: 'Inter', 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --font-num:  'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -1426,7 +1425,7 @@ watch(searchTarget, async (province) => {
 .dashboard-root :deep(.font-weight-medium) { font-weight: 500 !important; }
 
 /* Section titles (Top / Average / Low Performers, PRISM Ranking Matrix,
-   podium banner) — semibold + tighter tracking, but still Inter, so they
+   podium banner) - semibold + tighter tracking, but still Inter, so they
    sit in the same family as the rows beneath them. */
 .dashboard-root .chart-header :deep(.font-weight-bold),
 .dashboard-root .podium-banner :deep(.text-body-2),
@@ -1437,7 +1436,7 @@ watch(searchTarget, async (province) => {
 
 /* The three sizes used most: text-h4 (KPI values), text-body-2 (section
    titles, table cells), text-caption (subtitles, metadata). Hold them to
-   600/500/400 respectively — gives a 3-step hierarchy without ever going
+   600/500/400 respectively - gives a 3-step hierarchy without ever going
    heavy. */
 .dashboard-root :deep(.text-h4),
 .dashboard-root :deep(.text-h5),
@@ -1446,7 +1445,7 @@ watch(searchTarget, async (province) => {
     letter-spacing: -0.015em;
 }
 
-/* Tone down the podium — the gold/silver/bronze blocks were the heaviest
+/* Tone down the podium - the gold/silver/bronze blocks were the heaviest
    text on the page. 500/600 weights here keep the visual order (1st bigger
    than 2nd bigger than 3rd) but lose the "shouty" feel. */
 .dashboard-root .podium-province { font-weight: 600; letter-spacing: -0.01em; }
@@ -1454,7 +1453,7 @@ watch(searchTarget, async (province) => {
 .dashboard-root .podium-score    { font-weight: 600; letter-spacing: -0.02em; }
 .dashboard-root .podium-rank-num { font-weight: 500; letter-spacing: 0.02em; }
 
-/* Numeric family — ranks, percentages, score breakdowns. Tabular nums +
+/* Numeric family - ranks, percentages, score breakdowns. Tabular nums +
    `zero` (slashed zero) keep number columns aligned and readable. */
 .dashboard-root .rank-medal,
 .dashboard-root .podium-rest-rank,
@@ -1469,7 +1468,7 @@ watch(searchTarget, async (province) => {
     letter-spacing: -0.01em;
 }
 
-/* Table headers — small caps treatment via uppercase + tracking, NOT bold.
+/* Table headers - small caps treatment via uppercase + tracking, NOT bold.
    This is the clean way to separate header from body in a dense table
    without resorting to heavy weight. */
 .dashboard-root .leaderboard-table :deep(thead th) {
@@ -1480,7 +1479,7 @@ watch(searchTarget, async (province) => {
     color: #64748b;
 }
 
-/* QuantityCard title — same small-caps treatment so the KPI cards visually
+/* QuantityCard title - same small-caps treatment so the KPI cards visually
    echo the table header style. */
 .dashboard-root :deep(.qc-title) {
     font-weight: 500 !important;
@@ -1604,7 +1603,7 @@ watch(searchTarget, async (province) => {
 .breakdown-row    { display: flex; align-items: center; gap: 6px; cursor: default; }
 /* Label width tuned so the longest label ("FUNCTIONAL") fits at 13px without
    crowding the score. Was 120px which overflowed when the podium-stage
-   shrinks (42% width) — that's what was pushing the SUPPORT row off-screen
+   shrinks (42% width) - that's what was pushing the SUPPORT row off-screen
    or causing horizontal overflow per column. */
 .breakdown-label  { font-size: 13px; font-weight: 600; color: #475569; width: 78px; flex-shrink: 0; white-space: nowrap; }
 .breakdown-score  { font-size: 14px; font-weight: 700; min-width: 50px; text-align: right; flex-shrink: 0; margin-left: auto; }
@@ -1688,7 +1687,7 @@ watch(searchTarget, async (province) => {
 :deep(.v-data-table) { font-size: 17px !important; }
 :deep(.v-data-table th) { font-size: 14px !important; }
 
-/* Local font-size declarations sprinkled through the file — push them up too */
+/* Local font-size declarations sprinkled through the file - push them up too */
 .cat-weight   { font-size: 15px !important; }
 .score-cell .score-pct    { font-size: 19px !important; }
 .score-cell .score-counts { font-size: 15px !important; }
@@ -1701,17 +1700,17 @@ watch(searchTarget, async (province) => {
 .filter-select :deep(.v-field__label) { font-size: 16px !important; }
 
 /* QuantityCard title overline-style label needs more breathing room at the
-   larger size — and the number itself wants to stand out as the headline */
+   larger size - and the number itself wants to stand out as the headline */
 :deep(.v-card-subtitle.text-caption) {
     font-size: 14px !important;
     letter-spacing: 0.08em !important;
 }
 
-/* Keep the field a fixed single-line height regardless of selection count —
+/* Keep the field a fixed single-line height regardless of selection count -
    selections are rendered as a text summary via prepend-inner instead of chips. */
 .trend-province-select :deep(.v-field__input) { flex-wrap: nowrap; }
 
-/* Sticky filter shell — pins the filter bar just below the app navbar
+/* Sticky filter shell - pins the filter bar just below the app navbar
    (v-toolbar default height = 64px) and reserves a small white "shelf"
    above the bar so it never reads as flush with the navbar when scrolled.
    The negative margin-top swallows the page's py-5 (20px) top padding so
@@ -1725,7 +1724,7 @@ watch(searchTarget, async (province) => {
     background: #ffffff;
 }
 
-/* The filter bar — consistent with the white cards around it (border,
+/* The filter bar - consistent with the white cards around it (border,
    rounded corners, white background) but with a thin indigo top accent for
    identity and a stronger drop shadow than the cards so it visibly "lifts"
    above the page content when sticky. */
@@ -1740,7 +1739,7 @@ watch(searchTarget, async (province) => {
 
 /* Unified view-area inside the leaderboard card. All four views (Podium,
    Table, Trend, Map) live here and are sized to fill a fixed height so the
-   card's overall height never changes when the user switches views — the
+   card's overall height never changes when the user switches views - the
    page below the leaderboard stays put, making comparison between views
    "in place" rather than requiring a re-scroll each time. The Podium view
    scrolls internally if its content exceeds the slot.
@@ -1762,7 +1761,7 @@ watch(searchTarget, async (province) => {
 /* Compact, single-line dropdown filters. Widths are tuned so the full row
    (Tier · Island · Region · Category · Year · view toggle) fits on one line
    at typical desktop widths, and wraps gracefully on narrow screens. We let
-   Vuetify handle field height + the floating-label notch — overriding the
+   Vuetify handle field height + the floating-label notch - overriding the
    internal padding or the notch ::before/::after misaligns the label and
    makes the border appear to cut through the label text. */
 .filter-select               { width: 160px; flex-shrink: 0; }
@@ -1770,7 +1769,7 @@ watch(searchTarget, async (province) => {
 .filter-select--narrow       { width: 110px; }
 
 /* Thin slate divider between the Tier · Geography · Category groups in the
-   sticky filter bar — quietly signals that Island/Region/Province belong
+   sticky filter bar - quietly signals that Island/Region/Province belong
    together (they cascade) without adding background colour. */
 .filter-divider {
     height: 32px;
@@ -1779,7 +1778,7 @@ watch(searchTarget, async (province) => {
     opacity: 0.6;
 }
 
-/* Search highlight — three amber pulses, then settles into a quiet indigo
+/* Search highlight - three amber pulses, then settles into a quiet indigo
    tint so the searched province stays findable after the animation. Applied
    to data-table rows, podium top-3 blocks, and podium-rest rows. */
 @keyframes search-pulse {
@@ -1800,7 +1799,7 @@ watch(searchTarget, async (province) => {
     animation: search-pulse 0.55s ease-in-out 3;
 }
 
-/* Performance Distribution card — fixed chart slot keeps page layout stable
+/* Performance Distribution card - fixed chart slot keeps page layout stable
    regardless of how many provinces are ranked in the active filter. */
 .bell-card-body {
     height: 416px;
@@ -1817,7 +1816,7 @@ watch(searchTarget, async (province) => {
     gap: 8px;
 }
 
-/* Performance bell — a normal curve whose area is shaded into Low 10% /
+/* Performance bell - a normal curve whose area is shaded into Low 10% /
    Average 70% / Top 20% at the 10th and 80th percentiles, with a hover/lock
    side list of the provinces in each region. */
 .bell-layout {

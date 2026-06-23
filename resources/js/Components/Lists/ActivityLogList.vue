@@ -53,7 +53,7 @@
                             </v-avatar>
                             <div>
                                 <div class="text-body-2 font-weight-medium">{{ log.name }}</div>
-                                <div class="text-caption text-medium-emphasis">{{ log.employee_id ?? '—' }}</div>
+                                <div class="text-caption text-medium-emphasis">{{ log.employee_id ?? '-' }}</div>
                             </div>
                         </div>
                     </td>
@@ -147,7 +147,7 @@ const filtered = computed(() => {
 });
 
 const formatDate = (dt) => {
-    if (!dt) return '—';
+    if (!dt) return '-';
     return new Date(dt).toLocaleString('en-PH', {
         month: 'short', day: 'numeric', year: 'numeric',
         hour: '2-digit', minute: '2-digit',

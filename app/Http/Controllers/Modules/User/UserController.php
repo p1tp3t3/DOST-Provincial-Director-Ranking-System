@@ -121,10 +121,17 @@ class UserController extends Controller
                 $profile->delete();
             }
 
-            // activity_logs.user_id is a non-nullable RESTRICT FK, so a user
-            // that has ever logged in / acted in the system can't be deleted
-            // while their own log rows still reference them.
+            // Every table below has a non-nullable RESTRICT foreign key to this
+            // user, so all references must be cleared before the account can be
+            // removed. Deleting a director simply vacates their province — the
+            // provinces table is never touched; the user just stops occupying one.
             ActivityLog::where('user_id', $user->id)->delete();
+            DB::table('provincial_director_kpis')->where('provincial_director_id', $user->id)->delete();
+            DB::table('linkages')->where('provincial_director_id', $user->id)->delete();
+            DB::table('facebook_posts')->where('provincial_director_id', $user->id)->delete();
+            DB::table('notifications')->where('sender_id', $user->id)->orWhere('receiver_id', $user->id)->delete();
+            DB::table('provincial_members')->where('provincial_admin_id', $user->id)->delete();
+            DB::table('sessions')->where('user_id', $user->id)->delete();
 
             $user->delete();
 

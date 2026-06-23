@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>System Report — PRISM</title>
+    <title>System Report - PRISM</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DejaVu Sans',Arial,sans-serif; font-size:10px; color:#1e293b; background:#fff; }
@@ -22,7 +22,7 @@
             border-bottom:1px solid #e2e8f0;
         }
 
-        /* ── Summary cards — use table for layout ─ */
+        /* ── Summary cards - use table for layout ─ */
         .card-table {
             width:calc(100% - 56px);
             margin:0 28px 18px;
@@ -110,10 +110,10 @@
             <tr>
                 <td style="vertical-align:top;">
                     <h1>System Report</h1>
-                    <div class="sub">PRISM &mdash; DOST Philippines</div>
+                    <div class="sub">PRISM - DOST Philippines</div>
                 </td>
                 <td class="meta" style="vertical-align:top;">
-                    <div>Period: {{ $date_from }} &mdash; {{ $date_to }}</div>
+                    <div>Period: {{ $date_from }} - {{ $date_to }}</div>
                     <div>Generated: {{ $generated }}</div>
                     <div>By: {{ $generated_by }}</div>
                 </td>
@@ -164,7 +164,7 @@
     </table>
 
     <!-- ── Activity Log Summary ────────────────────────────────── -->
-    <div class="section-title">Activity Log Summary ({{ $date_from }} — {{ $date_to }})</div>
+    <div class="section-title">Activity Log Summary ({{ $date_from }} - {{ $date_to }})</div>
     @php
         $ls = $log_stats;
         $logTotal = array_sum($ls);
@@ -201,10 +201,10 @@
             @forelse($recent_users as $i => $u)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td style="font-weight:600;">{{ $u['name'] ?: '—' }}</td>
+                <td style="font-weight:600;">{{ $u['name'] ?: '-' }}</td>
                 <td>{{ $u['email'] }}</td>
                 <td><span class="badge role-{{ $u['role'] }}">{{ str_replace('_',' ', ucwords($u['role'],'_')) }}</span></td>
-                <td>{{ $u['province'] ?? '—' }}</td>
+                <td>{{ $u['province'] ?? '-' }}</td>
                 <td>{{ $u['registered'] }}</td>
             </tr>
             @empty
@@ -231,7 +231,7 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>
-                    <div style="font-weight:600;">{{ $log['name'] ?: '—' }}</div>
+                    <div style="font-weight:600;">{{ $log['name'] ?: '-' }}</div>
                     <div style="font-size:8px; color:#94a3b8;">{{ $log['employee_id'] }}</div>
                 </td>
                 <td><span class="badge role-{{ $log['role'] }}">{{ str_replace('_',' ', ucwords($log['role'],'_')) }}</span></td>
@@ -249,8 +249,8 @@
     <div class="footer">
         <table>
             <tr>
-                <td>DOST &mdash; PRISM</td>
-                <td style="text-align:right;">Confidential &mdash; For Internal Use Only</td>
+                <td>DOST - PRISM</td>
+                <td style="text-align:right;">Confidential - For Internal Use Only</td>
             </tr>
         </table>
     </div>

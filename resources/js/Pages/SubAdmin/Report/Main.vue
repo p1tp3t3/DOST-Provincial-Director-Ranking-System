@@ -1,4 +1,4 @@
-﻿<template>
+<template>
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -151,7 +151,7 @@
                                     <div class="flex-1-1">
                                         <div class="d-flex align-center justify-space-between">
                                             <div>
-                                                <div class="text-body-2 font-weight-medium">{{ d.name || '—' }}</div>
+                                                <div class="text-body-2 font-weight-medium">{{ d.name || '-' }}</div>
                                                 <div class="text-caption text-medium-emphasis">{{ d.province }}</div>
                                             </div>
                                             <div class="text-right">
@@ -266,7 +266,7 @@ const testProvinces = [
     { id:1,  name:'Davao del Sur',      category:'1st class', director:'Maria Santos',      employees:18, admins:2, total_users:22 },
     { id:2,  name:'Bukidnon',           category:'1st class', director:'Jose Dela Cruz',    employees:14, admins:1, total_users:17 },
     { id:3,  name:'Misamis Oriental',   category:'2nd class', director:'Ana Villanueva',    employees:11, admins:1, total_users:14 },
-    { id:4,  name:'Surigao del Norte',  category:'2nd class', director:'—',                 employees:9,  admins:1, total_users:11 },
+    { id:4,  name:'Surigao del Norte',  category:'2nd class', director:'-',                 employees:9,  admins:1, total_users:11 },
     { id:5,  name:'Agusan del Norte',   category:'3rd class', director:'Ramon Bautista',    employees:7,  admins:1, total_users:10 },
     { id:6,  name:'Lanao del Norte',    category:'3rd class', director:'Gloria Reyes',      employees:6,  admins:1, total_users:9  },
     { id:7,  name:'South Cotabato',     category:'1st class', director:'Carlos Mendoza',    employees:16, admins:2, total_users:20 },

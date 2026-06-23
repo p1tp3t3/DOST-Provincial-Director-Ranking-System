@@ -1,11 +1,11 @@
 <template>
   <v-toolbar color="primary" elevation="2">
 
-    <!-- DOST tagline — always-visible system signature.
+    <!-- DOST tagline - always-visible system signature.
          Kept readable but not loud: bold brand mark + lighter descriptor. -->
     <div class="dost-tagline d-flex align-center ml-4">
       <span class="tagline-mark">OneDOST4U</span>
-      <span class="tagline-sep">—</span>
+      <span class="tagline-sep">-</span>
       <span class="tagline-sub">Solutions and Opportunities for All</span>
     </div>
 

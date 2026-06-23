@@ -1,5 +1,5 @@
 <template>
-    <Head :title="`Linkages — ${director.name}`" />
+    <Head :title="`Linkages - ${director.name}`" />
     <div class="d-flex flex-column gap-3">
 
         <!-- Breadcrumb -->
@@ -86,7 +86,7 @@
                             >{{ row.type }}</v-chip>
                         </td>
                         <td class="text-body-2 text-caption">{{ formatDate(row.date_signed) }}</td>
-                        <td class="text-body-2 text-caption text-medium-emphasis">{{ row.signatories || '—' }}</td>
+                        <td class="text-body-2 text-caption text-medium-emphasis">{{ row.signatories || '-' }}</td>
                         <td class="text-right">
                             <v-btn
                                 icon
@@ -305,7 +305,7 @@ const goBack = () => {
 };
 
 const formatDate = (s) => {
-    if (!s) return '—';
+    if (!s) return '-';
     const d = new Date(s);
     if (isNaN(d)) return s;
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
