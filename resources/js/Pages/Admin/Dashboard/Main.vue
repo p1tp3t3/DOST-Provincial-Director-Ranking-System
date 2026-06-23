@@ -156,8 +156,18 @@
                                     <template #activator="{ props: tip }">
                                         <v-icon v-bind="tip" size="14" color="blue-grey" class="cursor-pointer">mdi-information-outline</v-icon>
                                     </template>
-                                    <div class="pa-2 text-caption">
-                                        Every ranked province is sorted by overall standing and split into three groups: the top 20% (Top), the middle 70% (Average), and the bottom 10% (Low). Use the toggle to view this as proportional bars or a bell curve. Hover a group to list its provinces; click to keep it open.
+                                    <div class="pa-2">
+                                        <div class="font-weight-bold mb-1">Performance Distribution</div>
+                                        <div class="text-caption mb-2" style="opacity:.85;">Ranked provinces split into three groups by overall standing:</div>
+                                        <ul class="text-caption" style="margin:0; padding-left:16px; list-style:disc; line-height:1.7;">
+                                            <li><b>Top</b> - best 20% of provinces</li>
+                                            <li><b>Average</b> - middle 70%</li>
+                                            <li><b>Low</b> - bottom 10%</li>
+                                        </ul>
+                                        <div class="text-caption mt-2" style="opacity:.75; line-height:1.6;">
+                                            <div><b>Bars / Bell</b> toggle shows the same data two ways.</div>
+                                            <div>Hover a group to list its provinces; click to keep it open.</div>
+                                        </div>
                                     </div>
                                 </v-tooltip>
                             </div>
@@ -366,14 +376,29 @@
                                             Scoring
                                         </v-chip>
                                     </template>
-                                    <div class="pa-1">
+                                    <div class="pa-2" style="max-width:340px;">
                                         <div class="font-weight-bold mb-1">Weighted PRISM Matrix Score</div>
-                                        <div class="text-caption mb-2 opacity-80">
-                                            For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, STRATEGIC = 30%, SUPPORT = 10%.
-                                        </div>
-                                        <div class="text-caption opacity-70">
-                                            Provinces are ranked within their size tier. Top 20% by rank = Top Performers, next 70% = Average, bottom 10% = Low.
-                                        </div>
+
+                                        <div class="text-caption font-weight-medium mt-1">How each of the 37 KPIs is scored</div>
+                                        <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
+                                            <li>Accomplishment % vs target becomes an adjective rating</li>
+                                            <li>Outstanding 1.0 &middot; Very Satisfactory 0.8 &middot; Satisfactory 0.6</li>
+                                            <li>Average 0.4 &middot; Unsatisfactory 0.2 &middot; Poor 0.0</li>
+                                            <li>That rating is multiplied by the KPI's weight</li>
+                                        </ul>
+
+                                        <div class="text-caption font-weight-medium mt-2">Category weights</div>
+                                        <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
+                                            <li><b>CORE</b> 60%</li>
+                                            <li><b>STRATEGIC</b> 30%</li>
+                                            <li><b>SUPPORT</b> 10%</li>
+                                        </ul>
+
+                                        <div class="text-caption font-weight-medium mt-2">Ranking &amp; tiers</div>
+                                        <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
+                                            <li>Ranked within size tier (Micro / Small / Medium / Large)</li>
+                                            <li>Top 20% = Top &middot; Middle 70% = Average &middot; Bottom 10% = Low</li>
+                                        </ul>
                                     </div>
                                 </v-tooltip>
                                 <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">
