@@ -205,29 +205,33 @@ const sampleDirector = computed(() => {
             <div class="hero-veil"></div>
 
             <div class="hero-inner">
-                <div class="hero-content max-w-4xl mx-auto px-4 sm:px-6 py-8 text-center text-white">
-                    <div class="hero-badge mx-auto">
-                        <img src="/assets/logo.png" alt="DOST" class="hero-badge-logo" />
-                        Department of Science and Technology
-                        <span class="hero-badge-sep">·</span>
-                        Developed by Region IX
-                    </div>
-                    <div class="hero-tagline">
-                        <span class="hero-tagline-mark">OneDOST4U</span>
-                        <span class="hero-tagline-sep">-</span>
-                        <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
-                    </div>
-                    <h1 class="hero-title">
-                        Provincial Director
-                        <span class="hero-title-accent">Ranking &amp; Information System for Management</span>
-                    </h1>
-                    <p class="hero-sub mx-auto">
-                        A transparent, evidence-based platform that scores and ranks Provincial Science &amp; Technology
-                        Directors across the Philippines - driving excellence in regional S&amp;T leadership.
-                    </p>
-                    <div class="mt-10 flex flex-wrap justify-center gap-3">
-                        <a href="#about"  class="btn-hero-light">Learn More <RiArrowRightLine class="w-5 h-5" /></a>
-                        <a href="/map"    class="btn-hero-ghost"><RiGlobalLine class="w-5 h-5" /> Explore the Map</a>
+                <div class="hero-content px-4 sm:px-6 py-8 text-white">
+                    <div class="max-w-7xl mx-auto w-full">
+                        <div class="hero-copy">
+                            <div class="hero-badge">
+                                <img src="/assets/logo.png" alt="DOST" class="hero-badge-logo" />
+                                Department of Science and Technology
+                                <span class="hero-badge-sep">·</span>
+                                Developed by Region IX
+                            </div>
+                            <div class="hero-tagline">
+                                <span class="hero-tagline-mark">OneDOST4U</span>
+                                <span class="hero-tagline-sep">-</span>
+                                <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
+                            </div>
+                            <h1 class="hero-title">
+                                Provincial Director
+                                <span class="hero-title-accent">Ranking &amp; Information System for Management</span>
+                            </h1>
+                            <p class="hero-sub">
+                                A transparent, evidence-based platform that scores and ranks Provincial Science &amp; Technology
+                                Directors across the Philippines - driving excellence in regional S&amp;T leadership.
+                            </p>
+                            <div class="mt-10 flex flex-wrap gap-3">
+                                <a href="#about"  class="btn-hero-light">Learn More <RiArrowRightLine class="w-5 h-5" /></a>
+                                <a href="/map"    class="btn-hero-ghost"><RiGlobalLine class="w-5 h-5" /> Explore the Map</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -635,13 +639,14 @@ const sampleDirector = computed(() => {
 .hero-veil {
     position: absolute; inset: 0; z-index: 2; pointer-events: none;
     background:
-        /* soft focus behind the centered text, fading out so the image shows at the edges */
-        radial-gradient(115% 78% at 50% 42%, rgba(4,20,46,.58) 0%, rgba(4,20,46,.22) 44%, rgba(4,20,46,0) 72%),
-        /* navy frame: readable top for the nav/badge, clear middle for the image, solid base into the stats strip */
-        linear-gradient(180deg, rgba(8,47,95,.74) 0%, rgba(8,47,95,.28) 38%, rgba(8,47,95,.40) 66%, rgba(6,24,52,.95) 100%);
+        /* dark behind the left-aligned copy, fading right so the imagery shows */
+        linear-gradient(90deg, rgba(5,21,48,.95) 0%, rgba(5,21,48,.84) 34%, rgba(5,21,48,.45) 62%, rgba(5,21,48,.08) 100%),
+        /* subtle top (nav) + solid base into the stats strip */
+        linear-gradient(180deg, rgba(8,47,95,.45) 0%, rgba(8,47,95,.12) 40%, rgba(6,24,52,.80) 100%);
 }
 .hero-inner { position: relative; z-index: 3; flex: 1; display: flex; flex-direction: column; }
 .hero-content { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+.hero-copy { max-width: 640px; text-align: left; }
 
 .hero-badge {
     display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px;
