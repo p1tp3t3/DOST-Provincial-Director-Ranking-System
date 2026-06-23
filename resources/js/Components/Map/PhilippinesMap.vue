@@ -420,17 +420,19 @@ const cstcNamesForRegion = (regionCode) =>
 const BUCKET_COLOR = { Top: '#ca8a04', Average: '#64748b', Low: '#9a3412' };
 const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Low: 'Low Performers' };
 const tierInfo = (entry) => {
-    if (!entry) return { color: '#94a3b8', label: 'No data' };
-    if (entry.status === 'no_director') return { color: '#94a3b8', label: 'No director assigned' };
-    if (entry.status === 'no_data')     return { color: '#94a3b8', label: 'No data submitted' };
-    if (entry.bucket == null)           return { color: '#94a3b8', label: 'Unbucketed' };
-    return { color: BUCKET_COLOR[entry.bucket] ?? '#94a3b8', label: BUCKET_LABEL[entry.bucket] ?? '-' };
+    if (!entry) return { color: '#ffffff', label: 'No data' };
+    if (entry.status === 'no_director') return { color: '#ffffff', label: 'No director assigned' };
+    if (entry.status === 'no_data')     return { color: '#ffffff', label: 'No data submitted' };
+    if (entry.bucket == null)           return { color: '#ffffff', label: 'Unbucketed' };
+    if (!entry.score)                   return { color: '#ffffff', label: 'No score' };
+    return { color: BUCKET_COLOR[entry.bucket] ?? '#ffffff', label: BUCKET_LABEL[entry.bucket] ?? '-' };
 };
 const tierColor = (entry) => tierInfo(entry).color;
 
 // Score-threshold coloring for raw averages (regions, islands). Calibrated so
 // a typical weighted score range (~0-70%) splits roughly into thirds.
 const scoreColor = (score) => {
+    if (!score)      return '#ffffff';   // 0 / no data -> white
     if (score >= 50) return '#ca8a04';   // gold
     if (score >= 25) return '#64748b';   // silver
     return '#9a3412';                    // bronze
@@ -890,7 +892,11 @@ const styleFor = (feature, sm, selReg, selProv, selIsl) => {
 
     const dbName    = GEO_TO_DB[name] ?? name;
     const entry     = sm[dbName] ?? null;
-    const baseColor = entry ? tierColor(entry) : '#94a3b8';
+    const baseColor = entry ? tierColor(entry) : '#ffffff';
+    // Blank (no data / vacant / 0) provinces render white with a light outline
+    // so they stay visible against the basemap instead of disappearing.
+    const blank     = baseColor === '#ffffff';
+    const bd        = blank ? '#cbd5e1' : '#fff';
 
     const isSelectedProv = selProv && name === selProv;
     const isInSelRegion  = selReg  && regionCode === Number(selReg);
@@ -900,23 +906,23 @@ const styleFor = (feature, sm, selReg, selProv, selIsl) => {
     const hasIslandFilter = !!selIsl;
 
     if (isSelectedProv)
-        return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
+        return { fillColor: baseColor, weight: 3.5, color: bd, fillOpacity: blank ? 1 : 0.97 };
 
     if (hasRegFilter) {
         if (isInSelRegion)
             return hasProvFilter
-                ? { fillColor: baseColor, weight: 0.8, color: '#fff', fillOpacity: 0.45 }
-                : { fillColor: baseColor, weight: 1.2, color: '#fff', fillOpacity: 0.85 };
+                ? { fillColor: baseColor, weight: 0.8, color: bd, fillOpacity: blank ? 1 : 0.45 }
+                : { fillColor: baseColor, weight: 1.2, color: bd, fillOpacity: blank ? 1 : 0.85 };
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
     }
 
     if (hasIslandFilter) {
         if (isInSelIsland)
-            return { fillColor: baseColor, weight: 0.8, color: '#fff', fillOpacity: 0.85 };
+            return { fillColor: baseColor, weight: 0.8, color: bd, fillOpacity: blank ? 1 : 0.85 };
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
     }
 
-    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
+    return { fillColor: baseColor, weight: 0.6, color: bd, fillOpacity: blank ? 1 : 0.78 };
 };
 
 const refreshStyle = () => {
