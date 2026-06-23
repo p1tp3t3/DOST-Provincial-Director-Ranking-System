@@ -620,7 +620,7 @@
                                     :class="rowHighlightClass(item.province)"
                                     :data-province="item.province"
                                 >
-                                    <span class="podium-rest-rank">#{{ item.rank }}</span>
+                                    <span class="podium-rest-rank">{{ isRanked(item) ? '#' + item.rank : '-' }}</span>
                                     <div class="flex-1" style="min-width:0;">
                                         <div class="text-body-2 font-weight-medium text-truncate">
                                             <a :href="`/province-directories/${item.province_url_id}`" class="province-link">{{ item.province }}</a>
@@ -634,13 +634,16 @@
                                         {{ item.category }}
                                     </v-chip>
                                     <div class="score-cell podium-rest-cell">
-                                        <div class="score-track">
-                                            <div class="score-fill" :style="{ width: `${Math.min(getScore(item), 100)}%`, background: bucketBar(item.bucket) }" />
-                                        </div>
-                                        <div class="score-text">
-                                            <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
-                                            <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · STRAT {{ item.subtotals_pct.STRATEGIC.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
-                                        </div>
+                                        <template v-if="isRanked(item)">
+                                            <div class="score-track">
+                                                <div class="score-fill" :style="{ width: `${Math.min(getScore(item), 100)}%`, background: bucketBar(item.bucket) }" />
+                                            </div>
+                                            <div class="score-text">
+                                                <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
+                                                <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · STRAT {{ item.subtotals_pct.STRATEGIC.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
+                                            </div>
+                                        </template>
+                                        <span v-else class="text-caption text-disabled" style="margin:auto;">No data</span>
                                     </div>
                                 </div>
                                 <div v-if="!restList.length" class="text-center py-8 text-caption text-medium-emphasis">
@@ -929,12 +932,13 @@ const bucketCounts = computed(() => {
     return counts;
 });
 
-// Podium + rest list operate on RANKED rows only so unranked never appears on
-// the leader podium. Unranked provinces still show in the table at the bottom.
+// The podium shows only the top 3 RANKED provinces. The rest list mirrors the
+// table: ranked provinces #4 onward, then unranked / no-data provinces at the
+// bottom (shown with a "No data" placeholder) so nothing is hidden.
 const rankedOnly       = computed(() => rankedScores.value.filter(isRanked));
 const unrankedProvinces = computed(() => rankedScores.value.filter(r => !isRanked(r)));
 const top3     = computed(() => rankedOnly.value.slice(0, 3));
-const restList = computed(() => rankedOnly.value.slice(3));
+const restList = computed(() => [...rankedOnly.value.slice(3), ...unrankedProvinces.value]);
 
 // Performer (Top / Average / Low) is bucketed per-tier so it's only meaningful
 // when a single tier is selected. In the "All Tiers" view we hide the column
@@ -1642,12 +1646,12 @@ watch(searchTarget, async (province) => {
    (.score-cell .score-counts → 15px) made "CORE X · STRAT X · SUPP X"
    exceed the original 210px text slot and truncate to "SUP...".
    Score-text widened in lockstep so all three category values fit. */
-.score-cell { display: flex; align-items: center; gap: 10px; width: 380px; flex-shrink: 0; }
+.score-cell { display: flex; align-items: center; gap: 10px; width: 420px; flex-shrink: 0; }
 .score-cell .score-track { flex: unset; width: 105px; flex-shrink: 0; }
-.score-cell .score-text  { width: 260px; flex-shrink: 0; }
+.score-cell .score-text  { width: 300px; flex-shrink: 0; }
 .score-cell .score-pct   { font-size: 15px; }
 .score-cell .score-counts { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
-.podium-rest-cell { width: 380px; }
+.podium-rest-cell { width: 420px; }
 
 /* Tighten the province dropdown's menu rows so more items fit without scrolling */
 .trend-province-select :deep(.v-list-item) { min-height: 32px; padding-top: 2px; padding-bottom: 2px; }
