@@ -438,11 +438,11 @@ const scoreColor = (score) => {
     return '#9a3412';                    // bronze
 };
 
-// Full per-category breakdown for the side panel. Always returns CORE → FUNCTIONAL
+// Full per-category breakdown for the side panel. Always returns CORE → STRATEGIC
 // → SUPPORT in matrix-weight order, with isStrongest/isWeakest flags so the
 // panel can mark the leader and laggard with arrow markers.
-const CATEGORY_FULL_NAMES = { CORE: 'Core', FUNCTIONAL: 'Functional', SUPPORT: 'Support' };
-const CATEGORY_ORDER      = ['CORE', 'FUNCTIONAL', 'SUPPORT'];
+const CATEGORY_FULL_NAMES = { CORE: 'Core', STRATEGIC: 'Strategic', SUPPORT: 'Support' };
+const CATEGORY_ORDER      = ['CORE', 'STRATEGIC', 'SUPPORT'];
 const categoryBreakdown = (entry) => {
     if (!entry?.subtotals_pct) return [];
     const list = CATEGORY_ORDER

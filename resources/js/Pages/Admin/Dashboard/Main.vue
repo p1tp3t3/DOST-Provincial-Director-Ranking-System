@@ -369,7 +369,7 @@
                                     <div class="pa-1">
                                         <div class="font-weight-bold mb-1">Weighted PRISM Matrix Score</div>
                                         <div class="text-caption mb-2 opacity-80">
-                                            For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, FUNCTIONAL = 30%, SUPPORT = 10%.
+                                            For each of the 37 KPIs we compute accomplishment % vs target, map it to an adjective score (Outstanding 1.0 / VS 0.8 / Sat 0.6 / Avg 0.4 / Unsat 0.2 / Poor 0.0), then multiply by the KPI's weight. CORE = 60%, STRATEGIC = 30%, SUPPORT = 10%.
                                         </div>
                                         <div class="text-caption opacity-70">
                                             Provinces are ranked within their size tier. Top 20% by rank = Top Performers, next 70% = Average, bottom 10% = Low.
@@ -495,9 +495,9 @@
                             </span>
                             <span v-else class="text-caption text-disabled">-</span>
                         </template>
-                        <template #item.functional="{ item }">
-                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">
-                                {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }}%
+                        <template #item.strategic="{ item }">
+                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'STRATEGIC' }">
+                                {{ item.subtotals_pct.STRATEGIC.toFixed(1) }}%
                             </span>
                             <span v-else class="text-caption text-disabled">-</span>
                         </template>
@@ -602,7 +602,7 @@
                                 <!-- Top 3 category-subtotal breakdown -->
                                 <div v-if="top3.length" class="podium-breakdown">
                                     <div v-for="(p, idx) in top3" :key="p.province" class="breakdown-col">
-                                        <div v-for="cat in ['CORE','FUNCTIONAL','SUPPORT']" :key="cat" class="breakdown-row">
+                                        <div v-for="cat in ['CORE','STRATEGIC','SUPPORT']" :key="cat" class="breakdown-row">
                                             <span class="breakdown-label">{{ cat }}</span>
                                             <span class="breakdown-score">{{ p.subtotals_pct[cat].toFixed(1) }}%</span>
                                         </div>
@@ -639,7 +639,7 @@
                                         </div>
                                         <div class="score-text">
                                             <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
-                                            <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · FUNC {{ item.subtotals_pct.FUNCTIONAL.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
+                                            <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · STRAT {{ item.subtotals_pct.STRATEGIC.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -678,7 +678,7 @@ const props = defineProps({
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('all');
-const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'FUNCTIONAL' | 'SUPPORT'
+const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'STRATEGIC' | 'SUPPORT'
 const selectedIsland   = ref('all');
 const selectedRegion   = ref('all');
 const selectedProvince = ref('all');
@@ -744,7 +744,7 @@ const tierLabel = computed(() =>
 
 // Rank-percentile bucketing matches RankingService::rankAndBucket on the backend.
 // Mirrored client-side so the Category filter can re-bucket within the active
-// tier when the user picks CORE / FUNCTIONAL / SUPPORT instead of Overall.
+// tier when the user picks CORE / STRATEGIC / SUPPORT instead of Overall.
 // If config/ranking.php values change, update these to match.
 const BUCKET_TOP_PCT   = 0.20;
 const BUCKET_UNDER_PCT = 0.10;
@@ -948,7 +948,7 @@ const tableHeaders = computed(() => {
         { title: 'Director', key: 'director', sortable: false },
         { title: 'Tier',     key: 'category', width: '90px',  align: 'center', sortable: true  },
         { title: 'CORE 60%', key: 'core',     width: '90px',  align: 'center', sortable: false },
-        { title: 'FUNC 30%', key: 'functional', width: '90px', align: 'center', sortable: false },
+        { title: 'STRAT 30%', key: 'strategic', width: '90px', align: 'center', sortable: false },
         { title: 'SUPP 10%', key: 'support',  width: '90px',  align: 'center', sortable: false },
         { title: 'Total',    key: 'total_pct', width: '110px', align: 'center', sortable: true  },
     ];
@@ -1601,7 +1601,7 @@ watch(searchTarget, async (province) => {
 .podium-breakdown { display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
 .breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 .breakdown-row    { display: flex; align-items: center; gap: 6px; cursor: default; }
-/* Label width tuned so the longest label ("FUNCTIONAL") fits at 13px without
+/* Label width tuned so the longest label ("STRATEGIC") fits at 13px without
    crowding the score. Was 120px which overflowed when the podium-stage
    shrinks (42% width) - that's what was pushing the SUPPORT row off-screen
    or causing horizontal overflow per column. */
@@ -1639,7 +1639,7 @@ watch(searchTarget, async (province) => {
 }
 
 /* Widened from 330 → 380 because the elderly-friendly font override
-   (.score-cell .score-counts → 15px) made "CORE X · FUNC X · SUPP X"
+   (.score-cell .score-counts → 15px) made "CORE X · STRAT X · SUPP X"
    exceed the original 210px text slot and truncate to "SUP...".
    Score-text widened in lockstep so all three category values fit. */
 .score-cell { display: flex; align-items: center; gap: 10px; width: 380px; flex-shrink: 0; }

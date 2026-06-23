@@ -41,7 +41,7 @@ const features = [
     { icon: RiBuilding2Line, title: 'Province Directories',
       text: 'Browse every province\'s profile - its provincial S&T director, staff, classification tier, and region - in one organized place.' },
     { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
-      text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Functional (30%), and Support (10%) categories, with adjective ratings.' },
+      text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Strategic (30%), and Support (10%) categories, with adjective ratings.' },
     { icon: RiBarChart2Line, title: 'Regional Analytics',
       text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
     { icon: RiLineChartLine, title: 'Trends Over Time',
@@ -63,7 +63,7 @@ const blogs = [
         tag:    'Updates',
         date:   'May 28, 2025',
         title:  'FY 2024 PSTD Rankings Now Available on the Information System',
-        excerpt:'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, functional, and support categories.',
+        excerpt:'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, strategic, and support categories.',
     },
     {
         slug:   'regional-st-directors-summit-2025',
@@ -333,7 +333,7 @@ const sampleDirector = computed(() => {
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Covering all 83 provinces and clusters across 17 regions, the system uses a structured
                     scoring framework with 37 performance indicators grouped into three categories -
-                    Core, Functional, and Support - to produce transparent, evidence-based rankings.
+                    Core, Strategic, and Support - to produce transparent, evidence-based rankings.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Designed to promote excellence and accountability in regional S&amp;T leadership,
@@ -348,7 +348,7 @@ const sampleDirector = computed(() => {
                     </div>
                     <div class="scoring-keys">
                         <span class="scoring-key"><span class="scoring-dot" style="background:#0b57a8;"></span>Core <b>60%</b></span>
-                        <span class="scoring-key"><span class="scoring-dot" style="background:#2079c4;"></span>Functional <b>30%</b></span>
+                        <span class="scoring-key"><span class="scoring-dot" style="background:#2079c4;"></span>Strategic <b>30%</b></span>
                         <span class="scoring-key"><span class="scoring-dot" style="background:#3f93e0;"></span>Support <b>10%</b></span>
                     </div>
                     <div class="scoring-stack">
@@ -444,7 +444,7 @@ const sampleDirector = computed(() => {
                                             {{ selectedProvince.name }} is a province under {{ selectedProvince.region }},
                                             located in the {{ selectedProvince.island }} island group of the Philippines.
                                             It is part of DOST's provincial S&amp;T director network, which evaluates
-                                            performance across Core, Functional, and Support categories.
+                                            performance across Core, Strategic, and Support categories.
                                         </p>
 
                                         <hr class="prov-sep" />
