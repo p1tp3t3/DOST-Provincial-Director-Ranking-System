@@ -8,7 +8,7 @@ import {
     RiArrowRightLine, RiGlobalLine, RiMicroscopeLine,
     RiLeafLine, RiLightbulbLine, RiTeamLine,
     RiCalendarLine, RiArrowRightUpLine, RiCloseLine,
-    RiMapPin2Fill, RiLockLine, RiUserFill,
+    RiMapPin2Fill, RiLockLine, RiUserFill, RiEyeLine, RiFocus3Line, RiAuctionLine
 } from '@remixicon/vue';
 
 defineProps({
@@ -158,8 +158,7 @@ const sampleDirector = computed(() => {
                         <img src="/assets/logo.png" alt="DOST" class="w-10 h-10 rounded-lg object-contain" />
                         <div class="leading-tight">
                             <div class="font-extrabold dost-ink text-lg tracking-tight">DOST PRISM</div>
-                            <div class="text-[13px] text-slate-500 hidden sm:block">Ranking &amp; Information System</div>
-                            <div class="text-[11px] text-slate-400 hidden sm:block">Developed by Region IX</div>
+                            <div class="text-[11px] text-slate-500 hidden sm:block">Developed by Region IX</div>
                         </div>
                     </a>
 
@@ -304,17 +303,17 @@ const sampleDirector = computed(() => {
                 </div>
                 <div class="mvm-grid">
                     <article class="mvm-card reveal reveal--d1">
-                        <div class="mvm-icon"><RiBuilding2Line class="w-6 h-6" /></div>
+                        <div class="mvm-icon"><RiAuctionLine class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Mandate</h3>
                         <p class="mvm-text">Provide central direction, leadership and coordination of scientific and technological efforts and ensure that the results therefrom are geared and utilized in areas of maximum economic and social benefits for the people.</p>
                     </article>
                     <article class="mvm-card mvm-card--accent reveal reveal--d2">
-                        <div class="mvm-icon"><RiLightbulbLine class="w-6 h-6" /></div>
+                        <div class="mvm-icon"><RiFocus3Line class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Mission</h3>
                         <p class="mvm-text">To direct, lead, and coordinate the country's scientific, technological, and innovative efforts geared towards maximum economic and social benefits for the people.</p>
                     </article>
                     <article class="mvm-card reveal reveal--d3">
-                        <div class="mvm-icon"><RiGlobalLine class="w-6 h-6" /></div>
+                        <div class="mvm-icon"><RiEyeLine class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Vision</h3>
                         <p class="mvm-text">DOST as the leading enabler and provider of science, technology, and innovation (STI) explicit solutions towards national development.</p>
                     </article>
