@@ -165,7 +165,7 @@ const sampleDirector = computed(() => {
 
                     <nav class="hidden md:flex items-center gap-1">
                         <a href="#about"    class="nav-link">About</a>
-                        <a href="#system"   class="nav-link">The System</a>
+                        <a href="#system"   class="nav-link">Platform</a>
                         <a href="#features" class="nav-link">Features</a>
                         <a href="#map"      class="nav-link">Map</a>
                         <a href="#news"     class="nav-link">News</a>
@@ -181,7 +181,7 @@ const sampleDirector = computed(() => {
 
                 <div v-if="mobileOpen" class="md:hidden pb-4 flex flex-col gap-1">
                     <a href="#about"    class="nav-link" @click="mobileOpen=false">About</a>
-                    <a href="#system"   class="nav-link" @click="mobileOpen=false">The System</a>
+                    <a href="#system"   class="nav-link" @click="mobileOpen=false">Platform</a>
                     <a href="#features" class="nav-link" @click="mobileOpen=false">Features</a>
                     <a href="#map"      class="nav-link" @click="mobileOpen=false">Map</a>
                     <a href="#news"     class="nav-link" @click="mobileOpen=false">News</a>
@@ -324,7 +324,7 @@ const sampleDirector = computed(() => {
 
         <section id="system" class="py-24 lg:py-32 bg-slate-50">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-                <div class="eyebrow">The System</div>
+                <div class="eyebrow">The Platform</div>
                 <h2 class="section-title">PRISM</h2>
                 <p class="section-lead mx-auto">
                     The PRISM is DOST's centralized platform for monitoring,
@@ -344,7 +344,7 @@ const sampleDirector = computed(() => {
                 <div class="scoring-card reveal">
                     <div class="scoring-head">
                         <span class="scoring-head-title">Scoring Framework</span>
-                        <span class="scoring-head-sub">37 indicators · 3 functions · 83 provinces</span>
+                        <span class="scoring-head-sub">37 indicators · 3 functions</span>
                     </div>
                     <div class="scoring-keys">
                         <span class="scoring-key"><span class="scoring-dot" style="background:#0b57a8;"></span>Core Functions <b>60%</b></span>
@@ -565,7 +565,7 @@ const sampleDirector = computed(() => {
                         <h4 class="text-lg font-semibold text-white mb-4">Navigate</h4>
                         <ul class="space-y-2">
                             <li><a href="#about"    class="foot-link">About DOST</a></li>
-                            <li><a href="#system"   class="foot-link">The System</a></li>
+                            <li><a href="#system"   class="foot-link">Platform</a></li>
                             <li><a href="#features" class="foot-link">Features</a></li>
                             <li><a href="#map"      class="foot-link">Interactive Map</a></li>
                             <li><a href="#news"     class="foot-link">News &amp; Updates</a></li>
