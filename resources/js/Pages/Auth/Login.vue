@@ -221,23 +221,20 @@ const features = [
 .prism-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.16);
-    border-radius: 999px;
-    padding: 6px 16px 6px 9px;
+    gap: 10px;
+    align-self: flex-start;   /* size to content, not the full column width */
 }
 .prism-badge-logo {
-    width: 20px;
-    height: 20px;
+    width: 26px;
+    height: 26px;
     object-fit: contain;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
 }
 .prism-badge-text {
     color: #fff;
-    font-size: 0.82rem;
+    font-size: 0.95rem;
     font-weight: 800;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.2em;
     line-height: 1;
 }
 .prism-fullname {
