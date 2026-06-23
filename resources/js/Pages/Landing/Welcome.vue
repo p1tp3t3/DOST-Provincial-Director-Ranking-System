@@ -51,7 +51,7 @@ const features = [
 const blogs = [
     {
         slug:   'new-performance-evaluation-framework',
-        image:  '/assets/hero/pic1.png',
+        image:  '/assets/placeholder.png',
         tag:    'Announcement',
         date:   'June 10, 2025',
         title:  'DOST Launches New Performance Evaluation Framework for Provincial S&T Directors',
@@ -59,7 +59,7 @@ const blogs = [
     },
     {
         slug:   'fy-2024-pstd-rankings-available',
-        image:  '/assets/hero/pic2.png',
+        image:  '/assets/placeholder.png',
         tag:    'Updates',
         date:   'May 28, 2025',
         title:  'FY 2024 PSTD Rankings Now Available on the Information System',
@@ -67,7 +67,7 @@ const blogs = [
     },
     {
         slug:   'regional-st-directors-summit-2025',
-        image:  '/assets/hero/pic3.png',
+        image:  '/assets/placeholder.png',
         tag:    'Events',
         date:   'May 15, 2025',
         title:  'Regional S&T Directors Summit: Highlights and Key Takeaways',
