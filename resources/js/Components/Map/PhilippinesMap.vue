@@ -1041,13 +1041,41 @@ const onRegionChange = () => {
     smartFlyTo(bounds, { maxZoom: regionMaxZoom(code), padding: [30, 30] });
 };
 
+// Resolve a province/cluster name to its CSTC city footprint. The former CSTCs
+// (CAMANAVA, PAMAMAZON, PAMAMARISAN, MUNTAPARLAS, ZCIC, Davao City) are now
+// classified as Large and appear in the province list, but they're city clusters
+// rather than province polygons, so they must zoom via cstcData. Matching is
+// case-tolerant because the rankings data and the geojson `cstc` may differ.
+const findCstc = (name) => {
+    if (!name) return null;
+    if (cstcData[name]) return { key: name, bounds: cstcData[name] };
+    const lower = name.toLowerCase();
+    const key = Object.keys(cstcData).find(k => k.toLowerCase() === lower);
+    return key ? { key, bounds: cstcData[key] } : null;
+};
+
 const onProvinceChange = () => {
     pendingFly = false;
-    refreshStyle();
-    if (!selProvince.value) { panel.value = null; return; }
-    panel.value = buildProvincePanel(selProvince.value);
+    if (!selProvince.value) { selCstc.value = ''; refreshStyle(); refreshCstcStyle(); panel.value = null; return; }
+
     const prov = provinces.find(p => p.name === selProvince.value);
-    if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+    if (prov) {
+        selCstc.value = '';
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildProvincePanel(selProvince.value);
+        smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+        return;
+    }
+    const cstc = findCstc(selProvince.value);
+    if (cstc) {
+        selCstc.value = cstc.key;
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildCstcPanel(cstc.key);
+        smartFlyTo(cstc.bounds, { maxZoom: 13, padding: [40, 40] });
+        return;
+    }
+    refreshStyle();
+    panel.value = buildProvincePanel(selProvince.value);
 };
 
 // ── External (dashboard sticky filter) → internal map state ───────────────────
@@ -1093,14 +1121,25 @@ const selectRegionFromList = (code) => {
 };
 
 const selectProvinceFromList = (name) => {
-    const prov = provinces.find(p => p.name === name);
-    if (!prov) return;
     selProvince.value = name;
     pendingFly = false;
-    refreshStyle();
-    panel.value = buildProvincePanel(name);
-    softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
-    provinceListOpen.value = false;
+    const prov = provinces.find(p => p.name === name);
+    if (prov) {
+        selCstc.value = '';
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildProvincePanel(name);
+        softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+        provinceListOpen.value = false;
+        return;
+    }
+    const cstc = findCstc(name);
+    if (cstc) {
+        selCstc.value = cstc.key;
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildCstcPanel(cstc.key);
+        softFlyTo(cstc.bounds, { maxZoom: 13, padding: [40, 40] });
+        provinceListOpen.value = false;
+    }
 };
 
 const resetView = () => {
