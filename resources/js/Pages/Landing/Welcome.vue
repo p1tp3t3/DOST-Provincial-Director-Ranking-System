@@ -634,7 +634,11 @@ const sampleDirector = computed(() => {
 }
 .hero-veil {
     position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: linear-gradient(180deg, rgba(8,47,95,.86) 0%, rgba(8,47,95,.46) 40%, rgba(8,47,95,.54) 68%, rgba(6,31,64,.92) 100%);
+    background:
+        /* soft focus behind the centered text, fading out so the image shows at the edges */
+        radial-gradient(115% 78% at 50% 42%, rgba(4,20,46,.58) 0%, rgba(4,20,46,.22) 44%, rgba(4,20,46,0) 72%),
+        /* navy frame: readable top for the nav/badge, clear middle for the image, solid base into the stats strip */
+        linear-gradient(180deg, rgba(8,47,95,.74) 0%, rgba(8,47,95,.28) 38%, rgba(8,47,95,.40) 66%, rgba(6,24,52,.95) 100%);
 }
 .hero-inner { position: relative; z-index: 3; flex: 1; display: flex; flex-direction: column; }
 .hero-content { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
@@ -652,12 +656,12 @@ const sampleDirector = computed(() => {
 .hero-tagline-sub   { opacity: .85; font-weight: 500; }
 .hero-title {
     font-size: clamp(2.4rem, 4.5vw, 3.4rem); font-weight: 800; line-height: 1.08;
-    color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.25);
+    color: #fff; text-shadow: 0 2px 16px rgba(2,12,30,.55);
 }
-.hero-title-accent { display: block; color: #8ec5ff; margin-top: 4px; }
+.hero-title-accent { display: block; color: #9fd0ff; margin-top: 4px; text-shadow: 0 2px 16px rgba(2,12,30,.5); }
 .hero-sub {
     margin-top: 20px; max-width: 40rem; font-size: 1.25rem; line-height: 1.7;
-    color: rgba(255,255,255,.88);
+    color: rgba(255,255,255,.92); text-shadow: 0 1px 8px rgba(2,12,30,.5);
 }
 .btn-hero-light {
     display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 12px;
