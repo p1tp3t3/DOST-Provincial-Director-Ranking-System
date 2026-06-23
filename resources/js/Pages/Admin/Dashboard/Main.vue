@@ -193,7 +193,7 @@
                                     <VueApexCharts
                                         v-if="top10Data.names.length"
                                         type="bar"
-                                        height="340"
+                                        height="500"
                                         :options="top10Options"
                                         :series="top10Series"
                                         :key="`top10-${selectedYear}-${selectedTier}-${selectedCategory}`"
@@ -242,7 +242,7 @@
                                     <VueApexCharts
                                         v-if="underData.names.length"
                                         type="bar"
-                                        height="340"
+                                        height="500"
                                         :options="underOptions"
                                         :series="underSeries"
                                         :key="`under-${selectedYear}-${selectedTier}-${selectedCategory}`"
@@ -1149,13 +1149,13 @@ const perfTooltip = (data, i) => {
             </div>`;
 };
 
-const makeHorizOptions = (data) => {
+const makeHorizOptions = (data, big = false) => {
     const max = Math.max(...data.scores, 0);
     const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
                  animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
-        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
+        plotOptions: { bar: { horizontal: true, barHeight: big ? '82%' : '68%', borderRadius: big ? 4 : 3, distributed: true } },
         colors: data.buckets.map(bucketColor),
         fill: {
             type: 'gradient',
@@ -1174,18 +1174,18 @@ const makeHorizOptions = (data) => {
                 xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
                 padding: { left: 0, right: 12, top: -8, bottom: 0 } },
         dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
-                      style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
+                      style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
         xaxis: { categories: data.names, min: 0, max: computedMax,
-                 labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
+                 labels: { formatter: v => `${v}%`, style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
                  axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 115 } },
+        yaxis: { labels: { style: { fontSize: big ? '14px' : '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: big ? 150 : 115 } },
         tooltip: { theme: 'light', custom: ({ dataPointIndex }) => perfTooltip(data, dataPointIndex) },
     };
 };
 
-const top10Options = computed(() => makeHorizOptions(top10Data.value));
+const top10Options = computed(() => makeHorizOptions(top10Data.value, true));
 const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
-const underOptions = computed(() => makeHorizOptions(underData.value));
+const underOptions = computed(() => makeHorizOptions(underData.value, true));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
 const avgOptions   = computed(() => makeHorizOptions(avgData.value));
 const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
