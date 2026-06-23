@@ -62,7 +62,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head :title="post ? `${post.title} - DOST PRISM` : 'Blog - DOST PRISM'" />
+    <Head :title="post ? post.title : 'Blog'" />
 
     <div class="min-h-screen bg-white text-slate-800">
 

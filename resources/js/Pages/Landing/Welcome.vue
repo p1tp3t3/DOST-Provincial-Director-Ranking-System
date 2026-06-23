@@ -146,7 +146,7 @@ const sampleDirector = computed(() => {
 </script>
 
 <template>
-    <Head title="Welcome - DOST PRISM" />
+    <Head title="Welcome" />
 
     <div ref="rootEl" class="landing min-h-screen bg-white text-slate-800">
 

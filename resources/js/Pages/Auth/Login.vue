@@ -22,7 +22,7 @@ const features = [
 </script>
 
 <template>
-    <Head title="Sign In - PRISM" />
+    <Head title="Sign In" />
 
     <div class="login-root">
 
