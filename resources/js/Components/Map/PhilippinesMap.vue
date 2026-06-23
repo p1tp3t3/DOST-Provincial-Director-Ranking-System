@@ -416,7 +416,8 @@ const cstcNamesForRegion = (regionCode) =>
 // provinces, matching RankingService's rank-percentile bucketing. For
 // aggregates (region / island averages) the bucket field doesn't apply, so we
 // fall back to score-threshold coloring.
-const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' };
+// Gold / silver / bronze - matches the podium, charts, and leaderboard buckets.
+const BUCKET_COLOR = { Top: '#ca8a04', Average: '#64748b', Low: '#9a3412' };
 const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Low: 'Low Performers' };
 const tierInfo = (entry) => {
     if (!entry) return { color: '#94a3b8', label: 'No data' };
@@ -430,9 +431,9 @@ const tierColor = (entry) => tierInfo(entry).color;
 // Score-threshold coloring for raw averages (regions, islands). Calibrated so
 // a typical weighted score range (~0-70%) splits roughly into thirds.
 const scoreColor = (score) => {
-    if (score >= 50) return '#15803d';
-    if (score >= 25) return '#ca8a04';
-    return '#b91c1c';
+    if (score >= 50) return '#ca8a04';   // gold
+    if (score >= 25) return '#64748b';   // silver
+    return '#9a3412';                    // bronze
 };
 
 // Full per-category breakdown for the side panel. Always returns CORE → FUNCTIONAL
