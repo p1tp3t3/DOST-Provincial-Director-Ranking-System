@@ -34,7 +34,7 @@
     "isDynamicEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D2gwOPze.js",
+    "file": "assets/app-wlaPnPFO.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -43,7 +43,7 @@
       "node_modules/vue3-apexcharts/dist/apexcharts.ssr.esm-fe46cd2d.js"
     ],
     "css": [
-      "assets/app-joeePbmI.css"
+      "assets/app-B6ycCwit.css"
     ],
     "assets": [
       "assets/layers-BWBAp2CZ.png",
