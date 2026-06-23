@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3 dashboard-root">
 
@@ -175,7 +175,6 @@
                                 <v-btn value="bars" size="small" prepend-icon="mdi-chart-bar">Bars</v-btn>
                                 <v-btn value="bell" size="small" prepend-icon="mdi-chart-bell-curve">Bell</v-btn>
                             </v-btn-toggle>
-                            <v-chip size="x-small" variant="tonal" color="indigo">Average score {{ distributionData.stats.mean.toFixed(1) }}%</v-chip>
                             <v-chip size="x-small" variant="tonal" color="blue-grey">{{ distributionData.stats.n }} provinces</v-chip>
                         </div>
                     </div>

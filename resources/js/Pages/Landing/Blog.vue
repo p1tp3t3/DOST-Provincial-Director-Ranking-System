@@ -45,7 +45,7 @@ const allPosts = [
         tag:     'Events',
         date:    'May 15, 2025',
         title:   'Regional S&T Directors Summit: Highlights and Key Takeaways',
-        excerpt: 'Officials from all 16 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
+        excerpt: 'Officials from all 17 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
         body: [
             'The Department of Science and Technology recently convened the 2025 Regional S&T Directors Summit, bringing together officials from all 16 regional offices, provincial directors, and central office representatives. The summit, held over two days, focused on strategies for improving science and technology service delivery at the provincial level and strengthening the capacity of provincial S&T directorates.',
             'A key agenda item was the rollout plan for the updated PSTD performance evaluation framework. Regional directors engaged in breakout sessions to discuss implementation challenges, data collection protocols, and best practices for supporting provincial offices in meeting the new KPI standards.',

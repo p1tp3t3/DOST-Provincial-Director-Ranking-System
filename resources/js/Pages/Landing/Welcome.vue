@@ -71,7 +71,7 @@ const blogs = [
         tag:    'Events',
         date:   'May 15, 2025',
         title:  'Regional S&T Directors Summit: Highlights and Key Takeaways',
-        excerpt:'Officials from all 16 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
+        excerpt:'Officials from all 17 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
     },
 ];
 
