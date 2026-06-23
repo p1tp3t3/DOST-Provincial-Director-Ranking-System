@@ -1806,7 +1806,7 @@ watch(searchTarget, async (province) => {
 /* Performance Distribution card - fixed chart slot keeps page layout stable
    regardless of how many provinces are ranked in the active filter. */
 .bell-card-body {
-    height: 416px;
+    height: 560px;
     overflow: hidden;
     position: relative;
     padding: 4px 4px 0;
