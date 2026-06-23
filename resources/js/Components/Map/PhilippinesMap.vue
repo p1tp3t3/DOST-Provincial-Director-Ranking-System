@@ -283,6 +283,14 @@
             </div>
         </transition>
 
+        <!-- Reset view -->
+        <button class="reset-btn" @click="resetView" title="Reset map">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+        </button>
+
         <!-- Fullscreen toggle -->
         <button class="fs-btn" @click="toggleFullscreen" :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
             <svg v-if="!isFullscreen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1573,10 +1581,23 @@ onBeforeUnmount(() => {
 .fs-btn:hover { background: #f1f5f9; color: #1e293b; }
 .fs-btn svg   { width: 16px; height: 16px; }
 
+.reset-btn {
+    position: absolute; top: 10px; right: 50px; z-index: 1000;
+    width: 32px; height: 32px; padding: 6px;
+    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0; border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: #475569;
+    backdrop-filter: blur(4px); transition: background 0.15s, color 0.15s;
+}
+.reset-btn:hover { background: #f1f5f9; color: #1e293b; }
+.reset-btn svg   { width: 16px; height: 16px; }
+
 .ph-map-wrap:fullscreen .map-nav,
 .ph-map-wrap:-webkit-full-screen .map-nav { top: 14px; left: 14px; }
 .ph-map-wrap:fullscreen .fs-btn,
 .ph-map-wrap:-webkit-full-screen .fs-btn  { top: 14px; right: 14px; }
+.ph-map-wrap:fullscreen .reset-btn,
+.ph-map-wrap:-webkit-full-screen .reset-btn  { top: 14px; right: 54px; }
 .ph-map-wrap:fullscreen .map-info-panel,
 .ph-map-wrap:-webkit-full-screen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
 .ph-map-wrap:fullscreen .map-province-list-panel,
