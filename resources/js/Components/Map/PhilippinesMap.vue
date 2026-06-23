@@ -1176,15 +1176,15 @@ onMounted(async () => {
 
     map = L.map(mapEl.value, {
         center: HOME.center, zoom: HOME.zoom,
-        zoomControl: false, attributionControl: true,
+        zoomControl: false, attributionControl: false,
         scrollWheelZoom: false, zoomAnimation: true, fadeAnimation: true,
+        // Lock the view to the Philippines so panning can't drift off the country.
+        maxBounds: [[1.5, 114], [22.5, 128.5]], maxBoundsViscosity: 1.0, minZoom: 5,
     });
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd', maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    }).addTo(map);
+    // No tile basemap on purpose: we render only the Philippine province polygons,
+    // so no surrounding countries appear. The container background stands in for sea.
 
     const res     = await fetch('/geo/philippines-provinces.geojson');
     const geojson = await res.json();
@@ -1365,6 +1365,8 @@ onBeforeUnmount(() => {
 .ph-map {
     height: v-bind(height); width: 100%; z-index: 0;
     border-radius: 0 0 8px 8px;
+    /* No tile basemap - this soft blue-grey reads as sea around the islands. */
+    background: #dce5ed;
 }
 
 /* Fullscreen: keep the filter bar on top and let the map fill the rest */
