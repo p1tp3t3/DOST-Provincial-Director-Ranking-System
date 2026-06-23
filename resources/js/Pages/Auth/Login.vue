@@ -221,33 +221,33 @@ const features = [
 .prism-badge {
     display: inline-flex;
     align-items: center;
-    gap: 11px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
     border-radius: 999px;
-    padding: 9px 22px 9px 12px;
+    padding: 6px 16px 6px 9px;
 }
 .prism-badge-logo {
-    width: 30px;
-    height: 30px;
+    width: 20px;
+    height: 20px;
     object-fit: contain;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
 }
 .prism-badge-text {
     color: #fff;
-    font-size: 1.3rem;
-    font-weight: 900;
-    letter-spacing: 0.22em;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
     line-height: 1;
 }
 .prism-fullname {
     color: #fff;
-    font-size: 1.2rem;
-    font-weight: 600;
-    line-height: 1.45;
-    letter-spacing: 0.005em;
-    max-width: 440px;
-    opacity: 0.92;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    max-width: 360px;
+    opacity: 0.7;
 }
 
 /* Feature grid */
