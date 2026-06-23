@@ -55,7 +55,7 @@
                             <span class="text-body-2 font-weight-medium">{{ user.name }}</span>
                         </div>
                     </td>
-                    <td class="text-body-2 text-medium-emphasis">{{ user.employee_id ?? '—' }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ user.employee_id ?? '-' }}</td>
                     <td class="text-body-2">{{ user.email }}</td>
                     <td class="text-center">
                         <v-chip
@@ -69,7 +69,7 @@
                     </td>
                     <!-- Activation switch -->
                     <td class="text-center">
-                        <v-tooltip :text="getActivate(user) ? 'Active — click to deactivate' : 'Inactive — click to activate'" location="top">
+                        <v-tooltip :text="getActivate(user) ? 'Active - click to deactivate' : 'Inactive - click to activate'" location="top">
                             <template #activator="{ props: tip }">
                                 <v-switch
                                     v-bind="tip"
@@ -451,7 +451,7 @@ const toggleActivation = (user) => {
     const prev = getActivate(user);
     const next = !prev;
 
-    // Optimistic update — flip immediately, no page reload
+    // Optimistic update - flip immediately, no page reload
     localState.value = { ...localState.value, [user.id]: next };
     toggling.value   = user.id;
 

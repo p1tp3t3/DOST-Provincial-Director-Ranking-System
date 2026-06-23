@@ -241,7 +241,7 @@
                                 <v-icon size="15" color="medium-emphasis">{{ item.icon }}</v-icon>
                                 <div>
                                     <div class="text-caption text-medium-emphasis" style="font-size:10px; text-transform:uppercase; letter-spacing:.04em;">{{ item.label }}</div>
-                                    <div class="text-body-2 font-weight-medium">{{ item.value || '—' }}</div>
+                                    <div class="text-body-2 font-weight-medium">{{ item.value || '-' }}</div>
                                 </div>
                             </div>
                         </div>
@@ -590,7 +590,7 @@ const rules            = { required: (v) => !!v || 'This field is required.' };
 </style>
 
 <style>
-/* Override CropperJS v2 web-component theme — these inherit through shadow DOM */
+/* Override CropperJS v2 web-component theme - these inherit through shadow DOM */
 cropper-selection {
     --theme-color: rgba(255, 255, 255, 0.9);
 }

@@ -22,7 +22,7 @@ const features = [
 </script>
 
 <template>
-    <Head title="Sign In — PRISM" />
+    <Head title="Sign In" />
 
     <div class="login-root">
 
@@ -40,9 +40,9 @@ const features = [
                     <img src="/assets/logo.png" alt="DOST" class="logo-img" />
                 </div>
                 <div>
-                    <div class="text-h6 font-weight-black text-white" style="letter-spacing:0.05em;">PRISM</div>
+                    <div class="text-white font-weight-black" style="font-size:1.05rem; line-height:1.2; letter-spacing:0.02em;">Department of Science and Technology</div>
                     <div class="text-white" style="font-size:0.65rem; opacity:0.65; line-height:1.5; text-transform:uppercase; letter-spacing:0.06em;">
-                        Provincial Director Ranking and Information System for Management
+                        OneDOST4U - Solutions and Opportunities for All
                     </div>
                 </div>
             </div>
@@ -50,17 +50,15 @@ const features = [
             <!-- Center: Main content -->
             <div class="left-section flex-grow-1 d-flex flex-column justify-center" style="position:relative;">
 
-                <!-- Badge — DOST logo on the left, then the text -->
-                <div class="dost-badge mb-3">
-                    <img src="/assets/logo.png" alt="DOST" class="dost-badge-logo mr-2" />
-                    <span class="text-white" style="font-size:0.68rem; opacity:0.9; letter-spacing:0.06em; text-transform:uppercase;">Department of Science and Technology</span>
+                <!-- PRISM system brand -->
+                <div class="prism-badge mb-4">
+                    <img src="/assets/logo.png" alt="PRISM" class="prism-badge-logo" />
+                    <span class="prism-badge-text">PRISM</span>
                 </div>
 
-                <!-- DOST tagline — the system signature; readable but not loud -->
-                <div class="text-white mb-6" style="font-size:0.92rem; letter-spacing:0.01em;">
-                    <span style="font-weight:800;">OneDOST4U</span>
-                    <span style="opacity:0.55; margin:0 6px;">—</span>
-                    <span style="opacity:0.85; font-weight:500;">Solutions and Opportunities for All</span>
+                <!-- PRISM full name -->
+                <div class="prism-fullname mb-7">
+                    Provincial Director Ranking and Information System for Management
                 </div>
 
                 <!-- Headline -->
@@ -71,7 +69,7 @@ const features = [
                     Empowering provincial directors through transparent, evidence-based performance evaluation and recognition.
                 </div>
 
-                <!-- Features — 2 column grid -->
+                <!-- Features - 2 column grid -->
                 <div class="feat-grid">
                     <div
                         v-for="feat in features"
@@ -219,6 +217,36 @@ const features = [
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
 }
 
+/* PRISM brand lockup (center) */
+.prism-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;   /* size to content, not the full column width */
+}
+.prism-badge-logo {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+.prism-badge-text {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    line-height: 1;
+}
+.prism-fullname {
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    max-width: 360px;
+    opacity: 0.7;
+}
+
 /* Feature grid */
 .feat-grid {
     display: grid;
@@ -333,7 +361,7 @@ const features = [
     .left-section:last-child {
         border-right: none;
     }
-    /* Hide center & bottom sections on tablet — show only logo bar */
+    /* Hide center & bottom sections on tablet - show only logo bar */
     .left-section.flex-grow-1,
     .left-section:not(:first-child) {
         display: none !important;

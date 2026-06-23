@@ -187,7 +187,7 @@
                                             <span v-if="displayValue(kpi, 'target') != null" class="text-body-2 font-weight-medium" style="white-space:pre-line;">
                                                 {{ displayValue(kpi, 'target') }}
                                             </span>
-                                            <span v-else class="text-caption text-disabled">—</span>
+                                            <span v-else class="text-caption text-disabled">-</span>
                                         </td>
                                         <td class="text-center">
                                             <template v-if="displayValue(kpi, 'accomplished') != null">
@@ -199,7 +199,7 @@
                                                     style="height:auto; white-space:pre-line;"
                                                 >{{ displayValue(kpi, 'accomplished') }}</v-chip>
                                             </template>
-                                            <span v-else class="text-caption text-disabled">—</span>
+                                            <span v-else class="text-caption text-disabled">-</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -258,7 +258,7 @@
                         <v-chip v-if="item.status" size="x-small" variant="tonal" :color="item.status === 'permanent' ? 'teal' : 'orange'" class="text-capitalize font-weight-medium">
                             {{ item.status }}
                         </v-chip>
-                        <span v-else class="text-caption text-medium-emphasis">—</span>
+                        <span v-else class="text-caption text-medium-emphasis">-</span>
                     </template>
                     <template #item.actions>
                         <v-icon size="14" color="medium-emphasis">mdi-chevron-right</v-icon>
@@ -332,7 +332,7 @@ const CATEGORY_VISUALS = {
 const categoryIcon   = (code) => CATEGORY_VISUALS[code]?.icon  ?? 'mdi-chart-bar';
 const categoryAccent = (code) => CATEGORY_VISUALS[code]?.color ?? 'blue-grey';
 
-// Edit shortcut — visible only to super_admin since the editor route is
+// Edit shortcut - visible only to super_admin since the editor route is
 // behind the super-admin middleware. The encrypted province id is already
 // in the current URL (/province-directories/{id}), reuse it as-is.
 const page = usePage();
@@ -354,7 +354,7 @@ const headers = [
 
 const directorName = computed(() => {
     const p = profile.provincial_director?.profile;
-    if (!p) return '—';
+    if (!p) return '-';
     const middle = p.middle_name ? `${p.middle_name} ` : '';
     return `${p.first_name ?? ''} ${middle}${p.last_name ?? ''}`.trim();
 });
@@ -364,7 +364,7 @@ const employees = computed(() =>
         profile_id: u.id,
         id:         u.dost_employee_id ?? `#${u.id}`,
         name:       buildName(u.profile),
-        position:   u.profile?.employee_profile?.position ?? u.profile?.position ?? '—',
+        position:   u.profile?.employee_profile?.position ?? u.profile?.position ?? '-',
         status:     u.profile?.employee_profile?.status ?? null,
     }))
 );
@@ -380,7 +380,7 @@ const filtered = computed(() => {
 });
 
 const buildName = (p) => {
-    if (!p) return '—';
+    if (!p) return '-';
     const middle = p.middle_name ? `${p.middle_name} ` : '';
     return `${p.first_name ?? ''} ${middle}${p.last_name ?? ''}`.trim();
 };

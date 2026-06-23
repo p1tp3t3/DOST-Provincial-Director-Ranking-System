@@ -33,7 +33,7 @@
                         <div class="panel-hero">
                             <div class="panel-hero-row">
                                 <div class="panel-score-num" :style="{ color: panel.tierColor }">
-                                    {{ panel.score != null ? panel.score + '%' : '—' }}
+                                    {{ panel.score != null ? panel.score + '%' : '-' }}
                                 </div>
                                 <div class="panel-hero-status" :style="{ color: panel.tierColor }">
                                     {{ panel.tier }}<span v-if="panel.rank" class="panel-hero-rank">#{{ panel.rank }}</span>
@@ -248,7 +248,7 @@
                             <span class="plist-director">{{ region.provinceCount }} province{{ region.provinceCount !== 1 ? 's' : '' }}</span>
                         </div>
                         <span class="plist-score" :style="{ color: region.color }">
-                            {{ region.score != null ? region.score + '%' : '—' }}
+                            {{ region.score != null ? region.score + '%' : '-' }}
                         </span>
                     </div>
                 </div>
@@ -276,7 +276,7 @@
                             <span class="plist-director">{{ prov.director || 'Vacant' }}</span>
                         </div>
                         <span class="plist-score" :style="{ color: prov.color }">
-                            {{ prov.score != null ? prov.score + '%' : '—' }}
+                            {{ prov.score != null ? prov.score + '%' : '-' }}
                         </span>
                     </div>
                 </div>
@@ -318,7 +318,7 @@ const props = defineProps({
     selectedTier:     { type: String, default: 'all' },
     height:           { type: String, default: '460px' },
     // External filter values driven by the dashboard's sticky filter bar.
-    // 'all' / '' maps to "no filter" — the watchers below translate dashboard
+    // 'all' / '' maps to "no filter" - the watchers below translate dashboard
     // formats ('Luzon', 'Region I', 'Bohol') to the map's internal formats
     // ('luzon', region code 100000000, 'Bohol') and trigger the existing
     // smart-fly logic so the map zooms to match the picked scope.
@@ -348,43 +348,43 @@ const REGION_CODE_OVERRIDE = {
 };
 
 const REGION_LABELS = {
-    100000000:  'Region I — Ilocos',
-    200000000:  'Region II — Cagayan Valley',
-    300000000:  'Region III — Central Luzon',
-    400000000:  'Region IV-A — CALABARZON',
-    1700000000: 'Region IV-B — MIMAROPA',
-    500000000:  'Region V — Bicol',
-    600000000:  'Region VI — Western Visayas',
-    700000000:  'Region VII — Central Visayas',
-    800000000:  'Region VIII — Eastern Visayas',
-    [NIR_CODE]: 'NIR — Negros Island Region',
-    900000000:  'Region IX — Zamboanga Peninsula',
-    1000000000: 'Region X — Northern Mindanao',
-    1100000000: 'Region XI — Davao Region',
-    1200000000: 'Region XII — SOCCSKSARGEN',
-    1400000000: 'CAR — Cordillera',
-    1600000000: 'Region XIII — Caraga',
+    100000000:  'Region I - Ilocos',
+    200000000:  'Region II - Cagayan Valley',
+    300000000:  'Region III - Central Luzon',
+    400000000:  'Region IV-A - CALABARZON',
+    1700000000: 'Region IV-B - MIMAROPA',
+    500000000:  'Region V - Bicol',
+    600000000:  'Region VI - Western Visayas',
+    700000000:  'Region VII - Central Visayas',
+    800000000:  'Region VIII - Eastern Visayas',
+    [NIR_CODE]: 'NIR - Negros Island Region',
+    900000000:  'Region IX - Zamboanga Peninsula',
+    1000000000: 'Region X - Northern Mindanao',
+    1100000000: 'Region XI - Davao Region',
+    1200000000: 'Region XII - SOCCSKSARGEN',
+    1400000000: 'CAR - Cordillera',
+    1600000000: 'Region XIII - Caraga',
     1300000000: 'NCR',
 };
 
 const REGION_TO_ISLAND = {
-    100000000:  'luzon',    // Region I — Ilocos
-    200000000:  'luzon',    // Region II — Cagayan Valley
-    300000000:  'luzon',    // Region III — Central Luzon
-    400000000:  'luzon',    // Region IV-A — CALABARZON
-    1700000000: 'luzon',    // Region IV-B — MIMAROPA
-    500000000:  'luzon',    // Region V — Bicol
-    1400000000: 'luzon',    // CAR — Cordillera
+    100000000:  'luzon',    // Region I - Ilocos
+    200000000:  'luzon',    // Region II - Cagayan Valley
+    300000000:  'luzon',    // Region III - Central Luzon
+    400000000:  'luzon',    // Region IV-A - CALABARZON
+    1700000000: 'luzon',    // Region IV-B - MIMAROPA
+    500000000:  'luzon',    // Region V - Bicol
+    1400000000: 'luzon',    // CAR - Cordillera
     1300000000: 'luzon',    // NCR
-    600000000:  'visayas',  // Region VI — Western Visayas
-    700000000:  'visayas',  // Region VII — Central Visayas
-    800000000:  'visayas',  // Region VIII — Eastern Visayas
-    [NIR_CODE]: 'visayas',  // NIR — Negros Island Region
-    900000000:  'mindanao', // Region IX — Zamboanga Peninsula
-    1000000000: 'mindanao', // Region X — Northern Mindanao
-    1100000000: 'mindanao', // Region XI — Davao Region
-    1200000000: 'mindanao', // Region XII — SOCCSKSARGEN
-    1600000000: 'mindanao', // Region XIII — Caraga
+    600000000:  'visayas',  // Region VI - Western Visayas
+    700000000:  'visayas',  // Region VII - Central Visayas
+    800000000:  'visayas',  // Region VIII - Eastern Visayas
+    [NIR_CODE]: 'visayas',  // NIR - Negros Island Region
+    900000000:  'mindanao', // Region IX - Zamboanga Peninsula
+    1000000000: 'mindanao', // Region X - Northern Mindanao
+    1100000000: 'mindanao', // Region XI - Davao Region
+    1200000000: 'mindanao', // Region XII - SOCCSKSARGEN
+    1600000000: 'mindanao', // Region XIII - Caraga
     1900000000: 'mindanao', // BARMM (no DOST PSTD provinces; not a selectable region)
 };
 
@@ -404,8 +404,8 @@ const CSTC_REGION_CODE = {
     'MUNTAPARLAS': 1300000000,
     'PAMAMAZON':   1300000000,
     'PAMAMARISAN': 1300000000,
-    'ZCIC':         900000000,  // Region IX — Zamboanga Peninsula
-    'Davao City':  1100000000,  // Region XI — Davao Region
+    'ZCIC':         900000000,  // Region IX - Zamboanga Peninsula
+    'Davao City':  1100000000,  // Region XI - Davao Region
 };
 const cstcNamesForRegion = (regionCode) =>
     Object.entries(CSTC_REGION_CODE)
@@ -416,23 +416,26 @@ const cstcNamesForRegion = (regionCode) =>
 // provinces, matching RankingService's rank-percentile bucketing. For
 // aggregates (region / island averages) the bucket field doesn't apply, so we
 // fall back to score-threshold coloring.
-const BUCKET_COLOR = { Top: '#15803d', Average: '#ca8a04', Low: '#b91c1c' };
+// Gold / silver / bronze - matches the podium, charts, and leaderboard buckets.
+const BUCKET_COLOR = { Top: '#ca8a04', Average: '#64748b', Low: '#9a3412' };
 const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Low: 'Low Performers' };
 const tierInfo = (entry) => {
-    if (!entry) return { color: '#94a3b8', label: 'No data' };
-    if (entry.status === 'no_director') return { color: '#94a3b8', label: 'No director assigned' };
-    if (entry.status === 'no_data')     return { color: '#94a3b8', label: 'No data submitted' };
-    if (entry.bucket == null)           return { color: '#94a3b8', label: 'Unbucketed' };
-    return { color: BUCKET_COLOR[entry.bucket] ?? '#94a3b8', label: BUCKET_LABEL[entry.bucket] ?? '—' };
+    if (!entry) return { color: '#ffffff', label: 'No data' };
+    if (entry.status === 'no_director') return { color: '#ffffff', label: 'No director assigned' };
+    if (entry.status === 'no_data')     return { color: '#ffffff', label: 'No data submitted' };
+    if (entry.bucket == null)           return { color: '#ffffff', label: 'Unbucketed' };
+    if (!entry.score)                   return { color: '#ffffff', label: 'No score' };
+    return { color: BUCKET_COLOR[entry.bucket] ?? '#ffffff', label: BUCKET_LABEL[entry.bucket] ?? '-' };
 };
 const tierColor = (entry) => tierInfo(entry).color;
 
 // Score-threshold coloring for raw averages (regions, islands). Calibrated so
 // a typical weighted score range (~0-70%) splits roughly into thirds.
 const scoreColor = (score) => {
-    if (score >= 50) return '#15803d';
-    if (score >= 25) return '#ca8a04';
-    return '#b91c1c';
+    if (!score)      return '#ffffff';   // 0 / no data -> white
+    if (score >= 50) return '#ca8a04';   // gold
+    if (score >= 25) return '#64748b';   // silver
+    return '#9a3412';                    // bronze
 };
 
 // Full per-category breakdown for the side panel. Always returns CORE → FUNCTIONAL
@@ -541,7 +544,7 @@ const buildProvincePanel = (geoName) => {
 
     if (!entry) return {
         type: 'province', name: geoName, score: null, tier: 'No data',
-        tierColor: '#94a3b8', director: '—', category: null,
+        tierColor: '#94a3b8', director: '-', category: null,
         rank: null, year: props.selectedYear, categories: [], trend,
         region: null, provinceUrlId: null, directorId: null,
     };
@@ -589,7 +592,7 @@ const computeIslandRanking = () => {
         if (!buckets.has(island)) buckets.set(island, []);
         buckets.get(island).push(entry.score);
     }
-    // Include CSTC clusters in their parent island's bucket — Luzon's average
+    // Include CSTC clusters in their parent island's bucket - Luzon's average
     // shouldn't silently exclude NCR just because NCR has no province polygons.
     for (const [cstcName, regionCode] of Object.entries(CSTC_REGION_CODE)) {
         const island = REGION_TO_ISLAND[regionCode];
@@ -652,7 +655,7 @@ const buildIslandPanel = (islandValue) => {
                 ? Math.round(regScores.reduce((a, s) => a + s.score, 0) / regScores.length * 10) / 10
                 : null;
             const fullLabel = REGION_LABELS[code];
-            const shortLabel = fullLabel.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || fullLabel;
+            const shortLabel = fullLabel.replace(/^Region [IVXLCD\d-]+\s*-\s*/i, '').trim() || fullLabel;
             return {
                 code,
                 label:         shortLabel,
@@ -696,7 +699,7 @@ const buildIslandPanel = (islandValue) => {
 };
 
 // Average score per region across all regions present on the map, sorted desc.
-// Uses the broader rankingPool — same reason as island ranking: a region's
+// Uses the broader rankingPool - same reason as island ranking: a region's
 // rank should reflect every region in the country (or every region in its
 // island when the caller narrows by island), not just the regions surviving
 // the current Region/Province filter.
@@ -713,7 +716,7 @@ const computeRegionRanking = () => {
         if (!buckets.has(p.regionCode)) buckets.set(p.regionCode, []);
         buckets.get(p.regionCode).push(entry.score);
     }
-    // Pull CSTC clusters into their parent region's bucket too — without this,
+    // Pull CSTC clusters into their parent region's bucket too - without this,
     // NCR (which has no provinces in the basemap) would never appear in the
     // ranking and its region panel would show rank = null.
     for (const [cstcName, regionCode] of Object.entries(CSTC_REGION_CODE)) {
@@ -733,15 +736,15 @@ const computeRegionRanking = () => {
 
 const buildRegionPanel = (regionCode) => {
     const label = REGION_LABELS[regionCode] ?? `Region ${regionCode}`;
-    // short label: strip "Region X —" prefix for the header title
-    const shortLabel = label.replace(/^Region [IVXLCD\d-]+\s*—\s*/i, '').trim() || label;
+    // short label: strip "Region X -" prefix for the header title
+    const shortLabel = label.replace(/^Region [IVXLCD\d-]+\s*-\s*/i, '').trim() || label;
 
     const sm = scoreMap();
     const regionProvs = provinces.filter(p => p.regionCode === regionCode);
     const regionProvNames = regionProvs.map(p => GEO_TO_DB[p.name] ?? p.name);
 
     // Some regions also "own" CSTC clusters that sit outside the province
-    // layer — NCR is composed entirely of these. Include them as members so
+    // layer - NCR is composed entirely of these. Include them as members so
     // the region panel surfaces their score, count, best/worst, etc. instead
     // of treating NCR as an empty region.
     const regionCstcNames = cstcNamesForRegion(regionCode);
@@ -815,7 +818,7 @@ const buildCstcPanel = (cstcName) => {
 
     if (!entry) return {
         type: 'cstc', name: cstcName, score: null, tier: 'No data',
-        tierColor: '#94a3b8', director: '—', category: 'large',
+        tierColor: '#94a3b8', director: '-', category: 'large',
         rank: null, year: props.selectedYear, categories: [], trend,
         region: null, provinceUrlId: null, directorId: null,
     };
@@ -860,7 +863,7 @@ const styleForCstc = (feature, sm, selReg, selIsl) => {
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
 
     // CSTC clusters (e.g. Zamboanga City / ZCIC) overlap the province polygons in the
-    // basemap — Zamboanga City's land is baked into Zamboanga del Sur. With no score in
+    // basemap - Zamboanga City's land is baked into Zamboanga del Sur. With no score in
     // the active filter we render the cluster as a neutral cut-out so it masks the
     // province's highlight beneath it rather than inheriting that province's colour.
     if (!entry)
@@ -889,7 +892,11 @@ const styleFor = (feature, sm, selReg, selProv, selIsl) => {
 
     const dbName    = GEO_TO_DB[name] ?? name;
     const entry     = sm[dbName] ?? null;
-    const baseColor = entry ? tierColor(entry) : '#94a3b8';
+    const baseColor = entry ? tierColor(entry) : '#ffffff';
+    // Blank (no data / vacant / 0) provinces render white with a light outline
+    // so they stay visible against the basemap instead of disappearing.
+    const blank     = baseColor === '#ffffff';
+    const bd        = blank ? '#cbd5e1' : '#fff';
 
     const isSelectedProv = selProv && name === selProv;
     const isInSelRegion  = selReg  && regionCode === Number(selReg);
@@ -899,23 +906,23 @@ const styleFor = (feature, sm, selReg, selProv, selIsl) => {
     const hasIslandFilter = !!selIsl;
 
     if (isSelectedProv)
-        return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
+        return { fillColor: baseColor, weight: 3.5, color: bd, fillOpacity: blank ? 1 : 0.97 };
 
     if (hasRegFilter) {
         if (isInSelRegion)
             return hasProvFilter
-                ? { fillColor: baseColor, weight: 0.8, color: '#fff', fillOpacity: 0.45 }
-                : { fillColor: baseColor, weight: 1.2, color: '#fff', fillOpacity: 0.85 };
+                ? { fillColor: baseColor, weight: 0.8, color: bd, fillOpacity: blank ? 1 : 0.45 }
+                : { fillColor: baseColor, weight: 1.2, color: bd, fillOpacity: blank ? 1 : 0.85 };
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
     }
 
     if (hasIslandFilter) {
         if (isInSelIsland)
-            return { fillColor: baseColor, weight: 0.8, color: '#fff', fillOpacity: 0.85 };
+            return { fillColor: baseColor, weight: 0.8, color: bd, fillOpacity: blank ? 1 : 0.85 };
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
     }
 
-    return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.78 };
+    return { fillColor: baseColor, weight: 0.6, color: bd, fillOpacity: blank ? 1 : 0.78 };
 };
 
 const refreshStyle = () => {
@@ -927,7 +934,7 @@ const refreshStyle = () => {
 // ── Fly helpers ───────────────────────────────────────────────────────────────
 const HOME = { center: [12.2, 122.5], zoom: 5 };
 
-// smartFlyTo — used by FILTER-driven changes (Island/Region/Province from the
+// smartFlyTo - used by FILTER-driven changes (Island/Region/Province from the
 // top sticky bar). If the target isn't currently visible, it first pulls back
 // to overview so the user gets visual context, then flies in. Acceptable
 // here because the user explicitly changed scope.
@@ -950,9 +957,9 @@ const smartFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
     }
 };
 
-// softFlyTo — used by CLICK-driven changes (clicking on a province/CSTC or
+// softFlyTo - used by CLICK-driven changes (clicking on a province/CSTC or
 // picking from the panel's expand-list). Pan/zoom directly to the target
-// without the overview detour — clicking a nearby province should feel like
+// without the overview detour - clicking a nearby province should feel like
 // a gentle slide-over, not a "zoom-out-then-back-in" flourish.
 const softFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
     if (!map) return;
@@ -965,7 +972,7 @@ const softFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
 // province polygons; NCR has no province polygons at all (and a couple of other
 // regions have CSTC clusters that aren't represented as provinces), so we union
 // in the CSTC bounds when the region has cluster members. Returns null if the
-// region has neither — caller decides what to do.
+// region has neither - caller decides what to do.
 const regionBounds = (code) => {
     const regionProvs = provinces.filter(p => p.regionCode === code);
     let b = null;
@@ -982,7 +989,7 @@ const regionBounds = (code) => {
     return b;
 };
 
-// NCR's bounding box is ~25 km across — zooming to maxZoom 8 (the default for
+// NCR's bounding box is ~25 km across - zooming to maxZoom 8 (the default for
 // regions) would still show the whole of Luzon. Pick a tighter cap so users
 // actually see the four NCR clusters when they pick NCR from the filter bar.
 const regionMaxZoom = (code) => (code === 1300000000 ? 11 : 8);
@@ -1047,7 +1054,7 @@ const onProvinceChange = () => {
 // Maps the dashboard's region-short-name back to its numeric PSGC code so the
 // existing handlers don't need to change. Built from REGION_LABELS once.
 const REGION_NAME_TO_CODE = Object.fromEntries(
-    Object.entries(REGION_LABELS).map(([code, label]) => [label.split(' — ')[0], Number(code)])
+    Object.entries(REGION_LABELS).map(([code, label]) => [label.split(' - ')[0], Number(code)])
 );
 
 watch(() => props.island, (v) => {
@@ -1294,7 +1301,7 @@ watch(panel, (p) => {
 });
 // Sparkline highlights the active year, so the panel needs to rebuild when the
 // year changes (especially during time-lapse playback). Trends prop only
-// updates if a full reload happens — usually not during the session.
+// updates if a full reload happens - usually not during the session.
 watch(() => props.selectedYear, () => { rebuildPanel(); });
 watch(() => props.trends,       () => { rebuildPanel(); }, { deep: true });
 
@@ -1318,7 +1325,7 @@ onBeforeUnmount(() => {
 .ph-map-root:fullscreen .ph-map-wrap, .ph-map-root:-webkit-full-screen .ph-map-wrap { flex: 1; min-height: 0; }
 .ph-map-root:fullscreen .ph-map, .ph-map-root:-webkit-full-screen .ph-map { height: 100%; border-radius: 0; }
 
-/* ── Filter bar (Island / Region / Province) — matches the other dashboard filter rows ── */
+/* ── Filter bar (Island / Region / Province) - matches the other dashboard filter rows ── */
 .map-filter-bar {
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
     padding: 10px 16px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06);
@@ -1414,7 +1421,7 @@ onBeforeUnmount(() => {
     flex: 1; display: flex; flex-direction: column; justify-content: space-between;
 }
 
-/* Hero: large score number paired with inline tier/rank — no chips */
+/* Hero: large score number paired with inline tier/rank - no chips */
 .panel-hero          { display: flex; flex-direction: column; gap: 6px; }
 .panel-hero-row      { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .panel-score-num     { font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
@@ -1425,7 +1432,7 @@ onBeforeUnmount(() => {
 }
 .panel-score-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; opacity: 0.85; }
 
-/* Section labels — small uppercase tags above each block */
+/* Section labels - small uppercase tags above each block */
 .panel-section          { display: flex; flex-direction: column; gap: 6px; }
 .panel-section-header   { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .panel-section-label {
@@ -1433,7 +1440,7 @@ onBeforeUnmount(() => {
     letter-spacing: 0.06em; color: #94a3b8;
 }
 
-/* Category rows — flat list, ▲/▼/· markers, score on the right */
+/* Category rows - flat list, ▲/▼/· markers, score on the right */
 .cat-rows { display: flex; flex-direction: column; gap: 1px; }
 .cat-row {
     display: grid;
@@ -1455,7 +1462,7 @@ onBeforeUnmount(() => {
 /* Trend delta badge in the section header */
 .trend-delta { font-size: 11px; font-weight: 700; }
 
-/* Shared classes — also used by the Island + Region panel variants */
+/* Shared classes - also used by the Island + Region panel variants */
 .panel-divider { height: 1px; background: #f1f5f9; margin: 0 -14px; }
 .panel-row {
     display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;

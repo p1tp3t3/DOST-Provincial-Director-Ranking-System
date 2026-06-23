@@ -203,7 +203,7 @@
                 <tr>
                     <td style="vertical-align:top;">
                         <h1>Activity Logs Report</h1>
-                        <div class="subtitle">PRISM &mdash; DOST</div>
+                        <div class="subtitle">PRISM - DOST</div>
                     </td>
                     <td style="text-align:right; vertical-align:top;" class="meta">
                         <div>Generated: {{ $generated }}</div>
@@ -217,7 +217,7 @@
     <!-- Filter summary -->
     <table class="filter-table">
         <tr>
-            <td>Date Range: <strong>{{ $date_from }}</strong> &mdash; <strong>{{ $date_to }}</strong></td>
+            <td>Date Range: <strong>{{ $date_from }}</strong> - <strong>{{ $date_to }}</strong></td>
             <td>Action Type: <strong>{{ ucfirst($type) }}</strong></td>
             <td>Total Records: <strong>{{ count($logs) }}</strong></td>
         </tr>
@@ -286,8 +286,8 @@
     <div class="footer">
         <table>
             <tr>
-                <td style="text-align:left;">DOST &mdash; PRISM</td>
-                <td style="text-align:right;">Confidential &mdash; For Internal Use Only</td>
+                <td style="text-align:left;">DOST - PRISM</td>
+                <td style="text-align:right;">Confidential - For Internal Use Only</td>
             </tr>
         </table>
     </div>

@@ -1,5 +1,5 @@
 <template>
-    <Head :title="`Facebook Posts — ${director.name}`" />
+    <Head :title="`Facebook Posts - ${director.name}`" />
     <div class="d-flex flex-column gap-3">
 
         <!-- Breadcrumb -->
@@ -92,7 +92,7 @@
                                 <v-icon size="12" class="me-1">mdi-open-in-new</v-icon>
                                 {{ truncateUrl(row.post_url) }}
                             </a>
-                            <span v-else class="text-medium-emphasis">—</span>
+                            <span v-else class="text-medium-emphasis">-</span>
                         </td>
                         <td class="text-right">
                             <v-btn
@@ -295,7 +295,7 @@ const doDelete = () => {
 const goBack = () => { router.visit(props.return_url); };
 
 const formatDate = (s) => {
-    if (!s) return '—';
+    if (!s) return '-';
     const d = new Date(s);
     if (isNaN(d)) return s;
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
