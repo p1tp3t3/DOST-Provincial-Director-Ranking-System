@@ -2,7 +2,12 @@
     <div ref="wrapEl" class="ph-map-root">
         <!-- Island / Region / Province filters are operated by the top sticky
              filter bar in the parent dashboard. The map only renders here. -->
-        <div class="ph-map-wrap">
+        <!-- Fullscreen is a CSS pseudo-fullscreen (fixed overlay) teleported to
+             <body>. The native Fullscreen API renders black when an ancestor has
+             a transform / filter / backdrop-filter (top-layer promotion bug),
+             which is exactly the case inside the dashboard shell. -->
+        <Teleport to="body" :disabled="!isFullscreen">
+        <div ref="fsEl" class="ph-map-wrap" :class="{ 'is-fullscreen': isFullscreen }">
         <div ref="mapEl" class="ph-map"></div>
 
         <!-- Info Panel -->
@@ -303,11 +308,12 @@
             </svg>
         </button>
         </div>
+        </Teleport>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -516,6 +522,7 @@ const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51
 // ── Refs ──────────────────────────────────────────────────────────────────────
 const mapEl        = ref(null);
 const wrapEl       = ref(null);
+const fsEl         = ref(null);
 const isFullscreen = ref(false);
 const ready        = ref(false);
 const selIsland    = ref('');
@@ -1161,14 +1168,51 @@ const resetView = () => {
 };
 
 // ── Fullscreen ────────────────────────────────────────────────────────────────
+// True OS-level fullscreen via the native Fullscreen API, but requested only
+// AFTER the map is teleported to <body>. Requesting it in place renders black,
+// because the dashboard shell has transform/filter/backdrop-filter ancestors and
+// Chrome can't promote such an element to the top layer. Teleporting first
+// removes those ancestors; a CSS fixed overlay (.is-fullscreen) is the fallback
+// if the native API is blocked.
+const enterFullscreen = async () => {
+    isFullscreen.value = true;     // teleports to <body> + applies the overlay
+    await nextTick();              // keeps the click's user activation (microtask)
+    try {
+        await fsEl.value?.requestFullscreen();
+    } catch {
+        /* Native API blocked — the fixed overlay still covers the viewport. */
+    }
+};
+const exitFullscreen = async () => {
+    try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+    } catch { /* ignore */ }
+    isFullscreen.value = false;
+};
 const toggleFullscreen = () => {
-    if (!document.fullscreenElement) wrapEl.value?.requestFullscreen();
-    else document.exitFullscreen();
+    isFullscreen.value ? exitFullscreen() : enterFullscreen();
 };
+const onEsc = (e) => { if (e.key === 'Escape') exitFullscreen(); };
+// Browser-driven exit (Esc / F11) and the resize on enter/exit: keep state and
+// Leaflet's sizing in sync.
 const onFullscreenChange = () => {
-    isFullscreen.value = !!document.fullscreenElement;
-    setTimeout(() => map?.invalidateSize(), 100);
+    if (!document.fullscreenElement && isFullscreen.value) isFullscreen.value = false;
+    requestAnimationFrame(() => map?.invalidateSize());
 };
+
+watch(isFullscreen, async (on) => {
+    if (on) {
+        document.addEventListener('keydown', onEsc);
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.removeEventListener('keydown', onEsc);
+        document.body.style.overflow = '';
+    }
+    // Wait for the teleport/layout to settle, then let Leaflet recompute its size
+    // for the new container dimensions (otherwise tiles stay sized to the old box).
+    await nextTick();
+    requestAnimationFrame(() => map?.invalidateSize());
+});
 
 // ── Mount ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
@@ -1354,6 +1398,8 @@ watch(() => props.trends,       () => { rebuildPanel(); }, { deep: true });
 
 onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', onFullscreenChange);
+    document.removeEventListener('keydown', onEsc);
+    document.body.style.overflow = '';
     map?.remove();
 });
 </script>
@@ -1367,10 +1413,13 @@ onBeforeUnmount(() => {
     border-radius: 0 0 8px 8px;
 }
 
-/* Fullscreen: keep the filter bar on top and let the map fill the rest */
-.ph-map-root:fullscreen, .ph-map-root:-webkit-full-screen { background: #fff; display: flex; flex-direction: column; }
-.ph-map-root:fullscreen .ph-map-wrap, .ph-map-root:-webkit-full-screen .ph-map-wrap { flex: 1; min-height: 0; }
-.ph-map-root:fullscreen .ph-map, .ph-map-root:-webkit-full-screen .ph-map { height: 100%; border-radius: 0; }
+/* Pseudo-fullscreen: the .ph-map-wrap is teleported to <body> and pinned over
+   the viewport. Avoids the native Fullscreen API's black-screen bug under
+   transformed/filtered ancestors. */
+.ph-map-wrap.is-fullscreen {
+    position: fixed; inset: 0; z-index: 3000; background: #fff;
+}
+.ph-map-wrap.is-fullscreen .ph-map { height: 100%; border-radius: 0; }
 
 /* ── Filter bar (Island / Region / Province) - matches the other dashboard filter rows ── */
 .map-filter-bar {
@@ -1592,16 +1641,11 @@ onBeforeUnmount(() => {
 .reset-btn:hover { background: #f1f5f9; color: #1e293b; }
 .reset-btn svg   { width: 16px; height: 16px; }
 
-.ph-map-wrap:fullscreen .map-nav,
-.ph-map-wrap:-webkit-full-screen .map-nav { top: 14px; left: 14px; }
-.ph-map-wrap:fullscreen .fs-btn,
-.ph-map-wrap:-webkit-full-screen .fs-btn  { top: 14px; right: 14px; }
-.ph-map-wrap:fullscreen .reset-btn,
-.ph-map-wrap:-webkit-full-screen .reset-btn  { top: 14px; right: 54px; }
-.ph-map-wrap:fullscreen .map-info-panel,
-.ph-map-wrap:-webkit-full-screen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
-.ph-map-wrap:fullscreen .map-province-list-panel,
-.ph-map-wrap:-webkit-full-screen .map-province-list-panel { bottom: 32px; right: 324px; }
+.ph-map-wrap.is-fullscreen .map-nav { top: 14px; left: 14px; }
+.ph-map-wrap.is-fullscreen .fs-btn  { top: 14px; right: 14px; }
+.ph-map-wrap.is-fullscreen .reset-btn  { top: 14px; right: 54px; }
+.ph-map-wrap.is-fullscreen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
+.ph-map-wrap.is-fullscreen .map-province-list-panel { bottom: 32px; right: 324px; }
 
 /* ── Panel slide-in transition ─────────────── */
 .panel-slide-enter-active { transition: transform 0.22s ease, opacity 0.22s ease; }
