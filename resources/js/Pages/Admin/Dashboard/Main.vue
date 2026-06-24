@@ -1118,7 +1118,7 @@ const bellCurve = computed(() => {
 
 // Which display: 'bars' (proportional 20/70/10 blocks) or 'bell' (shaded curve).
 // Both views show the same Top/Average/Low data and share the side list below.
-const chartView = ref('bell');
+const chartView = ref('bars');
 
 // Region interaction: hovering a region/block previews its provinces in the side
 // list; clicking locks it open (click the same one again, or another, to change).
