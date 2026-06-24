@@ -1212,12 +1212,19 @@ const top10Options = computed(() => makeHorizOptions(top10Data.value, true));
 const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
 const underOptions = computed(() => makeHorizOptions(underData.value, true));
 const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
-const avgOptions   = computed(() => makeHorizOptions(avgData.value));
+// Average uses the same "big" bar styling as Top/Low so the bars match in size.
+const avgOptions   = computed(() => makeHorizOptions(avgData.value, true));
 const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
 
-// ~26px per bar keeps labels legible - Average can have 40+ entries at All Tiers,
-// so a fixed height would squash bars; render at natural height and scroll.
-const avgChartHeight = computed(() => Math.max(340, avgData.value.names.length * 26 + 40));
+// Average can hold far more provinces than Top/Low. Size each bar so AVG_VISIBLE
+// (16, the Top chart's max) fit in the column at once at the same bar size as Top,
+// and let the wrapper scroll to reveal the rest. Floor at the column height so a
+// small Average bucket still fills the column exactly like Top/Low.
+const AVG_COL_HEIGHT = 500;
+const AVG_VISIBLE    = 16;
+const avgChartHeight = computed(() =>
+    Math.max(AVG_COL_HEIGHT, Math.ceil(avgData.value.names.length * (AVG_COL_HEIGHT / AVG_VISIBLE))),
+);
 
 
 // ── Trend view: weighted score per province across years ──────────────────
