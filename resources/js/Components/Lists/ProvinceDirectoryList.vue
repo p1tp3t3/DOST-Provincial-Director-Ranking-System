@@ -200,6 +200,11 @@ const tableHeaders = [
     { title: '',                  key: 'actions',               sortable: false, align: 'end', width: '40px' },
 ];
 
+// Group provinces by size category, then alphabetically within each group, so the
+// CSTC clusters (CAMANAVA, PAMAMAZON, ...) sit with the other Large provinces
+// instead of floating to the top in raw DB order.
+const CATEGORY_ORDER = { micro: 0, small: 1, medium: 2, large: 3 };
+
 const filtered = computed(() => {
     let data = props.list;
     const q = search.value.toLowerCase().trim();
@@ -212,7 +217,12 @@ const filtered = computed(() => {
     if (selectedCategory.value) {
         data = data.filter(item => item.category === selectedCategory.value);
     }
-    return data;
+    return [...data].sort((a, b) => {
+        const ca = CATEGORY_ORDER[a.category] ?? 99;
+        const cb = CATEGORY_ORDER[b.category] ?? 99;
+        if (ca !== cb) return ca - cb;
+        return (a.name ?? '').localeCompare(b.name ?? '');
+    });
 });
 
 const palette = ['#5C6BC0','#42A5F5','#26A69A','#66BB6A','#FFA726','#EC407A','#AB47BC','#78909C'];
