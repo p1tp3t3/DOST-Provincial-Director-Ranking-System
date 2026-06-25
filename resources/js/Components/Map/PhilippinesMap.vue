@@ -1164,7 +1164,7 @@ const resetView = () => {
     map?.stop();
     refreshStyle();
     refreshCstcStyle();
-    map?.flyTo(HOME.center, HOME.zoom, { duration: 1.0, easeLinearity: 0.3 });
+    map?.flyTo(HOME.center, HOME.zoom + (isFullscreen.value ? FS_ZOOM_BOOST : 0), { duration: 1.0, easeLinearity: 0.3 });
 };
 
 // ── Fullscreen ────────────────────────────────────────────────────────────────
@@ -1193,6 +1193,10 @@ const toggleFullscreen = () => {
     isFullscreen.value ? exitFullscreen() : enterFullscreen();
 };
 const onEsc = (e) => { if (e.key === 'Escape') exitFullscreen(); };
+// Extra zoom levels applied while fullscreen. The fullscreen canvas is ~2x the
+// embedded card in each dimension, which is one Leaflet zoom level — so without
+// this the Philippines would render tiny on the big canvas.
+const FS_ZOOM_BOOST = 1;
 // Browser-driven exit (Esc / F11) and the resize on enter/exit: keep state and
 // Leaflet's sizing in sync.
 const onFullscreenChange = () => {
@@ -1211,7 +1215,13 @@ watch(isFullscreen, async (on) => {
     // Wait for the teleport/layout to settle, then let Leaflet recompute its size
     // for the new container dimensions (otherwise tiles stay sized to the old box).
     await nextTick();
-    requestAnimationFrame(() => map?.invalidateSize());
+    requestAnimationFrame(() => {
+        if (!map) return;
+        map.invalidateSize();
+        // Compensate for the canvas resize so the framing matches the embedded
+        // card instead of the map turning tiny (fullscreen) or oversized (exit).
+        map.setZoom(map.getZoom() + (on ? FS_ZOOM_BOOST : -FS_ZOOM_BOOST), { animate: false });
+    });
 });
 
 // ── Mount ─────────────────────────────────────────────────────────────────────
@@ -1463,7 +1473,7 @@ onBeforeUnmount(() => {
 /* ── Info panel ────────────────────────────── */
 .map-info-panel {
     position: absolute; bottom: 28px; right: 10px; z-index: 1000;
-    width: 290px;
+    width: 320px;
     background: rgba(255,255,255,0.97);
     border: 1px solid #e2e8f0; border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.14);
@@ -1481,16 +1491,16 @@ onBeforeUnmount(() => {
 .panel-header-main   { flex: 1; min-width: 0; }
 .panel-caption {
     display: flex; align-items: center; gap: 5px;
-    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; margin-bottom: 4px;
 }
 .panel-caption-tier { color: #6366f1; }
 .panel-caption-sep  { color: #cbd5e1; font-weight: 400; }
 .panel-caption-year { color: #94a3b8; }
 
-.panel-title    { font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.panel-subtitle { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.3; }
-.panel-region-tag { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
+.panel-title    { font-size: 21px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.panel-subtitle { font-size: 14.5px; color: #64748b; margin-top: 3px; line-height: 1.3; }
+.panel-region-tag { font-size: 13px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
 .panel-name-link {
     text-decoration: none !important; color: inherit; display: block;
     transition: color 0.15s;
@@ -1520,8 +1530,8 @@ onBeforeUnmount(() => {
 /* Hero: large score number paired with inline tier/rank - no chips */
 .panel-hero          { display: flex; flex-direction: column; gap: 6px; }
 .panel-hero-row      { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.panel-score-num     { font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
-.panel-hero-status   { font-size: 11.5px; font-weight: 600; line-height: 1.3; text-align: right; }
+.panel-score-num     { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.panel-hero-status   { font-size: 14px; font-weight: 600; line-height: 1.3; text-align: right; }
 .panel-hero-rank     { font-weight: 700; margin-left: 4px; }
 .panel-score-bar-wrap {
     height: 4px; background: #f1f5f9; border-radius: 3px; overflow: hidden;
@@ -1532,7 +1542,7 @@ onBeforeUnmount(() => {
 .panel-section          { display: flex; flex-direction: column; gap: 6px; }
 .panel-section-header   { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .panel-section-label {
-    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: #94a3b8;
 }
 
@@ -1547,16 +1557,16 @@ onBeforeUnmount(() => {
     border-top: 1px solid #f1f5f9;
 }
 .cat-row:first-child { border-top: none; }
-.cat-row-marker      { color: #cbd5e1; text-align: center; font-size: 11px; line-height: 1; }
-.cat-row-name        { font-size: 12px; color: #475569; }
-.cat-row-score       { font-size: 12px; font-weight: 700; color: #0f172a; }
+.cat-row-marker      { color: #cbd5e1; text-align: center; font-size: 13px; line-height: 1; }
+.cat-row-name        { font-size: 14.5px; color: #475569; }
+.cat-row-score       { font-size: 14.5px; font-weight: 700; color: #0f172a; }
 .cat-row--top .cat-row-marker { color: #16a34a; }
 .cat-row--top .cat-row-score  { color: #15803d; }
 .cat-row--bottom .cat-row-marker { color: #dc2626; }
 .cat-row--bottom .cat-row-score  { color: #b91c1c; }
 
 /* Trend delta badge in the section header */
-.trend-delta { font-size: 11px; font-weight: 700; }
+.trend-delta { font-size: 13.5px; font-weight: 700; }
 
 /* Shared classes - also used by the Island + Region panel variants */
 .panel-divider { height: 1px; background: #f1f5f9; margin: 0 -14px; }
@@ -1607,7 +1617,7 @@ onBeforeUnmount(() => {
 .panel-trend-years {
     display: flex;
     justify-content: space-between;
-    font-size: 9.5px;
+    font-size: 11.5px;
     color: #94a3b8;
     font-weight: 600;
     padding: 0 4px;
@@ -1644,7 +1654,7 @@ onBeforeUnmount(() => {
 .ph-map-wrap.is-fullscreen .map-nav { top: 14px; left: 14px; }
 .ph-map-wrap.is-fullscreen .fs-btn  { top: 14px; right: 14px; }
 .ph-map-wrap.is-fullscreen .reset-btn  { top: 14px; right: 54px; }
-.ph-map-wrap.is-fullscreen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
+.ph-map-wrap.is-fullscreen .map-info-panel { bottom: 32px; right: 14px; width: 330px; }
 .ph-map-wrap.is-fullscreen .map-province-list-panel { bottom: 32px; right: 324px; }
 
 /* ── Panel slide-in transition ─────────────── */
