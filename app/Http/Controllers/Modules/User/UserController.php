@@ -10,6 +10,7 @@ use App\Http\Resources\UserResource;
 use App\Jobs\GenerateEmployeeAccount;
 use App\Models\ActivityLog;
 use App\Models\Province;
+use App\Models\Region;
 use App\Jobs\VerifyCSVJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -107,10 +108,17 @@ class UserController extends Controller
 
     public function destroy(int $id)
     {
-        $user = User::with('profile')->findOrFail($id);
+        $actor = Auth::user();
+        $user  = User::with('profile')->findOrFail($id);
 
         if ($user->id === Auth::id()) {
             return response()->json(['message' => 'You cannot delete your own account.'], 403);
+        }
+
+        // Provincial admins are scoped to their own province, same as the user
+        // list and manual registration — they can't reach across provinces.
+        if ($actor->role === 'provincial_admin' && $user->province_id !== $actor->province_id) {
+            return response()->json(['message' => 'You can only delete users in your own province.'], 403);
         }
 
         DB::beginTransaction();
@@ -194,10 +202,14 @@ class UserController extends Controller
     public function store(UserRegistrationRequest $request)
     {
         $data = $request->validated();
+        $actor = Auth::user();
 
         DB::beginTransaction();
         try {
-            $province = Province::findOrFail($data['province']);
+            // Provincial admins can only register into their own province — never
+            // trust a client-submitted value for them, even if one were sent.
+            $provinceId = $actor->role === 'provincial_admin' ? $actor->province_id : ($data['province'] ?? null);
+            $province   = Province::findOrFail($provinceId);
 
             $user = User::create([
                 'role'             => $data['role'],
@@ -210,20 +222,26 @@ class UserController extends Controller
             $user->provinces()->attach($province->id);
 
             $profileId = Profile::insertGetId([
-                'user_id'            => $user->id,
-                'first_name'         => $data['first_name'],
-                'middle_name'        => $data['middle_name'],
-                'last_name'          => $data['last_name'],
-                'prefix'             => $data['prefix'],
-                'suffix'             => $data['suffix'],
-                'length_of_service'  => $data['length_of_service'] ?? '',
+                'user_id'              => $user->id,
+                'first_name'           => $data['first_name'],
+                'middle_name'          => $data['middle_name'],
+                'last_name'            => $data['last_name'],
+                'prefix'               => $data['prefix'],
+                'suffix'               => $data['suffix'] ?? null,
+                'length_of_service'    => $data['length_of_service'] ?? '',
+                // Required NOT NULL json column with no DB default — manual
+                // registration doesn't collect this yet, so seed an empty list.
+                'education_attainment' => json_encode([]),
             ]);
 
             if ($data['role'] === 'employee') {
                 EmployeeProfile::insert([
-                    'profile_id' => $profileId,
-                    'position'   => $data['position'],
-                    'status'     => $data['status'],
+                    'profile_id'          => $profileId,
+                    'position'            => $data['position'],
+                    'status'              => $data['status'],
+                    // Required NOT NULL json column with no DB default — manual
+                    // registration doesn't collect this yet, so seed an empty list.
+                    'work_specification'  => json_encode([]),
                 ]);
             }
 
@@ -457,7 +475,7 @@ class UserController extends Controller
     public function get_users(?string $search = null, ?string $role = null)
     {
         $data = User::has('profile')
-                    ->with(['profile', 'provinces', 'region'])
+                    ->with(['profile', 'provinces.region', 'region'])
                     ->when($search, function ($q, $search) {
                         $q->where(function ($q) use ($search) {
                             $q->whereHas('profile', fn($p) =>
@@ -469,9 +487,14 @@ class UserController extends Controller
                     })
                     ->when($role, fn($q, $role) => $q->where('role', $role));
 
-        $data = auth()->user()->province_id
-                    ? $data->whereProvince(auth()->user()->province_id)
-                    : $data;
+        $actor = auth()->user();
+
+        if ($actor->role === 'regional_admin') {
+            $region = Region::with('provinces')->findOrFail($actor->region_id);
+            $data->whereProvinceIn($region->provinces->pluck('id')->toArray());
+        } elseif ($actor->province_id) {
+            $data->whereProvince($actor->province_id);
+        }
 
         $data = $data->latest('created_at')
                     ->paginate(20)

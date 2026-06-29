@@ -34,6 +34,13 @@ class ProvinceController extends Controller
     public function province_profile_index($id) {
         $decryptedId = Crypt::decrypt($id);
 
+        if (auth()->user()->role === 'regional_admin') {
+            $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
+            if (!$region->provinces->pluck('id')->contains((int) $decryptedId)) {
+                abort(403);
+            }
+        }
+
         $data = Province::with([
                             'directorAssignments.profile',
                             'users' => fn($q) => $q->where('role', 'employee')->with('profile.employeeProfile'),

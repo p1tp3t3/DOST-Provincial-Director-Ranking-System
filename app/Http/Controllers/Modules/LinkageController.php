@@ -112,8 +112,8 @@ class LinkageController extends Controller
         ]);
     }
 
-    // Provincial sub admins can only manage linkages for their own province's director;
-    // super admin can manage any director. Sub admin role is enforced by route middleware.
+    // Provincial admins can only manage linkages for their own province's director;
+    // super admin can manage any director. Role is enforced by route middleware.
     private function authorizeDirector(int $directorId): User
     {
         $user     = Auth::user();
@@ -122,7 +122,7 @@ class LinkageController extends Controller
             ->with('profile')
             ->firstOrFail();
 
-        if ($user->role === 'provincial_sub_admin' && $director->province_id !== $user->province_id) {
+        if ($user->role === 'provincial_admin' && $director->province_id !== $user->province_id) {
             abort(403);
         }
 
@@ -167,7 +167,7 @@ class LinkageController extends Controller
     private function returnUrlFor(int $directorId, int $year): string
     {
         $user = Auth::user();
-        if ($user->role === 'provincial_sub_admin') {
+        if ($user->role === 'provincial_admin') {
             return "/provincial-kpi/{$year}";
         }
         // super admin returns to the province-keyed edit screen

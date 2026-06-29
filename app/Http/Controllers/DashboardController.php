@@ -278,7 +278,7 @@ class DashboardController extends Controller
             'total_directors'            => User::where('role', 'provincial_director')->whereProvinceIn($provinceIds)->count(),
             'total_employees'            => User::where('role', 'employee')->whereProvinceIn($provinceIds)->count(),
             'active_reporting_provinces' => $activeProvinces,
-            ...self::build_ranking_payload(),
+            ...self::build_ranking_payload($provinceIds),
         ]);
     }
 

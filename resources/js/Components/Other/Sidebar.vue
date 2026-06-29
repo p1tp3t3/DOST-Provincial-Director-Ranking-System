@@ -18,6 +18,7 @@ import {
     RiFolder2Line,
     RiEdit2Fill,
     RiRoadMapFill,
+    RiLockUnlockFill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -68,6 +69,7 @@ const tabs = computed(() => {
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
+                { name: 'User List',            href: '/users',                icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
                 { name: 'Reports',              href: '/sub-admin-report',              icon: RiFileChartFill  },
             ];
@@ -98,7 +100,8 @@ const tabs = computed(() => {
             return [
                 { name: 'Dashboard',            href: '/dashboard',                  icon: RiDashboard2Fill },
                 { name: 'Province Directories', href: '/province-directories',       icon: RiFolder2Fill    },
-                { name: 'Performance Map',       href: '/regional-performance-map',   icon: RiRoadMapFill    },
+                { name: 'User List',             href: '/users',                      icon: RiTeamFill       },
+                { name: 'KPI Edit Requests',      href: '/regional-kpi-edit-requests', icon: RiLockUnlockFill },
                 { name: 'Activity Logs',         href: '/activity-logs',              icon: RiListView       },
                 { name: 'Reports',               href: '/regional-admin-report',      icon: RiFileChartFill  },
                 { name: 'My Profile',            href: '/profile',                    icon: RiUser2Fill      },

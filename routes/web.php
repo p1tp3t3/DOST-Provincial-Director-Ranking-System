@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPIDataController;
+use App\Http\Controllers\Modules\KpiEditAccessController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
@@ -71,8 +72,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // ── Super Admin only ───────────────────────────────────────
     Route::middleware('super-admin')->group(function () {
-        Route::put('/users/{id}',    [UserController::class, 'update']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        Route::put('/users/{id}', [UserController::class, 'update']);
 
         Route::get('/maintenance',                                    [MaintenanceController::class, 'index']);
         Route::post('/maintenance/backup',                            [MaintenanceController::class, 'create_backup']);
@@ -109,9 +109,16 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/activity-logs/report', [ActivityLogController::class, 'generate_logs_report']);
     });
 
+    // Read-only user list also available to Sub Admin (nationwide) and Regional
+    // Admin (scoped to their own region); management actions below stay
+    // restricted to Super Admin/Provincial Admin.
+    Route::middleware('role:super_admin,sub_admin,provincial_admin,regional_admin')->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+    });
+
     // ── Super Admin + Provincial Admin ─────────────────────────
     Route::middleware('role:super_admin,provincial_admin')->group(function () {
-        Route::get('/users',                                           [UserController::class, 'index']);
+        Route::delete('/users/{id}',                                   [UserController::class, 'destroy']);
         Route::patch('/users/{id}/toggle-activation',                  [UserController::class, 'toggle_activation']);
 
         Route::get('/users/create',                                    [UserController::class, 'manual_registration_index']);
@@ -139,6 +146,12 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
         Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
         Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
+
+        // KPI edit access requests — approve/reject a provincial admin's request
+        // for an extra edit once their free edit for a year/type is spent.
+        Route::get('/regional-kpi-edit-requests',                [KpiEditAccessController::class, 'index']);
+        Route::patch('/regional-kpi-edit-requests/{id}/approve', [KpiEditAccessController::class, 'approve']);
+        Route::patch('/regional-kpi-edit-requests/{id}/reject',  [KpiEditAccessController::class, 'reject']);
     });
 
     // ── Provincial Admin only ─────────────────────────────────
@@ -149,14 +162,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     // ── Provincial Admin only (KPI editor) ────────────────────
     Route::middleware('role:provincial_admin')->group(function () {
-        Route::get('/provincial-kpi/{year?}',          [KPIDataController::class, 'provincial_index']);
-        Route::put('/provincial-kpi/{director}/{year}', [KPIDataController::class, 'provincial_update']);
+        Route::get('/provincial-kpi/{year?}',                            [KPIDataController::class, 'provincial_index']);
+        Route::put('/provincial-kpi/{director}/{year}',                  [KPIDataController::class, 'provincial_update']);
+        Route::post('/provincial-kpi/{director}/{year}/request-access', [KPIDataController::class, 'provincial_request_access']);
     });
 
-    // ── Evidence-based KPI modules (Super Admin + Provincial Sub Admin) ──
+    // ── Evidence-based KPI modules (Super Admin + Provincial Admin) ──
     // Each module backs a specific KPI. The accomplishment field for that KPI
     // is locked and derived from the count of records here.
-    Route::middleware('role:super_admin,provincial_sub_admin')->group(function () {
+    Route::middleware('role:super_admin,provincial_admin')->group(function () {
         // Linkages → func_linkages_established
         Route::get('/linkages/{director}/{year}',                 [LinkageController::class, 'index']);
         Route::post('/linkages/{director}/{year}',                [LinkageController::class, 'store']);

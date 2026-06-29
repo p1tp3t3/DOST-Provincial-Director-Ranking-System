@@ -83,11 +83,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('prefix')->nullable();
             $table->string('first_name');
-            $table->string('middle_name');
+            $table->string('middle_name')->nullable();
             $table->string('last_name');
             $table->string('profile_picture')->nullable();
             $table->string('length_of_service');
-            $table->json('education_attainment');
+            $table->json('education_attainment')->nullable();
             $table->string('suffix')->nullable();
         });
 

@@ -33,7 +33,9 @@ class UserResource extends JsonResource
             'email'             => $this->email,
             'province'          => $this->province?->name,
             'province_id'       => $this->province_id,
-            'region'            => $this->region?->name,
+            // Regional admins carry region_id directly; everyone else (provincial
+            // admin/director/employee) is only tied to a region through their province.
+            'region'            => $this->region?->name ?? $this->province?->region?->name,
             'prefix'            => $profile?->prefix,
             'first_name'        => $profile?->first_name,
             'middle_name'       => $profile?->middle_name,

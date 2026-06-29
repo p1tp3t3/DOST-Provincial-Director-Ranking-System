@@ -24,10 +24,6 @@
                         <div>
                             <div class="text-h6 font-weight-bold">KPI Data Editor</div>
                             <div class="d-flex align-center gap-2 mt-1">
-                                <v-chip color="teal" size="x-small" variant="tonal" class="font-weight-medium">
-                                    Provincial Sub Admin
-                                </v-chip>
-                                <span class="text-caption text-medium-emphasis">·</span>
                                 <span class="text-caption text-medium-emphasis">{{ director.name }}</span>
                             </div>
                         </div>
@@ -79,16 +75,39 @@
                         color="teal"
                         size="small"
                         :loading="form.processing"
-                        :disabled="!isDirty"
+                        :disabled="!isDirty || edit_access.locked"
                         prepend-icon="mdi-content-save"
-                        @click="save"
+                        @click="openConfirmDialog"
                     >Save Changes</v-btn>
                 </div>
             </v-card>
 
+            <!-- Edit-access lock banner -->
+            <v-alert
+                v-if="edit_access.locked"
+                type="warning" variant="tonal" density="compact" rounded="lg"
+            >
+                <div class="d-flex align-center flex-wrap gap-2">
+                    <span class="text-body-2">
+                        You've used this year's free edit for {{ selectedYear }}.
+                        <template v-if="edit_access.pending_request">
+                            Request sent — waiting on your regional admin.
+                        </template>
+                        <template v-else-if="edit_access.last_request?.status === 'rejected'">
+                            Last request was rejected{{ edit_access.last_request.response_note ? `: ${edit_access.last_request.response_note}` : '.' }}
+                        </template>
+                    </span>
+                    <v-btn
+                        v-if="!edit_access.pending_request"
+                        size="x-small" variant="outlined" color="warning"
+                        @click="openRequestDialog"
+                    >Request Access</v-btn>
+                </div>
+            </v-alert>
+
             <!-- Category sections -->
             <v-card
-                v-for="cat in form.categories"
+                v-for="cat in categories"
                 :key="cat.id"
                 border elevation="0" rounded="lg"
             >
@@ -145,7 +164,7 @@
                                 <v-text-field
                                     v-model="kpi.target"
                                     :placeholder="kpi.derivation_type ? 'n/a' : ''"
-                                    :disabled="kpi.derivation_type === 'delinquent_ratio'"
+                                    :disabled="kpi.derivation_type === 'delinquent_ratio' || edit_access.locked"
                                     variant="solo-filled"
                                     density="compact"
                                     hide-details
@@ -168,7 +187,7 @@
                                     v-else
                                     v-model="kpi.accomplished"
                                     :placeholder="kpi.derivation_type ? 'n/a' : ''"
-                                    :disabled="kpi.derivation_type === 'delinquent_ratio'"
+                                    :disabled="kpi.derivation_type === 'delinquent_ratio' || edit_access.locked"
                                     variant="solo-filled"
                                     density="compact"
                                     hide-details
@@ -197,12 +216,79 @@
                     color="teal"
                     size="small"
                     :loading="form.processing"
-                    :disabled="!isDirty"
+                    :disabled="!isDirty || edit_access.locked"
                     prepend-icon="mdi-content-save"
-                    @click="save"
+                    @click="openConfirmDialog"
                 >Save Changes</v-btn>
             </div>
         </template>
+
+        <!-- Confirm changes dialog -->
+        <v-dialog v-model="confirmDialogOpen" max-width="560">
+            <v-card rounded="lg">
+                <v-card-title class="text-subtitle-1 font-weight-bold">Confirm KPI Changes</v-card-title>
+                <v-card-text>
+                    <p class="text-body-2 text-medium-emphasis mb-3">
+                        Please review the values below before saving — this may use your free edit for {{ selectedYear }} if it hasn't been used yet.
+                    </p>
+                    <div class="confirm-diff">
+                        <div v-for="group in pendingChanges" :key="group.code" class="confirm-diff-group">
+                            <div class="confirm-diff-group-title" :style="{ background: catBg(group.code) }">
+                                <v-icon size="14" :color="catColor(group.code)">{{ catIcon(group.code) }}</v-icon>
+                                <span>{{ group.name }}</span>
+                            </div>
+                            <div v-for="(c, i) in group.changes" :key="i" class="confirm-diff-row">
+                                <div class="confirm-diff-kpi">{{ c.kpi }}</div>
+                                <div class="confirm-diff-fields">
+                                    <div v-for="(f, fi) in c.fields" :key="fi" class="confirm-diff-field">
+                                        <v-chip size="x-small" variant="tonal" class="confirm-diff-chip" :color="f.field === 'Target' ? 'indigo' : 'teal'">{{ f.field }}</v-chip>
+                                        <span class="text-caption text-medium-emphasis">{{ f.old }}</span>
+                                        <v-icon size="14">mdi-arrow-right</v-icon>
+                                        <span class="text-caption font-weight-bold">{{ f.new }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="!pendingChanges.length" class="text-caption text-medium-emphasis">
+                            No changed values detected.
+                        </div>
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" @click="confirmDialogOpen = false">Cancel</v-btn>
+                    <v-btn color="teal" @click="confirmAndSave">Yes, Save Changes</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Request access dialog -->
+        <v-dialog v-model="requestDialogOpen" max-width="440">
+            <v-card rounded="lg">
+                <v-card-title class="text-subtitle-1 font-weight-bold">Request edit access</v-card-title>
+                <v-card-text>
+                    <p class="text-body-2 text-medium-emphasis mb-3">
+                        This sends a request to your regional admin to allow one more edit for <strong>{{ selectedYear }}</strong>.
+                    </p>
+                    <v-textarea
+                        v-model="requestForm.reason"
+                        label="Reason (optional)"
+                        variant="outlined"
+                        density="compact"
+                        rows="3"
+                        hide-details
+                    />
+                    <div v-if="requestForm.errors.edit_access" class="text-caption text-error mt-2">
+                        {{ requestForm.errors.edit_access }}
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" @click="requestDialogOpen = false">Cancel</v-btn>
+                    <v-btn color="teal" :loading="requestForm.processing" @click="submitRequest">Send Request</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
 
     </div>
 </template>
@@ -219,6 +305,10 @@ const props = defineProps({
     kpi_categories:    { type: Array,  default: () => [] },
     modular_kpi_codes: { type: Object, default: () => ({}) },
     no_director:       { type: Boolean, default: false },
+    edit_access:       {
+        type: Object,
+        default: () => ({ locked: false, pending_request: null, last_request: null }),
+    },
 });
 
 const isModular = (code) => Object.prototype.hasOwnProperty.call(props.modular_kpi_codes, code);
@@ -232,13 +322,12 @@ const openModule = (code) => {
 
 const selectedYear = ref(props.year);
 
-const form = useForm({
-    categories: JSON.parse(JSON.stringify(props.kpi_categories)),
-});
-
-const initialSnapshot = JSON.stringify(props.kpi_categories);
-
-const isDirty = computed(() => JSON.stringify(form.categories) !== initialSnapshot);
+// Live editable state — bound directly by v-model. initialSnapshot is the fixed
+// point dirtiness is compared against; it's resynced whenever the server sends
+// back fresh kpi_categories (e.g. right after a successful save).
+const categories = ref(JSON.parse(JSON.stringify(props.kpi_categories)));
+let initialSnapshot = JSON.stringify(props.kpi_categories);
+const isDirty = computed(() => JSON.stringify(categories.value) !== initialSnapshot);
 
 const allYears = computed(() => {
     const set = new Set(props.director_years);
@@ -260,9 +349,11 @@ const catColor = (code) => ({ CORE: 'indigo', STRATEGIC: 'teal', SUPPORT: 'deep-
 const catBg    = (code) => ({ CORE: '#eef2ff', STRATEGIC: '#e0f2f1', SUPPORT: '#ede7f6' }[code] ?? '#f1f5f9');
 const catIcon  = (code) => ({ CORE: 'mdi-rocket-launch-outline', STRATEGIC: 'mdi-shield-outline', SUPPORT: 'mdi-cog-outline' }[code] ?? 'mdi-chart-bar');
 
+const form = useForm({});
+
 const save = () => {
     const values = [];
-    for (const cat of form.categories) {
+    for (const cat of categories.value) {
         for (const kpi of cat.kpis) {
             values.push({
                 kpi_id:       kpi.id,
@@ -279,8 +370,58 @@ const save = () => {
         });
 };
 
+// Diff shown in the confirmation dialog so the provincial admin can double-check
+// values before they're committed (and before the free/granted edit is spent).
+// Grouped by category (Core / Functional / Support); within a category, one
+// entry per KPI — a KPI with both Target and Accomplished changed lists both
+// fields under the same row.
+const pendingChanges = computed(() => {
+    const groups = [];
+    for (let ci = 0; ci < categories.value.length; ci++) {
+        const cat     = categories.value[ci];
+        const origCat = props.kpi_categories[ci];
+        const changes = [];
+
+        for (let ki = 0; ki < cat.kpis.length; ki++) {
+            const kpi     = cat.kpis[ki];
+            const origKpi = origCat?.kpis?.[ki];
+            if (!origKpi) continue;
+
+            const fields = [];
+
+            const oldTarget = origKpi.target ?? '';
+            const newTarget = kpi.target ?? '';
+            if (oldTarget !== newTarget) {
+                fields.push({ field: 'Target', old: oldTarget || '—', new: newTarget || '—' });
+            }
+
+            const oldAccomplished = origKpi.accomplished ?? '';
+            const newAccomplished = kpi.accomplished ?? '';
+            if (!isModular(kpi.code) && oldAccomplished !== newAccomplished) {
+                fields.push({ field: 'Accomplished', old: oldAccomplished || '—', new: newAccomplished || '—' });
+            }
+
+            if (fields.length) {
+                changes.push({ kpi: kpi.name, fields });
+            }
+        }
+
+        if (changes.length) {
+            groups.push({ code: cat.code, name: cat.name, changes });
+        }
+    }
+    return groups;
+});
+
+const confirmDialogOpen = ref(false);
+const openConfirmDialog = () => { confirmDialogOpen.value = true; };
+const confirmAndSave = () => {
+    confirmDialogOpen.value = false;
+    save();
+};
+
 const reset = () => {
-    form.categories = JSON.parse(initialSnapshot);
+    categories.value = JSON.parse(initialSnapshot);
 };
 
 const changeYear = (yr) => {
@@ -290,6 +431,26 @@ const changeYear = (yr) => {
 };
 
 watch(() => props.year, (y) => { selectedYear.value = y; });
+watch(() => props.kpi_categories, (v) => {
+    categories.value = JSON.parse(JSON.stringify(v));
+    initialSnapshot = JSON.stringify(v);
+});
+
+// ── Request access ──────────────────────────────────────────────────────────
+const requestDialogOpen = ref(false);
+const requestForm = useForm({ reason: '' });
+
+const openRequestDialog = () => {
+    requestForm.reason = '';
+    requestDialogOpen.value = true;
+};
+
+const submitRequest = () => {
+    requestForm.post(`/provincial-kpi/${props.director.id}/${selectedYear.value}/request-access`, {
+        preserveScroll: true,
+        onSuccess: () => { requestDialogOpen.value = false; },
+    });
+};
 </script>
 
 <style scoped>
@@ -419,5 +580,62 @@ watch(() => props.year, (y) => { selectedYear.value = y; });
     backdrop-filter: blur(4px);
     z-index: 5;
     margin-top: 8px;
+}
+.confirm-diff {
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.confirm-diff-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.confirm-diff-group-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.confirm-diff-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fafbfc;
+}
+.confirm-diff-kpi {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+.confirm-diff-fields {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.confirm-diff-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.confirm-diff-chip {
+    min-width: 92px;
+    justify-content: center;
 }
 </style>

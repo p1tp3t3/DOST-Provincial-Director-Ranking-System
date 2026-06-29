@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users');
-            $table->enum('type', ['log in', 'log out', 'province creation', 'registration', 'profile update']);
+            $table->foreignId('user_id')
+                  ->constrained('users');
+            $table->string('type', 32);
             $table->text('description');
             $table->timestamps();
         });
