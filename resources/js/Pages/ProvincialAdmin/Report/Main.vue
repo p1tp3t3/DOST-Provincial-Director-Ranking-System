@@ -353,7 +353,6 @@ const summaryCards = computed(() => [
     { label: 'Employees',    value: us.value.employees,  color: 'success', icon: 'mdi-account-outline'         },
     { label: 'Directors',    value: us.value.directors,  color: 'blue',    icon: 'mdi-account-tie-outline'     },
     { label: 'Admins',       value: us.value.admins,     color: 'indigo',  icon: 'mdi-account-cog-outline'     },
-    { label: 'Sub Admins',   value: us.value.sub_admins, color: 'purple',  icon: 'mdi-account-settings-outline'},
     { label: 'KPI Rate',     value: (directorKpi.value?.rate ?? 0) + '%', color: directorKpi.value?.rate >= 90 ? 'success' : directorKpi.value?.rate >= 75 ? 'warning' : 'error', icon: 'mdi-chart-line' },
 ]);
 
@@ -411,12 +410,12 @@ const statusLabel = (s) => ({ permanent: 'Permanent', cos: 'COS', jo: 'Job Order
 
 const roleColor = (r) => ({
     super_admin: 'indigo', sub_admin: 'purple', provincial_admin: 'teal',
-    provincial_sub_admin: 'cyan', provincial_director: 'blue', employee: 'success',
+    provincial_director: 'blue', employee: 'success',
 }[r] ?? 'grey');
 
 const roleLabel = (r) => ({
     super_admin: 'Super Admin', sub_admin: 'Sub Admin', provincial_admin: 'Prov. Admin',
-    provincial_sub_admin: 'Prov. Sub Admin', provincial_director: 'Director', employee: 'Employee',
+    provincial_director: 'Director', employee: 'Employee',
 }[r] ?? r);
 
 const typeColor = (t) => ({

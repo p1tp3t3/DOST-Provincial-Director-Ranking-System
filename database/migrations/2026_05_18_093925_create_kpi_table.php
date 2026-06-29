@@ -32,6 +32,13 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order');
         });
 
+        Schema::create('provincial_kpis', function (Blueprint $table) {
+            $table->foreignId('province_id')->constrained('provinces');
+            $table->foreignId('kpi_id')->constrained('kpis');
+            $table->text('target')->nullable();
+            $table->year('year');
+        });
+
         Schema::create('provincial_director_kpis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('provincial_director_id')->constrained('users');
@@ -48,6 +55,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('provincial_director_kpis');
+        Schema::dropIfExists('provincial_kpis');
         Schema::dropIfExists('kpis');
         Schema::dropIfExists('kpi_categories');
     }

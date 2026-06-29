@@ -54,7 +54,7 @@ class ProvincialAdminReportController extends Controller
         $p = Province::find($provinceId);
         if (!$p) return [];
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->with('profile')
             ->first();
@@ -78,7 +78,7 @@ class ProvincialAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $users    = User::where('province_id', $provinceId)->get();
+        $users    = User::whereProvince($provinceId)->get();
         $byRole   = $users->groupBy('role')->map->count();
 
         $employees = $users->where('role', 'employee');
@@ -109,7 +109,7 @@ class ProvincialAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        return User::where('province_id', $provinceId)
+        return User::whereProvince($provinceId)
             ->where('role', 'employee')
             ->with(['profile.employeeProfile'])
             ->latest()
@@ -129,7 +129,7 @@ class ProvincialAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->first();
 
@@ -154,7 +154,7 @@ class ProvincialAdminReportController extends Controller
     private function get_log_stats(?int $provinceId): array
     {
         $userIds = $provinceId
-            ? User::where('province_id', $provinceId)->pluck('id')
+            ? User::whereProvince($provinceId)->pluck('id')
             : collect();
 
         $counts = ActivityLog::selectRaw('type, COUNT(*) as count')
@@ -178,7 +178,7 @@ class ProvincialAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $userIds = User::where('province_id', $provinceId)->pluck('id');
+        $userIds = User::whereProvince($provinceId)->pluck('id');
 
         return ActivityLog::with('user.profile')
             ->whereIn('user_id', $userIds)

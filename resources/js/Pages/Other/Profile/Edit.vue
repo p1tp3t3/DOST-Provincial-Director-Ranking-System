@@ -339,7 +339,7 @@ const props = defineProps({
 
 const page       = usePage();
 const isRestricted = computed(() => ['employee', 'provincial_director'].includes(props.role));
-const isAdmin      = computed(() => ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_sub_admin'].includes(props.role));
+const isAdmin      = computed(() => ['super_admin', 'sub_admin', 'provincial_admin'].includes(props.role));
 const formRef    = ref(null);
 const fileInput  = ref(null);
 const saving     = ref(false);
@@ -533,7 +533,7 @@ const avatarColor = computed(() => {
 
 const roleLabels = {
     super_admin: 'Super Admin', sub_admin: 'Sub Admin',
-    provincial_admin: 'Provincial Admin', provincial_sub_admin: 'Provincial Sub Admin',
+    provincial_admin: 'Provincial Admin',
     provincial_director: 'Provincial Director', employee: 'Employee',
 };
 

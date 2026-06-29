@@ -13,6 +13,7 @@ use App\Http\Controllers\Modules\Report\ProvincialAdminReportController;
 use App\Http\Controllers\Modules\Report\SubAdminReportController;
 use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\Report\ProvincialSubAdminReportController;
+use App\Http\Controllers\Modules\Report\RegionalAdminReportController;
 use App\Http\Controllers\Modules\User\ProvincialDirectorController;
 use App\Http\Controllers\Modules\User\UserController;
 use App\Http\Controllers\Modules\SettingsController;
@@ -93,19 +94,25 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
         Route::get('/admins', [UserController::class, 'admin_index']);
 
-        // KPI Data Editor — central place for super admin to maintain target/accomplished
-        // values per province per year. Province directory pages remain read-only.
-        Route::get('/kpi-data',                              [KPIDataController::class, 'index']);
-        Route::get('/kpi-data/{id}/{year?}',                 [KPIDataController::class, 'edit']);
-        Route::put('/kpi-data/{director}/{year}',            [KPIDataController::class, 'update']);
+    });
+
+    // ── KPI Data Editor: Super Admin + Sub Admin ───────────────
+    Route::middleware('role:super_admin,sub_admin')->group(function () {
+        Route::get('/kpi-data',                   [KPIDataController::class, 'index']);
+        Route::get('/kpi-data/{id}/{year?}',      [KPIDataController::class, 'edit']);
+        Route::put('/kpi-data/{director}/{year}', [KPIDataController::class, 'update']);
+    });
+
+    // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────
+    Route::middleware('role:super_admin,provincial_admin,regional_admin')->group(function () {
+        Route::get('/activity-logs',        [ActivityLogController::class, 'index']);
+        Route::get('/activity-logs/report', [ActivityLogController::class, 'generate_logs_report']);
     });
 
     // ── Super Admin + Provincial Admin ─────────────────────────
     Route::middleware('role:super_admin,provincial_admin')->group(function () {
         Route::get('/users',                                           [UserController::class, 'index']);
         Route::patch('/users/{id}/toggle-activation',                  [UserController::class, 'toggle_activation']);
-        Route::get('/activity-logs',                                   [ActivityLogController::class, 'index']);
-        Route::get('/activity-logs/report',                            [ActivityLogController::class, 'generate_logs_report']);
 
         Route::get('/users/create',                                    [UserController::class, 'manual_registration_index']);
         Route::post('/users/store',                                    [UserController::class, 'store']);
@@ -127,14 +134,21 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/performance-map', [DashboardController::class, 'map_index'])->name('performance-map');
     });
 
+    // ── Regional Admin only ─────────────────────────────────────
+    Route::middleware('role:regional_admin')->group(function () {
+        Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
+        Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
+        Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
+    });
+
     // ── Provincial Admin only ─────────────────────────────────
     Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-admin-report',        [ProvincialAdminReportController::class, 'index']);
         Route::get('/provincial-admin-report/export', [ProvincialAdminReportController::class, 'export']);
     });
 
-    // ── Provincial Sub Admin only ──────────────────────────────
-    Route::middleware('role:provincial_sub_admin')->group(function () {
+    // ── Provincial Admin only (KPI editor) ────────────────────
+    Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-kpi/{year?}',          [KPIDataController::class, 'provincial_index']);
         Route::put('/provincial-kpi/{director}/{year}', [KPIDataController::class, 'provincial_update']);
     });
@@ -162,8 +176,13 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/provincial-sub-admin-report/export', [ProvincialSubAdminReportController::class, 'export']);
     });
 
-    // ── Sub Admin + Provincial Admin + Provincial Sub Admin + Provincial Director ──
-    Route::middleware('role:sub_admin,provincial_admin,provincial_sub_admin,provincial_director')->group(function () {
+    Route::middleware('role:provincial_director')->group(function () {
+        Route::get('/provincial-director-report',        [ProvincialSubAdminReportController::class, 'index']);
+        Route::get('/provincial-director-report/export', [ProvincialSubAdminReportController::class, 'export']);
+    });
+
+    // ── Sub Admin + Provincial Admin + Provincial Director ─────
+    Route::middleware('role:sub_admin,provincial_admin,provincial_director')->group(function () {
         Route::get('/employees', [EmployeeController::class, 'index']);
     });
 });

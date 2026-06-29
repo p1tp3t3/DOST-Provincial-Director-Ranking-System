@@ -692,7 +692,6 @@ import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
 import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
-
 const props = defineProps({
     total_users:                { type: Number, default: 0 },
     active_reporting_provinces: { type: Number, default: 0 },
@@ -702,7 +701,9 @@ const props = defineProps({
     rankings_by_year:           { type: Object, default: () => ({}) },
     kpi_categories:             { type: Array,  default: () => [] },
     available_years:            { type: Array,  default: () => [] },
+    regions:                    { type: Array,  default: () => [] },
 });
+
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('all');
@@ -889,7 +890,7 @@ const baseRows = computed(() => {
         rows = rows.filter(r => PROVINCE_REGIONS[r.province]?.island === selectedIsland.value);
     }
     if (selectedRegion.value !== 'all') {
-        rows = rows.filter(r => r.region === selectedRegion.value);
+        rows = rows.filter(r => r.region_name === selectedRegion.value);
     }
     return rows;
 });
@@ -1245,9 +1246,8 @@ const trendData = computed(() => {
             for (const r of rows) {
                 if (!isRanked(r)) continue;
 
-                const geo = PROVINCE_REGIONS[r.province];
-                if (selectedIsland.value !== 'all' && geo?.island !== selectedIsland.value) continue;
-                if (selectedRegion.value !== 'all' && geo?.region !== selectedRegion.value) continue;
+                if (selectedIsland.value !== 'all' && PROVINCE_REGIONS[r.province]?.island !== selectedIsland.value) continue;
+                if (selectedRegion.value !== 'all' && r.region_name !== selectedRegion.value) continue;
 
                 if (!provinceMap[r.province]) provinceMap[r.province] = {};
                 provinceMap[r.province][year] = getScore(r);

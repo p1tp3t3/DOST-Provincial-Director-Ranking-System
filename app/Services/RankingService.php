@@ -58,18 +58,20 @@ class RankingService
     //       ]
     //     ]
     //   ]
-    public function rankAllYears(): array
+    // $provinceIds optionally restricts the result to a subset of provinces
+    // (e.g. all provinces within a given region for the Regional Admin views).
+    public function rankAllYears(?array $provinceIds = null): array
     {
         $out = [];
         foreach ($this->availableYears() as $year) {
-            $out[$year] = $this->rankByYear($year);
+            $out[$year] = $this->rankByYear($year, $provinceIds);
         }
         return $out;
     }
 
-    public function rankByYear(int $year): array
+    public function rankByYear(int $year, ?array $provinceIds = null): array
     {
-        $records = $this->scoreAllProvinces($year);
+        $records = $this->scoreAllProvinces($year, $provinceIds);
 
         // Group by classification tier so each tier is ranked independently
         $byCategory = [];
@@ -85,8 +87,9 @@ class RankingService
     }
 
     // Computes the weighted score for every province for the given year, including
-    // provinces that have no data (they show up with total = 0).
-    public function scoreAllProvinces(int $year): array
+    // provinces that have no data (they show up with total = 0). Pass $provinceIds
+    // to restrict the result to a subset of provinces (e.g. one region).
+    public function scoreAllProvinces(int $year, ?array $provinceIds = null): array
     {
         $directorNameSql = "CONCAT_WS(' ',
             NULLIF(TRIM(IFNULL(pr.prefix,'')), ''),
@@ -96,24 +99,34 @@ class RankingService
             NULLIF(TRIM(IFNULL(pr.suffix,'')), '')
         )";
 
+        $directors = DB::table('user_province as up')
+            ->join('users as u', 'u.id', '=', 'up.user_id')
+            ->where('u.role', 'provincial_director')
+            ->select('up.province_id', 'up.user_id as director_id');
+
         $provinceMeta = DB::table('provinces as p')
-            ->leftJoin('users as u', function ($j) {
-                $j->on('u.province_id', '=', 'p.id')->where('u.role', '=', 'provincial_director');
-            })
+            ->leftJoinSub($directors, 'd', 'd.province_id', '=', 'p.id')
+            ->leftJoin('users as u', 'u.id', '=', 'd.director_id')
             ->leftJoin('profiles as pr', 'pr.user_id', '=', 'u.id')
+            ->leftJoin('region as r', 'r.id', '=', 'p.region_id')
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('p.id', $provinceIds))
             ->select(
                 'p.id as province_id',
                 'p.name as province',
                 'p.category',
-                'p.region',
+                'p.region_id as region_id',
+                'r.name as region_name',
+                'r.island_under as island_under',
                 'u.id as director_id',
                 DB::raw("$directorNameSql as director")
             )->get()->keyBy('province_id');
 
         $rows = DB::table('provincial_director_kpis as pk')
             ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
+            ->join('user_province as up', 'up.user_id', '=', 'u.id')
             ->where('pk.year', $year)
-            ->select('u.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('up.province_id', $provinceIds))
+            ->select('up.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
             ->get();
 
         // valuesByProvince[province_id][kpi_id] = ['target' => ..., 'accomplished' => ...]
@@ -209,8 +222,14 @@ class RankingService
         return [
             'province_id'      => $provinceId,
             'province'         => $meta['province'],
-            'region'           => $meta['region'] ?? null,
+            // `region` keeps the legacy string contract the dashboard map panel reads
+            // (entry.region); region_id / region_name / island_under back the newer
+            // region-aware views. All derive from the region table via p.region_id.
+            'region'           => $meta['region_name'] ?? null,
             'category'         => $meta['category'],
+            'region_id'        => $meta['region_id'],
+            'region_name'      => $meta['region_name'],
+            'island_under'     => $meta['island_under'],
             'director'         => $meta['director'] ?? null,
             'director_id'      => $meta['director_id'] ?? null,
             'status'           => $status,

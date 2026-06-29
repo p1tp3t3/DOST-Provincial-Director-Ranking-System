@@ -11,8 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('region', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->enum('island_under', ['luzon', 'visayas', 'mindanao']);
+            $table->timestamps();
+        });
         Schema::create('provinces', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('region_id')
+                  ->constrained('region');
             $table->string('name');
             $table->enum('category', ['micro', 'small', 'medium', 'large']);
             $table->integer('num_plantilla_employees');
@@ -26,12 +34,16 @@ return new class extends Migration
             $table->enum('role', [
                 'super_admin', 
                 'sub_admin', 
+                'regional_admin',
                 'provincial_admin', 
                 'provincial_sub_admin', 
                 'provincial_director', 
                 'employee'
             ]);
-            $table->foreignId('province_id')->nullable()->constrained('provinces');
+            $table->foreignId('region_id')
+                  ->nullable()
+                  ->constrained('region')
+                  ->nullOnDelete();
             $table->string('dost_employee_id')->nullable()->unique();
             $table->string('username')->unique();
             $table->string('email')->unique();
@@ -40,6 +52,15 @@ return new class extends Migration
                   ->default(true);
             $table->rememberToken();
             $table->timestamps();
+        });
+
+        Schema::create('user_province', function (Blueprint $table) {
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+            $table->foreignId('province_id')
+                  ->constrained('provinces')
+                  ->cascadeOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -74,7 +95,7 @@ return new class extends Migration
         Schema::create('employee_profiles', function (Blueprint $table) {
             $table->foreignId('profile_id')->constrained('profiles');
             $table->string('position');
-            $table->enum('status', ['permanent', 'cos']);
+            $table->enum('status', ['permanent', 'cos', 'jo']);
             $table->json('work_specification');
         });
         
@@ -85,10 +106,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('region');
+        Schema::dropIfExists('provinces');
         Schema::dropIfExists('users');
+        Schema::dropIfExists('user_province');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
-        Schema::dropIfExists('provinces');
         Schema::dropIfExists('profiles');
         Schema::dropIfExists('employee_profiles');
         Schema::dropIfExists('sessions');

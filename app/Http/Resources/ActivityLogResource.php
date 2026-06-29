@@ -22,7 +22,7 @@ class ActivityLogResource extends JsonResource
 
         return [
             'id'          => $this->id,
-            'employee_id' => $this->dost_employee_id,
+            'employee_id' => $this->user->dost_employee_id,
             'role'        => $this->user->role,
             'name'        => trim($firstName . ' ' . $middleName . $lastName),
             'profile_picture'    => $profile?->profile_picture,

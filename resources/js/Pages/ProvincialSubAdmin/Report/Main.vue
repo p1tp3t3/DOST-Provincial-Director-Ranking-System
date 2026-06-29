@@ -372,12 +372,12 @@ const statusLabel = (s) => ({ permanent: 'Permanent', cos: 'COS', jo: 'Job Order
 
 const roleColor = (r) => ({
     super_admin: 'indigo', sub_admin: 'purple', provincial_admin: 'teal',
-    provincial_sub_admin: 'cyan', provincial_director: 'blue', employee: 'success',
+    provincial_director: 'blue', employee: 'success',
 }[r] ?? 'grey');
 
 const roleLabel = (r) => ({
     super_admin: 'Super Admin', sub_admin: 'Sub Admin', provincial_admin: 'Prov. Admin',
-    provincial_sub_admin: 'Prov. Sub Admin', provincial_director: 'Director', employee: 'Employee',
+    provincial_director: 'Director', employee: 'Employee',
 }[r] ?? r);
 
 const typeColor = (t) => ({

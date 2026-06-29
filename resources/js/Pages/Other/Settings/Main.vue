@@ -238,14 +238,13 @@ const roleLabels = {
     super_admin:          'Super Admin',
     sub_admin:            'Sub Admin',
     provincial_admin:     'Provincial Admin',
-    provincial_sub_admin: 'Provincial Sub Admin',
     provincial_director:  'Provincial Director',
     employee:             'Employee',
 };
 
 const roleColor = (r) => ({
     super_admin: 'indigo', sub_admin: 'purple', provincial_admin: 'teal',
-    provincial_sub_admin: 'cyan', provincial_director: 'blue', employee: 'success',
+    provincial_director: 'blue', employee: 'success',
 }[r] ?? 'grey');
 
 // ── Active section ────────────────────────────────────────────

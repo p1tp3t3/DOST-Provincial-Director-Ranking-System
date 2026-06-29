@@ -180,7 +180,6 @@ const roleColor = (role) => ({
     super_admin:          'indigo',
     sub_admin:            'purple',
     provincial_admin:     'teal',
-    provincial_sub_admin: 'cyan',
     provincial_director:  'blue',
     employee:             'grey',
 }[role] ?? 'grey');
@@ -189,7 +188,6 @@ const roleLabel = (role) => ({
     super_admin:          'Super Admin',
     sub_admin:            'Sub Admin',
     provincial_admin:     'Prov. Admin',
-    provincial_sub_admin: 'Prov. Sub Admin',
     provincial_director:  'Director',
     employee:             'Employee',
 }[role] ?? role);

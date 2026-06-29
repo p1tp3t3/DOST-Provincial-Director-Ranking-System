@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules\Report;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Province;
+use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
 use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -54,7 +55,7 @@ class ProvincialSubAdminReportController extends Controller
         $p = Province::find($provinceId);
         if (!$p) return [];
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->with('profile')
             ->first();
@@ -78,10 +79,10 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $users = User::where('province_id', $provinceId)->get();
+        $users = User::whereProvince($provinceId)->get();
 
         $byRole    = $users->groupBy('role')->map->count();
-        $employees = User::where('province_id', $provinceId)
+        $employees = User::whereProvince($provinceId)
             ->where('role', 'employee')
             ->with('profile.employeeProfile')
             ->get();
@@ -103,7 +104,7 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        return User::where('province_id', $provinceId)
+        return User::whereProvince($provinceId)
             ->where('role', 'employee')
             ->with(['profile.employeeProfile'])
             ->latest()
@@ -125,21 +126,35 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->first();
         if (!$director) return [];
 
+        // The PDF shows a simple accomplishment view (target vs accomplished) from the
+        // director's submitted KPI rows; ranking-matrix fields (tier/bucket) are merged
+        // on top for any section that needs them.
+        $toNum        = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
+        $kpis         = ProvincialDirectorKPI::where('provincial_director_id', $director->id)->get();
+        $target       = $kpis->sum(fn($k) => $toNum($k->target));
+        $accomplished = $kpis->sum(fn($k) => $toNum($k->accomplished));
+        $base = [
+            'director_id'  => $director->id,
+            'target'       => $target,
+            'accomplished' => $accomplished,
+            'rate'         => $target > 0 ? round($accomplished / $target * 100, 1) : 0,
+            'total_items'  => $kpis->count(),
+        ];
+
         $svc   = new RankingService();
         $years = $svc->availableYears();
-        if (empty($years)) return ['director_id' => $director->id];
+        if (empty($years)) return $base;
         $latestYear = $years[0];
 
         foreach ($svc->rankByYear($latestYear) as $tier => $rows) {
             foreach ($rows as $r) {
                 if ((int) $r['province_id'] === (int) $provinceId) {
-                    return [
-                        'director_id'    => $director->id,
+                    return array_merge($base, [
                         'year'           => $latestYear,
                         'tier'           => $tier,
                         'tier_rank'      => $r['rank'],
@@ -147,17 +162,17 @@ class ProvincialSubAdminReportController extends Controller
                         'total_pct'      => $r['total_pct'],
                         'adjective'      => $r['adjective_label'],
                         'subtotals_pct'  => $r['subtotals_pct'],
-                    ];
+                    ]);
                 }
             }
         }
-        return ['director_id' => $director->id, 'year' => $latestYear];
+        return array_merge($base, ['year' => $latestYear]);
     }
 
     private function get_log_stats(?int $provinceId, ?Carbon $from = null, ?Carbon $to = null): array
     {
         $userIds = $provinceId
-            ? User::where('province_id', $provinceId)->pluck('id')
+            ? User::whereProvince($provinceId)->pluck('id')
             : collect();
 
         $query = ActivityLog::selectRaw('type, COUNT(*) as count')
@@ -185,7 +200,7 @@ class ProvincialSubAdminReportController extends Controller
     {
         if (!$provinceId) return [];
 
-        $userIds = User::where('province_id', $provinceId)->pluck('id');
+        $userIds = User::whereProvince($provinceId)->pluck('id');
 
         return ActivityLog::with('user.profile')
             ->whereIn('user_id', $userIds)

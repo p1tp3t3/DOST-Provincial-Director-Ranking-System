@@ -21,21 +21,22 @@
             </div>
 
             <!-- List -->
-            <AdminList :list="props.admins" />
+            <AdminList :list="props.admins" :initial-search="search" :initial-role="role" />
 
         </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import AdminList from '@/Components/Lists/AdminList.vue';
 import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
 
 const props = defineProps({
     admins: { type: Object, default: null },
+    search: { type: String, default: '' },
+    role:   { type: String, default: '' },
 });
 
-const listData = computed(() => props.admins);
 const open = ref(false);
 
 </script>

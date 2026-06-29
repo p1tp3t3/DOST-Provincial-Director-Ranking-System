@@ -9,6 +9,7 @@ use App\Http\Resources\ProvinceResource;
 use App\Models\KPI;
 use App\Models\KPICategory;
 use App\Models\Province;
+use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -17,7 +18,14 @@ use Illuminate\Support\Facades\DB;
 class ProvinceController extends Controller
 {
     public function index() {
-        $data = Province::with(['provincialDirector.profile', 'user'])->get();
+        $query = Province::with(['directorAssignments.profile', 'users']);
+
+        if (auth()->user()->role === 'regional_admin') {
+            $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
+            $query->whereIn('id', $region->provinces->pluck('id'));
+        }
+
+        $data = $query->get();
         return inertia("Other/Province/Main", [
             'provinces' => ProvinceResource::collection($data)
         ]);
@@ -27,8 +35,8 @@ class ProvinceController extends Controller
         $decryptedId = Crypt::decrypt($id);
 
         $data = Province::with([
-                            'provincialDirector.profile',
-                            'user' => fn($q) => $q->where('role', 'employee')->with('profile.employeeProfile'),
+                            'directorAssignments.profile',
+                            'users' => fn($q) => $q->where('role', 'employee')->with('profile.employeeProfile'),
                         ])
                         ->where('id', $decryptedId)
                         ->get();
@@ -95,13 +103,14 @@ class ProvinceController extends Controller
             'num_cities'              => 0,
         ]);
 
-        User::create([
+        $admin = User::create([
             'role'        => 'provincial_admin',
-            'province_id' => $province->id,
             'username'    => $data['admin_username'],
             'email'       => $data['admin_email'],
             'password'    => bcrypt($data['admin_password']),
         ]);
+
+        $admin->provinces()->attach($province->id);
 
         return redirect()->back();
     }

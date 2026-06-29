@@ -134,7 +134,6 @@ const roleLabels = {
     super_admin:          'Super Admin',
     sub_admin:            'Sub Admin',
     provincial_admin:     'Provincial Admin',
-    provincial_sub_admin: 'Provincial Sub Admin',
     provincial_director:  'Provincial Director',
     employee:             'Employee',
 };

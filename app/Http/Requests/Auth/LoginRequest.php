@@ -41,7 +41,7 @@ class LoginRequest extends FormRequest
         $identifier = trim($this->string('identifier'));
         $password   = $this->string('password');
 
-        $adminRoles = ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_sub_admin'];
+        $adminRoles = ['super_admin', 'sub_admin', 'provincial_admin'];
 
         /** @var User|null $user */
         $user = User::query()

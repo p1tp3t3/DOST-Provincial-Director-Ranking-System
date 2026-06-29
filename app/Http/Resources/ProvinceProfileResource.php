@@ -18,7 +18,7 @@ class ProvinceProfileResource extends JsonResource
             'name'                => $this->name,
             'category'            => $this->category,
             'provincial_director' => $this->provincialDirector,
-            'employees'           => $this->user->where('role', 'employee')->values(),
+            'employees'           => $this->users->where('role', 'employee')->values(),
         ];
     }
 }

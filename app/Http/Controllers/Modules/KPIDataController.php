@@ -35,10 +35,14 @@ class KPIDataController extends Controller
             NULLIF(TRIM(IFNULL(pr.last_name,'')), '')
         )";
 
+        $directors = DB::table('user_province as up')
+            ->join('users as u', 'u.id', '=', 'up.user_id')
+            ->where('u.role', 'provincial_director')
+            ->select('up.province_id', 'up.user_id as director_id');
+
         $provinces = DB::table('provinces as p')
-            ->leftJoin('users as u', function ($j) {
-                $j->on('u.province_id', '=', 'p.id')->where('u.role', '=', 'provincial_director');
-            })
+            ->leftJoinSub($directors, 'd', 'd.province_id', '=', 'p.id')
+            ->leftJoin('users as u', 'u.id', '=', 'd.director_id')
             ->leftJoin('profiles as pr', 'pr.user_id', '=', 'u.id')
             ->select(
                 'p.id', 'p.name', 'p.category',
@@ -80,7 +84,7 @@ class KPIDataController extends Controller
         $provinceId = Crypt::decrypt($id);
         $province   = Province::findOrFail($provinceId);
 
-        $director = User::where('province_id', $provinceId)
+        $director = User::whereProvince($provinceId)
                         ->where('role', 'provincial_director')
                         ->with('profile')
                         ->first();
@@ -224,7 +228,7 @@ class KPIDataController extends Controller
         $provinceId = $user->province_id;
 
         $director = User::query()
-            ->where('province_id', $provinceId)
+            ->whereProvince($provinceId)
             ->where('role', 'provincial_director')
             ->with('profile')
             ->first();
@@ -292,7 +296,7 @@ class KPIDataController extends Controller
         $director = User::query()
             ->where('id', $directorId)
             ->where('role', 'provincial_director')
-            ->where('province_id', $user->province_id)
+            ->whereProvince($user->province_id)
             ->firstOrFail();
 
         $request->validate([

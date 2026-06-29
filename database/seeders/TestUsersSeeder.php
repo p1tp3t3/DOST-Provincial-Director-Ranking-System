@@ -51,18 +51,18 @@ class TestUsersSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            [$user, $created] = [
-                User::firstOrCreate(
-                    ['email' => $data['email']],
-                    [
-                        'username'    => $data['username'],
-                        'password'    => Hash::make('password'),
-                        'role'        => $data['role'],
-                        'province_id' => $data['province_id'] ?? null,
-                    ]
-                ),
-                null,
-            ];
+            $user = User::firstOrCreate(
+                ['email' => $data['email']],
+                [
+                    'username' => $data['username'],
+                    'password' => Hash::make('password'),
+                    'role'     => $data['role'],
+                ]
+            );
+
+            if (!empty($data['province_id'])) {
+                $user->provinces()->syncWithoutDetaching([$data['province_id']]);
+            }
 
             Profile::firstOrCreate(
                 ['user_id' => $user->id],

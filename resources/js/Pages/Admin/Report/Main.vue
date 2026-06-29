@@ -212,7 +212,7 @@ const props = defineProps({
 // ── Test data ─────────────────────────────────────────────────
 const testUserStats = {
     total: 312, super_admin: 1, sub_admin: 3, provincial_admin: 81,
-    provincial_sub_admin: 81, provincial_director: 81, employee: 65,
+    provincial_director: 81, employee: 65,
 };
 
 const testRecentUsers = [
@@ -257,7 +257,6 @@ const roleBreakdown = computed(() => [
     { label: 'Super Admin',          count: us.value.super_admin,          color: 'indigo',  icon: 'mdi-shield-crown-outline'   },
     { label: 'Sub Admin',            count: us.value.sub_admin,            color: 'purple',  icon: 'mdi-shield-account-outline' },
     { label: 'Provincial Admin',     count: us.value.provincial_admin,     color: 'teal',    icon: 'mdi-account-cog-outline'    },
-    { label: 'Provincial Sub Admin', count: us.value.provincial_sub_admin, color: 'cyan',    icon: 'mdi-account-settings-outline'},
     { label: 'Provincial Director',  count: us.value.provincial_director,  color: 'blue',    icon: 'mdi-account-tie-outline'    },
     { label: 'Employee',             count: us.value.employee,             color: 'success', icon: 'mdi-account-outline'        },
 ]);
@@ -301,12 +300,12 @@ const exportPDF = () => {
 
 const roleColor = (r) => ({
     super_admin: 'indigo', sub_admin: 'purple', provincial_admin: 'teal',
-    provincial_sub_admin: 'cyan', provincial_director: 'blue', employee: 'success',
+    provincial_director: 'blue', employee: 'success',
 }[r] ?? 'grey');
 
 const roleLabel = (r) => ({
     super_admin: 'Super Admin', sub_admin: 'Sub Admin',
-    provincial_admin: 'Prov. Admin', provincial_sub_admin: 'Prov. Sub Admin',
+    provincial_admin: 'Prov. Admin',
     provincial_director: 'Director', employee: 'Employee',
 }[r] ?? r);
 

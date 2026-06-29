@@ -11,7 +11,7 @@ class ProvincialDirectorController extends Controller
 {
     public function index() {
         $data = User::has('profile')
-                    ->with(['province', 'profile'])
+                    ->with(['provinces', 'profile'])
                     ->where('role', 'provincial_director')
                     ->paginate(12);
 

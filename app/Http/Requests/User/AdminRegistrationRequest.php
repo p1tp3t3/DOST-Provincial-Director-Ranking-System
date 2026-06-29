@@ -24,7 +24,6 @@ class AdminRegistrationRequest extends FormRequest
     {
         return [
             'role'                 => 'required|in:super_admin,sub_admin',
-            'province_id'          => 'in:super_admin,sub_admin',
             'username'             => 'required|unique:users,username',
             'email'                => 'required|email|unique:users,email',
             'password'             => 'required|confirmed|min:8',

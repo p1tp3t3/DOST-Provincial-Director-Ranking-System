@@ -42,7 +42,7 @@ class UserController extends Controller
         $user = User::with('profile')->findOrFail($id);
 
         $validated = $request->validate([
-            'role'                  => ['required', 'in:super_admin,sub_admin,provincial_admin,provincial_sub_admin,provincial_director,employee'],
+            'role'                  => ['required', 'in:super_admin,sub_admin,provincial_admin,provincial_director,employee'],
             'province_id'           => ['nullable', 'exists:provinces,id'],
             'dost_employee_id'      => ['nullable', 'string', 'unique:users,dost_employee_id,' . $id],
             'username'              => ['required', 'string', 'unique:users,username,' . $id],
@@ -61,7 +61,6 @@ class UserController extends Controller
         try {
             $userFields = [
                 'role'             => $validated['role'],
-                'province_id'      => $validated['province_id'],
                 'dost_employee_id' => $validated['dost_employee_id'],
                 'username'         => $validated['username'],
                 'email'            => $validated['email'],
@@ -72,6 +71,8 @@ class UserController extends Controller
             }
 
             $user->update($userFields);
+
+            $user->provinces()->sync($validated['province_id'] ? [$validated['province_id']] : []);
 
             $user->profile->update([
                 'prefix'            => $validated['prefix'],
@@ -129,7 +130,6 @@ class UserController extends Controller
             DB::table('linkages')->where('provincial_director_id', $user->id)->delete();
             DB::table('facebook_posts')->where('provincial_director_id', $user->id)->delete();
             DB::table('notifications')->where('sender_id', $user->id)->orWhere('receiver_id', $user->id)->delete();
-            DB::table('provincial_members')->where('provincial_admin_id', $user->id)->delete();
             DB::table('sessions')->where('user_id', $user->id)->delete();
 
             $user->delete();
@@ -146,15 +146,31 @@ class UserController extends Controller
         return back();
     }
 
-    public function admin_index()
+    public function admin_index(Request $request)
     {
-        $admins = User::with(['profile', 'province'])
-                      ->whereIn('role', ['super_admin', 'sub_admin', 'provincial_admin', 'provincial_sub_admin'])
+        $search = $request->input('search');
+        $role   = $request->input('role');
+
+        $admins = User::with(['profile', 'provinces', 'region'])
+                      ->whereIn('role', ['super_admin', 'sub_admin', 'regional_admin', 'provincial_admin'])
+                      ->when($search, function ($q, $search) {
+                          $q->where(function ($q) use ($search) {
+                              $q->whereHas('profile', fn($p) =>
+                                  $p->whereRaw("CONCAT(first_name, ' ', COALESCE(middle_name,''), ' ', last_name) LIKE ?", ["%{$search}%"])
+                              )
+                              ->orWhere('email', 'like', "%{$search}%")
+                              ->orWhere('username', 'like', "%{$search}%");
+                          });
+                      })
+                      ->when($role, fn($q, $role) => $q->where('role', $role))
                       ->latest('created_at')
-                      ->paginate(20);
+                      ->paginate(20)
+                      ->withQueryString();
 
         return inertia('Admin/Users/Admins', [
             'admins' => UserResource::collection($admins),
+            'search' => $search ?? '',
+            'role'   => $role ?? '',
         ]);
     }
 
@@ -180,14 +196,17 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
+            $province = Province::findOrFail($data['province']);
+
             $user = User::create([
                 'role'             => $data['role'],
-                'province_id'      => $data['province'],
                 'dost_employee_id' => $data['dost_employee_id'],
                 'email'            => $data['email'],
                 'username'         => $data['username'],
                 'password'         => $data['password'],
             ]);
+
+            $user->provinces()->attach($province->id);
 
             $profileId = Profile::insertGetId([
                 'user_id'            => $user->id,
@@ -225,7 +244,6 @@ class UserController extends Controller
         $data = $request->validated();
         User::create([
             'role'             => $data['role'],
-            'province_id'      => $data['province_id'],
             'email'            => $data['email'],
             'username'         => $data['username'],
             'password'         => $data['password'],
@@ -343,7 +361,7 @@ class UserController extends Controller
         ]);
 
         $actor        = Auth::user();
-        $actor->loadMissing('province');
+        $actor->loadMissing('provinces');
         $provinceId   = $actor->province_id;
         $provinceName = $actor->province?->name ?? 'Province';
 
@@ -383,7 +401,7 @@ class UserController extends Controller
         ]);
 
         $actor        = Auth::user();
-        $actor->loadMissing('province');
+        $actor->loadMissing('provinces');
         $provinceId   = $actor->province_id;
         $provinceName = $actor->province?->name ?? 'Province';
 
@@ -438,7 +456,7 @@ class UserController extends Controller
     public function get_users(?string $search = null, ?string $role = null)
     {
         $data = User::has('profile')
-                    ->with('profile')
+                    ->with(['profile', 'provinces', 'region'])
                     ->when($search, function ($q, $search) {
                         $q->where(function ($q) use ($search) {
                             $q->whereHas('profile', fn($p) =>
@@ -451,7 +469,7 @@ class UserController extends Controller
                     ->when($role, fn($q, $role) => $q->where('role', $role));
 
         $data = auth()->user()->province_id
-                    ? $data->where('province_id', auth()->user()->province_id)
+                    ? $data->whereProvince(auth()->user()->province_id)
                     : $data;
 
         $data = $data->latest('created_at')

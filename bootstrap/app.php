@@ -8,6 +8,7 @@ use App\Http\Middleware\User\ProvincialAdminMiddleware;
 use App\Http\Middleware\User\ProvincialSubAdminMiddleware;
 use App\Http\Middleware\User\ProvincialDirectorMiddleware;
 use App\Http\Middleware\User\ActivationStatusMiddleware;
+use App\Http\Middleware\User\RegionalAdminMiddleware;
 use App\Http\Middleware\User\SubAdminMiddleware;
 use App\Http\Middleware\User\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'                 => RoleMiddleware::class,
             'super-admin'          => SuperAdminMiddleware::class,
             'sub-admin'            => SubAdminMiddleware::class,
+            'regional-admin'       => RegionalAdminMiddleware::class,
             'provincial-admin'     => ProvincialAdminMiddleware::class,
             'provincial-sub-admin' => ProvincialSubAdminMiddleware::class,
             'provincial-director'  => ProvincialDirectorMiddleware::class,

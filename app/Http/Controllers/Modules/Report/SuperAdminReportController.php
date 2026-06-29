@@ -64,7 +64,6 @@ class SuperAdminReportController extends Controller
             'super_admin'          => $counts['super_admin']          ?? 0,
             'sub_admin'            => $counts['sub_admin']            ?? 0,
             'provincial_admin'     => $counts['provincial_admin']     ?? 0,
-            'provincial_sub_admin' => $counts['provincial_sub_admin'] ?? 0,
             'provincial_director'  => $counts['provincial_director']  ?? 0,
             'employee'             => $counts['employee']             ?? 0,
         ];
@@ -80,7 +79,7 @@ class SuperAdminReportController extends Controller
 
     private function get_recent_users(int $limit = 6): array
     {
-        return User::with(['profile', 'province'])
+        return User::with(['profile', 'provinces'])
                    ->latest('created_at')
                    ->limit($limit)
                    ->get()

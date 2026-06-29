@@ -7,6 +7,7 @@ use App\Models\KPI;
 use App\Models\KPICategory;
 use App\Models\Profile;
 use App\Models\Province;
+use App\Models\Region;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -63,6 +64,18 @@ class DatabaseSeeder extends Seeder
         ],
     ];
 
+    // CSTC clusters (clusters of cities with no province of their own). They are not
+    // in data/provinces.php, so they are seeded here. Region is resolved from
+    // Province::REGIONS like every other province; see CSTCSeeder for their KPI data.
+    private const CSTC_PROVINCES = [
+        ['name' => 'CAMANAVA',    'num_plantilla_employees' => 0, 'num_municipalities' => 0, 'num_cities' => 4],
+        ['name' => 'PAMAMAZON',   'num_plantilla_employees' => 0, 'num_municipalities' => 0, 'num_cities' => 0],
+        ['name' => 'PAMAMARISAN', 'num_plantilla_employees' => 4, 'num_municipalities' => 0, 'num_cities' => 0],
+        ['name' => 'MUNTAPARLAS', 'num_plantilla_employees' => 4, 'num_municipalities' => 0, 'num_cities' => 3],
+        ['name' => 'ZCIC',        'num_plantilla_employees' => 1, 'num_municipalities' => 0, 'num_cities' => 1],
+        ['name' => 'Davao City',  'num_plantilla_employees' => 3, 'num_municipalities' => 0, 'num_cities' => 1],
+    ];
+
     private static function get_category(string $name): string
     {
         foreach (self::CLASSIFICATION as $category => $list) {
@@ -71,22 +84,57 @@ class DatabaseSeeder extends Seeder
         return 'micro';
     }
 
-    private function generate_provinces()
+    // Creates the `region` table rows from the canonical region → island map and
+    // returns a [region name => region id] lookup for assigning provinces.
+    private function generate_regions(): array
     {
-        $provinces = require __DIR__ . '/data/provinces.php';
-        foreach ($provinces as $p) {
-            Province::create([
-                'name'                    => $p['name'],
-                'category'                => self::get_category($p['name']),
-                'region'                  => Province::REGIONS[$p['name']] ?? null,
+        $map = [];
+        foreach (Province::REGION_ISLANDS as $name => $island) {
+            $map[$name] = Region::create([
+                'name'         => $name,
+                'island_under' => $island,
+            ])->id;
+        }
+        return $map;
+    }
+
+    private function generate_provinces(): void
+    {
+        $regionMap = self::generate_regions();
+
+        $create = function (string $name, array $extra) use ($regionMap) {
+            $regionName = Province::REGIONS[$name] ?? null;
+            if ($regionName === null || !isset($regionMap[$regionName])) {
+                throw new \RuntimeException("No region mapping for province '{$name}'");
+            }
+            Province::create(array_merge([
+                'name'                    => $name,
+                'category'                => self::get_category($name),
+                'region_id'               => $regionMap[$regionName],
+                'num_plantilla_employees' => 0,
+                'num_municipalities'      => 0,
+                'num_cities'              => 0,
+            ], $extra));
+        };
+
+        foreach (require __DIR__ . '/data/provinces.php' as $p) {
+            $create($p['name'], [
                 'num_plantilla_employees' => (int) ($p['num_plantilla_employees'] ?? 0),
                 'num_municipalities'      => (int) ($p['num_municipalities']      ?? 0),
                 'num_cities'              => (int) ($p['num_cities']              ?? 0),
             ]);
         }
+
+        foreach (self::CSTC_PROVINCES as $c) {
+            $create($c['name'], [
+                'num_plantilla_employees' => $c['num_plantilla_employees'],
+                'num_municipalities'      => $c['num_municipalities'],
+                'num_cities'              => $c['num_cities'],
+            ]);
+        }
     }
 
-    private function generate_users()
+    private function generate_users(): void
     {
         $provinces    = Province::all()->keyBy('name');
         $directorRows = require __DIR__ . '/data/provincial-directors.php';
@@ -114,6 +162,11 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->create(['role' => 'sub_admin']);
 
+        // One Regional Admin per region (region-scoped, no province assignment).
+        foreach (Region::all() as $region) {
+            User::factory()->create(['role' => 'regional_admin', 'region_id' => $region->id]);
+        }
+
         foreach ($directorRows as $dir) {
             $province = $provinces[$dir['province']] ?? null;
             if (!$province) continue;
@@ -122,8 +175,8 @@ class DatabaseSeeder extends Seeder
             $director = User::factory()->create([
                 'role'             => 'provincial_director',
                 'dost_employee_id' => self::generate_emp_id(),
-                'province_id'      => $province->id,
             ]);
+            $director->provinces()->attach($province->id);
             self::generate_profile_from_data($director, [
                 'full_name'           => $dir['full_name'],
                 'length_of_service'   => $dir['length_of_service_dost'],
@@ -137,9 +190,9 @@ class DatabaseSeeder extends Seeder
             foreach ($provEmployees as $i => $emp) {
                 $employee = User::factory()->create([
                     'role'             => 'employee',
-                    'province_id'      => $province->id,
                     'dost_employee_id' => "emp-p{$province->id}-" . sprintf('%02d', $i + 1),
                 ]);
+                $employee->provinces()->attach($province->id);
                 self::generate_profile_from_data($employee, [
                     'full_name'           => $emp['full_name'],
                     'length_of_service'   => $emp['length_of_service'],
@@ -152,9 +205,12 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // Create Provincial Admin (no real data available)
-            User::factory()->create(['role' => 'provincial_admin', 'province_id' => $province->id]);
-            User::factory()->create(['role' => 'provincial_sub_admin', 'province_id' => $province->id]);
+            // Create Provincial Admin + Provincial Sub Admin (no real data available)
+            $provincialAdmin = User::factory()->create(['role' => 'provincial_admin']);
+            $provincialAdmin->provinces()->attach($province->id);
+
+            $provincialSubAdmin = User::factory()->create(['role' => 'provincial_sub_admin']);
+            $provincialSubAdmin->provinces()->attach($province->id);
         }
     }
 
