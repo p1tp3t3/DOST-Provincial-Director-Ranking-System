@@ -273,7 +273,7 @@ return [
     ],
     [
         'sort_order' => '28',
-        'category_code' => 'FUNCTIONAL',
+        'category_code' => 'STRATEGIC',
         'code' => 'func_drr_measures',
         'name' => 'Number of Measures on Disaster Risk Reduction and Mitigation Implemented',
         'weight' => '0.1',
@@ -283,7 +283,7 @@ return [
     ],
     [
         'sort_order' => '29',
-        'category_code' => 'FUNCTIONAL',
+        'category_code' => 'STRATEGIC',
         'code' => 'func_drrm_collaborations',
         'name' => 'Number of DRRM-related collaboration with Stakeholders',
         'weight' => '0.075',
@@ -293,7 +293,7 @@ return [
     ],
     [
         'sort_order' => '30',
-        'category_code' => 'FUNCTIONAL',
+        'category_code' => 'STRATEGIC',
         'code' => 'func_linkages_established',
         'name' => 'Number of Linkages established thru signed MOA or MOU',
         'weight' => '0.075',
@@ -303,7 +303,7 @@ return [
     ],
     [
         'sort_order' => '31',
-        'category_code' => 'FUNCTIONAL',
+        'category_code' => 'STRATEGIC',
         'code' => 'func_external_funds_sourced',
         'name' => 'Amount of External Funds sourced with MOV (DOST Councils, Other NGAs, Funding Partners)',
         'weight' => '0.05',

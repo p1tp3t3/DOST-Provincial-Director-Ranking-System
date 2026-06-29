@@ -8,7 +8,7 @@ import {
     RiArrowRightLine, RiGlobalLine, RiMicroscopeLine,
     RiLeafLine, RiLightbulbLine, RiTeamLine,
     RiCalendarLine, RiArrowRightUpLine, RiCloseLine,
-    RiMapPin2Fill, RiLockLine, RiUserFill,
+    RiMapPin2Fill, RiLockLine, RiUserFill, RiEyeLine, RiFocus3Line, RiAuctionLine
 } from '@remixicon/vue';
 
 defineProps({
@@ -41,7 +41,7 @@ const features = [
     { icon: RiBuilding2Line, title: 'Province Directories',
       text: 'Browse every province\'s profile - its provincial S&T director, staff, classification tier, and region - in one organized place.' },
     { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
-      text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Functional (30%), and Support (10%) categories, with adjective ratings.' },
+      text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Strategic (30%), and Support (10%) categories, with adjective ratings.' },
     { icon: RiBarChart2Line, title: 'Regional Analytics',
       text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
     { icon: RiLineChartLine, title: 'Trends Over Time',
@@ -63,7 +63,7 @@ const blogs = [
         tag:    'Updates',
         date:   'May 28, 2025',
         title:  'FY 2024 PSTD Rankings Now Available on the Information System',
-        excerpt:'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, functional, and support categories.',
+        excerpt:'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, strategic, and support categories.',
     },
     {
         slug:   'regional-st-directors-summit-2025',
@@ -158,8 +158,7 @@ const sampleDirector = computed(() => {
                         <img src="/assets/logo.png" alt="DOST" class="w-10 h-10 rounded-lg object-contain" />
                         <div class="leading-tight">
                             <div class="font-extrabold dost-ink text-lg tracking-tight">DOST PRISM</div>
-                            <div class="text-[13px] text-slate-500 hidden sm:block">Ranking &amp; Information System</div>
-                            <div class="text-[11px] text-slate-400 hidden sm:block">Developed by Region IX</div>
+                            <div class="text-[11px] text-slate-500 hidden sm:block">Developed by Region IX</div>
                         </div>
                     </a>
 
@@ -304,17 +303,17 @@ const sampleDirector = computed(() => {
                 </div>
                 <div class="mvm-grid">
                     <article class="mvm-card reveal reveal--d1">
-                        <div class="mvm-icon"><RiBuilding2Line class="w-6 h-6" /></div>
+                        <div class="mvm-icon"><RiAuctionLine class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Mandate</h3>
                         <p class="mvm-text">Provide central direction, leadership and coordination of scientific and technological efforts and ensure that the results therefrom are geared and utilized in areas of maximum economic and social benefits for the people.</p>
                     </article>
                     <article class="mvm-card mvm-card--accent reveal reveal--d2">
-                        <div class="mvm-icon"><RiLightbulbLine class="w-6 h-6" /></div>
+                        <div class="mvm-icon"><RiFocus3Line class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Mission</h3>
                         <p class="mvm-text">To direct, lead, and coordinate the country's scientific, technological, and innovative efforts geared towards maximum economic and social benefits for the people.</p>
                     </article>
                     <article class="mvm-card reveal reveal--d3">
-                        <div class="mvm-icon"><RiGlobalLine class="w-6 h-6" /></div>
+                        <div class="mvm-icon"><RiEyeLine class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Vision</h3>
                         <p class="mvm-text">DOST as the leading enabler and provider of science, technology, and innovation (STI) explicit solutions towards national development.</p>
                     </article>
@@ -333,7 +332,7 @@ const sampleDirector = computed(() => {
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Covering all 83 provinces and clusters across 17 regions, the system uses a structured
                     scoring framework with 37 performance indicators grouped into three categories -
-                    Core, Functional, and Support - to produce transparent, evidence-based rankings.
+                    Core, Strategic, and Support - to produce transparent, evidence-based rankings.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Designed to promote excellence and accountability in regional S&amp;T leadership,
@@ -348,7 +347,7 @@ const sampleDirector = computed(() => {
                     </div>
                     <div class="scoring-keys">
                         <span class="scoring-key"><span class="scoring-dot" style="background:#0b57a8;"></span>Core <b>60%</b></span>
-                        <span class="scoring-key"><span class="scoring-dot" style="background:#2079c4;"></span>Functional <b>30%</b></span>
+                        <span class="scoring-key"><span class="scoring-dot" style="background:#2079c4;"></span>Strategic <b>30%</b></span>
                         <span class="scoring-key"><span class="scoring-dot" style="background:#3f93e0;"></span>Support <b>10%</b></span>
                     </div>
                     <div class="scoring-stack">
@@ -444,7 +443,7 @@ const sampleDirector = computed(() => {
                                             {{ selectedProvince.name }} is a province under {{ selectedProvince.region }},
                                             located in the {{ selectedProvince.island }} island group of the Philippines.
                                             It is part of DOST's provincial S&amp;T director network, which evaluates
-                                            performance across Core, Functional, and Support categories.
+                                            performance across Core, Strategic, and Support categories.
                                         </p>
 
                                         <hr class="prov-sep" />

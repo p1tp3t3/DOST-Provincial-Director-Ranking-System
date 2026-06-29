@@ -44,7 +44,7 @@ class KPIScoreSeeder extends Seeder
         45 => 'core_cest_value_funded',
         33 => 'input_setup_ongoing_count',
         35 => 'input_setup_delinquent_count',
-        // FUNCTIONAL
+        // STRATEGIC
         25 => 'func_drr_measures',
         26 => 'func_drrm_collaborations',
         53 => 'func_linkages_established',

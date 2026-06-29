@@ -65,7 +65,7 @@ class ProvinceController extends Controller
             }
         }
 
-        // Group KPIs under their matrix category (CORE / FUNCTIONAL / SUPPORT) for display
+        // Group KPIs under their matrix category (CORE / STRATEGIC / SUPPORT) for display
         $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
             ->orderBy('sort_order')->get()
             ->map(fn($cat) => [

@@ -260,9 +260,9 @@ const addableYears = computed(() => {
 });
 
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
-const catColor  = (code) => ({ CORE: 'indigo', FUNCTIONAL: 'teal', SUPPORT: 'deep-purple' }[code] ?? 'blue-grey');
-const catBg     = (code) => ({ CORE: '#eef2ff', FUNCTIONAL: '#e0f2f1', SUPPORT: '#ede7f6' }[code] ?? '#f1f5f9');
-const catIcon   = (code) => ({ CORE: 'mdi-rocket-launch-outline', FUNCTIONAL: 'mdi-shield-outline', SUPPORT: 'mdi-cog-outline' }[code] ?? 'mdi-chart-bar');
+const catColor  = (code) => ({ CORE: 'indigo', STRATEGIC: 'teal', SUPPORT: 'deep-purple' }[code] ?? 'blue-grey');
+const catBg     = (code) => ({ CORE: '#eef2ff', STRATEGIC: '#e0f2f1', SUPPORT: '#ede7f6' }[code] ?? '#f1f5f9');
+const catIcon   = (code) => ({ CORE: 'mdi-rocket-launch-outline', STRATEGIC: 'mdi-shield-outline', SUPPORT: 'mdi-cog-outline' }[code] ?? 'mdi-chart-bar');
 
 const save = () => {
     const values = [];

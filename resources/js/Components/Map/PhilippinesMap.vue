@@ -2,7 +2,12 @@
     <div ref="wrapEl" class="ph-map-root">
         <!-- Island / Region / Province filters are operated by the top sticky
              filter bar in the parent dashboard. The map only renders here. -->
-        <div class="ph-map-wrap">
+        <!-- Fullscreen is a CSS pseudo-fullscreen (fixed overlay) teleported to
+             <body>. The native Fullscreen API renders black when an ancestor has
+             a transform / filter / backdrop-filter (top-layer promotion bug),
+             which is exactly the case inside the dashboard shell. -->
+        <Teleport to="body" :disabled="!isFullscreen">
+        <div ref="fsEl" class="ph-map-wrap" :class="{ 'is-fullscreen': isFullscreen }">
         <div ref="mapEl" class="ph-map"></div>
 
         <!-- Info Panel -->
@@ -283,6 +288,14 @@
             </div>
         </transition>
 
+        <!-- Reset view -->
+        <button class="reset-btn" @click="resetView" title="Reset map">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+        </button>
+
         <!-- Fullscreen toggle -->
         <button class="fs-btn" @click="toggleFullscreen" :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
             <svg v-if="!isFullscreen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -295,11 +308,12 @@
             </svg>
         </button>
         </div>
+        </Teleport>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { REGION_LABELS } from '@/Data/mapRegions';
@@ -377,11 +391,11 @@ const scoreColor = (score) => {
     return '#9a3412';                    // bronze
 };
 
-// Full per-category breakdown for the side panel. Always returns CORE → FUNCTIONAL
+// Full per-category breakdown for the side panel. Always returns CORE → STRATEGIC
 // → SUPPORT in matrix-weight order, with isStrongest/isWeakest flags so the
 // panel can mark the leader and laggard with arrow markers.
-const CATEGORY_FULL_NAMES = { CORE: 'Core', FUNCTIONAL: 'Functional', SUPPORT: 'Support' };
-const CATEGORY_ORDER      = ['CORE', 'FUNCTIONAL', 'SUPPORT'];
+const CATEGORY_FULL_NAMES = { CORE: 'Core', STRATEGIC: 'Strategic', SUPPORT: 'Support' };
+const CATEGORY_ORDER      = ['CORE', 'STRATEGIC', 'SUPPORT'];
 const categoryBreakdown = (entry) => {
     if (!entry?.subtotals_pct) return [];
     const list = CATEGORY_ORDER
@@ -447,6 +461,7 @@ const catBg    = (cat) => ({ micro:'#607d8b18', small:'#00968818', medium:'#3f51
 // ── Refs ──────────────────────────────────────────────────────────────────────
 const mapEl        = ref(null);
 const wrapEl       = ref(null);
+const fsEl         = ref(null);
 const isFullscreen = ref(false);
 const ready        = ref(false);
 const selIsland    = ref('');
@@ -932,33 +947,41 @@ const hideCstcLayerDynamic = () => {
     selCstc.value = '';
 };
 
+// Resolve a province/cluster name to its CSTC city footprint. The former CSTCs
+// (CAMANAVA, PAMAMAZON, PAMAMARISAN, MUNTAPARLAS, ZCIC, Davao City) are now
+// classified as Large and appear in the province list, but they're city clusters
+// rather than province polygons, so they must zoom via cstcData. Matching is
+// case-tolerant because the rankings data and the geojson `cstc` may differ.
+const findCstc = (name) => {
+    if (!name) return null;
+    if (cstcData[name]) return { key: name, bounds: cstcData[name] };
+    const lower = name.toLowerCase();
+    const key = Object.keys(cstcData).find(k => k.toLowerCase() === lower);
+    return key ? { key, bounds: cstcData[key] } : null;
+};
+
 const onProvinceChange = () => {
     pendingFly = false;
+    if (!selProvince.value) { selCstc.value = ''; refreshStyle(); refreshCstcStyle(); panel.value = null; return; }
 
-    if (!selProvince.value) {
-        panel.value = null;
-        hideCstcLayerDynamic();
-        refreshStyle();
-        refreshCstcStyle();
-        return;
-    }
-
-    // CSTC cluster picked from the Province dropdown (no entry in `provinces`)
-    if (cstcData[selProvince.value]) {
-        selCstc.value = selProvince.value;
-        showCstcLayerDynamic();
-        refreshCstcStyle();
-        panel.value = buildCstcPanel(selProvince.value);
-        smartFlyTo(cstcData[selProvince.value], { maxZoom: 13, padding: [50, 50] });
-        return;
-    }
-
-    hideCstcLayerDynamic();
-    refreshStyle();
-    refreshCstcStyle();
-    panel.value = buildProvincePanel(selProvince.value);
     const prov = provinces.find(p => p.name === selProvince.value);
-    if (prov) smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+    if (prov) {
+        selCstc.value = '';
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildProvincePanel(selProvince.value);
+        smartFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+        return;
+    }
+    const cstc = findCstc(selProvince.value);
+    if (cstc) {
+        selCstc.value = cstc.key;
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildCstcPanel(cstc.key);
+        smartFlyTo(cstc.bounds, { maxZoom: 13, padding: [40, 40] });
+        return;
+    }
+    refreshStyle();
+    panel.value = buildProvincePanel(selProvince.value);
 };
 
 // ── External (dashboard sticky filter) → internal map state ───────────────────
@@ -1008,14 +1031,25 @@ const selectRegionFromList = (code) => {
 };
 
 const selectProvinceFromList = (name) => {
-    const prov = provinces.find(p => p.name === name);
-    if (!prov) return;
     selProvince.value = name;
     pendingFly = false;
-    refreshStyle();
-    panel.value = buildProvincePanel(name);
-    softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
-    provinceListOpen.value = false;
+    const prov = provinces.find(p => p.name === name);
+    if (prov) {
+        selCstc.value = '';
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildProvincePanel(name);
+        softFlyTo(prov.bounds, { maxZoom: 9, padding: [50, 50] });
+        provinceListOpen.value = false;
+        return;
+    }
+    const cstc = findCstc(name);
+    if (cstc) {
+        selCstc.value = cstc.key;
+        refreshStyle(); refreshCstcStyle();
+        panel.value = buildCstcPanel(cstc.key);
+        softFlyTo(cstc.bounds, { maxZoom: 13, padding: [40, 40] });
+        provinceListOpen.value = false;
+    }
 };
 const resetView = () => {
     selIsland.value = selRegion.value = selProvince.value = '';
@@ -1025,18 +1059,65 @@ const resetView = () => {
     map?.stop();
     refreshStyle();
     refreshCstcStyle();
-    map?.flyTo(HOME.center, HOME.zoom, { duration: 1.0, easeLinearity: 0.3 });
+    map?.flyTo(HOME.center, HOME.zoom + (isFullscreen.value ? FS_ZOOM_BOOST : 0), { duration: 1.0, easeLinearity: 0.3 });
 };
 
 // ── Fullscreen ────────────────────────────────────────────────────────────────
+// True OS-level fullscreen via the native Fullscreen API, but requested only
+// AFTER the map is teleported to <body>. Requesting it in place renders black,
+// because the dashboard shell has transform/filter/backdrop-filter ancestors and
+// Chrome can't promote such an element to the top layer. Teleporting first
+// removes those ancestors; a CSS fixed overlay (.is-fullscreen) is the fallback
+// if the native API is blocked.
+const enterFullscreen = async () => {
+    isFullscreen.value = true;     // teleports to <body> + applies the overlay
+    await nextTick();              // keeps the click's user activation (microtask)
+    try {
+        await fsEl.value?.requestFullscreen();
+    } catch {
+        /* Native API blocked — the fixed overlay still covers the viewport. */
+    }
+};
+const exitFullscreen = async () => {
+    try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+    } catch { /* ignore */ }
+    isFullscreen.value = false;
+};
 const toggleFullscreen = () => {
-    if (!document.fullscreenElement) wrapEl.value?.requestFullscreen();
-    else document.exitFullscreen();
+    isFullscreen.value ? exitFullscreen() : enterFullscreen();
 };
+const onEsc = (e) => { if (e.key === 'Escape') exitFullscreen(); };
+// Extra zoom levels applied while fullscreen. The fullscreen canvas is ~2x the
+// embedded card in each dimension, which is one Leaflet zoom level — so without
+// this the Philippines would render tiny on the big canvas.
+const FS_ZOOM_BOOST = 1;
+// Browser-driven exit (Esc / F11) and the resize on enter/exit: keep state and
+// Leaflet's sizing in sync.
 const onFullscreenChange = () => {
-    isFullscreen.value = !!document.fullscreenElement;
-    setTimeout(() => map?.invalidateSize(), 100);
+    if (!document.fullscreenElement && isFullscreen.value) isFullscreen.value = false;
+    requestAnimationFrame(() => map?.invalidateSize());
 };
+
+watch(isFullscreen, async (on) => {
+    if (on) {
+        document.addEventListener('keydown', onEsc);
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.removeEventListener('keydown', onEsc);
+        document.body.style.overflow = '';
+    }
+    // Wait for the teleport/layout to settle, then let Leaflet recompute its size
+    // for the new container dimensions (otherwise tiles stay sized to the old box).
+    await nextTick();
+    requestAnimationFrame(() => {
+        if (!map) return;
+        map.invalidateSize();
+        // Compensate for the canvas resize so the framing matches the embedded
+        // card instead of the map turning tiny (fullscreen) or oversized (exit).
+        map.setZoom(map.getZoom() + (on ? FS_ZOOM_BOOST : -FS_ZOOM_BOOST), { animate: false });
+    });
+});
 
 // ── Mount ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
@@ -1234,6 +1315,8 @@ watch(() => props.trends,       () => { rebuildPanel(); }, { deep: true });
 
 onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', onFullscreenChange);
+    document.removeEventListener('keydown', onEsc);
+    document.body.style.overflow = '';
     map?.remove();
 });
 </script>
@@ -1247,10 +1330,13 @@ onBeforeUnmount(() => {
     border-radius: 0 0 8px 8px;
 }
 
-/* Fullscreen: keep the filter bar on top and let the map fill the rest */
-.ph-map-root:fullscreen, .ph-map-root:-webkit-full-screen { background: #fff; display: flex; flex-direction: column; }
-.ph-map-root:fullscreen .ph-map-wrap, .ph-map-root:-webkit-full-screen .ph-map-wrap { flex: 1; min-height: 0; }
-.ph-map-root:fullscreen .ph-map, .ph-map-root:-webkit-full-screen .ph-map { height: 100%; border-radius: 0; }
+/* Pseudo-fullscreen: the .ph-map-wrap is teleported to <body> and pinned over
+   the viewport. Avoids the native Fullscreen API's black-screen bug under
+   transformed/filtered ancestors. */
+.ph-map-wrap.is-fullscreen {
+    position: fixed; inset: 0; z-index: 3000; background: #fff;
+}
+.ph-map-wrap.is-fullscreen .ph-map { height: 100%; border-radius: 0; }
 
 /* ── Filter bar (Island / Region / Province) - matches the other dashboard filter rows ── */
 .map-filter-bar {
@@ -1294,7 +1380,7 @@ onBeforeUnmount(() => {
 /* ── Info panel ────────────────────────────── */
 .map-info-panel {
     position: absolute; bottom: 28px; right: 10px; z-index: 1000;
-    width: 290px;
+    width: 320px;
     background: rgba(255,255,255,0.97);
     border: 1px solid #e2e8f0; border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.14);
@@ -1312,16 +1398,16 @@ onBeforeUnmount(() => {
 .panel-header-main   { flex: 1; min-width: 0; }
 .panel-caption {
     display: flex; align-items: center; gap: 5px;
-    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; margin-bottom: 4px;
 }
 .panel-caption-tier { color: #6366f1; }
 .panel-caption-sep  { color: #cbd5e1; font-weight: 400; }
 .panel-caption-year { color: #94a3b8; }
 
-.panel-title    { font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.panel-subtitle { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.3; }
-.panel-region-tag { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
+.panel-title    { font-size: 21px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.panel-subtitle { font-size: 14.5px; color: #64748b; margin-top: 3px; line-height: 1.3; }
+.panel-region-tag { font-size: 13px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
 .panel-name-link {
     text-decoration: none !important; color: inherit; display: block;
     transition: color 0.15s;
@@ -1351,8 +1437,8 @@ onBeforeUnmount(() => {
 /* Hero: large score number paired with inline tier/rank - no chips */
 .panel-hero          { display: flex; flex-direction: column; gap: 6px; }
 .panel-hero-row      { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.panel-score-num     { font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
-.panel-hero-status   { font-size: 11.5px; font-weight: 600; line-height: 1.3; text-align: right; }
+.panel-score-num     { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.panel-hero-status   { font-size: 14px; font-weight: 600; line-height: 1.3; text-align: right; }
 .panel-hero-rank     { font-weight: 700; margin-left: 4px; }
 .panel-score-bar-wrap {
     height: 4px; background: #f1f5f9; border-radius: 3px; overflow: hidden;
@@ -1363,7 +1449,7 @@ onBeforeUnmount(() => {
 .panel-section          { display: flex; flex-direction: column; gap: 6px; }
 .panel-section-header   { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .panel-section-label {
-    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.06em; color: #94a3b8;
 }
 
@@ -1378,16 +1464,16 @@ onBeforeUnmount(() => {
     border-top: 1px solid #f1f5f9;
 }
 .cat-row:first-child { border-top: none; }
-.cat-row-marker      { color: #cbd5e1; text-align: center; font-size: 11px; line-height: 1; }
-.cat-row-name        { font-size: 12px; color: #475569; }
-.cat-row-score       { font-size: 12px; font-weight: 700; color: #0f172a; }
+.cat-row-marker      { color: #cbd5e1; text-align: center; font-size: 13px; line-height: 1; }
+.cat-row-name        { font-size: 14.5px; color: #475569; }
+.cat-row-score       { font-size: 14.5px; font-weight: 700; color: #0f172a; }
 .cat-row--top .cat-row-marker { color: #16a34a; }
 .cat-row--top .cat-row-score  { color: #15803d; }
 .cat-row--bottom .cat-row-marker { color: #dc2626; }
 .cat-row--bottom .cat-row-score  { color: #b91c1c; }
 
 /* Trend delta badge in the section header */
-.trend-delta { font-size: 11px; font-weight: 700; }
+.trend-delta { font-size: 13.5px; font-weight: 700; }
 
 /* Shared classes - also used by the Island + Region panel variants */
 .panel-divider { height: 1px; background: #f1f5f9; margin: 0 -14px; }
@@ -1438,7 +1524,7 @@ onBeforeUnmount(() => {
 .panel-trend-years {
     display: flex;
     justify-content: space-between;
-    font-size: 9.5px;
+    font-size: 11.5px;
     color: #94a3b8;
     font-weight: 600;
     padding: 0 4px;
@@ -1461,14 +1547,22 @@ onBeforeUnmount(() => {
 .fs-btn:hover { background: #f1f5f9; color: #1e293b; }
 .fs-btn svg   { width: 16px; height: 16px; }
 
-.ph-map-wrap:fullscreen .map-nav,
-.ph-map-wrap:-webkit-full-screen .map-nav { top: 14px; left: 14px; }
-.ph-map-wrap:fullscreen .fs-btn,
-.ph-map-wrap:-webkit-full-screen .fs-btn  { top: 14px; right: 14px; }
-.ph-map-wrap:fullscreen .map-info-panel,
-.ph-map-wrap:-webkit-full-screen .map-info-panel { bottom: 32px; right: 14px; width: 300px; }
-.ph-map-wrap:fullscreen .map-province-list-panel,
-.ph-map-wrap:-webkit-full-screen .map-province-list-panel { bottom: 32px; right: 324px; }
+.reset-btn {
+    position: absolute; top: 10px; right: 50px; z-index: 1000;
+    width: 32px; height: 32px; padding: 6px;
+    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0; border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: #475569;
+    backdrop-filter: blur(4px); transition: background 0.15s, color 0.15s;
+}
+.reset-btn:hover { background: #f1f5f9; color: #1e293b; }
+.reset-btn svg   { width: 16px; height: 16px; }
+
+.ph-map-wrap.is-fullscreen .map-nav { top: 14px; left: 14px; }
+.ph-map-wrap.is-fullscreen .fs-btn  { top: 14px; right: 14px; }
+.ph-map-wrap.is-fullscreen .reset-btn  { top: 14px; right: 54px; }
+.ph-map-wrap.is-fullscreen .map-info-panel { bottom: 32px; right: 14px; width: 330px; }
+.ph-map-wrap.is-fullscreen .map-province-list-panel { bottom: 32px; right: 324px; }
 
 /* ── Panel slide-in transition ─────────────── */
 .panel-slide-enter-active { transition: transform 0.22s ease, opacity 0.22s ease; }
