@@ -141,12 +141,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/performance-map', [DashboardController::class, 'map_index'])->name('performance-map');
     });
 
-    // ── Regional Admin only ─────────────────────────────────────
-    Route::middleware('role:regional_admin')->group(function () {
+    // ── Regional Admin + Regional Director (region overview / map / report) ──
+    Route::middleware('role:regional_admin,regional_director')->group(function () {
         Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
         Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
         Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
+    });
 
+    // ── Regional Admin only ─────────────────────────────────────
+    Route::middleware('role:regional_admin')->group(function () {
         // KPI edit access requests — approve/reject a provincial admin's request
         // for an extra edit once their free edit for a year/type is spent.
         Route::get('/regional-kpi-edit-requests',                [KpiEditAccessController::class, 'index']);

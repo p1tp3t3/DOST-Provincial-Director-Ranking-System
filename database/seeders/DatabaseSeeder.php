@@ -167,6 +167,29 @@ class DatabaseSeeder extends Seeder
             User::factory()->create(['role' => 'regional_admin', 'region_id' => $region->id]);
         }
 
+        // One Regional Director per region. No real roster yet, so each is simply
+        // named after the region it oversees (e.g. "NCR", "Region I"). Region-scoped
+        // like the regional admin — no province or KPIs of their own.
+        // Login: regdir_<region-slug> / password  (e.g. regdir_region_i).
+        foreach (Region::all() as $region) {
+            $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $region->name)); // "region_i", "ncr"
+            $regionalDirector = User::factory()->create([
+                'role'             => 'regional_director',
+                'region_id'        => $region->id,
+                'username'         => 'regdir_' . $slug,
+                'email'            => 'regdir_' . $slug . '@dost.test',
+                'dost_employee_id' => 'rd-' . $region->id,
+            ]);
+            Profile::create([
+                'user_id'              => $regionalDirector->id,
+                'first_name'           => $region->name,
+                'middle_name'          => '',
+                'last_name'            => '',
+                'length_of_service'    => '',
+                'education_attainment' => ['data' => []],
+            ]);
+        }
+
         foreach ($directorRows as $dir) {
             $province = $provinces[$dir['province']] ?? null;
             if (!$province) continue;

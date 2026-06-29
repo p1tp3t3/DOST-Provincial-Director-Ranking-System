@@ -18,7 +18,10 @@ class DashboardController extends Controller
         switch (auth()->user()->role) {
             case 'super_admin':           return self::super_admin_dashboard();
             case 'sub_admin':             return self::sub_admin_dashboard();
-            case 'regional_admin':        return self::regional_admin_dashboard();
+            // A regional director oversees their region; they get the same
+            // region-performance overview the regional admin sees.
+            case 'regional_admin':
+            case 'regional_director':     return self::regional_admin_dashboard();
             case 'provincial_admin':      return self::provincial_admin_dashboard();
             case 'provincial_director':   return self::director_dashboard();
             case 'employee':              return self::employee_dashboard();
