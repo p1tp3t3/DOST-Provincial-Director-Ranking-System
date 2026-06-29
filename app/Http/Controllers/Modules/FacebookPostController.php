@@ -109,7 +109,7 @@ class FacebookPostController extends Controller
             ->with('profile')
             ->firstOrFail();
 
-        if ($user->role === 'provincial_sub_admin' && $director->province_id !== $user->province_id) {
+        if ($user->role === 'provincial_admin' && $director->province_id !== $user->province_id) {
             abort(403);
         }
 
@@ -152,7 +152,7 @@ class FacebookPostController extends Controller
     private function returnUrlFor(int $directorId, int $year): string
     {
         $user = Auth::user();
-        if ($user->role === 'provincial_sub_admin') {
+        if ($user->role === 'provincial_admin') {
             return "/provincial-kpi/{$year}";
         }
         $director = User::find($directorId);

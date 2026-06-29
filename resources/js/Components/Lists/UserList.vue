@@ -39,6 +39,8 @@
                     <th class="text-caption text-medium-emphasis">Name</th>
                     <th class="text-caption text-medium-emphasis">Employee ID</th>
                     <th class="text-caption text-medium-emphasis">Email</th>
+                    <th v-if="showProvinceColumn" class="text-caption text-medium-emphasis">Province</th>
+                    <th v-if="showRegionColumn" class="text-caption text-medium-emphasis">Region</th>
                     <th class="text-caption text-medium-emphasis text-center" width="120">Role</th>
                     <th class="text-caption text-medium-emphasis text-center" width="110">Status</th>
                     <th class="text-caption text-medium-emphasis text-center" width="100">Actions</th>
@@ -57,6 +59,8 @@
                     </td>
                     <td class="text-body-2 text-medium-emphasis">{{ user.employee_id ?? '-' }}</td>
                     <td class="text-body-2">{{ user.email }}</td>
+                    <td v-if="showProvinceColumn" class="text-body-2 text-medium-emphasis">{{ user.province ?? '—' }}</td>
+                    <td v-if="showRegionColumn" class="text-body-2 text-medium-emphasis">{{ user.region ?? '—' }}</td>
                     <td class="text-center">
                         <v-chip
                             size="small"
@@ -74,7 +78,7 @@
                                 <v-switch
                                     v-bind="tip"
                                     :model-value="getActivate(user)"
-                                    :disabled="isOwnAccount(user.id) || toggling === user.id"
+                                    :disabled="!canManage || isOwnAccount(user.id) || toggling === user.id"
                                     :loading="toggling === user.id"
                                     color="success"
                                     density="compact"
@@ -117,7 +121,7 @@
                                     </v-btn>
                                 </template>
                             </v-tooltip>
-                            <v-tooltip text="Delete User" location="top">
+                            <v-tooltip v-if="canManage" text="Delete User" location="top">
                                 <template #activator="{ props: tip }">
                                     <v-btn
                                         v-bind="tip"
@@ -137,7 +141,7 @@
 
                 <!-- Empty state -->
                 <tr v-if="filtered.length === 0">
-                    <td colspan="7">
+                    <td :colspan="showLocationColumns ? 9 : 7">
                         <div class="text-center py-12">
                             <v-icon size="40" color="grey-lighten-2" class="mb-3">mdi-account-search-outline</v-icon>
                             <div class="text-body-2 text-medium-emphasis">
@@ -398,6 +402,15 @@ const toggling     = ref(null);
 const localState   = ref({});  // userId → boolean override for instant UI feedback
 
 const isSuperAdmin  = computed(() => page.props.auth?.user?.role === 'super_admin');
+// Regional Admin gets a read-only view of this list — create/edit/delete/activation
+// stay restricted to the roles the corresponding routes actually allow.
+const canManage     = computed(() => ['super_admin', 'provincial_admin'].includes(page.props.auth?.user?.role));
+// Province/Region columns only add value when the list spans more than one of
+// each. Regional Admin's list spans many provinces but a single region, so
+// Region would just repeat the same value on every row — show Province only.
+// Super Admin/Sub Admin see the whole country, so both columns earn their place.
+const showProvinceColumn = computed(() => ['super_admin', 'sub_admin', 'regional_admin'].includes(page.props.auth?.user?.role));
+const showRegionColumn   = computed(() => ['super_admin', 'sub_admin'].includes(page.props.auth?.user?.role));
 const isOwnAccount  = (id) => page.props.auth?.user?.id === id;
 const getActivate   = (user) => localState.value[user.id] ?? user.activate;
 

@@ -670,12 +670,13 @@ const sampleDirector = computed(() => {
 .btn-hero-light {
     display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 12px;
     background: #fff; color: var(--dost-700); font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,.18);
-    transition: transform .15s ease, background .15s ease;
+    transition: transform .15s ease, background .15s ease; text-decoration: none !important;
 }
 .btn-hero-light:hover { background: #eef5ff; transform: translateY(-1px); }
 .btn-hero-ghost {
     display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px;
     color: #fff; font-weight: 700; border: 1.5px solid rgba(255,255,255,.45); transition: background .15s ease;
+    text-decoration: none !important;
 }
 .btn-hero-ghost:hover { background: rgba(255,255,255,.12); }
 
@@ -742,6 +743,7 @@ const sampleDirector = computed(() => {
     display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 12px;
     background: var(--dost); color: #fff; font-weight: 700; font-size: 17px;
     box-shadow: 0 4px 14px rgba(11,87,168,.30); transition: background .15s ease, transform .15s ease;
+    text-decoration: none !important;
 }
 .btn-primary-lg:hover { background: var(--dost-700); transform: translateY(-1px); }
 

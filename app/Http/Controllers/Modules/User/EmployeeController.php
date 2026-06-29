@@ -24,7 +24,7 @@ class EmployeeController extends Controller
                     })
                     ->latest('created_at')
                     ->paginate(20);
-        
+
         return EmployeeResource::collection($data);
     }
 }
