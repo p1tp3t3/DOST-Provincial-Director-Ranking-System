@@ -218,9 +218,9 @@
                     <span v-else class="text-caption text-disabled">—</span>
                 </template>
 
-                <template #item.functional="{ item }">
+                <template #item.strategic="{ item }">
                     <span v-if="item.status === 'ranked'" class="text-caption">
-                        {{ item.subtotals_pct?.FUNCTIONAL?.toFixed(1) ?? '—' }}%
+                        {{ item.subtotals_pct?.STRATEGIC?.toFixed(1) ?? '—' }}%
                     </span>
                     <span v-else class="text-caption text-disabled">—</span>
                 </template>
@@ -409,7 +409,7 @@ const tableHeaders = [
     { title: 'Director', key: 'director',  sortable: false },
     { title: 'Tier',     key: 'category',  width: '90px',  align: 'center', sortable: true  },
     { title: 'CORE 60%', key: 'core',      width: '90px',  align: 'center', sortable: false },
-    { title: 'FUNC 30%', key: 'functional',width: '90px',  align: 'center', sortable: false },
+    { title: 'STRAT 30%',key: 'strategic', width: '90px',  align: 'center', sortable: false },
     { title: 'SUPP 10%', key: 'support',   width: '90px',  align: 'center', sortable: false },
     { title: 'Total',    key: 'total_pct', width: '200px', sortable: true  },
 ];

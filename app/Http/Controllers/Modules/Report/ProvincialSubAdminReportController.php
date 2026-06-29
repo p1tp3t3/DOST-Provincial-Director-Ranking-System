@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules\Report;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Province;
+use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
 use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -130,16 +131,30 @@ class ProvincialSubAdminReportController extends Controller
             ->first();
         if (!$director) return [];
 
+        // The PDF shows a simple accomplishment view (target vs accomplished) from the
+        // director's submitted KPI rows; ranking-matrix fields (tier/bucket) are merged
+        // on top for any section that needs them.
+        $toNum        = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
+        $kpis         = ProvincialDirectorKPI::where('provincial_director_id', $director->id)->get();
+        $target       = $kpis->sum(fn($k) => $toNum($k->target));
+        $accomplished = $kpis->sum(fn($k) => $toNum($k->accomplished));
+        $base = [
+            'director_id'  => $director->id,
+            'target'       => $target,
+            'accomplished' => $accomplished,
+            'rate'         => $target > 0 ? round($accomplished / $target * 100, 1) : 0,
+            'total_items'  => $kpis->count(),
+        ];
+
         $svc   = new RankingService();
         $years = $svc->availableYears();
-        if (empty($years)) return ['director_id' => $director->id];
+        if (empty($years)) return $base;
         $latestYear = $years[0];
 
         foreach ($svc->rankByYear($latestYear) as $tier => $rows) {
             foreach ($rows as $r) {
                 if ((int) $r['province_id'] === (int) $provinceId) {
-                    return [
-                        'director_id'    => $director->id,
+                    return array_merge($base, [
                         'year'           => $latestYear,
                         'tier'           => $tier,
                         'tier_rank'      => $r['rank'],
@@ -147,11 +162,11 @@ class ProvincialSubAdminReportController extends Controller
                         'total_pct'      => $r['total_pct'],
                         'adjective'      => $r['adjective_label'],
                         'subtotals_pct'  => $r['subtotals_pct'],
-                    ];
+                    ]);
                 }
             }
         }
-        return ['director_id' => $director->id, 'year' => $latestYear];
+        return array_merge($base, ['year' => $latestYear]);
     }
 
     private function get_log_stats(?int $provinceId, ?Carbon $from = null, ?Carbon $to = null): array

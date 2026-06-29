@@ -198,7 +198,7 @@ const props = defineProps({
 
 const kpiCategories = [
     { code: 'CORE',       label: 'Core',       weight: '60%' },
-    { code: 'FUNCTIONAL', label: 'Functional', weight: '30%' },
+    { code: 'STRATEGIC',  label: 'Strategic',  weight: '30%' },
     { code: 'SUPPORT',    label: 'Support',    weight: '10%' },
 ];
 

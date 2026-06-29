@@ -222,7 +222,10 @@ class RankingService
         return [
             'province_id'      => $provinceId,
             'province'         => $meta['province'],
-            'region'           => $meta['region'] ?? null,
+            // `region` keeps the legacy string contract the dashboard map panel reads
+            // (entry.region); region_id / region_name / island_under back the newer
+            // region-aware views. All derive from the region table via p.region_id.
+            'region'           => $meta['region_name'] ?? null,
             'category'         => $meta['category'],
             'region_id'        => $meta['region_id'],
             'region_name'      => $meta['region_name'],

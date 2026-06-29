@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules\Report;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Province;
+use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
 use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -97,9 +98,22 @@ class SubAdminReportController extends Controller
         if (empty($years)) return [];
         $latestYear = $years[0];
 
+        // Pre-aggregate each director's submitted target/accomplished for the year so the
+        // PDF's accomplishment columns render without an N+1 query per director.
+        $toNum  = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
+        $kpiAgg = ProvincialDirectorKPI::where('year', $latestYear)->get()
+            ->groupBy('provincial_director_id')
+            ->map(fn($g) => [
+                'target'       => $g->sum(fn($k) => $toNum($k->target)),
+                'accomplished' => $g->sum(fn($k) => $toNum($k->accomplished)),
+            ]);
+
         $rows = [];
         foreach ($svc->rankByYear($latestYear) as $tier => $tierRows) {
             foreach ($tierRows as $r) {
+                $agg          = $kpiAgg[$r['director_id']] ?? ['target' => 0, 'accomplished' => 0];
+                $target       = $agg['target'];
+                $accomplished = $agg['accomplished'];
                 $rows[] = [
                     'id'           => $r['province_id'],
                     'name'         => $r['director'] ?: '—',
@@ -108,6 +122,10 @@ class SubAdminReportController extends Controller
                     'tier_rank'    => $r['rank'],
                     'bucket'       => $r['bucket'],
                     'total_pct'    => $r['total_pct'],
+                    // Legacy accomplishment view the PDF blade renders (target/accomplished/rate).
+                    'target'       => $target,
+                    'accomplished' => $accomplished,
+                    'rate'         => $target > 0 ? round($accomplished / $target * 100, 1) : 0,
                     'adjective'    => $r['adjective_label'],
                     'subtotals'    => $r['subtotals_pct'],
                     'year'         => $latestYear,
