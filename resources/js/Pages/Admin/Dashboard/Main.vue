@@ -706,7 +706,7 @@ const props = defineProps({
 
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
-const selectedTier     = ref('all');
+const selectedTier     = ref('micro');
 const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'STRATEGIC' | 'SUPPORT'
 const selectedIsland   = ref('all');
 const selectedRegion   = ref('all');
@@ -935,10 +935,9 @@ const tierCounts = computed(() => {
 
 // Items for the dropdown filters in the sticky bar. Counts/weights are appended
 // to the label so users still see the same context as the old segmented buttons.
-const tierSelectItems = computed(() => [
-    { value: 'all', label: `All Tiers (${tierCounts.value.all ?? 0})` },
-    ...tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` })),
-]);
+const tierSelectItems = computed(() =>
+    tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` }))
+);
 
 const islandSelectItems = computed(() => [
     { value: 'all', label: 'All Islands' },

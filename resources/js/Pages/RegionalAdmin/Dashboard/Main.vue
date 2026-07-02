@@ -308,7 +308,7 @@ const props = defineProps({
 
 // ── Filters ───────────────────────────────────────────────────────────────
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
-const selectedTier     = ref('all');
+const selectedTier     = ref('micro');
 const selectedCategory = ref('overall');
 const viewMode         = ref('table');
 const searchTerm       = ref('');
@@ -326,10 +326,9 @@ const tierLabel = computed(() =>
         : (tiers.find(t => t.value === selectedTier.value)?.label ?? '')
 );
 
-const tierSelectItems = computed(() => [
-    { value: 'all', label: 'All Tiers' },
-    ...tiers.map(t => ({ value: t.value, label: t.label })),
-]);
+const tierSelectItems = computed(() =>
+    tiers.map(t => ({ value: t.value, label: t.label }))
+);
 
 const categorySelectItems = computed(() => [
     { value: 'overall', label: 'Overall' },
