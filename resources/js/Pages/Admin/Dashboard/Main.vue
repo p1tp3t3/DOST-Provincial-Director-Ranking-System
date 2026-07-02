@@ -1184,7 +1184,7 @@ const makeHorizOptions = (data, big = false) => {
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
                  animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
-        plotOptions: { bar: { horizontal: true, barHeight: big ? '82%' : '68%', borderRadius: big ? 4 : 3, distributed: true } },
+        plotOptions: { bar: { horizontal: true, barHeight: big ? '82%' : '68%', borderRadius: big ? 4 : 3, distributed: true, dataLabels: { position: 'center' } } },
         colors: data.buckets.map(bucketColor),
         fill: {
             type: 'gradient',

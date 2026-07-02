@@ -425,7 +425,7 @@ const chartOptions = computed(() => {
     const computedMin = Math.max(0, Math.floor((min * 0.95) / 5) * 5);
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: true, speed: 700 } },
-        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
+        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true, dataLabels: { position: 'center' } } },
         colors: data.labels.map(bandColor),
         legend: { show: false },
         grid:   { borderColor: '#f1f5f9', xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } }, padding: { left: 0, right: 12, top: -8, bottom: 0 } },
