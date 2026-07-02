@@ -418,7 +418,11 @@ const chartData = computed(() => {
 const chartOptions = computed(() => {
     const data = chartData.value;
     const max  = Math.max(...data.scores, 0);
+    const min  = data.scores.length ? Math.min(...data.scores) : 0;
     const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
+    // Start the axis just below the lowest bar (floored to a 5% step) so the
+    // spread between provinces is visible instead of squashed against 0%.
+    const computedMin = Math.max(0, Math.floor((min * 0.95) / 5) * 5);
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: true, speed: 700 } },
         plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
@@ -426,7 +430,7 @@ const chartOptions = computed(() => {
         legend: { show: false },
         grid:   { borderColor: '#f1f5f9', xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } }, padding: { left: 0, right: 12, top: -8, bottom: 0 } },
         dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`, style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: 0, max: computedMax, labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        xaxis: { categories: data.names, min: computedMin, max: computedMax, labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
         yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 130 } },
         tooltip: {
             theme: 'light',

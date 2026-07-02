@@ -1176,7 +1176,11 @@ const perfTooltip = (data, i) => {
 
 const makeHorizOptions = (data, big = false) => {
     const max = Math.max(...data.scores, 0);
+    const min = data.scores.length ? Math.min(...data.scores) : 0;
     const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
+    // Start the axis just below the lowest bar (floored to a 5% step) so the
+    // spread between provinces is visible instead of squashed against 0%.
+    const computedMin = Math.max(0, Math.floor((min * 0.95) / 5) * 5);
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
                  animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
@@ -1200,7 +1204,7 @@ const makeHorizOptions = (data, big = false) => {
                 padding: { left: 0, right: 12, top: -8, bottom: 0 } },
         dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
                       style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: 0, max: computedMax,
+        xaxis: { categories: data.names, min: computedMin, max: computedMax,
                  labels: { formatter: v => `${v}%`, style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
                  axisBorder: { show: false }, axisTicks: { show: false } },
         yaxis: { labels: { style: { fontSize: big ? '14px' : '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: big ? 150 : 115 } },
