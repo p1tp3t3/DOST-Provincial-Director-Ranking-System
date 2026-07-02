@@ -415,22 +415,27 @@ const chartData = computed(() => {
     };
 });
 
+// Axis floor: largest 5% step below the lowest bar (with a little margin), or 0.
+const axisFloor = (scores) =>
+    scores.length ? Math.max(0, Math.floor((Math.min(...scores) * 0.95) / 5) * 5) : 0;
+
 const chartOptions = computed(() => {
-    const data = chartData.value;
-    const max  = Math.max(...data.scores, 0);
-    const min  = data.scores.length ? Math.min(...data.scores) : 0;
-    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
-    // Start the axis just below the lowest bar (floored to a 5% step) so the
-    // spread between provinces is visible instead of squashed against 0%.
-    const computedMin = Math.max(0, Math.floor((min * 0.95) / 5) * 5);
+    const data  = chartData.value;
+    const max   = Math.max(...data.scores, 0);
+    const floor = axisFloor(data.scores);
+    // Start the axis just below the lowest bar so the spread is visible. ApexCharts
+    // draws bars from 0 and clips them (which pins the value labels to the clipped
+    // edge), so we plot each bar as (value - floor) on a 0-based axis and add the
+    // floor back in the formatters to keep the labels centred.
+    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5) - floor;
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: true, speed: 700 } },
         plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true, dataLabels: { position: 'center' } } },
         colors: data.labels.map(bandColor),
         legend: { show: false },
         grid:   { borderColor: '#f1f5f9', xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } }, padding: { left: 0, right: 12, top: -8, bottom: 0 } },
-        dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`, style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: computedMin, max: computedMax, labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        dataLabels: { enabled: true, formatter: v => `${(v + floor).toFixed(1)}%`, style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
+        xaxis: { categories: data.names, min: 0, max: computedMax, labels: { formatter: v => `${Math.round(v + floor)}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
         yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 130 } },
         tooltip: {
             theme: 'light',
@@ -451,7 +456,11 @@ const chartOptions = computed(() => {
     };
 });
 
-const chartSeries = computed(() => [{ name: 'Score', data: chartData.value.scores }]);
+// Offset by the axis floor so ApexCharts draws bars from 0 (keeps % labels centred).
+const chartSeries = computed(() => {
+    const s = chartData.value.scores, f = axisFloor(s);
+    return [{ name: 'Score', data: s.map(v => v - f) }];
+});
 const chartHeight = computed(() => Math.max(320, rankedOnly.value.length * 28 + 40));
 </script>
 

@@ -1174,13 +1174,20 @@ const perfTooltip = (data, i) => {
             </div>`;
 };
 
+// Axis floor: largest 5% step below the lowest bar (with a little margin), or 0.
+// Shared by the bar options and the offset series.
+const axisFloor = (scores) =>
+    scores.length ? Math.max(0, Math.floor((Math.min(...scores) * 0.95) / 5) * 5) : 0;
+
 const makeHorizOptions = (data, big = false) => {
-    const max = Math.max(...data.scores, 0);
-    const min = data.scores.length ? Math.min(...data.scores) : 0;
-    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5);
-    // Start the axis just below the lowest bar (floored to a 5% step) so the
-    // spread between provinces is visible instead of squashed against 0%.
-    const computedMin = Math.max(0, Math.floor((min * 0.95) / 5) * 5);
+    const max   = Math.max(...data.scores, 0);
+    const floor = axisFloor(data.scores);
+    // Start the axis just below the lowest bar so the spread is visible instead of
+    // squashed against 0%. ApexCharts draws bars from 0 and clips them, which would
+    // pin the value labels to the clipped edge — so we plot each bar as
+    // (value - floor) on a 0-based axis and add the floor back in the formatters,
+    // which keeps the labels centred.
+    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5) - floor;
     return {
         chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
                  animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
@@ -1202,23 +1209,27 @@ const makeHorizOptions = (data, big = false) => {
         grid: { borderColor: '#f1f5f9',
                 xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
                 padding: { left: 0, right: 12, top: -8, bottom: 0 } },
-        dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
+        dataLabels: { enabled: true, formatter: v => `${(v + floor).toFixed(1)}%`,
                       style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: computedMin, max: computedMax,
-                 labels: { formatter: v => `${v}%`, style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
+        xaxis: { categories: data.names, min: 0, max: computedMax,
+                 labels: { formatter: v => `${Math.round(v + floor)}%`, style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
                  axisBorder: { show: false }, axisTicks: { show: false } },
         yaxis: { labels: { style: { fontSize: big ? '14px' : '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: big ? 150 : 115 } },
         tooltip: { theme: 'light', custom: ({ dataPointIndex }) => perfTooltip(data, dataPointIndex) },
     };
 };
 
+// Series values are offset by the axis floor so ApexCharts draws each bar from 0
+// (keeps the % labels centred); makeHorizOptions' formatters add the floor back.
+const offsetScores = (d) => { const f = axisFloor(d.scores); return d.scores.map(v => v - f); };
+
 const top10Options = computed(() => makeHorizOptions(top10Data.value, true));
-const top10Series  = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
+const top10Series  = computed(() => [{ name: 'Weighted Score', data: offsetScores(top10Data.value) }]);
 const underOptions = computed(() => makeHorizOptions(underData.value, true));
-const underSeries  = computed(() => [{ name: 'Weighted Score', data: underData.value.scores }]);
+const underSeries  = computed(() => [{ name: 'Weighted Score', data: offsetScores(underData.value) }]);
 // Average uses the same "big" bar styling as Top/Low so the bars match in size.
 const avgOptions   = computed(() => makeHorizOptions(avgData.value, true));
-const avgSeries    = computed(() => [{ name: 'Weighted Score', data: avgData.value.scores }]);
+const avgSeries    = computed(() => [{ name: 'Weighted Score', data: offsetScores(avgData.value) }]);
 
 // Average can hold far more provinces than Top/Low. Size each bar so AVG_VISIBLE
 // (16, the Top chart's max) fit in the column at once at the same bar size as Top,
