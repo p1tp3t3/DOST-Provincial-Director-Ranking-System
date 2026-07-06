@@ -507,11 +507,13 @@ const changePage = (page) => {
 };
 
 const roleOptions = [
-    { label: 'Super Admin',        value: 'super_admin'         },
-    { label: 'Sub Admin',          value: 'sub_admin'           },
-    { label: 'Provincial Admin',   value: 'provincial_admin'    },
+    { label: 'Super Admin',         value: 'super_admin'         },
+    { label: 'Sub Admin',           value: 'sub_admin'           },
+    { label: 'Regional Admin',      value: 'regional_admin'      },
+    { label: 'Regional Director',   value: 'regional_director'   },
+    { label: 'Provincial Admin',    value: 'provincial_admin'    },
     { label: 'Provincial Director', value: 'provincial_director' },
-    { label: 'Employee',           value: 'employee'            },
+    { label: 'Employee',            value: 'employee'            },
 ];
 
 const filtered = computed(() => props.list.data);

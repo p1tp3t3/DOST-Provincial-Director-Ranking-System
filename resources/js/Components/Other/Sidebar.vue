@@ -36,6 +36,7 @@ const getRoleLabel = () => {
         'super_admin':        'System Administrator',
         'sub_admin':          'Sub Administrator',
         'regional_admin':     `Regional Administrator of ${authUser.value?.region?.name}`,
+        'regional_director':  `Regional Director of ${authUser.value?.region?.name}`,
         'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
         'employee':           `Employee at ${authUser.value?.province?.name}`,
@@ -105,6 +106,13 @@ const tabs = computed(() => {
                 { name: 'Activity Logs',         href: '/activity-logs',              icon: RiListView       },
                 { name: 'Reports',               href: '/regional-admin-report',      icon: RiFileChartFill  },
                 { name: 'My Profile',            href: '/profile',                    icon: RiUser2Fill      },
+            ];
+        case 'regional_director':
+            return [
+                { name: 'Dashboard',            href: '/dashboard',             icon: RiDashboard2Fill },
+                { name: 'Province Directories', href: '/province-directories',  icon: RiFolder2Fill    },
+                { name: 'Reports',              href: '/regional-admin-report', icon: RiFileChartFill  },
+                { name: 'My Profile',           href: '/profile',               icon: RiUser2Fill      },
             ];
         case 'employee':
             return [
