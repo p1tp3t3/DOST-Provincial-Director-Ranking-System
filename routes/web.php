@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Modules\BlogController;
 use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPIDataController;
 use App\Http\Controllers\Modules\KpiEditAccessController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
+use App\Http\Controllers\Modules\RegionController;
 use App\Http\Controllers\Modules\Report\SuperAdminReportController;
 use App\Http\Controllers\Modules\Report\ProvincialAdminReportController;
 use App\Http\Controllers\Modules\Report\SubAdminReportController;
@@ -22,10 +25,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public: landing page ───────────────────────────────────────
-Route::get('/', fn() => inertia('Landing/Welcome', [
-    'canLogin'    => Route::has('login'),
-    'canRegister' => Route::has('register'),
-]))->name('home');
+Route::get('/', [LandingController::class, 'home'])->name('home');
 
 // ── Public: interactive map ────────────────────────────────────
 Route::get('/map', fn() => inertia('Landing/Map', [
@@ -33,10 +33,7 @@ Route::get('/map', fn() => inertia('Landing/Map', [
 ]))->name('map');
 
 // ── Public: blog detail ────────────────────────────────────────
-Route::get('/blog/{slug}', fn(string $slug) => inertia('Landing/Blog', [
-    'slug'     => $slug,
-    'canLogin' => Route::has('login'),
-]))->name('blog.show');
+Route::get('/blog/{slug}', [LandingController::class, 'blogShow'])->name('blog.show');
 
 // ── Public: maintenance notice ─────────────────────────────────
 Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
@@ -135,10 +132,23 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::middleware('sub-admin')->group(function () {
         Route::get('/sub-admin-report',        [SubAdminReportController::class, 'index']);
         Route::get('/sub-admin-report/export', [SubAdminReportController::class, 'export']);
+
+        // Blog posts management
+        Route::get('/blogs',                [BlogController::class, 'index']);
+        Route::get('/blogs/create',         [BlogController::class, 'create']);
+        Route::post('/blogs',               [BlogController::class, 'store']);
+        Route::get('/blogs/{id}/edit',      [BlogController::class, 'edit']);
+        Route::post('/blogs/{id}',          [BlogController::class, 'update']);
+        Route::delete('/blogs/{id}',        [BlogController::class, 'destroy']);
     });
     
     Route::middleware('role:super_admin,sub_admin')->group(function () {
         Route::get('/performance-map', [DashboardController::class, 'map_index'])->name('performance-map');
+    });
+
+    // ── Regions list: Super Admin + Sub Admin only ────────────
+    Route::middleware('role:super_admin,sub_admin')->group(function () {
+        Route::get('/regions', [RegionController::class, 'index']);
     });
 
     // ── Regional Admin + Regional Director (region overview / map / report) ──
@@ -148,10 +158,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
     });
 
-    // ── Regional Admin only ─────────────────────────────────────
-    Route::middleware('role:regional_admin')->group(function () {
-        // KPI edit access requests — approve/reject a provincial admin's request
-        // for an extra edit once their free edit for a year/type is spent.
+    // ── Regional Director only: approve/reject KPI edit requests ──
+    Route::middleware('role:regional_director')->group(function () {
         Route::get('/regional-kpi-edit-requests',                [KpiEditAccessController::class, 'index']);
         Route::patch('/regional-kpi-edit-requests/{id}/approve', [KpiEditAccessController::class, 'approve']);
         Route::patch('/regional-kpi-edit-requests/{id}/reject',  [KpiEditAccessController::class, 'reject']);

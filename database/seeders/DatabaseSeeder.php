@@ -142,6 +142,8 @@ class DatabaseSeeder extends Seeder
 
         // Group employees by province name
         $employeesByProvince = [];
+        $regions = Region::all();
+
         foreach ($employeeRows as $emp) {
             $employeesByProvince[$emp['province']][] = $emp;
         }
@@ -163,7 +165,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create(['role' => 'sub_admin']);
 
         // One Regional Admin per region (region-scoped, no province assignment).
-        foreach (Region::all() as $region) {
+        foreach ($regions as $region) {
             User::factory()->create(['role' => 'regional_admin', 'region_id' => $region->id]);
         }
 
@@ -171,7 +173,7 @@ class DatabaseSeeder extends Seeder
         // named after the region it oversees (e.g. "NCR", "Region I"). Region-scoped
         // like the regional admin — no province or KPIs of their own.
         // Login: regdir_<region-slug> / password  (e.g. regdir_region_i).
-        foreach (Region::all() as $region) {
+        foreach ($regions as $region) {
             $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $region->name)); // "region_i", "ncr"
             $regionalDirector = User::factory()->create([
                 'role'             => 'regional_director',
@@ -182,10 +184,10 @@ class DatabaseSeeder extends Seeder
             ]);
             Profile::create([
                 'user_id'              => $regionalDirector->id,
-                'first_name'           => $region->name,
-                'middle_name'          => '',
-                'last_name'            => '',
-                'length_of_service'    => '',
+                'first_name'           => fake()->firstName(),
+                'middle_name'          => fake()->lastName(),
+                'last_name'            => fake()->lastName(),
+                'length_of_service'    => (string) fake()->numberBetween(1, 20),
                 'education_attainment' => ['data' => []],
             ]);
         }
@@ -231,9 +233,7 @@ class DatabaseSeeder extends Seeder
             // Create Provincial Admin + Provincial Sub Admin (no real data available)
             $provincialAdmin = User::factory()->create(['role' => 'provincial_admin']);
             $provincialAdmin->provinces()->attach($province->id);
-
-            $provincialSubAdmin = User::factory()->create(['role' => 'provincial_sub_admin']);
-            $provincialSubAdmin->provinces()->attach($province->id);
+            
         }
     }
 

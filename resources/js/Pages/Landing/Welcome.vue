@@ -12,7 +12,8 @@ import {
 } from '@remixicon/vue';
 
 defineProps({
-    canLogin: { type: Boolean, default: true },
+    canLogin:    { type: Boolean, default: true },
+    blogs:       { type: Array,   default: () => [] },
 });
 
 const stats = [
@@ -46,33 +47,6 @@ const features = [
       text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
     { icon: RiLineChartLine, title: 'Trends Over Time',
       text: 'Track how each province and director performs across reporting years to spot momentum, plateaus, and turnarounds.' },
-];
-
-const blogs = [
-    {
-        slug:   'new-performance-evaluation-framework',
-        image:  '/assets/placeholder.png',
-        tag:    'Announcement',
-        date:   'June 10, 2025',
-        title:  'DOST Launches New Performance Evaluation Framework for Provincial S&T Directors',
-        excerpt:'The Department of Science and Technology introduces an enhanced evaluation framework incorporating 37 key performance indicators to better assess the effectiveness of provincial S&T leadership.',
-    },
-    {
-        slug:   'fy-2024-pstd-rankings-available',
-        image:  '/assets/placeholder.png',
-        tag:    'Updates',
-        date:   'May 28, 2025',
-        title:  'FY 2024 PSTD Rankings Now Available on the Information System',
-        excerpt:'The FY 2024 annual rankings of Provincial Science and Technology Directors are now published, reflecting performance across core, strategic, and support categories.',
-    },
-    {
-        slug:   'regional-st-directors-summit-2025',
-        image:  '/assets/placeholder.png',
-        tag:    'Events',
-        date:   'May 15, 2025',
-        title:  'Regional S&T Directors Summit: Highlights and Key Takeaways',
-        excerpt:'Officials from all 17 DOST regional offices gathered to discuss strategies for improving S&T service delivery and strengthening provincial S&T directorates.',
-    },
 ];
 
 const year = new Date().getFullYear();
@@ -129,6 +103,12 @@ const AVATAR_COLORS = [
 ];
 
 const strHash = (s) => s.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+
+const CLASSIFICATIONS = ['Micro', 'Small', 'Medium', 'Large'];
+const sampleClassification = computed(() => {
+    if (!selectedProvince.value) return null;
+    return CLASSIFICATIONS[strHash(selectedProvince.value.name + 'cls') % CLASSIFICATIONS.length];
+});
 
 const sampleDirector = computed(() => {
     if (!selectedProvince.value) return null;
@@ -436,6 +416,14 @@ const sampleDirector = computed(() => {
                                                 <RiGroupLine class="prov-row-icon" />
                                                 <span>{{ selectedProvince.siblings.length + 1 }} provinces in this region</span>
                                             </div>
+                                            <div class="prov-row">
+                                                <RiBuilding2Line class="prov-row-icon" />
+                                                <span>{{ sampleClassification }} classification <span class="prov-row-sample">(sample)</span></span>
+                                            </div>
+                                            <div class="prov-row">
+                                                <RiBarChart2Line class="prov-row-icon" />
+                                                <span>Evaluated annually via PRISM</span>
+                                            </div>
                                         </div>
 
                                         <!-- Description -->
@@ -445,6 +433,15 @@ const sampleDirector = computed(() => {
                                             It is part of DOST's provincial S&amp;T director network, which evaluates
                                             performance across Core, Strategic, and Support categories.
                                         </p>
+
+                                        <!-- Sibling provinces -->
+                                        <div v-if="selectedProvince.siblings.length">
+                                            <div class="prov-section-label">Other provinces in this region</div>
+                                            <div class="prov-pills">
+                                                <span v-for="s in selectedProvince.siblings.slice(0, 6)" :key="s" class="prov-pill">{{ s }}</span>
+                                                <span v-if="selectedProvince.siblings.length > 6" class="prov-pill prov-pill--more">+{{ selectedProvince.siblings.length - 6 }} more</span>
+                                            </div>
+                                        </div>
 
                                         <hr class="prov-sep" />
 
@@ -461,6 +458,19 @@ const sampleDirector = computed(() => {
                                                 </div>
                                                 <span class="prov-dir-badge">Sample</span>
                                             </div>
+                                        </div>
+
+                                        <hr class="prov-sep" />
+
+                                        <!-- PRISM scoring teaser -->
+                                        <div class="prov-prism">
+                                            <div class="prov-prism-head">PRISM Scoring Framework</div>
+                                            <div class="prov-prism-bar">
+                                                <div class="prov-prism-seg" style="width:60%;background:#0b57a8;">Core 60%</div>
+                                                <div class="prov-prism-seg" style="width:30%;background:#2079c4;">Strategic 30%</div>
+                                                <div class="prov-prism-seg" style="width:10%;background:#3f93e0;font-size:9px;">10%</div>
+                                            </div>
+                                            <div class="prov-prism-labels">37 indicators · 3 categories · evaluated annually</div>
                                         </div>
 
                                         <hr class="prov-sep" />
@@ -503,7 +513,12 @@ const sampleDirector = computed(() => {
                     </div>
                 </div>
 
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div v-if="!blogs.length" class="text-center py-16 text-slate-400">
+                    <p class="text-lg font-medium">No news yet.</p>
+                    <p class="text-base mt-1">Check back soon for updates from DOST PRISM.</p>
+                </div>
+
+                <div v-else class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <article v-for="b in blogs" :key="b.title" class="blog-card reveal" @click="router.visit(`/blog/${b.slug}`)" style="cursor:pointer">
                         <div class="blog-card-img">
                             <img :src="b.image" :alt="b.title" />

@@ -20,21 +20,41 @@ class ProvinceController extends Controller
     public function index() {
         $query = Province::with(['directorAssignments.profile', 'users']);
 
-        if (auth()->user()->role === 'regional_admin') {
+        $regionInfo = null;
+        if (in_array(auth()->user()->role, ['regional_admin', 'regional_director'])) {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             $query->whereIn('id', $region->provinces->pluck('id'));
+
+            $regDir = User::with('profile')
+                ->where('region_id', $region->id)
+                ->where('role', 'regional_director')
+                ->first();
+
+            $regionInfo = [
+                'name'               => $region->name,
+                'regional_director'  => $this->regionalDirectorName($regDir),
+            ];
         }
 
         $data = $query->get();
         return inertia("Other/Province/Main", [
-            'provinces' => ProvinceResource::collection($data)
+            'provinces' => ProvinceResource::collection($data),
+            'region'    => $regionInfo,
         ]);
+    }
+
+    private function regionalDirectorName(?User $user): ?string
+    {
+        if (! $user || ! $user->profile) return null;
+        $p = $user->profile;
+        $middle = $p->middle_name ? " {$p->middle_name}" : '';
+        return "{$p->first_name}{$middle} {$p->last_name}";
     }
 
     public function province_profile_index($id) {
         $decryptedId = Crypt::decrypt($id);
 
-        if (auth()->user()->role === 'regional_admin') {
+        if (in_array(auth()->user()->role, ['regional_admin', 'regional_director'])) {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             if (!$region->provinces->pluck('id')->contains((int) $decryptedId)) {
                 abort(403);

@@ -658,6 +658,27 @@ onBeforeUnmount(() => {
 .prov-slide-enter-active, .prov-slide-leave-active { transition: opacity .2s ease, transform .2s ease; }
 .prov-slide-enter-from, .prov-slide-leave-to { opacity: 0; transform: translateX(16px); }
 
+/* Province panel — extra detail rows */
+.prov-row-sample { color: #94a3b8; font-size: 12px; font-weight: 500; }
+
+/* Province panel — PRISM scoring mini-bar */
+.prov-prism-head {
+    font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: #94a3b8; margin-bottom: 8px;
+}
+.prov-prism-bar {
+    display: flex; height: 30px; border-radius: 8px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(11,87,168,.12);
+}
+.prov-prism-seg {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,.2); white-space: nowrap; overflow: hidden;
+}
+.prov-prism-labels {
+    font-size: 11.5px; color: #94a3b8; margin-top: 7px; font-weight: 600; text-align: center;
+}
+
 /* Province name labels (permanent tooltips) */
 .rmap-label {
     background: transparent !important;

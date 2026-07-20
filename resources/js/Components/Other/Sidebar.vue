@@ -19,6 +19,8 @@ import {
     RiEdit2Fill,
     RiRoadMapFill,
     RiLockUnlockFill,
+    RiNewspaperLine,
+    RiMapPin2Fill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -51,6 +53,7 @@ const tabs = computed(() => {
         case 'super_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
+                { name: 'Regions', href: '/regions', icon: RiMapPin2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
                 { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
                 {
@@ -68,11 +71,13 @@ const tabs = computed(() => {
         case 'sub_admin':
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
+                { name: 'Regions',              href: '/regions',              icon: RiMapPin2Fill    },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
-                { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
+                { name: 'KPI Data Editor',      href: '/kpi-data',             icon: RiEdit2Fill      },
+                { name: 'Blog Posts',           href: '/blogs',                icon: RiNewspaperLine  },
                 { name: 'User List',            href: '/users',                icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
-                { name: 'Reports',              href: '/sub-admin-report',              icon: RiFileChartFill  },
+                { name: 'Reports',              href: '/sub-admin-report',     icon: RiFileChartFill  },
             ];
         case 'provincial_admin':
             return [
@@ -93,31 +98,27 @@ const tabs = computed(() => {
         case 'provincial_director':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'My Profile',href: '/profile',   icon: RiUser2Fill      },
                 { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 { name: 'Reports',   href: '/provincial-director-report',    icon: RiFileList3Fill  },
             ];
         case 'regional_admin':
             return [
-                { name: 'Dashboard',            href: '/dashboard',                  icon: RiDashboard2Fill },
-                { name: 'Province Directories', href: '/province-directories',       icon: RiFolder2Fill    },
-                { name: 'User List',             href: '/users',                      icon: RiTeamFill       },
-                { name: 'KPI Edit Requests',      href: '/regional-kpi-edit-requests', icon: RiLockUnlockFill },
-                { name: 'Activity Logs',         href: '/activity-logs',              icon: RiListView       },
-                { name: 'Reports',               href: '/regional-admin-report',      icon: RiFileChartFill  },
-                { name: 'My Profile',            href: '/profile',                    icon: RiUser2Fill      },
+                { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
+                { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
+                { name: 'User List',            href: '/users',                icon: RiTeamFill       },
+                { name: 'Activity Logs',        href: '/activity-logs',        icon: RiListView       },
+                { name: 'Reports',              href: '/regional-admin-report', icon: RiFileChartFill  },
             ];
         case 'regional_director':
             return [
-                { name: 'Dashboard',            href: '/dashboard',             icon: RiDashboard2Fill },
-                { name: 'Province Directories', href: '/province-directories',  icon: RiFolder2Fill    },
-                { name: 'Reports',              href: '/regional-admin-report', icon: RiFileChartFill  },
-                { name: 'My Profile',           href: '/profile',               icon: RiUser2Fill      },
+                { name: 'Dashboard',            href: '/dashboard',                  icon: RiDashboard2Fill },
+                { name: 'Province Directories', href: '/province-directories',       icon: RiFolder2Fill    },
+                { name: 'KPI Edit Requests',    href: '/regional-kpi-edit-requests', icon: RiLockUnlockFill },
+                { name: 'Reports',              href: '/regional-admin-report',      icon: RiFileChartFill  },
             ];
         case 'employee':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'My Profile',href: `/profile/${authUser.value?.id}`,   icon: RiUser2Fill      },
                 { name: 'Provincial Directors', href: '/provincial-directors', icon: RiTeamFill       },
             ];
     }
