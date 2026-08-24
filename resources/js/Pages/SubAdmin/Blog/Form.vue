@@ -53,47 +53,12 @@
                             hint="Shown on the landing page card and at the top of the article"
                         />
 
-                        <!-- Body paragraphs -->
-                        <div>
-                            <div class="text-caption font-weight-bold text-grey-darken-2 mb-2">
-                                Body Paragraphs *
-                                <span class="text-grey font-weight-regular">(each block becomes a paragraph)</span>
-                            </div>
-                            <div v-for="(_, i) in form.body" :key="i" class="d-flex gap-2 mb-2 align-start">
-                                <v-textarea
-                                    v-model="form.body[i]"
-                                    :label="`Paragraph ${i + 1}`"
-                                    variant="outlined"
-                                    density="comfortable"
-                                    rows="4"
-                                    auto-grow
-                                    hide-details
-                                    :error-messages="form.errors[`body.${i}`]"
-                                />
-                                <v-btn
-                                    v-if="form.body.length > 1"
-                                    icon="mdi-minus-circle-outline"
-                                    variant="text"
-                                    color="error"
-                                    size="small"
-                                    class="mt-1 flex-shrink-0"
-                                    @click="removePara(i)"
-                                />
-                            </div>
-                            <v-btn
-                                variant="tonal"
-                                color="indigo"
-                                size="small"
-                                prepend-icon="mdi-plus"
-                                class="mt-1"
-                                @click="addPara"
-                            >
-                                Add Paragraph
-                            </v-btn>
-                            <div v-if="form.errors.body" class="text-caption text-error mt-1">
-                                {{ form.errors.body }}
-                            </div>
-                        </div>
+                        <!-- Body -->
+                        <RichTextEditor
+                            v-model="form.body"
+                            label="Body *"
+                            :error-messages="form.errors.body"
+                        />
 
                     </v-card>
                 </v-col>
@@ -187,6 +152,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import RichTextEditor from '@/Components/Other/RichTextEditor/RichTextEditor.vue';
 
 const props = defineProps({
     post: { type: Object, default: null },
@@ -199,7 +165,7 @@ const form = useForm({
     title:        props.post?.title        ?? '',
     tag:          props.post?.tag          ?? 'Announcement',
     excerpt:      props.post?.excerpt      ?? '',
-    body:         props.post?.body?.length ? [...props.post.body] : [''],
+    body:         props.post?.body ?? '',
     is_published: props.post?.is_published ?? true,
     image:        null,
 });
@@ -228,10 +194,6 @@ const onFileChange = (files) => {
 onUnmounted(() => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
 });
-
-// ── Body paragraph helpers ────────────────────────────────────────────────────
-const addPara    = () => form.body.push('');
-const removePara = (i) => form.body.splice(i, 1);
 
 // ── Submit ────────────────────────────────────────────────────────────────────
 const submit = () => {

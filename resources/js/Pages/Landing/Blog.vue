@@ -74,11 +74,7 @@ const year = new Date().getFullYear();
                     {{ post.excerpt }}
                 </p>
 
-                <div class="mt-10 space-y-5">
-                    <p v-for="(para, i) in post.body" :key="i" class="text-slate-700 leading-relaxed text-[17px]">
-                        {{ para }}
-                    </p>
-                </div>
+                <div class="mt-10 blog-content" v-html="post.body"></div>
 
                 <div class="mt-12 pt-8 border-t border-slate-100">
                     <a href="/#news" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900">
@@ -157,4 +153,36 @@ const year = new Date().getFullYear();
 .related-img { width: 120px; height: 100%; min-height: 100px; flex-shrink: 0; overflow: hidden; }
 .related-img img { width: 100%; height: 100%; object-fit: cover; }
 .related-body { padding: 16px 16px 16px 0; }
+
+.blog-content { color: #334155; line-height: 1.75; font-size: 17px; }
+.blog-content :deep(p) { margin: 0 0 1.25em; }
+.blog-content :deep(h2) { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 1.4em 0 0.6em; }
+.blog-content :deep(h3) { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 1.2em 0 0.5em; }
+.blog-content :deep(ul),
+.blog-content :deep(ol) { padding-left: 1.4em; margin: 0 0 1.25em; }
+.blog-content :deep(li) { margin-bottom: 0.4em; }
+.blog-content :deep(blockquote) {
+    border-left: 4px solid #bfdbfe;
+    padding: 4px 0 4px 18px;
+    margin: 0 0 1.25em;
+    color: #64748b;
+    font-style: italic;
+}
+.blog-content :deep(a) { color: #1d4ed8; text-decoration: underline; }
+.blog-content :deep(.video-embed) {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    margin: 0 0 1.5em;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+}
+.blog-content :deep(.video-embed) iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
 </style>

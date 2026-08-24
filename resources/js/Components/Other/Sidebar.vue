@@ -56,6 +56,7 @@ const tabs = computed(() => {
                 { name: 'Regions', href: '/regions', icon: RiMapPin2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
                 { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
+                { name: 'Blog Posts', href: '/blogs', icon: RiNewspaperLine },
                 {
                     name: 'User Management', icon: RiUser2Fill,
                     children: [
@@ -91,6 +92,7 @@ const tabs = computed(() => {
                     ]
                 },
                 { name: 'KPI Data Editor', href: '/provincial-kpi', icon: RiEdit2Fill },
+                { name: 'Province Info',   href: '/province-info',  icon: RiMapPin2Fill },
                 { name: 'Employees',        href: '/employees',       icon: RiTeamFill  },
                 { name: 'Activity Logs',    href: '/activity-logs',   icon: RiListView  },
                 { name: 'Reports',          href: '/provincial-admin-report', icon: RiBarChart2Fill },

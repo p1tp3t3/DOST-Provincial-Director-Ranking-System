@@ -12,8 +12,7 @@ class CheckMaintenanceMode
     /** Paths that are always accessible, even during maintenance. */
     private const ALWAYS_ALLOW = [
         'maintenance-notice',
-        'console/login',
-        'console/authenticate',
+        'admin/login/*',
         'logout',
         'up',
     ];

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import './echo';
 //import 'bootstrap/dist/css/bootstrap.css';
 //import 'bootstrap-vue-next/dist/bootstrap-vue-next.css';
 

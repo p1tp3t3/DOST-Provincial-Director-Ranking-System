@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
+use App\Models\Province;
 use Illuminate\Support\Facades\Route;
 
 class LandingController extends Controller
@@ -22,10 +23,18 @@ class LandingController extends Controller
                 'excerpt' => $p->excerpt,
             ]);
 
+        $provinces = Province::all()->map(fn ($p) => [
+            'name'        => $p->name,
+            'category'    => $p->category,
+            'description' => $p->description,
+            'image_url'   => $p->image_url,
+        ]);
+
         return inertia('Landing/Welcome', [
             'canLogin'    => Route::has('login'),
             'canRegister' => Route::has('register'),
             'blogs'       => $blogs,
+            'provinces'   => $provinces,
         ]);
     }
 

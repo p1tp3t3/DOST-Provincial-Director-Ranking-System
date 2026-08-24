@@ -1,7 +1,24 @@
 <script setup>
+import { onMounted, onUnmounted } from 'vue';
 import Sidebar from '@/Components/Other/Sidebar.vue';
 import AuthHeader from '@/Components/Other/AuthHeader.vue';
+import { receiveBroadcast, getAuth } from '@/helper-functions.js';
 
+const user = getAuth();
+
+onMounted(() => {
+    if (user) {
+        receiveBroadcast(`App.Models.User.${user.id}`, 'private', '.test.broadcast', (event) => {
+            console.log('[broadcast] test.broadcast received:', event);
+        });
+    }
+});
+
+onUnmounted(() => {
+    if (user) {
+        window.Echo.leave(`App.Models.User.${user.id}`);
+    }
+});
 </script>
 
 <template>

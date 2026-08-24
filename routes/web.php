@@ -39,9 +39,13 @@ Route::get('/blog/{slug}', [LandingController::class, 'blogShow'])->name('blog.s
 Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
 
 // ── Super admin console login (bypasses maintenance mode) ──────
-Route::middleware('guest')->group(function () {
-    Route::get('/console/login',        [SuperAdminLoginController::class, 'show'])->name('console.login');
-    Route::post('/console/authenticate', [SuperAdminLoginController::class, 'store'])->name('console.authenticate');
+// {password} is a shared secret that gates the login form itself — it is
+// not a login credential. The super admin still authenticates with their
+// real account on the form this reveals. See SuperAdminLoginController.
+Route::middleware('throttle:5,1')->where(['password' => '[^/]+'])->group(function () {
+    Route::get('/admin/login/{password}', [SuperAdminLoginController::class, 'show'])
+        ->name('admin.breakglass-login');
+    Route::post('/admin/login/{password}', [SuperAdminLoginController::class, 'store']);
 });
 
 
@@ -85,6 +89,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/maintenance/optimize',                          [MaintenanceController::class, 'optimize']);
         Route::post('/maintenance/reset',                             [MaintenanceController::class, 'reset']);
         Route::post('/maintenance/toggle-mode',                       [MaintenanceController::class, 'toggle_maintenance']);
+        Route::post('/maintenance/breakglass-password',               [MaintenanceController::class, 'update_breakglass_password']);
 
         Route::get('/super-admin-report',        [SuperAdminReportController::class, 'index']);
         Route::get('/super-admin-report/export', [SuperAdminReportController::class, 'export']);
@@ -132,8 +137,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::middleware('sub-admin')->group(function () {
         Route::get('/sub-admin-report',        [SubAdminReportController::class, 'index']);
         Route::get('/sub-admin-report/export', [SubAdminReportController::class, 'export']);
+    });
 
-        // Blog posts management
+    // ── Blog posts management: Super Admin + Sub Admin ─────────
+    Route::middleware('role:super_admin,sub_admin')->group(function () {
         Route::get('/blogs',                [BlogController::class, 'index']);
         Route::get('/blogs/create',         [BlogController::class, 'create']);
         Route::post('/blogs',               [BlogController::class, 'store']);
@@ -176,6 +183,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/provincial-kpi/{year?}',                            [KPIDataController::class, 'provincial_index']);
         Route::put('/provincial-kpi/{director}/{year}',                  [KPIDataController::class, 'provincial_update']);
         Route::post('/provincial-kpi/{director}/{year}/request-access', [KPIDataController::class, 'provincial_request_access']);
+
+        // Public landing page info for their own province — description + cover image
+        Route::get('/province-info',  [ProvinceController::class, 'edit_own_info']);
+        Route::put('/province-info',  [ProvinceController::class, 'update_own_info']);
     });
 
     // ── Evidence-based KPI modules (Super Admin + Provincial Sub Admin + Provincial Admin) ──

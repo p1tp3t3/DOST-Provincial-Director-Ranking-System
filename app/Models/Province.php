@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Province extends Model
 {
     public $table    = 'provinces';
-    protected $fillable = ['name', 'category', 'region_id', 'num_plantilla_employees', 'num_municipalities', 'num_cities'];
+    protected $fillable = ['name', 'category', 'region_id', 'num_plantilla_employees', 'num_municipalities', 'num_cities', 'description', 'image_url'];
 
     /**
      * Canonical province → DOST region assignment. Single source of truth shared by

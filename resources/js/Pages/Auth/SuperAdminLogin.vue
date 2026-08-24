@@ -132,6 +132,10 @@
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 
+const props = defineProps({
+    password: { type: String, required: true },
+});
+
 const showPassword = ref(false);
 
 const form = useForm({
@@ -141,7 +145,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('console.authenticate'), {
+    form.post(route('admin.breakglass-login', { password: props.password }), {
         onFinish: () => form.reset('password'),
     });
 };

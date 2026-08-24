@@ -9,3 +9,13 @@ export const getAuth = () => {
     
     return user.value;
 };
+
+
+export const receiveBroadcast = (channel, type, event, callback) => {
+    if(type == 'private') {
+        window.Echo.private(channel).listen(event, callback);
+    }
+    if(type == 'public') {
+        window.Echo.channel(channel).listen(event, callback);
+    }
+}

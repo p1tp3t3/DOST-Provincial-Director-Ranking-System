@@ -13,10 +13,10 @@
                     <div class="d-flex flex-column gap-4">
 
                         <!-- System Export -->
-                        <v-card class="elevation-1 border-0 rounded-md" style="border-left: 3px solid rgb(var(--v-theme-deep-purple)) !important;">
+                        <v-card class="elevation-1 border-0 rounded-md" style="border-left: 3px solid rgb(var(--v-theme-primary)) !important;">
                             <div class="pa-5 pb-3 d-flex align-center gap-3">
-                                <v-avatar color="deep-purple-lighten-5" rounded="lg" size="38">
-                                    <v-icon color="deep-purple" size="20">mdi-archive-arrow-down-outline</v-icon>
+                                <v-avatar color="primary-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="primary" size="20">mdi-archive-arrow-down-outline</v-icon>
                                 </v-avatar>
                                 <div class="flex-1-1">
                                     <div class="text-subtitle-2 font-weight-bold">Full System Export</div>
@@ -30,10 +30,10 @@
                                 <div>
                                     <div class="section-label mb-2">What's included</div>
                                     <div class="d-flex flex-wrap gap-2">
-                                        <v-chip size="x-small" color="deep-purple" variant="tonal" prepend-icon="mdi-code-braces">Source Code</v-chip>
-                                        <v-chip size="x-small" color="indigo" variant="tonal" prepend-icon="mdi-database-outline">Database Dump</v-chip>
-                                        <v-chip size="x-small" color="teal" variant="tonal" prepend-icon="mdi-folder-outline">Uploaded Files</v-chip>
-                                        <v-chip size="x-small" color="orange" variant="tonal" prepend-icon="mdi-cog-outline">Config (.env)</v-chip>
+                                        <v-chip size="x-small" color="primary" variant="tonal" prepend-icon="mdi-code-braces">Source Code</v-chip>
+                                        <v-chip size="x-small" color="primary" variant="tonal" prepend-icon="mdi-database-outline">Database Dump</v-chip>
+                                        <v-chip size="x-small" color="primary" variant="tonal" prepend-icon="mdi-folder-outline">Uploaded Files</v-chip>
+                                        <v-chip size="x-small" color="primary" variant="tonal" prepend-icon="mdi-cog-outline">Config (.env)</v-chip>
                                     </div>
                                 </div>
 
@@ -50,7 +50,7 @@
                                         class="d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5"
                                     >
                                         <div class="d-flex align-center gap-3">
-                                            <v-icon size="18" color="deep-purple">mdi-archive-outline</v-icon>
+                                            <v-icon size="18" color="primary">mdi-archive-outline</v-icon>
                                             <div>
                                                 <div class="text-body-2 font-weight-medium">{{ b.filename }}</div>
                                                 <div class="text-caption text-medium-emphasis">{{ b.size }} · {{ b.created_at }}</div>
@@ -78,7 +78,7 @@
 
                                 <div class="d-flex justify-end">
                                     <v-btn
-                                        color="deep-purple"
+                                        color="primary"
                                         variant="flat"
                                         size="small"
                                         prepend-icon="mdi-archive-arrow-down-outline"
@@ -92,8 +92,8 @@
                         <!-- Database Backup -->
                         <v-card class="elevation-1 border-0 rounded-md">
                             <div class="pa-5 pb-3 d-flex align-center gap-3">
-                                <v-avatar color="indigo-lighten-5" rounded="lg" size="38">
-                                    <v-icon color="indigo" size="20">mdi-database-export-outline</v-icon>
+                                <v-avatar color="primary-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="primary" size="20">mdi-database-export-outline</v-icon>
                                 </v-avatar>
                                 <div>
                                     <div class="text-subtitle-2 font-weight-bold">Database Backup</div>
@@ -112,7 +112,7 @@
                                             class="d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5"
                                         >
                                             <div class="d-flex align-center gap-3">
-                                                <v-icon size="18" color="indigo">mdi-database-outline</v-icon>
+                                                <v-icon size="18" color="primary">mdi-database-outline</v-icon>
                                                 <div>
                                                     <div class="text-body-2 font-weight-medium">{{ b.filename }}</div>
                                                     <div class="text-caption text-medium-emphasis">{{ b.size }} · {{ b.created_at }}</div>
@@ -139,7 +139,7 @@
                                     <div v-else class="text-caption text-medium-emphasis">No backups found.</div>
                                     <div class="d-flex justify-end">
                                         <v-btn
-                                            color="indigo"
+                                            color="primary"
                                             variant="tonal"
                                             size="small"
                                             prepend-icon="mdi-database-export-outline"
@@ -154,8 +154,8 @@
                         <!-- Storage Backup -->
                         <v-card class="elevation-1 border-0 rounded-md">
                             <div class="pa-5 pb-3 d-flex align-center gap-3">
-                                <v-avatar color="teal-lighten-5" rounded="lg" size="38">
-                                    <v-icon color="teal" size="20">mdi-folder-zip-outline</v-icon>
+                                <v-avatar color="primary-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="primary" size="20">mdi-folder-zip-outline</v-icon>
                                 </v-avatar>
                                 <div>
                                     <div class="text-subtitle-2 font-weight-bold">Storage Backup</div>
@@ -173,7 +173,7 @@
                                             class="d-flex align-center justify-space-between pa-3 rounded-lg bg-grey-lighten-5"
                                         >
                                             <div class="d-flex align-center gap-3">
-                                                <v-icon size="18" color="teal">mdi-folder-zip-outline</v-icon>
+                                                <v-icon size="18" color="primary">mdi-folder-zip-outline</v-icon>
                                                 <div>
                                                     <div class="text-body-2 font-weight-medium">{{ b.filename }}</div>
                                                     <div class="text-caption text-medium-emphasis">{{ b.size }} · {{ b.created_at }}</div>
@@ -200,7 +200,7 @@
                                     <div v-else class="text-caption text-medium-emphasis">No storage backups found.</div>
                                     <div class="d-flex justify-end">
                                         <v-btn
-                                            color="teal"
+                                            color="primary"
                                             variant="tonal"
                                             size="small"
                                             prepend-icon="mdi-folder-zip-outline"
@@ -215,8 +215,8 @@
                         <!-- Clear Cache -->
                         <v-card class="elevation-1 border-0 rounded-md">
                             <div class="pa-5 pb-3 d-flex align-center gap-3">
-                                <v-avatar color="orange-lighten-5" rounded="lg" size="38">
-                                    <v-icon color="orange" size="20">mdi-cached</v-icon>
+                                <v-avatar color="primary-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="primary" size="20">mdi-cached</v-icon>
                                 </v-avatar>
                                 <div>
                                     <div class="text-subtitle-2 font-weight-bold">Clear Cache</div>
@@ -314,10 +314,92 @@
                                 <div class="px-4 py-3">
                                     <v-alert type="warning" variant="tonal" density="compact" icon="mdi-account-lock-outline" class="text-caption">
                                         Regular users are redirected to the maintenance notice.
-                                        Super admins can log in at <strong>/console/login</strong>.
+                                        Super admins can still get in using the break-glass URL below.
                                     </v-alert>
                                 </div>
                             </template>
+                        </v-card>
+
+                        <!-- Break-glass Login Password -->
+                        <v-card class="elevation-1 border-0 rounded-md">
+                            <div class="pa-4 d-flex align-center gap-3">
+                                <v-avatar color="primary-lighten-5" rounded="lg" size="38">
+                                    <v-icon color="primary" size="20">mdi-shield-key-outline</v-icon>
+                                </v-avatar>
+                                <div class="flex-1-1">
+                                    <div class="text-subtitle-2 font-weight-bold">Break-glass Login Password</div>
+                                    <div class="text-caption text-medium-emphasis">
+                                        Lets a super admin log in during maintenance via a secret URL
+                                    </div>
+                                </div>
+                                <v-chip
+                                    size="x-small"
+                                    :color="breakglassSet ? 'success' : 'grey'"
+                                    variant="tonal"
+                                >{{ breakglassSet ? 'Configured' : 'Not set' }}</v-chip>
+                            </div>
+                            <v-divider></v-divider>
+                            <div class="pa-4 d-flex flex-column gap-3">
+                                <v-text-field
+                                    v-model="breakglassForm.password"
+                                    label="New password"
+                                    :type="showBreakglassPw ? 'text' : 'password'"
+                                    :append-inner-icon="showBreakglassPw ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                                    variant="outlined"
+                                    density="compact"
+                                    hide-details="auto"
+                                    :error-messages="breakglassForm.errors.password"
+                                    @click:append-inner="showBreakglassPw = !showBreakglassPw"
+                                />
+                                <v-text-field
+                                    v-model="breakglassForm.password_confirmation"
+                                    label="Confirm password"
+                                    :type="showBreakglassPw ? 'text' : 'password'"
+                                    variant="outlined"
+                                    density="compact"
+                                    hide-details="auto"
+                                />
+                                <div class="d-flex gap-2">
+                                    <v-btn
+                                        variant="tonal"
+                                        color="primary"
+                                        size="small"
+                                        prepend-icon="mdi-dice-multiple-outline"
+                                        @click="generateBreakglassPassword"
+                                    >Generate</v-btn>
+                                    <v-spacer />
+                                    <v-btn
+                                        variant="flat"
+                                        color="primary"
+                                        size="small"
+                                        prepend-icon="mdi-content-save-outline"
+                                        :loading="savingBreakglass"
+                                        :disabled="!breakglassForm.password || !breakglassForm.password_confirmation"
+                                        @click="saveBreakglassPassword"
+                                    >Save</v-btn>
+                                </div>
+
+                                <v-alert
+                                    v-if="breakglassRevealUrl"
+                                    type="success"
+                                    variant="tonal"
+                                    density="compact"
+                                    icon="mdi-key-variant"
+                                    closable
+                                    @click:close="breakglassRevealUrl = null"
+                                >
+                                    <div class="text-caption font-weight-bold mb-1">Saved — copy this now</div>
+                                    <div class="text-caption mb-2">
+                                        This URL won't be shown again; the password is stored as a one-way hash.
+                                    </div>
+                                    <div class="d-flex align-center gap-2">
+                                        <code class="breakglass-url">{{ breakglassRevealUrl }}</code>
+                                        <v-btn icon size="x-small" variant="text" @click="copyBreakglassUrl">
+                                            <v-icon size="16">mdi-content-copy</v-icon>
+                                        </v-btn>
+                                    </div>
+                                </v-alert>
+                            </div>
                         </v-card>
 
                         <!-- System Info -->
@@ -508,15 +590,16 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
-    backups:           { type: Array,   default: () => [] },
-    storage_backups:   { type: Array,   default: () => [] },
-    system_backups:    { type: Array,   default: () => [] },
-    system_info:       { type: Array,   default: () => [] },
-    storage_info:      { type: Array,   default: () => [] },
-    maintenance_mode:  { type: Boolean, default: false },
+    backups:                  { type: Array,   default: () => [] },
+    storage_backups:          { type: Array,   default: () => [] },
+    system_backups:           { type: Array,   default: () => [] },
+    system_info:               { type: Array,   default: () => [] },
+    storage_info:              { type: Array,   default: () => [] },
+    maintenance_mode:          { type: Boolean, default: false },
+    breakglass_password_set:   { type: Boolean, default: false },
 });
 
 // ── Maintenance Mode ───────────────────────────────────────────
@@ -529,6 +612,45 @@ const toggleMaintenanceMode = () => {
         onSuccess: () => { maintenanceMode.value = !maintenanceMode.value; },
         onFinish:  () => { togglingMode.value = false; },
     });
+};
+
+// ── Break-glass Login Password ────────────────────────────────
+const breakglassSet       = ref(props.breakglass_password_set);
+const showBreakglassPw    = ref(false);
+const savingBreakglass    = ref(false);
+const breakglassRevealUrl = ref(null);
+
+const breakglassForm = useForm({
+    password: '',
+    password_confirmation: '',
+});
+
+const generateBreakglassPassword = () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const password = Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 32);
+    breakglassForm.password = password;
+    breakglassForm.password_confirmation = password;
+    showBreakglassPw.value = true;
+};
+
+const saveBreakglassPassword = () => {
+    savingBreakglass.value = true;
+    const plaintext = breakglassForm.password;
+
+    breakglassForm.post('/maintenance/breakglass-password', {
+        preserveScroll: true,
+        onSuccess: () => {
+            breakglassSet.value = true;
+            breakglassRevealUrl.value = `${window.location.origin}/admin/login/${encodeURIComponent(plaintext)}`;
+            breakglassForm.reset();
+            showBreakglassPw.value = false;
+        },
+        onFinish: () => { savingBreakglass.value = false; },
+    });
+};
+
+const copyBreakglassUrl = () => {
+    if (breakglassRevealUrl.value) navigator.clipboard.writeText(breakglassRevealUrl.value);
 };
 
 // ── DB Backups ─────────────────────────────────────────────────
@@ -619,10 +741,10 @@ const deleteStorageBackup = () => {
 const clearing = ref(null);
 
 const cacheItems = [
-    { key: 'app',    label: 'Application Cache', description: 'General app-level cache',        icon: 'mdi-application-outline',  color: 'orange'  },
-    { key: 'config', label: 'Config Cache',       description: 'Cached configuration values',   icon: 'mdi-cog-outline',           color: 'blue'    },
-    { key: 'route',  label: 'Route Cache',        description: 'Cached route definitions',      icon: 'mdi-routes',                color: 'teal'    },
-    { key: 'view',   label: 'View Cache',         description: 'Compiled Blade/template files', icon: 'mdi-eye-outline',           color: 'purple'  },
+    { key: 'app',    label: 'Application Cache', description: 'General app-level cache',        icon: 'mdi-application-outline',  color: 'primary' },
+    { key: 'config', label: 'Config Cache',       description: 'Cached configuration values',   icon: 'mdi-cog-outline',           color: 'primary' },
+    { key: 'route',  label: 'Route Cache',        description: 'Cached route definitions',      icon: 'mdi-routes',                color: 'primary' },
+    { key: 'view',   label: 'View Cache',         description: 'Compiled Blade/template files', icon: 'mdi-eye-outline',           color: 'primary' },
 ];
 
 const clearCache = (key) => {
@@ -656,12 +778,21 @@ const storageItems = props.storage_info;
 const quickActions = [
     { label: 'Download Latest Backup', icon: 'mdi-download-outline',      color: 'primary', handler: () => {} },
     { label: 'View Error Logs',        icon: 'mdi-text-box-outline',       color: 'default', handler: () => router.visit('/activity-logs') },
-    { label: 'Clear All Caches',       icon: 'mdi-cached',                 color: 'orange',  handler: () => clearCache('all') },
-    { label: 'Optimize Application',   icon: 'mdi-lightning-bolt-outline', color: 'success', handler: () => router.post('/maintenance/optimize') },
+    { label: 'Clear All Caches',       icon: 'mdi-cached',                 color: 'primary', handler: () => clearCache('all') },
+    { label: 'Optimize Application',   icon: 'mdi-lightning-bolt-outline', color: 'primary', handler: () => router.post('/maintenance/optimize') },
 ];
 </script>
 
 <style scoped>
+.breakglass-url {
+    flex: 1;
+    font-size: 0.72rem;
+    word-break: break-all;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
 .section-label {
     text-transform: uppercase;
     letter-spacing: 0.05em;

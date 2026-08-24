@@ -12,8 +12,11 @@ use App\Models\Province;
 use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProvinceController extends Controller
 {
@@ -140,5 +143,47 @@ class ProvinceController extends Controller
         $admin->provinces()->attach($province->id);
 
         return redirect()->back();
+    }
+
+    // ── Provincial Admin: edit their own province's public landing info ──
+
+    public function edit_own_info()
+    {
+        $province = Auth::user()->province;
+        abort_unless($province, 404);
+
+        return inertia('ProvincialAdmin/ProvinceInfo/Main', [
+            'province' => [
+                'id'          => $province->id,
+                'name'        => $province->name,
+                'category'    => $province->category,
+                'region'      => $province->region?->name,
+                'description' => $province->description,
+                'image_url'   => $province->image_url,
+            ],
+        ]);
+    }
+
+    public function update_own_info(Request $request)
+    {
+        $province = Auth::user()->province;
+        abort_unless($province, 404);
+
+        $data = $request->validate([
+            'description' => ['nullable', 'string', 'max:2000'],
+            'image'       => ['nullable', 'image', 'max:4096'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($province->image_url && Str::startsWith($province->image_url, '/storage/')) {
+                Storage::disk('public')->delete(Str::after($province->image_url, '/storage/'));
+            }
+            $data['image_url'] = '/storage/' . $request->file('image')->store('province-images', 'public');
+        }
+        unset($data['image']);
+
+        $province->update($data);
+
+        return back()->with('success', 'Province info updated.');
     }
 }

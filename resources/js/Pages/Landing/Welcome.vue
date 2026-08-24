@@ -11,9 +11,16 @@ import {
     RiMapPin2Fill, RiLockLine, RiUserFill, RiEyeLine, RiFocus3Line, RiAuctionLine
 } from '@remixicon/vue';
 
-defineProps({
+const props = defineProps({
     canLogin:    { type: Boolean, default: true },
     blogs:       { type: Array,   default: () => [] },
+    provinces:   { type: Array,   default: () => [] },
+});
+
+const provinceByName = computed(() => {
+    const map = new Map();
+    for (const p of props.provinces) map.set(p.name, p);
+    return map;
 });
 
 const stats = [
@@ -74,13 +81,23 @@ const islandBg = {
     Mindanao: '/assets/hero/pic3.png',
 };
 
-const provinceBg = (province) => {
+const placeholderBg = (province) => {
     const seed = encodeURIComponent((province?.name ?? 'province').toLowerCase().replace(/\s+/g, '-'));
     return `https://picsum.photos/seed/${seed}/800/300`;
 };
 
 const onProvinceSelected = (province) => {
-    selectedProvince.value = province;
+    if (!province) {
+        selectedProvince.value = null;
+        return;
+    }
+    const record = provinceByName.value.get(province.name);
+    selectedProvince.value = {
+        ...province,
+        category:    record?.category ?? null,
+        description: record?.description ?? null,
+        image:       record?.image_url || placeholderBg(province),
+    };
 };
 
 const SAMPLE_DIRECTOR_POOL = [
@@ -103,12 +120,6 @@ const AVATAR_COLORS = [
 ];
 
 const strHash = (s) => s.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-
-const CLASSIFICATIONS = ['Micro', 'Small', 'Medium', 'Large'];
-const sampleClassification = computed(() => {
-    if (!selectedProvince.value) return null;
-    return CLASSIFICATIONS[strHash(selectedProvince.value.name + 'cls') % CLASSIFICATIONS.length];
-});
 
 const sampleDirector = computed(() => {
     if (!selectedProvince.value) return null;
@@ -390,7 +401,7 @@ const sampleDirector = computed(() => {
 
                                     <!-- Photo header -->
                                     <div class="prov-photo">
-                                        <img :src="provinceBg(selectedProvince)" :alt="selectedProvince.name" />
+                                        <img :src="selectedProvince.image" :alt="selectedProvince.name" />
                                         <div class="prov-photo-gradient"></div>
                                         <button class="prov-close" @click="selectedProvince = null">
                                             <RiCloseLine class="w-4 h-4" />
@@ -416,9 +427,9 @@ const sampleDirector = computed(() => {
                                                 <RiGroupLine class="prov-row-icon" />
                                                 <span>{{ selectedProvince.siblings.length + 1 }} provinces in this region</span>
                                             </div>
-                                            <div class="prov-row">
+                                            <div v-if="selectedProvince.category" class="prov-row">
                                                 <RiBuilding2Line class="prov-row-icon" />
-                                                <span>{{ sampleClassification }} classification <span class="prov-row-sample">(sample)</span></span>
+                                                <span class="text-capitalize">{{ selectedProvince.category }} classification</span>
                                             </div>
                                             <div class="prov-row">
                                                 <RiBarChart2Line class="prov-row-icon" />
@@ -428,10 +439,7 @@ const sampleDirector = computed(() => {
 
                                         <!-- Description -->
                                         <p class="prov-desc">
-                                            {{ selectedProvince.name }} is a province under {{ selectedProvince.region }},
-                                            located in the {{ selectedProvince.island }} island group of the Philippines.
-                                            It is part of DOST's provincial S&amp;T director network, which evaluates
-                                            performance across Core, Strategic, and Support categories.
+                                            {{ selectedProvince.description || `${selectedProvince.name} is a province under ${selectedProvince.region}, located in the ${selectedProvince.island} island group of the Philippines. It is part of DOST's provincial S&T director network.` }}
                                         </p>
 
                                         <!-- Sibling provinces -->

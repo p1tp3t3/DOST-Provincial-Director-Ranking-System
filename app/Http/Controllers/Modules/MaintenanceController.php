@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class MaintenanceController extends Controller
 {
@@ -19,6 +20,7 @@ class MaintenanceController extends Controller
             'system_info'       => $this->get_system_info(),
             'storage_info'      => $this->get_storage_info(),
             'maintenance_mode'  => (bool) Cache::get('app_maintenance_mode', false),
+            'breakglass_password_set' => (bool) config('breakglass.password_hash'),
         ]);
     }
 
@@ -37,6 +39,52 @@ class MaintenanceController extends Controller
         }
 
         return back()->with('success', $msg);
+    }
+
+    // ── Break-glass Login Password ──────────────────────────────────
+
+    public function update_breakglass_password(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'min:12', 'max:255', 'confirmed'],
+        ]);
+
+        $this->set_env_value(
+            'SUPER_ADMIN_BREAKGLASS_PASSWORD_HASH',
+            Hash::make((string) $request->input('password'))
+        );
+
+        Artisan::call('config:clear');
+
+        return back()->with('success', 'Break-glass login password updated.');
+    }
+
+    /**
+     * Rewrite (or append) a single KEY=value line in the project's .env
+     * file. The value is always double-quoted, since bcrypt hashes contain
+     * characters ($, .) that are unsafe unquoted in a .env file.
+     */
+    private function set_env_value(string $key, string $value): void
+    {
+        $path = base_path('.env');
+        $line = $key . '=' . '"' . addcslashes($value, '"\\') . '"';
+
+        if (!file_exists($path)) {
+            file_put_contents($path, $line . PHP_EOL);
+            return;
+        }
+
+        $contents = file_get_contents($path);
+        $pattern  = '/^' . preg_quote($key, '/') . '=.*$/m';
+
+        $contents = preg_match($pattern, $contents)
+            // preg_replace_callback, not preg_replace: the replacement is a bcrypt
+            // hash, and preg_replace treats "$2", "$12" etc. in its replacement
+            // argument as backreferences — it would silently mangle the hash.
+            ? preg_replace_callback($pattern, fn () => $line, $contents)
+            : rtrim($contents) . PHP_EOL . $line . PHP_EOL;
+
+        file_put_contents($path, $contents);
     }
 
     // ── Backup ─────────────────────────────────────────────────────
