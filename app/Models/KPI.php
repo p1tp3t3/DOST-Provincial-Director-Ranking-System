@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KPI extends Model
 {
+    use SoftDeletes;
+
     public $table      = 'kpis';
     public $timestamps = false;
     protected $fillable = [

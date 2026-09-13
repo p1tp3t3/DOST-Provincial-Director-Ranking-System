@@ -6,7 +6,6 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Modules\BlogController;
 use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPIDataController;
-use App\Http\Controllers\Modules\KpiEditAccessController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
@@ -98,11 +97,14 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     });
 
-    // ── KPI Data Editor: Super Admin + Sub Admin ───────────────
+    // ── KPI Data Editor + Catalog: Super Admin + Sub Admin only ────
+    // Provincial-level roles have no KPI edit access — central admins only.
     Route::middleware('role:super_admin,sub_admin')->group(function () {
         Route::get('/kpi-data',                   [KPIDataController::class, 'index']);
         Route::get('/kpi-data/{id}/{year?}',      [KPIDataController::class, 'edit']);
         Route::put('/kpi-data/{director}/{year}', [KPIDataController::class, 'update']);
+        Route::post('/kpi-data/kpis',              [KPIDataController::class, 'store_kpi']);
+        Route::delete('/kpi-data/kpis/{kpi}',      [KPIDataController::class, 'destroy_kpi']);
     });
 
     // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────
@@ -165,12 +167,6 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
     });
 
-    // ── Regional Director only: approve/reject KPI edit requests ──
-    Route::middleware('role:regional_director')->group(function () {
-        Route::get('/regional-kpi-edit-requests',                [KpiEditAccessController::class, 'index']);
-        Route::patch('/regional-kpi-edit-requests/{id}/approve', [KpiEditAccessController::class, 'approve']);
-        Route::patch('/regional-kpi-edit-requests/{id}/reject',  [KpiEditAccessController::class, 'reject']);
-    });
 
     // ── Provincial Admin only ─────────────────────────────────
     Route::middleware('role:provincial_admin')->group(function () {
@@ -178,12 +174,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/provincial-admin-report/export', [ProvincialAdminReportController::class, 'export']);
     });
 
-    // ── Provincial Admin only (KPI editor) ────────────────────
+    // ── Provincial Admin only ──────────────────────────────────
+    // KPI matrix editing was removed from here — central admins (super_admin,
+    // sub_admin) are now the only roles that can manage KPI data.
     Route::middleware('role:provincial_admin')->group(function () {
-        Route::get('/provincial-kpi/{year?}',                            [KPIDataController::class, 'provincial_index']);
-        Route::put('/provincial-kpi/{director}/{year}',                  [KPIDataController::class, 'provincial_update']);
-        Route::post('/provincial-kpi/{director}/{year}/request-access', [KPIDataController::class, 'provincial_request_access']);
-
         // Public landing page info for their own province — description + cover image
         Route::get('/province-info',  [ProvinceController::class, 'edit_own_info']);
         Route::put('/province-info',  [ProvinceController::class, 'update_own_info']);

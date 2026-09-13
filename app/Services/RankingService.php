@@ -27,7 +27,7 @@ class RankingService
         $this->kpiCategories = DB::table('kpi_categories')->orderBy('sort_order')
             ->get()->keyBy('id')->map(fn($c) => (array) $c)->toArray();
 
-        $this->kpis = DB::table('kpis')->orderBy('sort_order')
+        $this->kpis = DB::table('kpis')->whereNull('deleted_at')->orderBy('sort_order')
             ->get()->keyBy('id')->map(fn($k) => (array) $k)->toArray();
 
         $this->kpisByCode = [];

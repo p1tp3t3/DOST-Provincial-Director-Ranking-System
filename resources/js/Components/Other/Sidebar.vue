@@ -18,7 +18,6 @@ import {
     RiFolder2Line,
     RiEdit2Fill,
     RiRoadMapFill,
-    RiLockUnlockFill,
     RiNewspaperLine,
     RiMapPin2Fill,
 } from '@remixicon/vue';
@@ -91,7 +90,6 @@ const tabs = computed(() => {
                         { name: 'Auto User Generator', href: '/users/auto-generator',  icon: RiFile2Fill   },
                     ]
                 },
-                { name: 'KPI Data Editor', href: '/provincial-kpi', icon: RiEdit2Fill },
                 { name: 'Province Info',   href: '/province-info',  icon: RiMapPin2Fill },
                 { name: 'Employees',        href: '/employees',       icon: RiTeamFill  },
                 { name: 'Activity Logs',    href: '/activity-logs',   icon: RiListView  },
@@ -115,7 +113,6 @@ const tabs = computed(() => {
             return [
                 { name: 'Dashboard',            href: '/dashboard',                  icon: RiDashboard2Fill },
                 { name: 'Province Directories', href: '/province-directories',       icon: RiFolder2Fill    },
-                { name: 'KPI Edit Requests',    href: '/regional-kpi-edit-requests', icon: RiLockUnlockFill },
                 { name: 'Reports',              href: '/regional-admin-report',      icon: RiFileChartFill  },
             ];
         case 'employee':

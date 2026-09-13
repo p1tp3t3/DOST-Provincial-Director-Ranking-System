@@ -94,13 +94,20 @@
                 <v-avatar :color="catColor(cat.code)" size="30" rounded="md">
                     <v-icon size="16" color="white">{{ catIcon(cat.code) }}</v-icon>
                 </v-avatar>
-                <div>
+                <div class="flex-grow-1">
                     <div class="text-subtitle-2 font-weight-bold">{{ cat.name }}</div>
                     <div class="text-caption text-medium-emphasis">
                         Weight: <strong>{{ (cat.weight * 100).toFixed(0) }}%</strong>
                         · {{ cat.kpis.filter(k => k.is_scored).length }} scored KPIs
                     </div>
                 </div>
+                <v-btn
+                    size="small"
+                    variant="tonal"
+                    color="indigo"
+                    prepend-icon="mdi-plus"
+                    @click="openAddDialog(cat.id)"
+                >Add KPI</v-btn>
             </div>
             <v-divider />
 
@@ -109,9 +116,11 @@
                     <tr>
                         <th class="kpi-th" style="width:28px;">#</th>
                         <th class="kpi-th">KPI</th>
-                        <th class="kpi-th" style="width:70px; text-align:center;">Weight</th>
+                        <th class="kpi-th" style="width:150px;">Category</th>
+                        <th class="kpi-th" style="width:90px; text-align:center;">Weight %</th>
                         <th class="kpi-th" style="width:160px; text-align:center;">Target</th>
                         <th class="kpi-th" style="width:160px; text-align:center;">Accomplished</th>
+                        <th class="kpi-th" style="width:40px;"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,9 +144,34 @@
                                 Accomplishment is the live record count from the linked module - cannot be typed.
                             </div>
                         </td>
-                        <td class="text-caption text-medium-emphasis text-center">
-                            <span v-if="kpi.is_scored">{{ (kpi.weight * 100).toFixed(1) }}%</span>
-                            <span v-else>-</span>
+                        <td>
+                            <v-select
+                                v-model="kpi.category_id"
+                                :items="categoryOptions"
+                                item-title="name"
+                                item-value="id"
+                                variant="solo-filled"
+                                density="compact"
+                                hide-details
+                                class="kpi-input"
+                            />
+                            <div v-if="kpi.category_id !== originalCategoryOf(kpi.id)" class="text-caption text-warning mt-1">
+                                Moves here after save
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <v-text-field
+                                v-if="kpi.is_scored"
+                                :model-value="weightPercent(kpi.weight)"
+                                @update:model-value="(v) => kpi.weight = percentToWeight(v)"
+                                type="number"
+                                min="0" max="100" step="0.1"
+                                variant="solo-filled"
+                                density="compact"
+                                hide-details
+                                class="kpi-input"
+                            />
+                            <span v-else class="text-caption text-medium-emphasis">-</span>
                         </td>
                         <td>
                             <v-text-field
@@ -173,6 +207,15 @@
                                 class="kpi-input"
                             />
                         </td>
+                        <td class="text-center">
+                            <v-tooltip text="Remove (soft delete)" location="top">
+                                <template #activator="{ props: tip }">
+                                    <v-btn v-bind="tip" icon size="x-small" variant="text" color="error" @click="confirmDelete(kpi)">
+                                        <v-icon size="16">mdi-trash-can-outline</v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+                        </td>
                     </tr>
                 </tbody>
             </v-table>
@@ -201,11 +244,108 @@
             >Save Changes</v-btn>
         </div>
 
+        <!-- Add KPI Dialog -->
+        <v-dialog v-model="addDialogOpen" max-width="480" persistent>
+            <v-card rounded="lg">
+                <v-card-item class="pt-5 pb-2 px-5">
+                    <div class="d-flex align-center gap-3">
+                        <v-avatar color="indigo-lighten-5" size="40" rounded="lg">
+                            <v-icon color="indigo" size="20">mdi-plus-circle-outline</v-icon>
+                        </v-avatar>
+                        <div>
+                            <div class="text-subtitle-2 font-weight-bold">Add KPI</div>
+                            <div class="text-caption text-medium-emphasis">Applies to every province's matrix</div>
+                        </div>
+                    </div>
+                </v-card-item>
+                <v-card-text class="px-5 pb-3 d-flex flex-column gap-3">
+                    <v-text-field
+                        v-model="addForm.name"
+                        label="KPI name"
+                        variant="outlined"
+                        density="comfortable"
+                        :error-messages="addForm.errors.name"
+                        autofocus
+                    />
+                    <v-select
+                        v-model="addForm.category_id"
+                        :items="categoryOptions"
+                        item-title="name"
+                        item-value="id"
+                        label="Category"
+                        variant="outlined"
+                        density="comfortable"
+                        :error-messages="addForm.errors.category_id"
+                    />
+                    <v-text-field
+                        v-model="addForm.weightPercent"
+                        label="Weight %"
+                        type="number"
+                        min="0" max="100" step="0.1"
+                        variant="outlined"
+                        density="comfortable"
+                        :error-messages="addForm.errors.weight"
+                    />
+                    <v-text-field
+                        v-model="addForm.target"
+                        :label="`Target for ${selectedYear} (${director.name})`"
+                        variant="outlined"
+                        density="comfortable"
+                        hint="Optional — can be filled in later"
+                        persistent-hint
+                        :error-messages="addForm.errors.target"
+                    />
+                </v-card-text>
+                <v-divider />
+                <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                    <v-btn variant="text" size="small" @click="addDialogOpen = false">Cancel</v-btn>
+                    <v-btn
+                        variant="flat"
+                        color="indigo"
+                        size="small"
+                        :loading="addForm.processing"
+                        :disabled="!addForm.name.trim() || !addForm.category_id || addForm.weightPercent === ''"
+                        @click="submitAdd"
+                    >Add KPI</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Delete KPI Confirm Dialog -->
+        <v-dialog v-model="deleteDialogOpen" max-width="420" persistent>
+            <v-card rounded="lg">
+                <v-card-item class="pt-5 pb-2 px-5">
+                    <div class="d-flex align-center gap-3">
+                        <v-avatar color="error-lighten-5" size="40" rounded="lg">
+                            <v-icon color="error" size="20">mdi-trash-can-outline</v-icon>
+                        </v-avatar>
+                        <div>
+                            <div class="text-subtitle-2 font-weight-bold">Remove KPI</div>
+                            <div class="text-caption text-medium-emphasis">Soft delete — historical data is kept</div>
+                        </div>
+                    </div>
+                </v-card-item>
+                <v-card-text class="px-5 pb-3">
+                    <p class="text-body-2">
+                        Remove <strong>{{ deleteTarget?.name }}</strong> from the KPI matrix for every province?
+                        Past target/accomplished records stay in the database and remain visible in historical
+                        reports — this only stops it from being scored or edited going forward.
+                    </p>
+                </v-card-text>
+                <v-divider />
+                <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                    <v-btn variant="text" size="small" @click="deleteDialogOpen = false">Cancel</v-btn>
+                    <v-btn variant="flat" color="error" size="small" :loading="deleting" @click="doDelete">Remove</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
+import { useEcho } from '@laravel/echo-vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -215,8 +355,11 @@ const props = defineProps({
     available_years:   { type: Array,  default: () => [] },  // years across the whole system
     director_years:    { type: Array,  default: () => [] },  // years this director already has data for
     kpi_categories:    { type: Array,  default: () => [] },
+    category_options:  { type: Array,  default: () => [] },  // [{ id, code, name }] for the category dropdowns
     modular_kpi_codes: { type: Object, default: () => ({}) },  // { kpi_code: '/module/path' }
 });
+
+const categoryOptions = computed(() => props.category_options);
 
 const isModular = (code) => Object.prototype.hasOwnProperty.call(props.modular_kpi_codes, code);
 
@@ -272,6 +415,8 @@ const save = () => {
                 kpi_id:       kpi.id,
                 target:       kpi.target ?? '',
                 accomplished: kpi.accomplished ?? '',
+                category_id:  kpi.category_id,
+                weight:       kpi.is_scored ? kpi.weight : null,
             });
         }
     }
@@ -295,6 +440,85 @@ const changeYear = (yr) => {
 
 // Keep selectedYear in sync if the prop changes after navigation
 watch(() => props.year, (y) => { selectedYear.value = y; });
+
+// ── Weight display: stored as a 0-1 decimal, edited as a 0-100 percent ────────
+const weightPercent = (decimal) => {
+    const n = Number(decimal) * 100;
+    return Math.round(n * 100) / 100; // trim float noise, keep up to 2 decimals
+};
+const percentToWeight = (percent) => {
+    const n = Number(percent);
+    return Number.isFinite(n) ? n / 100 : 0;
+};
+
+// Original category, from the untouched snapshot — used to flag a pending move.
+const originalCategoryById = new Map();
+for (const cat of props.kpi_categories) {
+    for (const kpi of cat.kpis) originalCategoryById.set(kpi.id, kpi.category_id);
+}
+const originalCategoryOf = (kpiId) => originalCategoryById.get(kpiId);
+
+// ── Add KPI ────────────────────────────────────────────────────────────────
+const addDialogOpen = ref(false);
+
+const addForm = useForm({
+    category_id:   null,
+    name:          '',
+    weightPercent: '',
+    target:        '',
+});
+
+const openAddDialog = (categoryId) => {
+    addForm.reset();
+    addForm.category_id = categoryId;
+    addDialogOpen.value = true;
+};
+
+const submitAdd = () => {
+    addForm
+        .transform((data) => ({
+            category_id: data.category_id,
+            name:        data.name,
+            weight:      percentToWeight(data.weightPercent),
+            director_id: props.director.id,
+            year:        selectedYear.value,
+            target:      data.target,
+        }))
+        .post('/kpi-data/kpis', {
+            preserveScroll: true,
+            onSuccess: () => { addDialogOpen.value = false; },
+        });
+};
+
+// ── Delete (soft) KPI ──────────────────────────────────────────────────────
+const deleteDialogOpen = ref(false);
+const deleteTarget      = ref(null);
+const deleting          = ref(false);
+
+const confirmDelete = (kpi) => {
+    deleteTarget.value = kpi;
+    deleteDialogOpen.value = true;
+};
+
+const doDelete = () => {
+    deleting.value = true;
+    router.delete(`/kpi-data/kpis/${deleteTarget.value.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deleting.value = false;
+            deleteDialogOpen.value = false;
+            deleteTarget.value = null;
+        },
+    });
+};
+
+// ── Real-time: another admin's catalog change (add/edit weight/delete)
+// refreshes this screen so the matrix and scoring stay in sync everywhere.
+const { leaveChannel } = useEcho('kpi-catalog', 'kpi.catalog.updated', () => {
+    if (isDirty.value) return; // don't clobber unsaved local edits
+    router.reload({ only: ['kpi_categories', 'category_options'], preserveScroll: true, preserveState: true });
+});
+onBeforeUnmount(() => leaveChannel());
 </script>
 
 <style scoped>

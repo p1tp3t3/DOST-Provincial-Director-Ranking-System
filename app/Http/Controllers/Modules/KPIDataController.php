@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers\Modules;
 
+use App\Events\KpiCatalogUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\KPI;
 use App\Models\KPICategory;
-use App\Models\KpiEditRequest;
-use App\Models\KpiEditUsage;
 use App\Models\Province;
 use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
 use App\Services\RankingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
-// Super-admin-only editor for the PSTD Ranking Matrix accomplishment data.
-// Lives at /kpi-data and is intentionally separate from the public-facing
-// Province Directories page (which stays read-only).
+// Super Admin + Sub Admin editor for the PSTD Ranking Matrix — both the KPI
+// catalog itself (add / edit weight & category / soft-delete) and each
+// province's accomplishment data. Lives at /kpi-data and is intentionally
+// separate from the public-facing Province Directories page (read-only).
+// Provincial-level roles have no edit access here at all; central admins are
+// the only ones who can manage the matrix.
 class KPIDataController extends Controller
 {
     // KPI codes whose accomplishment is derived from a dedicated record module.
@@ -120,6 +121,7 @@ class KPIDataController extends Controller
                 'weight' => (float) $cat->weight,
                 'kpis'   => $cat->kpis->map(fn($k) => [
                     'id'              => $k->id,
+                    'category_id'     => $k->category_id,
                     'code'            => $k->code,
                     'name'            => $k->name,
                     'weight'          => (float) $k->weight,
@@ -130,6 +132,8 @@ class KPIDataController extends Controller
                     'accomplished'    => $values[$k->id]['accomplished'] ?? '',
                 ])->values()->toArray(),
             ])->values()->toArray();
+
+        $categoryOptions = KPICategory::orderBy('sort_order')->get(['id', 'code', 'name'])->toArray();
 
         $profile = $director->profile;
         $directorName = $profile
@@ -142,6 +146,7 @@ class KPIDataController extends Controller
                 'name'     => $province->name,
                 'category' => $province->category,
             ],
+            'category_options'   => $categoryOptions,
             'director'           => [
                 'id'   => $director->id,
                 'name' => $directorName ?: '—',
@@ -161,18 +166,42 @@ class KPIDataController extends Controller
             'values.*.kpi_id'        => ['required', 'integer', 'exists:kpis,id'],
             'values.*.target'        => ['nullable', 'string', 'max:255'],
             'values.*.accomplished'  => ['nullable', 'string', 'max:255'],
+            'values.*.category_id'   => ['nullable', 'integer', 'exists:kpi_categories,id'],
+            'values.*.weight'        => ['nullable', 'numeric', 'min:0', 'max:1'],
         ]);
 
         $director = User::where('id', $directorId)
             ->where('role', 'provincial_director')->firstOrFail();
 
         $modularKpiIds = KPI::whereIn('code', array_keys(self::MODULAR_KPI_CODES))->pluck('id')->all();
+        $catalogChanges = [];
 
-        DB::transaction(function () use ($request, $director, $year, $modularKpiIds) {
+        DB::transaction(function () use ($request, $director, $year, $modularKpiIds, &$catalogChanges) {
             foreach ($request->input('values') as $row) {
                 $target       = $this->normalizeInput($row['target']       ?? null);
                 $accomplished = $this->normalizeInput($row['accomplished'] ?? null);
                 $isModular    = in_array((int) $row['kpi_id'], $modularKpiIds, true);
+
+                // Catalog-level fields (shared across every province) — only touch
+                // the row if the client actually sent a change for it.
+                if (array_key_exists('category_id', $row) || array_key_exists('weight', $row)) {
+                    $kpi = KPI::find($row['kpi_id']);
+                    if ($kpi) {
+                        $catalogUpdate = [];
+                        if (array_key_exists('category_id', $row) && $row['category_id'] !== null
+                            && (int) $row['category_id'] !== $kpi->category_id) {
+                            $catalogUpdate['category_id'] = (int) $row['category_id'];
+                        }
+                        if (array_key_exists('weight', $row) && $row['weight'] !== null
+                            && (float) $row['weight'] !== (float) $kpi->weight) {
+                            $catalogUpdate['weight'] = (float) $row['weight'];
+                        }
+                        if ($catalogUpdate) {
+                            $kpi->update($catalogUpdate);
+                            $catalogChanges[] = $kpi->id;
+                        }
+                    }
+                }
 
                 // For modular KPIs, accomplishment is owned by the module — never
                 // touch it from this form. Only target is editable here.
@@ -219,245 +248,87 @@ class KPIDataController extends Controller
             }
         });
 
+        // Weight/category changes affect every province's live score — let open
+        // KPI Data screens know to refresh rather than show a stale matrix.
+        foreach (array_unique($catalogChanges) as $kpiId) {
+            $kpi = KPI::find($kpiId);
+            if ($kpi) {
+                broadcast(new KpiCatalogUpdated('updated', $kpi->id, $kpi->name, $kpi->category_id));
+            }
+        }
+
         return back()->with('success', "Saved KPI data for {$year}.");
     }
 
-    // ── Provincial Sub Admin ──────────────────────────────────────────────────
+    // ── KPI Catalog: add / soft-delete (Super Admin + Sub Admin only) ─────────
 
-    public function provincial_index(?int $year = null)
+    public function store_kpi(Request $request)
     {
-        $user       = Auth::user();
-        $provinceId = $user->province_id;
-
-        $director = User::query()
-            ->whereProvince($provinceId)
-            ->where('role', 'provincial_director')
-            ->with('profile')
-            ->first();
-
-        if (!$director) {
-            return inertia('ProvincialSubAdmin/KPI/Main', ['no_director' => true]);
-        }
-
-        $svc            = new RankingService();
-        $availableYears = $svc->availableYears();
-        $year           = $year ?: ($availableYears[0] ?? now()->year);
-
-        $directorYears = DB::table('provincial_director_kpis')
-            ->where('provincial_director_id', $director->id)
-            ->distinct()->orderByDesc('year')->pluck('year')->values()->toArray();
-
-        $values = ProvincialDirectorKPI::query()
-            ->where('provincial_director_id', $director->id)
-            ->where('year', $year)
-            ->get()
-            ->keyBy('kpi_id')
-            ->map(fn($r) => ['target' => $r->target, 'accomplished' => $r->accomplished])
-            ->toArray();
-
-        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
-            ->orderBy('sort_order')->get()
-            ->map(fn($cat) => [
-                'id'     => $cat->id,
-                'code'   => $cat->code,
-                'name'   => $cat->name,
-                'weight' => (float) $cat->weight,
-                'kpis'   => $cat->kpis->map(fn($k) => [
-                    'id'              => $k->id,
-                    'code'            => $k->code,
-                    'name'            => $k->name,
-                    'weight'          => (float) $k->weight,
-                    'is_scored'       => (bool) $k->is_scored,
-                    'inverse_scoring' => (bool) $k->inverse_scoring,
-                    'derivation_type' => $k->derivation_type,
-                    'target'          => $values[$k->id]['target']       ?? '',
-                    'accomplished'    => $values[$k->id]['accomplished'] ?? '',
-                ])->values()->toArray(),
-            ])->values()->toArray();
-
-        $profile      = $director->profile;
-        $directorName = $profile
-            ? trim(($profile->first_name ?? '') . ' ' . ($profile->middle_name ?? '') . ' ' . ($profile->last_name ?? ''))
-            : '—';
-
-        return inertia('ProvincialSubAdmin/KPI/Main', [
-            'director'          => ['id' => $director->id, 'name' => $directorName ?: '—'],
-            'year'              => (int) $year,
-            'available_years'   => $availableYears,
-            'director_years'    => $directorYears,
-            'kpi_categories'    => $categories,
-            'modular_kpi_codes' => self::MODULAR_KPI_CODES,
-            'no_director'       => false,
-            'edit_access'       => $this->editLockState($director->id, (int) $year),
-        ]);
-    }
-
-    public function provincial_update(Request $request, int $directorId, int $year)
-    {
-        $director = $this->ownDirectorOrFail($directorId);
-
-        $request->validate([
-            'values'                 => ['required', 'array'],
-            'values.*.kpi_id'        => ['required', 'integer', 'exists:kpis,id'],
-            'values.*.target'        => ['nullable', 'string', 'max:255'],
-            'values.*.accomplished'  => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $modularKpiIds = KPI::whereIn('code', array_keys(self::MODULAR_KPI_CODES))->pluck('id')->all();
-        $rows          = $request->input('values');
-
-        try {
-            DB::transaction(function () use ($director, $year, $rows, $modularKpiIds) {
-                $this->consumeEditRight($director->id, $year);
-
-                foreach ($rows as $row) {
-                    $kpiId        = (int) $row['kpi_id'];
-                    $isModular    = in_array($kpiId, $modularKpiIds, true);
-                    $target       = $this->normalizeInput($row['target']       ?? null);
-                    $accomplished = $this->normalizeInput($row['accomplished'] ?? null);
-
-                    // For modular KPIs, accomplishment is owned by the module — never
-                    // touch it from this form. Only target is editable here.
-                    if ($isModular) {
-                        if ($target === null) {
-                            ProvincialDirectorKPI::where('provincial_director_id', $director->id)
-                                ->where('kpi_id', $kpiId)->where('year', $year)
-                                ->update(['target' => null]);
-                            continue;
-                        }
-                        ProvincialDirectorKPI::updateOrCreate(
-                            ['provincial_director_id' => $director->id, 'kpi_id' => $kpiId, 'year' => $year],
-                            ['target' => $target]
-                        );
-                        continue;
-                    }
-
-                    if ($target === null && $accomplished === null) {
-                        ProvincialDirectorKPI::where('provincial_director_id', $director->id)
-                            ->where('kpi_id', $kpiId)->where('year', $year)->delete();
-                        continue;
-                    }
-
-                    ProvincialDirectorKPI::updateOrCreate(
-                        ['provincial_director_id' => $director->id, 'kpi_id' => $kpiId, 'year' => $year],
-                        ['target' => $target, 'accomplished' => $accomplished]
-                    );
-                }
-            });
-        } catch (\RuntimeException $e) {
-            return back()->withErrors(['edit_access' => $e->getMessage()]);
-        }
-
-        return back()->with('success', "KPI data saved for {$year}.");
-    }
-
-    public function provincial_request_access(Request $request, int $directorId, int $year)
-    {
-        $director = $this->ownDirectorOrFail($directorId);
-
         $data = $request->validate([
-            'reason' => ['nullable', 'string', 'max:1000'],
+            'category_id'  => ['required', 'integer', 'exists:kpi_categories,id'],
+            'name'         => ['required', 'string', 'max:500'],
+            'weight'       => ['required', 'numeric', 'min:0', 'max:1'],
+            'director_id'  => ['required', 'integer', 'exists:users,id'],
+            'year'         => ['required', 'integer', 'min:2000', 'max:2100'],
+            'target'       => ['nullable', 'string', 'max:255'],
         ]);
 
-        $alreadyPending = KpiEditRequest::where('provincial_director_id', $director->id)
-            ->where('year', $year)
-            ->where('status', 'pending')
-            ->exists();
+        $director = User::where('id', $data['director_id'])
+            ->where('role', 'provincial_director')->firstOrFail();
 
-        if ($alreadyPending) {
-            return back()->withErrors(['edit_access' => 'You already have a pending request for this.']);
-        }
+        $nextSort = (int) (KPI::where('category_id', $data['category_id'])->max('sort_order') ?? 0) + 1;
 
-        KpiEditRequest::create([
-            'provincial_director_id' => $director->id,
-            'requested_by'           => Auth::id(),
-            'year'                   => $year,
-            'reason'                 => $data['reason'] ?? null,
-            'status'                 => 'pending',
-        ]);
+        $kpi = DB::transaction(function () use ($data, $director, $nextSort) {
+            $kpi = KPI::create([
+                'category_id'     => $data['category_id'],
+                'code'            => $this->generateKpiCode($data['name']),
+                'name'            => $data['name'],
+                'weight'          => $data['weight'],
+                'is_scored'       => true,
+                'inverse_scoring' => false,
+                'derivation_type' => null,
+                'sort_order'      => $nextSort,
+            ]);
 
-        return back()->with('success', 'Request sent to your regional admin.');
-    }
-
-    private function ownDirectorOrFail(int $directorId): User
-    {
-        return User::query()
-            ->where('id', $directorId)
-            ->where('role', 'provincial_director')
-            ->whereProvince(Auth::user()->province_id)
-            ->firstOrFail();
-    }
-
-    // Whether the free edit for this (director, year) is still available, or —
-    // once spent — whether an approved-and-unused request has granted one more.
-    // Surfaced to the Vue editor so it can disable inputs and show request status.
-    private function editLockState(int $directorId, int $year): array
-    {
-        $used = KpiEditUsage::where('provincial_director_id', $directorId)
-            ->where('year', $year)->exists();
-
-        if (!$used) {
-            return ['locked' => false, 'pending_request' => null, 'last_request' => null];
-        }
-
-        $hasUnusedGrant = KpiEditRequest::where('provincial_director_id', $directorId)
-            ->where('year', $year)
-            ->where('status', 'approved')->whereNull('used_at')
-            ->exists();
-
-        $pending = KpiEditRequest::where('provincial_director_id', $directorId)
-            ->where('year', $year)
-            ->where('status', 'pending')->latest()->first();
-
-        $last = KpiEditRequest::where('provincial_director_id', $directorId)
-            ->where('year', $year)
-            ->whereIn('status', ['approved', 'rejected'])
-            ->latest()->first();
-
-        return [
-            'locked'          => !$hasUnusedGrant,
-            'pending_request' => $pending ? ['id' => $pending->id, 'created_at' => $pending->created_at->toIso8601String()] : null,
-            'last_request'    => $last ? [
-                'id'            => $last->id,
-                'status'        => $last->status,
-                'response_note' => $last->response_note,
-                'used'          => $last->used_at !== null,
-            ] : null,
-        ];
-    }
-
-    // Consumes the free edit (or, once spent, an approved-and-unused grant) for this
-    // (director, year). Throws if neither is available — callers should run this
-    // inside the same transaction as the actual data write, before it.
-    private function consumeEditRight(int $directorId, int $year): void
-    {
-        $used = KpiEditUsage::where('provincial_director_id', $directorId)
-            ->where('year', $year)->exists();
-
-        $requestId = null;
-
-        if ($used) {
-            $grant = KpiEditRequest::where('provincial_director_id', $directorId)
-                ->where('year', $year)
-                ->where('status', 'approved')->whereNull('used_at')
-                ->lockForUpdate()->first();
-
-            if (!$grant) {
-                throw new \RuntimeException(
-                    "Your free edit for {$year} has already been used. Request additional access from your regional admin."
+            $target = $this->normalizeInput($data['target'] ?? null);
+            if ($target !== null) {
+                ProvincialDirectorKPI::updateOrCreate(
+                    ['provincial_director_id' => $director->id, 'kpi_id' => $kpi->id, 'year' => $data['year']],
+                    ['target' => $target]
                 );
             }
 
-            $grant->update(['used_at' => now()]);
-            $requestId = $grant->id;
-        }
+            return $kpi;
+        });
 
-        KpiEditUsage::create([
-            'provincial_director_id' => $directorId,
-            'year'                   => $year,
-            'used_by'                => Auth::id(),
-            'kpi_edit_request_id'    => $requestId,
-        ]);
+        broadcast(new KpiCatalogUpdated('created', $kpi->id, $kpi->name, $kpi->category_id));
+
+        return back()->with('success', "\"{$kpi->name}\" added to the KPI matrix.");
+    }
+
+    public function destroy_kpi(int $kpiId)
+    {
+        $kpi = KPI::findOrFail($kpiId);
+        $name = $kpi->name;
+        $categoryId = $kpi->category_id;
+        $kpi->delete(); // soft delete — historical provincial_director_kpis rows are untouched
+
+        broadcast(new KpiCatalogUpdated('deleted', $kpiId, $name, $categoryId));
+
+        return back()->with('success', "\"{$name}\" removed from the KPI matrix. Historical data is preserved.");
+    }
+
+    // Unique, URL/DB-safe code derived from the name (e.g. "Trainings Conducted"
+    // → "custom_trainings_conducted"), disambiguated with a numeric suffix on clash.
+    private function generateKpiCode(string $name): string
+    {
+        $base = 'custom_' . \Illuminate\Support\Str::slug($name, '_');
+        $code = $base;
+        $i = 1;
+        while (KPI::withTrashed()->where('code', $code)->exists()) {
+            $code = $base . '_' . (++$i);
+        }
+        return $code;
     }
 
     private function normalizeInput(?string $v): ?string
