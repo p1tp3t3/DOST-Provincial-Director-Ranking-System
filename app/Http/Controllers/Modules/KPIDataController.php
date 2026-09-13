@@ -11,6 +11,7 @@ use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
 use App\Services\RankingService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -316,6 +317,157 @@ class KPIDataController extends Controller
         broadcast(new KpiCatalogUpdated('deleted', $kpiId, $name, $categoryId));
 
         return back()->with('success', "\"{$name}\" removed from the KPI matrix. Historical data is preserved.");
+    }
+
+    // ── KPI Catalog: bulk add via CSV (name, category, weight, target) ───────
+    // Mirrors the bulk-employee CSV pattern (verify → review → commit), minus
+    // the job-batch queue — a KPI row insert is trivial, so this runs inline.
+
+    public function verify_kpi_csv(Request $request)
+    {
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+        ]);
+
+        $rows = $this->parse_kpi_csv($request->file('csv_file'));
+
+        if (empty($rows)) {
+            return response()->json(['message' => 'The CSV file is empty or could not be parsed.'], 422);
+        }
+
+        $categories = KPICategory::all(['id', 'code', 'name']);
+        $byCode = $categories->keyBy(fn($c) => strtolower($c->code));
+        $byName = $categories->keyBy(fn($c) => strtolower($c->name));
+
+        $existingNames = KPI::pluck('name')->map(fn($n) => strtolower(trim($n)))->flip();
+        $seenNames = [];
+        $results   = [];
+
+        foreach ($rows as $i => $row) {
+            $name    = trim($row['name']     ?? '');
+            $catRaw  = trim($row['category'] ?? '');
+            $weightRaw = trim($row['weight'] ?? '');
+            $target  = trim($row['target']   ?? '');
+
+            $errors = [];
+            $nameKey = strtolower($name);
+
+            if ($name === '') {
+                $errors['name'] = 'Name is required.';
+            } elseif (isset($existingNames[$nameKey])) {
+                $errors['name'] = 'A KPI with this name already exists.';
+            } elseif (isset($seenNames[$nameKey])) {
+                $errors['name'] = 'Duplicate name in this CSV.';
+            } else {
+                $seenNames[$nameKey] = true;
+            }
+
+            $category = $byCode[strtolower($catRaw)] ?? $byName[strtolower($catRaw)] ?? null;
+            if ($catRaw === '') {
+                $errors['category'] = 'Category is required.';
+            } elseif (!$category) {
+                $errors['category'] = 'Unknown category — use Core, Strategic, or Support.';
+            }
+
+            $weight = is_numeric($weightRaw) ? (float) $weightRaw : null;
+            if ($weightRaw === '') {
+                $errors['weight'] = 'Weight is required.';
+            } elseif ($weight === null || $weight < 0 || $weight > 100) {
+                $errors['weight'] = 'Weight must be a number between 0 and 100.';
+            }
+
+            $results[] = [
+                'row_index' => $i,
+                'status'    => empty($errors) ? 'valid' : 'invalid',
+                'errors'    => $errors,
+                'include'   => empty($errors),
+                'data'      => [
+                    'name'        => $name,
+                    'category_id' => $category?->id,
+                    'category'    => $category?->name ?? $catRaw,
+                    'weight'      => $weight,
+                    'target'      => $target,
+                ],
+            ];
+        }
+
+        return response()->json([
+            'status'            => 'done',
+            'results'           => $results,
+            'total'             => count($results),
+            'category_options'  => $categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values(),
+        ]);
+    }
+
+    public function commit_kpi_csv(Request $request)
+    {
+        $data = $request->validate([
+            'rows'                => ['required', 'array', 'min:1'],
+            'rows.*.name'         => ['required', 'string', 'max:500'],
+            'rows.*.category_id'  => ['required', 'integer', 'exists:kpi_categories,id'],
+            'rows.*.weight'       => ['required', 'numeric', 'min:0', 'max:100'],
+            'rows.*.target'       => ['nullable', 'string', 'max:255'],
+            'director_id'         => ['required', 'integer', 'exists:users,id'],
+            'year'                => ['required', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $director = User::where('id', $data['director_id'])
+            ->where('role', 'provincial_director')->firstOrFail();
+
+        $createdIds = DB::transaction(function () use ($data, $director) {
+            $ids = [];
+            foreach ($data['rows'] as $row) {
+                $nextSort = (int) (KPI::where('category_id', $row['category_id'])->max('sort_order') ?? 0) + 1;
+
+                $kpi = KPI::create([
+                    'category_id'     => $row['category_id'],
+                    'code'            => $this->generateKpiCode($row['name']),
+                    'name'            => $row['name'],
+                    'weight'          => $row['weight'] / 100,
+                    'is_scored'       => true,
+                    'inverse_scoring' => false,
+                    'derivation_type' => null,
+                    'sort_order'      => $nextSort,
+                ]);
+
+                $target = $this->normalizeInput($row['target'] ?? null);
+                if ($target !== null) {
+                    ProvincialDirectorKPI::updateOrCreate(
+                        ['provincial_director_id' => $director->id, 'kpi_id' => $kpi->id, 'year' => $data['year']],
+                        ['target' => $target]
+                    );
+                }
+
+                $ids[] = $kpi->id;
+            }
+            return $ids;
+        });
+
+        broadcast(new KpiCatalogUpdated('bulk_created', $createdIds[0] ?? 0, count($createdIds) . ' KPIs imported', null));
+
+        return response()->json(['created' => count($createdIds)]);
+    }
+
+    private function parse_kpi_csv(UploadedFile $file): array
+    {
+        $rows    = [];
+        $headers = null;
+        $handle  = fopen($file->getRealPath(), 'r');
+
+        while (($line = fgetcsv($handle)) !== false) {
+            if (!$headers) {
+                $headers = array_map(fn($h) => strtolower(trim(str_replace(' ', '_', $h))), $line);
+                continue;
+            }
+            if (count($line) !== count($headers)) continue;
+            $row = array_combine($headers, $line);
+            if (!empty(array_filter($row))) {
+                $rows[] = $row;
+            }
+        }
+
+        fclose($handle);
+        return $rows;
     }
 
     // Unique, URL/DB-safe code derived from the name (e.g. "Trainings Conducted"

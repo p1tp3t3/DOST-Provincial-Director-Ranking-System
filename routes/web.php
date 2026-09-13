@@ -105,6 +105,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/kpi-data/{director}/{year}', [KPIDataController::class, 'update']);
         Route::post('/kpi-data/kpis',              [KPIDataController::class, 'store_kpi']);
         Route::delete('/kpi-data/kpis/{kpi}',      [KPIDataController::class, 'destroy_kpi']);
+        Route::post('/kpi-data/kpis/verify-csv',   [KPIDataController::class, 'verify_kpi_csv']);
+        Route::post('/kpi-data/kpis/commit-csv',   [KPIDataController::class, 'commit_kpi_csv']);
     });
 
     // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────

@@ -10,6 +10,14 @@
             <span class="text-caption text-medium-emphasis cursor-pointer" @click="router.visit('/kpi-data')">KPI Data Editor</span>
             <v-icon size="12" color="medium-emphasis">mdi-chevron-right</v-icon>
             <span class="text-caption font-weight-medium">{{ province.name }}</span>
+            <v-spacer />
+            <v-btn
+                size="small"
+                variant="outlined"
+                color="indigo"
+                prepend-icon="mdi-file-upload-outline"
+                @click="openCsvDialog"
+            >Bulk Add via CSV</v-btn>
         </div>
 
         <!-- Header card: province + director identity + year picker -->
@@ -340,6 +348,153 @@
             </v-card>
         </v-dialog>
 
+        <!-- Bulk Add via CSV Dialog -->
+        <v-dialog v-model="csvDialogOpen" max-width="760" persistent scrollable>
+            <v-card rounded="lg">
+                <v-card-item class="pt-5 pb-2 px-5">
+                    <div class="d-flex align-center gap-3">
+                        <v-avatar color="indigo-lighten-5" size="40" rounded="lg">
+                            <v-icon color="indigo" size="20">mdi-file-upload-outline</v-icon>
+                        </v-avatar>
+                        <div>
+                            <div class="text-subtitle-2 font-weight-bold">Bulk Add KPIs via CSV</div>
+                            <div class="text-caption text-medium-emphasis">
+                                {{ csvStep === 'upload' ? `Adds to every province's matrix, with targets set for ${director.name} (${selectedYear})` : `Review ${csvResults.length} row(s) before committing` }}
+                            </div>
+                        </div>
+                    </div>
+                </v-card-item>
+                <v-divider />
+
+                <!-- Step: upload -->
+                <v-card-text v-if="csvStep === 'upload'" class="px-5 py-4 d-flex flex-column gap-4">
+                    <v-alert type="info" variant="tonal" density="compact" icon="mdi-information-outline">
+                        <div class="text-caption">
+                            CSV columns: <strong>name, category, weight, target</strong>. Category must be
+                            <em>Core</em>, <em>Strategic</em>, or <em>Support</em>. Weight is a percent (e.g. 5 for 5%).
+                            Target is optional and applies to <strong>{{ director.name }}</strong> for
+                            <strong>{{ selectedYear }}</strong> — leave it blank to fill in later.
+                        </div>
+                    </v-alert>
+                    <div class="d-flex align-center justify-space-between">
+                        <div class="d-flex align-center gap-2">
+                            <v-icon size="14" color="indigo">mdi-table-eye</v-icon>
+                            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.06em;">Sample CSV Format</span>
+                        </div>
+                        <v-btn size="x-small" variant="tonal" color="indigo" prepend-icon="mdi-download-outline" @click="downloadCsvTemplate">
+                            Download Template
+                        </v-btn>
+                    </div>
+                    <div class="csv-sample-wrap rounded-lg overflow-x-auto">
+                        <table class="csv-sample">
+                            <thead>
+                                <tr><th>name</th><th>category</th><th>weight</th><th>target</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Trainings Conducted</td><td>Strategic</td><td>3</td><td>12</td>
+                                </tr>
+                                <tr>
+                                    <td>Linkages Established</td><td>Core</td><td>5</td><td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <v-file-input
+                        v-model="csvFile"
+                        label="CSV file"
+                        variant="outlined"
+                        density="comfortable"
+                        accept=".csv,text/csv"
+                        prepend-icon=""
+                        prepend-inner-icon="mdi-file-delimited-outline"
+                        :error-messages="csvUploadError"
+                        hide-details="auto"
+                    />
+                </v-card-text>
+
+                <!-- Step: review -->
+                <v-card-text v-else class="px-5 py-4">
+                    <div class="d-flex align-center gap-2 mb-3 flex-wrap">
+                        <v-chip size="small" color="success" variant="tonal">{{ validCsvCount }} valid</v-chip>
+                        <v-chip v-if="invalidCsvCount" size="small" color="error" variant="tonal">{{ invalidCsvCount }} need attention</v-chip>
+                        <v-spacer />
+                        <span class="text-caption text-medium-emphasis">Only checked rows are imported</span>
+                    </div>
+                    <v-table density="compact">
+                        <thead>
+                            <tr>
+                                <th style="width:32px;"></th>
+                                <th>Name</th>
+                                <th style="width:150px;">Category</th>
+                                <th style="width:110px;">Weight %</th>
+                                <th style="width:120px;">Target</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in csvResults" :key="row.row_index" :class="{ 'csv-row--invalid': row.status === 'invalid' }">
+                                <td>
+                                    <v-checkbox v-model="row.include" density="compact" hide-details :disabled="row.status === 'invalid'" />
+                                </td>
+                                <td>
+                                    <div class="text-body-2">{{ row.data.name || '—' }}</div>
+                                    <div v-if="row.errors.name" class="text-caption text-error">{{ row.errors.name }}</div>
+                                </td>
+                                <td>
+                                    <v-select
+                                        v-model="row.data.category_id"
+                                        :items="csvCategoryOptions"
+                                        item-title="name"
+                                        item-value="id"
+                                        density="compact"
+                                        variant="solo-filled"
+                                        hide-details
+                                        @update:model-value="revalidateCsvRow(row)"
+                                    />
+                                    <div v-if="row.errors.category" class="text-caption text-error">{{ row.errors.category }}</div>
+                                </td>
+                                <td>
+                                    <v-text-field
+                                        v-model.number="row.data.weight"
+                                        type="number" min="0" max="100" step="0.1"
+                                        density="compact" variant="solo-filled" hide-details
+                                        @update:model-value="revalidateCsvRow(row)"
+                                    />
+                                    <div v-if="row.errors.weight" class="text-caption text-error">{{ row.errors.weight }}</div>
+                                </td>
+                                <td>
+                                    <v-text-field
+                                        v-model="row.data.target"
+                                        density="compact" variant="solo-filled" hide-details
+                                    />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </v-table>
+                </v-card-text>
+
+                <v-divider />
+                <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                    <v-btn variant="text" size="small" @click="closeCsvDialog">Cancel</v-btn>
+                    <v-btn
+                        v-if="csvStep === 'upload'"
+                        variant="flat" color="indigo" size="small"
+                        :loading="csvVerifying"
+                        :disabled="!csvFile"
+                        @click="submitCsvVerify"
+                    >Verify</v-btn>
+                    <v-btn
+                        v-else
+                        variant="flat" color="indigo" size="small"
+                        :loading="csvCommitting"
+                        :disabled="!validCsvCount"
+                        prepend-icon="mdi-check"
+                        @click="submitCsvCommit"
+                    >Import {{ validCsvCount }} KPI(s)</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
     </div>
 </template>
 
@@ -519,9 +674,159 @@ const { leaveChannel } = useEcho('kpi-catalog', 'kpi.catalog.updated', () => {
     router.reload({ only: ['kpi_categories', 'category_options'], preserveScroll: true, preserveState: true });
 });
 onBeforeUnmount(() => leaveChannel());
+
+// ── Bulk Add via CSV (name, category, weight, target) ─────────────────────
+const csvDialogOpen  = ref(false);
+const csvStep        = ref('upload'); // 'upload' | 'review'
+const csvFile         = ref(null);
+const csvUploadError  = ref('');
+const csvVerifying    = ref(false);
+const csvCommitting   = ref(false);
+const csvResults      = ref([]);
+const csvCategoryOptions = ref([]);
+
+const validCsvCount   = computed(() => csvResults.value.filter(r => r.include).length);
+const invalidCsvCount = computed(() => csvResults.value.filter(r => r.status === 'invalid').length);
+
+const xsrfToken = () => {
+    const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+};
+
+const openCsvDialog = () => {
+    csvStep.value = 'upload';
+    csvFile.value = null;
+    csvUploadError.value = '';
+    csvResults.value = [];
+    csvDialogOpen.value = true;
+};
+
+const downloadCsvTemplate = () => {
+    const headers = 'name,category,weight,target';
+    const rows = [
+        'Trainings Conducted,Strategic,3,12',
+        'Linkages Established,Core,5,',
+    ];
+    const csv = `${headers}\n${rows.join('\n')}\n`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'kpi-import-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+const closeCsvDialog = () => {
+    csvDialogOpen.value = false;
+};
+
+const submitCsvVerify = async () => {
+    csvVerifying.value = true;
+    csvUploadError.value = '';
+    const data = new FormData();
+    data.append('csv_file', csvFile.value);
+
+    try {
+        const res = await fetch('/kpi-data/kpis/verify-csv', {
+            method: 'POST',
+            headers: { 'X-XSRF-TOKEN': xsrfToken() },
+            body: data,
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            csvUploadError.value = err.message ?? 'Verification failed. Please try again.';
+            return;
+        }
+        const json = await res.json();
+        csvCategoryOptions.value = json.category_options;
+        csvResults.value = json.results;
+        csvStep.value = 'review';
+    } catch {
+        csvUploadError.value = 'Network error. Please try again.';
+    } finally {
+        csvVerifying.value = false;
+    }
+};
+
+// Re-check a row client-side after an inline edit, so fixing a typo can flip
+// it back to includable without a full server round-trip.
+const revalidateCsvRow = (row) => {
+    const errors = {};
+    if (!row.data.category_id) errors.category = 'Category is required.';
+    const w = Number(row.data.weight);
+    if (row.data.weight === '' || row.data.weight === null || Number.isNaN(w) || w < 0 || w > 100) {
+        errors.weight = 'Weight must be a number between 0 and 100.';
+    }
+    if (!row.data.name) errors.name = 'Name is required.';
+
+    row.errors = errors;
+    row.status = Object.keys(errors).length ? 'invalid' : 'valid';
+    row.include = row.status === 'valid';
+};
+
+const submitCsvCommit = async () => {
+    csvCommitting.value = true;
+    const rows = csvResults.value
+        .filter(r => r.include)
+        .map(r => ({
+            name:        r.data.name,
+            category_id: r.data.category_id,
+            weight:      Number(r.data.weight),
+            target:      r.data.target || null,
+        }));
+
+    try {
+        const res = await fetch('/kpi-data/kpis/commit-csv', {
+            method: 'POST',
+            headers: { 'X-XSRF-TOKEN': xsrfToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows, director_id: props.director.id, year: selectedYear.value }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message ?? 'Import failed. Please try again.');
+            return;
+        }
+        csvDialogOpen.value = false;
+        router.reload({ only: ['kpi_categories', 'category_options'], preserveScroll: true });
+    } catch {
+        alert('Network error. Please try again.');
+    } finally {
+        csvCommitting.value = false;
+    }
+};
 </script>
 
 <style scoped>
+.csv-sample-wrap {
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    border-radius: 8px;
+    background: #f8fafc;
+}
+.csv-sample {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    white-space: nowrap;
+}
+.csv-sample thead tr { background: #eef0f8; }
+.csv-sample th {
+    padding: 6px 10px;
+    text-align: left;
+    font-weight: 700;
+    color: #3730a3;
+    border-bottom: 1px solid #dde1f0;
+}
+.csv-sample td {
+    padding: 5px 10px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+.csv-row--invalid { background: #fef2f2; }
+
 .filter-label {
     font-size: 11px;
     font-weight: 600;
