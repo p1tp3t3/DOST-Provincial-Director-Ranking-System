@@ -497,6 +497,80 @@ class MaintenanceController extends Controller
         return round($bytes / 1048576, 1) . ' MB';
     }
 
+    // ── Log Viewer ─────────────────────────────────────────────────
+
+    // Returns the tail of storage/logs/laravel.log — capped so a large log
+    // file can't blow up the response; use download_logs() for the full file.
+    public function view_logs(Request $request)
+    {
+        $path  = storage_path('logs/laravel.log');
+        $lines = max(50, min(5000, (int) $request->query('lines', 1000)));
+
+        if (!file_exists($path)) {
+            return response()->json([
+                'exists'     => false,
+                'content'    => '',
+                'size'       => '0 B',
+                'updated_at' => null,
+            ]);
+        }
+
+        return response()->json([
+            'exists'     => true,
+            'content'    => $this->tail_file($path, $lines),
+            'size'       => $this->format_bytes(filesize($path)),
+            'updated_at' => date('M d, Y g:i:s A', filemtime($path)),
+        ]);
+    }
+
+    public function download_logs()
+    {
+        $path = storage_path('logs/laravel.log');
+
+        abort_unless(file_exists($path), 404, 'Log file not found.');
+
+        return response()->download($path, 'laravel-' . now()->format('Y-m-d_H-i-s') . '.log');
+    }
+
+    public function clear_logs()
+    {
+        $path = storage_path('logs/laravel.log');
+
+        if (file_exists($path)) {
+            file_put_contents($path, '');
+        }
+
+        return back()->with('success', 'Log file cleared.');
+    }
+
+    // Reads the last $lines lines of a file without loading the whole thing
+    // into memory — logs can grow to many MB over time.
+    private function tail_file(string $path, int $lines): string
+    {
+        $handle = fopen($path, 'r');
+        if (!$handle) return '';
+
+        $buffer   = '';
+        $chunk    = 8192;
+        $lineCount = 0;
+        $pos      = filesize($path);
+
+        while ($pos > 0 && $lineCount <= $lines) {
+            $readSize = min($chunk, $pos);
+            $pos     -= $readSize;
+            fseek($handle, $pos);
+            $data    = fread($handle, $readSize);
+            $buffer  = $data . $buffer;
+            $lineCount = substr_count($buffer, "\n");
+        }
+
+        fclose($handle);
+
+        $allLines = explode("\n", $buffer);
+
+        return implode("\n", array_slice($allLines, -$lines));
+    }
+
     // ── Cache ──────────────────────────────────────────────────────
 
     public function clear_cache(string $key)
