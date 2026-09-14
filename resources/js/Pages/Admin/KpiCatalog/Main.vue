@@ -56,7 +56,7 @@
                     <div class="text-subtitle-2 font-weight-bold">{{ cat.name }}</div>
                     <div class="text-caption text-medium-emphasis">
                         Weight: <strong>{{ (cat.weight * 100).toFixed(0) }}%</strong>
-                        · {{ cat.kpis.filter(k => k.is_scored).length }} scored KPIs
+                        · {{ cat.kpis.filter(k => Number(k.weightPercent) > 0).length }} scored KPIs
                     </div>
                 </div>
                 <v-btn
@@ -80,7 +80,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(kpi, idx) in cat.kpis" :key="kpi.id" class="kpi-row" :class="{ 'kpi-row--input-only': !kpi.is_scored }">
+                    <tr v-for="(kpi, idx) in cat.kpis" :key="kpi.id" class="kpi-row" :class="{ 'kpi-row--input-only': Number(kpi.weightPercent) === 0 }">
                         <td class="text-caption text-medium-emphasis text-center">{{ idx + 1 }}</td>
                         <td class="py-2">
                             <v-text-field
@@ -93,7 +93,11 @@
                             />
                             <div class="d-flex align-center gap-2 flex-wrap mt-1">
                                 <v-chip v-if="kpi.inverse_scoring" size="x-small" variant="tonal" color="orange" class="font-weight-medium">Inverse</v-chip>
-                                <v-chip v-if="!kpi.is_scored" size="x-small" variant="tonal" color="blue-grey" class="font-weight-medium">Input only</v-chip>
+                                <v-tooltip text="Weight is 0, so this KPI doesn't count toward the ranking yet. Give it a weight to include it." location="top">
+                                    <template #activator="{ props: tip }">
+                                        <v-chip v-if="Number(kpi.weightPercent) === 0" v-bind="tip" size="x-small" variant="tonal" color="blue-grey" class="font-weight-medium">Input only</v-chip>
+                                    </template>
+                                </v-tooltip>
                                 <v-chip v-if="kpi.derivation_type === 'delinquent_ratio'" size="x-small" variant="tonal" color="indigo" class="font-weight-medium">Auto-derived</v-chip>
                             </div>
                         </td>
@@ -112,7 +116,6 @@
                         </td>
                         <td class="text-center">
                             <v-text-field
-                                v-if="kpi.is_scored"
                                 v-model="kpi.weightPercent"
                                 type="number"
                                 min="0" max="100" step="0.1"
@@ -122,7 +125,6 @@
                                 class="kpi-input"
                                 :class="{ 'kpi-input--dirty': isKpiChanged(kpi) }"
                             />
-                            <span v-else class="text-caption text-medium-emphasis">-</span>
                         </td>
                         <td class="text-center">
                             <v-tooltip text="Remove (soft delete)" location="top">

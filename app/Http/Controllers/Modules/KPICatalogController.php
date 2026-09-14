@@ -63,7 +63,7 @@ class KPICatalogController extends Controller
             'code'            => $this->generateKpiCode($data['name']),
             'name'            => $data['name'],
             'weight'          => $data['weight'] / 100,
-            'is_scored'       => true,
+            'is_scored'       => $data['weight'] > 0,
             'inverse_scoring' => false,
             'derivation_type' => null,
             'sort_order'      => $nextSort,
@@ -112,6 +112,9 @@ class KPICatalogController extends Controller
                     'name'        => trim($change['name']),
                     'category_id' => $change['category_id'],
                     'weight'      => $change['weight'] / 100,
+                    // Dynamic: a KPI counts toward the ranking only while it carries
+                    // weight. Zeroing the weight is how an admin turns scoring off.
+                    'is_scored'   => $change['weight'] > 0,
                 ]);
                 $ids[] = $kpi->id;
             }
@@ -232,7 +235,7 @@ class KPICatalogController extends Controller
                     'code'            => $this->generateKpiCode($row['name']),
                     'name'            => $row['name'],
                     'weight'          => $row['weight'] / 100,
-                    'is_scored'       => true,
+                    'is_scored'       => $row['weight'] > 0,
                     'inverse_scoring' => false,
                     'derivation_type' => null,
                     'sort_order'      => $nextSort,
