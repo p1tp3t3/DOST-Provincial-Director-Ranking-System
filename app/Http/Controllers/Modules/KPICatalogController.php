@@ -69,6 +69,8 @@ class KPICatalogController extends Controller
             'sort_order'      => $nextSort,
         ]);
 
+        $this->recalculateCategoryWeights([$kpi->category_id]);
+
         broadcast(new KpiCatalogUpdated('created', $kpi->id, $kpi->name, $kpi->category_id));
 
         return back()->with('success', "\"{$kpi->name}\" added to the KPI matrix.");
@@ -102,11 +104,15 @@ class KPICatalogController extends Controller
             throw ValidationException::withMessages(['changes' => 'One of the new names already belongs to another KPI.']);
         }
 
-        $updatedIds = DB::transaction(function () use ($data) {
+        $touchedCategoryIds = [];
+
+        $updatedIds = DB::transaction(function () use ($data, &$touchedCategoryIds) {
             $ids = [];
             foreach ($data['changes'] as $change) {
                 $kpi = KPI::find($change['id']);
                 if (!$kpi) continue;
+
+                $touchedCategoryIds[] = $kpi->category_id; // old category, in case it moved
 
                 $kpi->update([
                     'name'        => trim($change['name']),
@@ -116,10 +122,13 @@ class KPICatalogController extends Controller
                     // weight. Zeroing the weight is how an admin turns scoring off.
                     'is_scored'   => $change['weight'] > 0,
                 ]);
+                $touchedCategoryIds[] = $kpi->category_id; // new category
                 $ids[] = $kpi->id;
             }
             return $ids;
         });
+
+        $this->recalculateCategoryWeights($touchedCategoryIds);
 
         broadcast(new KpiCatalogUpdated('bulk_updated', $updatedIds[0] ?? 0, count($updatedIds) . ' KPIs updated', null));
 
@@ -132,6 +141,8 @@ class KPICatalogController extends Controller
         $name = $kpi->name;
         $categoryId = $kpi->category_id;
         $kpi->delete(); // soft delete — historical provincial_director_kpis rows are untouched
+
+        $this->recalculateCategoryWeights([$categoryId]);
 
         broadcast(new KpiCatalogUpdated('deleted', $kpiId, $name, $categoryId));
 
@@ -246,9 +257,23 @@ class KPICatalogController extends Controller
             return $ids;
         });
 
+        $this->recalculateCategoryWeights(array_column($data['rows'], 'category_id'));
+
         broadcast(new KpiCatalogUpdated('bulk_created', $createdIds[0] ?? 0, count($createdIds) . ' KPIs imported', null));
 
         return response()->json(['created' => count($createdIds)]);
+    }
+
+    // Keeps kpi_categories.weight (shown as "Weight: X%" on the catalog page,
+    // the KPI Data Editor, and the public Province Profile page) equal to the
+    // sum of that category's own KPI weights, so it never drifts out of sync
+    // after an add/edit/delete.
+    private function recalculateCategoryWeights(array $categoryIds): void
+    {
+        foreach (array_unique(array_filter($categoryIds)) as $categoryId) {
+            $sum = KPI::where('category_id', $categoryId)->sum('weight');
+            KPICategory::whereKey($categoryId)->update(['weight' => $sum]);
+        }
     }
 
     private function parseCsv(UploadedFile $file): array
