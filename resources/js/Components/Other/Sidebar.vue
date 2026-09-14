@@ -20,6 +20,7 @@ import {
     RiRoadMapFill,
     RiNewspaperLine,
     RiMapPin2Fill,
+    RiArchiveStackFill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -55,6 +56,7 @@ const tabs = computed(() => {
                 { name: 'Regions', href: '/regions', icon: RiMapPin2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
                 { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
+                { name: 'KPI Catalog', href: '/kpi-catalog', icon: RiArchiveStackFill },
                 { name: 'Blog Posts', href: '/blogs', icon: RiNewspaperLine },
                 {
                     name: 'User Management', icon: RiUser2Fill,
@@ -74,6 +76,7 @@ const tabs = computed(() => {
                 { name: 'Regions',              href: '/regions',              icon: RiMapPin2Fill    },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'KPI Data Editor',      href: '/kpi-data',             icon: RiEdit2Fill      },
+                { name: 'KPI Catalog',          href: '/kpi-catalog',          icon: RiArchiveStackFill },
                 { name: 'Blog Posts',           href: '/blogs',                icon: RiNewspaperLine  },
                 { name: 'User List',            href: '/users',                icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },

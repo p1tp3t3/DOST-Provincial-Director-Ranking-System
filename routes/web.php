@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Modules\BlogController;
 use App\Http\Controllers\Modules\FacebookPostController;
+use App\Http\Controllers\Modules\KPICatalogController;
 use App\Http\Controllers\Modules\KPIDataController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
@@ -100,13 +101,18 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // ── KPI Data Editor + Catalog: Super Admin + Sub Admin only ────
     // Provincial-level roles have no KPI edit access — central admins only.
     Route::middleware('role:super_admin,sub_admin')->group(function () {
+        // Per-province target/accomplished data entry
         Route::get('/kpi-data',                   [KPIDataController::class, 'index']);
         Route::get('/kpi-data/{id}/{year?}',      [KPIDataController::class, 'edit']);
         Route::put('/kpi-data/{director}/{year}', [KPIDataController::class, 'update']);
-        Route::post('/kpi-data/kpis',              [KPIDataController::class, 'store_kpi']);
-        Route::delete('/kpi-data/kpis/{kpi}',      [KPIDataController::class, 'destroy_kpi']);
-        Route::post('/kpi-data/kpis/verify-csv',   [KPIDataController::class, 'verify_kpi_csv']);
-        Route::post('/kpi-data/kpis/commit-csv',   [KPIDataController::class, 'commit_kpi_csv']);
+
+        // KPI catalog — managed as one shared matrix, not per province
+        Route::get('/kpi-catalog',                    [KPICatalogController::class, 'index']);
+        Route::post('/kpi-catalog/kpis',               [KPICatalogController::class, 'store']);
+        Route::put('/kpi-catalog/kpis',                [KPICatalogController::class, 'bulkUpdate']);
+        Route::delete('/kpi-catalog/kpis/{kpi}',       [KPICatalogController::class, 'destroy']);
+        Route::post('/kpi-catalog/kpis/verify-csv',    [KPICatalogController::class, 'verifyCsv']);
+        Route::post('/kpi-catalog/kpis/commit-csv',    [KPICatalogController::class, 'commitCsv']);
     });
 
     // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────
