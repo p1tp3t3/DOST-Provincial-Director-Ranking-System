@@ -7,6 +7,13 @@
                 <div class="text-caption text-medium-emphasis">System tools, backups, and configuration</div>
             </div>
 
+            <v-tabs v-model="activeTab" color="primary" density="compact">
+                <v-tab value="overview">Overview</v-tab>
+                <v-tab value="logs">Logs</v-tab>
+            </v-tabs>
+
+            <v-window v-model="activeTab">
+            <v-window-item value="overview">
             <v-row>
                 <!-- Left Column -->
                 <v-col cols="12" md="8">
@@ -462,6 +469,65 @@
                     </div>
                 </v-col>
             </v-row>
+            </v-window-item>
+
+            <v-window-item value="logs">
+                <v-card class="elevation-1 border-0 rounded-md">
+                    <div class="pa-5 pb-3 d-flex align-center gap-3 flex-wrap">
+                        <v-avatar color="primary-lighten-5" rounded="lg" size="38">
+                            <v-icon color="primary" size="20">mdi-text-box-outline</v-icon>
+                        </v-avatar>
+                        <div class="flex-1-1">
+                            <div class="text-subtitle-2 font-weight-bold">Application Log</div>
+                            <div class="text-caption text-medium-emphasis">
+                                storage/logs/laravel.log
+                                <template v-if="logMeta.size"> · {{ logMeta.size }} · updated {{ logMeta.updated_at }}</template>
+                            </div>
+                        </div>
+                        <v-btn
+                            size="small"
+                            variant="tonal"
+                            color="primary"
+                            prepend-icon="mdi-refresh"
+                            :loading="loadingLogs"
+                            @click="fetchLogs"
+                        >Refresh</v-btn>
+                        <v-btn
+                            size="small"
+                            variant="tonal"
+                            color="primary"
+                            prepend-icon="mdi-download-outline"
+                            href="/maintenance/logs/download"
+                        >Download</v-btn>
+                        <v-btn
+                            size="small"
+                            variant="tonal"
+                            color="error"
+                            prepend-icon="mdi-trash-can-outline"
+                            :disabled="!logExists || !logLines.length"
+                            @click="clearLogsDialog = true"
+                        >Clear</v-btn>
+                    </div>
+                    <v-divider></v-divider>
+                    <div class="pa-4">
+                        <div v-if="loadingLogs && !logContent" class="text-center py-8">
+                            <v-progress-circular indeterminate color="primary" size="28"></v-progress-circular>
+                        </div>
+                        <div v-else-if="!logExists" class="text-caption text-medium-emphasis text-center py-8">
+                            No log file found.
+                        </div>
+                        <div v-else-if="!logLines.length" class="text-caption text-medium-emphasis text-center py-8">
+                            Log file is empty.
+                        </div>
+                        <pre v-else class="log-viewer"><span
+                            v-for="(line, i) in logLines" :key="i"
+                            :class="logLineClass(line)"
+                        >{{ line }}
+</span></pre>
+                    </div>
+                </v-card>
+            </v-window-item>
+            </v-window>
 
             <!-- Delete Backup Confirm Dialog -->
             <v-dialog v-model="deleteBackupDialog" max-width="400" persistent>
@@ -544,6 +610,33 @@
                 </v-card>
             </v-dialog>
 
+            <!-- Clear Logs Confirm Dialog -->
+            <v-dialog v-model="clearLogsDialog" max-width="400" persistent>
+                <v-card rounded="lg">
+                    <v-card-item class="pt-5 pb-2 px-5">
+                        <div class="d-flex align-center gap-3">
+                            <v-avatar color="error-lighten-5" size="40" rounded="lg">
+                                <v-icon color="error" size="20">mdi-trash-can-outline</v-icon>
+                            </v-avatar>
+                            <div>
+                                <div class="text-subtitle-2 font-weight-bold">Clear Application Log</div>
+                                <div class="text-caption text-medium-emphasis">This cannot be undone</div>
+                            </div>
+                        </div>
+                    </v-card-item>
+                    <v-card-text class="px-5 pb-3">
+                        <p class="text-body-2">
+                            Are you sure you want to permanently clear <strong>laravel.log</strong>? Consider downloading it first if you need a record.
+                        </p>
+                    </v-card-text>
+                    <v-divider></v-divider>
+                    <v-card-actions class="px-5 py-3 gap-2 justify-end">
+                        <v-btn variant="text" size="small" @click="clearLogsDialog = false">Cancel</v-btn>
+                        <v-btn variant="flat" color="error" size="small" :loading="clearingLogs" @click="clearLogs">Clear</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
             <!-- Reset Confirm Dialog -->
             <v-dialog v-model="resetDialog" max-width="440" persistent>
                 <v-card rounded="lg">
@@ -589,7 +682,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -601,6 +694,59 @@ const props = defineProps({
     maintenance_mode:          { type: Boolean, default: false },
     breakglass_password_set:   { type: Boolean, default: false },
 });
+
+// ── Tabs ─────────────────────────────────────────────────────────
+const activeTab = ref('overview');
+
+// ── Log Viewer ───────────────────────────────────────────────────
+const logContent  = ref('');
+const logExists   = ref(true);
+const loadingLogs = ref(false);
+const logMeta     = ref({ size: null, updated_at: null });
+
+const logLines = computed(() => logContent.value ? logContent.value.split('\n') : []);
+
+const logLineClass = (line) => {
+    if (/\bERROR\b/.test(line)) return 'log-line log-line--error';
+    if (/\bWARNING\b/.test(line)) return 'log-line log-line--warning';
+    if (/\bINFO\b/.test(line)) return 'log-line log-line--info';
+    return 'log-line';
+};
+
+const fetchLogs = () => {
+    loadingLogs.value = true;
+    fetch('/maintenance/logs?lines=1000', { headers: { 'Accept': 'application/json' } })
+        .then((res) => res.json())
+        .then((data) => {
+            logExists.value = data.exists;
+            logContent.value = data.content ?? '';
+            logMeta.value = { size: data.size, updated_at: data.updated_at };
+        })
+        .finally(() => { loadingLogs.value = false; });
+};
+
+let logsLoadedOnce = false;
+watch(activeTab, (tab) => {
+    if (tab === 'logs' && !logsLoadedOnce) {
+        logsLoadedOnce = true;
+        fetchLogs();
+    }
+});
+
+const clearLogsDialog = ref(false);
+const clearingLogs    = ref(false);
+
+const clearLogs = () => {
+    clearingLogs.value = true;
+    router.post('/maintenance/logs/clear', {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            clearLogsDialog.value = false;
+            fetchLogs();
+        },
+        onFinish: () => { clearingLogs.value = false; },
+    });
+};
 
 // ── Maintenance Mode ───────────────────────────────────────────
 const maintenanceMode  = ref(props.maintenance_mode);
@@ -799,5 +945,31 @@ const quickActions = [
     font-size: 0.6rem;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.45);
+}
+
+.log-viewer {
+    max-height: 65vh;
+    overflow-y: auto;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Cascadia Code', Consolas, Menlo, monospace;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    padding: 12px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.log-line--error {
+    color: #f87171;
+}
+
+.log-line--warning {
+    color: #fbbf24;
+}
+
+.log-line--info {
+    color: #60a5fa;
 }
 </style>

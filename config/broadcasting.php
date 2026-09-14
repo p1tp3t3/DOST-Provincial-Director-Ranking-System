@@ -43,6 +43,11 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // Reverb is same-box/loopback in every environment — if it's
+                // down or unreachable, fail fast instead of hanging the whole
+                // KPI save on a multi-second connect timeout.
+                'connect_timeout' => 1,
+                'timeout'         => 2,
             ],
         ],
 

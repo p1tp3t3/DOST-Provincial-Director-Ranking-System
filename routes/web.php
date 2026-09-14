@@ -90,6 +90,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::post('/maintenance/reset',                             [MaintenanceController::class, 'reset']);
         Route::post('/maintenance/toggle-mode',                       [MaintenanceController::class, 'toggle_maintenance']);
         Route::post('/maintenance/breakglass-password',               [MaintenanceController::class, 'update_breakglass_password']);
+        Route::get('/maintenance/logs',                               [MaintenanceController::class, 'view_logs']);
+        Route::get('/maintenance/logs/download',                      [MaintenanceController::class, 'download_logs']);
+        Route::post('/maintenance/logs/clear',                        [MaintenanceController::class, 'clear_logs']);
 
         Route::get('/super-admin-report',        [SuperAdminReportController::class, 'index']);
         Route::get('/super-admin-report/export', [SuperAdminReportController::class, 'export']);

@@ -10,8 +10,8 @@ if (!key) {
 
     const noop = () => stub;
     const stub = {
-        listen: noop, stopListening: noop, subscribed: noop, error: noop,
-        whisper: noop, listenForWhisper: noop, notification: noop,
+        listen: noop, listenToAll: noop, stopListening: noop, subscribed: noop,
+        error: noop, whisper: noop, listenForWhisper: noop, notification: noop,
     };
 
     window.Echo = {
@@ -32,4 +32,28 @@ if (!key) {
 
     // helper-functions.js's receiveBroadcast() calls window.Echo directly.
     window.Echo = echo();
+
+    // Manual connectivity check — trigger from tinker with
+    // broadcast(new App\Events\TestPing('hi')) and watch these logs.
+    const pusher = window.Echo.connector.pusher;
+    console.log('[Echo test] initial connection state:', pusher.connection.state);
+    pusher.connection.bind('state_change', (states) => {
+        console.log('[Echo test] connection state changed:', states.previous, '->', states.current);
+    });
+    pusher.connection.bind('error', (err) => {
+        console.log('[Echo test] connection error:', err);
+    });
+
+    window.Echo.private('kpi-catalog')
+        .subscribed(() => console.log('[Echo test] kpi-catalog authenticated'))
+        .error((err) => console.log('[Echo test] kpi-catalog auth failed:', err))
+        // Wildcard: logs every event that actually arrives on this channel,
+        // whatever its real name is — useful if the expected event name never
+        // matches (e.g. after a broadcastAs() change that hasn't deployed yet).
+        .listenToAll((eventName, data) => {
+            console.log('[Echo test] channel event received:', eventName, data);
+        })
+        .listen('TestPing', (e) => {
+            console.log('[Echo test] TestPing received:', e);
+        });
 }

@@ -308,7 +308,7 @@ watch(() => props.year, (y) => { selectedYear.value = y; });
 // Real-time: the KPI catalog (name/category/weight) is managed on a separate,
 // general page (/kpi-catalog) — a change made there affects every province's
 // live score, so refresh this screen's weights/categories to match.
-const { leaveChannel } = useEcho('kpi-catalog', 'kpi.catalog.updated', () => {
+const { leaveChannel } = useEcho('kpi-catalog', 'KpiCatalogUpdated', () => {
     if (isDirty.value) return; // don't clobber unsaved local edits
     router.reload({ only: ['kpi_categories'], preserveScroll: true, preserveState: true });
 });
