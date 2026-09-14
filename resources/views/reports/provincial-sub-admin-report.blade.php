@@ -231,7 +231,7 @@
 <div class="footer">
     <table>
         <tr>
-            <td>PRISM - Provincial Director Ranking and Information System for Management</td>
+            <td>PRISM - PSTO Ranking and Information System for Management</td>
             <td>CONFIDENTIAL - For internal use only</td>
         </tr>
     </table>

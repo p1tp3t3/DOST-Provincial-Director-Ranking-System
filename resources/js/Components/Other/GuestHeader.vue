@@ -9,7 +9,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold text-indigo-900">DOST PRISM</h1>
-                    <p class="text-xs text-gray-600">Department of Science and Technology Provincial Director Ranking and Information System for Management</p>
+                    <p class="text-xs text-gray-600">Department of Science and Technology PSTO Ranking and Information System for Management</p>
                 </div>
             </div>
 

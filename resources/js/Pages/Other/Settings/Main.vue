@@ -277,7 +277,7 @@ const accountRows = computed(() => {
 
 // ── System info rows ──────────────────────────────────────────
 const systemRows = [
-    { label: 'Application', value: 'PRISM - Provincial Director Ranking and Information System for Management' },
+    { label: 'Application', value: 'PRISM - PSTO Ranking and Information System for Management' },
     { label: 'Framework',   value: 'Laravel 11 + Inertia.js + Vue 3' },
     { label: 'Environment', value: import.meta.env.MODE === 'production' ? 'Production' : 'Development' },
 ];

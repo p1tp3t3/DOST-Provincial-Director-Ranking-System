@@ -18,7 +18,7 @@ import { Link } from '@inertiajs/vue3';
                 <div class="grid md:grid-cols-4 gap-8 mb-8">
                     <div>
                         <h4 class="font-bold mb-4">PRISM</h4>
-                        <p class="text-sm text-indigo-200">Provincial Director Ranking and Information System for Management - Department of Science and Technology</p>
+                        <p class="text-sm text-indigo-200">PSTO Ranking and Information System for Management - Department of Science and Technology</p>
                     </div>
                     <div>
                         <h4 class="font-bold mb-4">Quick Links</h4>

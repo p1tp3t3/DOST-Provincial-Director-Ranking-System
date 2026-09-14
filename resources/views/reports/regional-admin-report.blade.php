@@ -59,7 +59,7 @@
     <table>
         <tr>
             <td>
-                <div class="title">PDRIS — Regional Report</div>
+                <div class="title">PRISM — Regional Report</div>
                 <div class="sub">{{ $region['name'] }} ({{ ucfirst($region['island_under']) }}) &mdash; Department of Science and Technology — Philippines</div>
             </td>
             <td class="meta">
@@ -223,7 +223,7 @@
 <div class="footer">
     <table>
         <tr>
-            <td>PDRIS — Provincial Director Ranking Information System</td>
+            <td>PRISM - PSTO Ranking and Information System for Management</td>
             <td>CONFIDENTIAL — For internal use only</td>
         </tr>
     </table>

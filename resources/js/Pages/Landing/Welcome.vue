@@ -210,7 +210,7 @@ const sampleDirector = computed(() => {
                                 <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
                             </div>
                             <h1 class="hero-title">
-                                Provincial Director
+                                PSTO
                                 <span class="hero-title-accent">Ranking &amp; Information System for Management</span>
                             </h1>
                             <p class="hero-sub">

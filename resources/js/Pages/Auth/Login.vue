@@ -58,7 +58,7 @@ const features = [
 
                 <!-- PRISM full name -->
                 <div class="prism-fullname mb-7">
-                    Provincial Director Ranking and Information System for Management
+                    PSTO Ranking and Information System for Management
                 </div>
 
                 <!-- Headline -->
@@ -99,7 +99,7 @@ const features = [
                         <img src="/assets/logo.png" alt="DOST" style="width:44px;height:44px;object-fit:contain;" />
                         <div>
                             <div class="text-h6 font-weight-black" style="color:#0047ab;">PRISM</div>
-                            <div class="text-caption text-medium-emphasis">Provincial Director Ranking IS</div>
+                            <div class="text-caption text-medium-emphasis">PSTO Ranking IS</div>
                         </div>
                     </div>
 
