@@ -24,11 +24,6 @@ class TestPing implements ShouldBroadcastNow
         return [new PrivateChannel('kpi-catalog')];
     }
 
-    public function broadcastAs(): string
-    {
-        return 'test.ping';
-    }
-
     public function broadcastWith(): array
     {
         return [

@@ -634,7 +634,7 @@ watch(() => props.kpi_categories, () => {
 });
 
 // ── Real-time: another admin's catalog change refreshes this screen ───────
-const { leaveChannel } = useEcho('kpi-catalog', 'kpi.catalog.updated', () => {
+const { leaveChannel } = useEcho('kpi-catalog', 'KpiCatalogUpdated', () => {
     if (isDirty.value) return; // don't clobber unsaved local edits
     router.reload({ only: ['kpi_categories', 'category_options'], preserveScroll: true, preserveState: true });
 });

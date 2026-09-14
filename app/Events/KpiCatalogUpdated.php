@@ -28,11 +28,6 @@ class KpiCatalogUpdated implements ShouldBroadcastNow
         return [new PrivateChannel('kpi-catalog')];
     }
 
-    public function broadcastAs(): string
-    {
-        return 'kpi.catalog.updated';
-    }
-
     public function broadcastWith(): array
     {
         return [

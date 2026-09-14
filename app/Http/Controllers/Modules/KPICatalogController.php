@@ -9,8 +9,10 @@ use App\Models\KPICategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * General KPI catalog management — Super Admin + Sub Admin only. This is a
@@ -71,7 +73,7 @@ class KPICatalogController extends Controller
 
         $this->recalculateCategoryWeights([$kpi->category_id]);
 
-        broadcast(new KpiCatalogUpdated('created', $kpi->id, $kpi->name, $kpi->category_id));
+        $this->safeBroadcast(new KpiCatalogUpdated('created', $kpi->id, $kpi->name, $kpi->category_id));
 
         return back()->with('success', "\"{$kpi->name}\" added to the KPI matrix.");
     }
@@ -130,7 +132,7 @@ class KPICatalogController extends Controller
 
         $this->recalculateCategoryWeights($touchedCategoryIds);
 
-        broadcast(new KpiCatalogUpdated('bulk_updated', $updatedIds[0] ?? 0, count($updatedIds) . ' KPIs updated', null));
+        $this->safeBroadcast(new KpiCatalogUpdated('bulk_updated', $updatedIds[0] ?? 0, count($updatedIds) . ' KPIs updated', null));
 
         return back()->with('success', count($updatedIds) . ' KPI(s) updated.');
     }
@@ -144,7 +146,7 @@ class KPICatalogController extends Controller
 
         $this->recalculateCategoryWeights([$categoryId]);
 
-        broadcast(new KpiCatalogUpdated('deleted', $kpiId, $name, $categoryId));
+        $this->safeBroadcast(new KpiCatalogUpdated('deleted', $kpiId, $name, $categoryId));
 
         return back()->with('success', "\"{$name}\" removed from the KPI matrix. Historical data is preserved.");
     }
@@ -259,7 +261,7 @@ class KPICatalogController extends Controller
 
         $this->recalculateCategoryWeights(array_column($data['rows'], 'category_id'));
 
-        broadcast(new KpiCatalogUpdated('bulk_created', $createdIds[0] ?? 0, count($createdIds) . ' KPIs imported', null));
+        $this->safeBroadcast(new KpiCatalogUpdated('bulk_created', $createdIds[0] ?? 0, count($createdIds) . ' KPIs imported', null));
 
         return response()->json(['created' => count($createdIds)]);
     }
@@ -273,6 +275,18 @@ class KPICatalogController extends Controller
         foreach (array_unique(array_filter($categoryIds)) as $categoryId) {
             $sum = KPI::where('category_id', $categoryId)->sum('weight');
             KPICategory::whereKey($categoryId)->update(['weight' => $sum]);
+        }
+    }
+
+    // A KPI add/edit/delete must always succeed even if Reverb is unreachable
+    // or misconfigured — the live-update push is a nice-to-have, not something
+    // that should be able to take down the actual data change.
+    private function safeBroadcast(KpiCatalogUpdated $event): void
+    {
+        try {
+            broadcast($event);
+        } catch (Throwable $e) {
+            Log::warning('KPI catalog broadcast failed (KPI change was still saved): ' . $e->getMessage());
         }
     }
 
