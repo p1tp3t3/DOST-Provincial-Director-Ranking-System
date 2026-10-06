@@ -10,7 +10,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-    <Head title="Interactive Map" />
+    <Head title="Map" />
 
     <div class="min-h-screen bg-white text-slate-800">
         <!-- ── Navbar ─────────────────────────────────────────────────────── -->

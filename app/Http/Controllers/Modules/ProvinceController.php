@@ -95,25 +95,12 @@ class ProvinceController extends Controller
             }
         }
 
-        // Group KPIs under their matrix category (CORE / STRATEGIC / SUPPORT) for display
-        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
-            ->orderBy('sort_order')->get()
-            ->map(fn($cat) => [
-                'id'     => $cat->id,
-                'code'   => $cat->code,
-                'name'   => $cat->name,
-                'weight' => (float) $cat->weight,
-                'kpis'   => $cat->kpis->map(fn($kpi) => [
-                    'id'              => $kpi->id,
-                    'code'            => $kpi->code,
-                    'name'            => $kpi->name,
-                    'weight'          => (float) $kpi->weight,
-                    'is_scored'       => $kpi->is_scored,
-                    'inverse_scoring' => $kpi->inverse_scoring,
-                    'scores'          => $scoreMap[$kpi->id] ?? [],
-                ])->values()->toArray(),
-            ])
-            ->values()->toArray();
+        // Group KPIs under their matrix category for display. Categories, their
+        // names and their weights all come from the catalog, so an edit on the
+        // KPI Catalog page shows up here without touching this file.
+        $categories = KPICategory::catalog(fn($kpi) => [
+            'scores' => $scoreMap[$kpi->id] ?? [],
+        ]);
 
         return inertia('Other/Province/Profile', [
             'province_profile' => ProvinceProfileResource::collection($data),

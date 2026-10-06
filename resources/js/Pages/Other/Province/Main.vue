@@ -1,4 +1,5 @@
 ﻿<template>
+        <Head title="Provinces" />
         <AddProvinceModal v-if="user?.role == 'super_admin'" v-model:open="open" />
 
         <div>
@@ -51,6 +52,7 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ProvinceDirectoryList from '@/Components/Lists/ProvinceDirectoryList.vue';
 import AddProvinceModal from '@/Components/Modals/Add/AddProvinceModal.vue';

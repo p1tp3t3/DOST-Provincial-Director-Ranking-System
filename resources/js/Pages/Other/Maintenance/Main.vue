@@ -1,4 +1,5 @@
 <template>
+    <Head title="Maintenance" />
     <div class="maintenance-root">
 
         <div class="text-center">
@@ -41,6 +42,7 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3';
 const currentYear = new Date().getFullYear();
 </script>
 

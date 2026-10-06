@@ -1,4 +1,5 @@
 ﻿<template>
+        <Head title="Users" />
         <div class="grid gap-4 w-full">
 
             <!-- Page Header -->
@@ -14,6 +15,7 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3';
 import UserList from '@/Components/Lists/UserList.vue';
 import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';
 

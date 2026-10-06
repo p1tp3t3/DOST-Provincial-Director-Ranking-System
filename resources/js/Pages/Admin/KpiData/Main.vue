@@ -1,5 +1,5 @@
 <template>
-    <Head title="KPI Data Editor" />
+    <Head title="KPI Data" />
     <v-card border elevation="0" rounded="lg">
 
         <!-- Header -->

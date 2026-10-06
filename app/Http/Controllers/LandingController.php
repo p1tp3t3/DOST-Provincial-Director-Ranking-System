@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
+use App\Models\KPI;
+use App\Models\KPICategory;
 use App\Models\Province;
 use Illuminate\Support\Facades\Route;
 
@@ -30,11 +32,25 @@ class LandingController extends Controller
             'image_url'   => $p->image_url,
         ]);
 
+        // The landing page advertises the scoring framework — the category
+        // split and the indicator count. Both are read from the live matrix so
+        // the public copy can't drift from what the system actually scores.
+        $framework = [
+            'categories' => KPICategory::orderBy('sort_order')->get()->map(fn ($c) => [
+                'code'      => $c->code,
+                'name'      => $c->name,
+                'weight'    => (float) $c->weight,
+                'kpi_count' => KPI::where('category_id', $c->id)->where('is_scored', true)->count(),
+            ])->values(),
+            'kpi_count'  => KPI::where('is_scored', true)->count(),
+        ];
+
         return inertia('Landing/Welcome', [
-            'canLogin'    => Route::has('login'),
-            'canRegister' => Route::has('register'),
-            'blogs'       => $blogs,
-            'provinces'   => $provinces,
+            'canLogin'      => Route::has('login'),
+            'canRegister'   => Route::has('register'),
+            'blogs'         => $blogs,
+            'provinces'     => $provinces,
+            'kpi_framework' => $framework,
         ]);
     }
 

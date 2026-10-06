@@ -1,5 +1,5 @@
 <template>
-    <Head :title="`Linkages - ${director.name}`" />
+    <Head title="Linkages" />
     <div class="d-flex flex-column gap-3">
 
         <!-- Breadcrumb -->

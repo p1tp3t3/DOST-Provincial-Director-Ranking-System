@@ -1,4 +1,5 @@
 ﻿<template>
+        <Head title="Logs" />
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -136,6 +137,7 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import ActivityLogList from '@/Components/Lists/ActivityLogList.vue';
 

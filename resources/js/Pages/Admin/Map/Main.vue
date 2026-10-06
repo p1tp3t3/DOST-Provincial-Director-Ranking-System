@@ -1,5 +1,5 @@
 <template>
-    <Head title="Performance Map" />
+    <Head title="Map" />
     <v-card border elevation="0" rounded="lg" class="overflow-hidden">
 
         <!-- Header: title + bucket legend -->
@@ -94,6 +94,7 @@
             :scores="filteredScores"
             :trends="trendsByProvince"
             :regions="regions"
+            :categories="kpi_categories"
             :selected-year="selectedYear"
             :selected-tier="selectedTier"
             height="calc(100vh - 260px)"
@@ -103,9 +104,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
+import { useKpiCategories } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 
 const props = defineProps({
     rankings_by_year: { type: Object, default: () => ({}) },
@@ -116,7 +119,7 @@ const props = defineProps({
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('all');
-const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'STRATEGIC' | 'SUPPORT'
+const selectedCategory = ref('overall'); // 'overall' | any code from kpi_categories
 
 const tiers = [
     { value: 'micro',  label: 'Micro'  },
@@ -125,13 +128,28 @@ const tiers = [
     { value: 'large',  label: 'Large'  },
 ];
 
+const kpiCategories = useKpiCategories(() => props.kpi_categories);
+
 const categoryOptions = computed(() =>
-    props.kpi_categories.map(c => ({
+    kpiCategories.value.map(c => ({
         value:  c.code,
         label:  c.code,
-        weight: `${Math.round(c.weight * 100)}%`,
+        weight: c.weightLabel,
     }))
 );
+
+// A category the user had filtered on can disappear from the matrix (renamed
+// or removed on the KPI Catalog page). Fall back to Overall rather than
+// leaving the map filtered on a code that no longer scores anything.
+watch(kpiCategories, (cats) => {
+    if (selectedCategory.value !== 'overall' && !cats.some(c => c.code === selectedCategory.value)) {
+        selectedCategory.value = 'overall';
+    }
+});
+
+// Live: a catalog edit changes both the category labels and the scores the map
+// colours provinces by, so refresh the rankings alongside the matrix.
+useKpiCatalogSync(['kpi_categories', 'rankings_by_year']);
 
 // Rank-percentile bucketing mirrored from RankingService::rankAndBucket. Used
 // to re-bucket within tier when the user picks a specific category. If the

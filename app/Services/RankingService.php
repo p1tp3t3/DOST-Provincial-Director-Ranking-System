@@ -18,6 +18,7 @@ class RankingService
 {
     private array $kpis;             // [kpi_id => row]
     private array $kpiCategories;    // [category_id => row]
+    private array $categoryCodes;    // category codes in matrix (sort_order) order
     private array $kpisByCode;       // [code => kpi_id]
     private array $bands;
     private array $bandsInverse;
@@ -26,6 +27,8 @@ class RankingService
     {
         $this->kpiCategories = DB::table('kpi_categories')->orderBy('sort_order')
             ->get()->keyBy('id')->map(fn($c) => (array) $c)->toArray();
+
+        $this->categoryCodes = array_values(array_column($this->kpiCategories, 'code'));
 
         $this->kpis = DB::table('kpis')->whereNull('deleted_at')->orderBy('sort_order')
             ->get()->keyBy('id')->map(fn($k) => (array) $k)->toArray();
@@ -51,8 +54,8 @@ class RankingService
     //       <province_category> => [   // 'micro' | 'small' | 'medium' | 'large'
     //         {
     //           rank, bucket, province, category, director, total, total_pct, adjective_label,
-    //           subtotals: {CORE: float, STRATEGIC: float, SUPPORT: float},
-    //           subtotals_pct: {CORE: float, STRATEGIC: float, SUPPORT: float},
+    //           subtotals:     {<category code> => float, ...},   // keys come from kpi_categories
+    //           subtotals_pct: {<category code> => float, ...},
     //           kpi_scores: [{kpi_id, score, weighted_score, actual_pct, adjective_label}]
     //         }, ...
     //       ]
@@ -306,8 +309,8 @@ class RankingService
     //     EXCLUDED from the bucket math — they shouldn't dilute N or steal an
     //     "Under" slot from a province that genuinely underperformed. They're
     //     appended at the end of the returned array with rank=null, bucket=null.
-    //   - Tiebreaker: total DESC, then CORE subtotal DESC, STRATEGIC DESC, SUPPORT DESC,
-    //     then province name ASC (deterministic).
+    //   - Tiebreaker: total DESC, then each category subtotal DESC in matrix order
+    //     (heaviest category first), then province name ASC (deterministic).
     //   - Bucketing rule: Top = round(N * top_pct, min 1), Under = round(N * under_pct, min 1),
     //     Average absorbs the remainder. Skipped entirely when N < min_group_size_for_buckets.
     private function rankAndBucket(array $rows): array
@@ -318,7 +321,7 @@ class RankingService
         usort($ranked, function ($a, $b) {
             $cmp = $b['total'] <=> $a['total'];
             if ($cmp !== 0) return $cmp;
-            foreach (['CORE', 'STRATEGIC', 'SUPPORT'] as $c) {
+            foreach ($this->categoryCodes as $c) {
                 $cmp = ($b['subtotals'][$c] ?? 0) <=> ($a['subtotals'][$c] ?? 0);
                 if ($cmp !== 0) return $cmp;
             }

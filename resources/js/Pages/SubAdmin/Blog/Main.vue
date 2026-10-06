@@ -1,5 +1,5 @@
 <template>
-    <Head title="Blog Posts" />
+    <Head title="Blog" />
     <div class="grid gap-4 w-full">
 
         <!-- Header -->

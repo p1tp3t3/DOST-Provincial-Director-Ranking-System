@@ -1,4 +1,5 @@
 ﻿<script setup>
+import { Head } from '@inertiajs/vue3';
 import ProvincialDirectorList from '@/Components/Lists/ProvincialDirectorList.vue';
 
 defineProps({
@@ -9,6 +10,7 @@ defineProps({
 </script>
 
 <template>
+        <Head title="Directors" />
         <div class="">
             <!-- Page Header -->
             <div class="d-flex align-center justify-space-between mb-5">

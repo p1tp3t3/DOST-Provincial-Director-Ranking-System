@@ -9,8 +9,15 @@ use Illuminate\Foundation\Events\Dispatchable;
 /**
  * Fired whenever the shared KPI catalog changes (a KPI added, its weight/category
  * edited, or soft-deleted) — anything that affects RankingService's live scoring
- * for every province. Broadcast to super_admin/sub_admin so open KPI Data screens
- * refresh without a manual reload. See routes/channels.php for channel authorization.
+ * for every province.
+ *
+ * Broadcast to every authenticated user, because every role has a screen that
+ * renders category names, weights, or the scores derived from them: the
+ * dashboards, the performance map, the KPI Data editor and the province
+ * profile all listen and refresh without a manual reload. Only Super Admin and
+ * Sub Admin can actually change the catalog. See routes/channels.php for the
+ * channel authorization, and resources/js/Composables/useKpiCatalogSync.js for
+ * the listener each screen uses.
  */
 class KpiCatalogUpdated implements ShouldBroadcastNow
 {

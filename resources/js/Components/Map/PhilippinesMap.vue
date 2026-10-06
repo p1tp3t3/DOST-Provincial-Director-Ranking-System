@@ -313,7 +313,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -327,6 +327,10 @@ const props = defineProps({
     // region in its island. Falls back to `scores` so existing callers that
     // don't supply this prop continue to work.
     rankingPool:      { type: Array,  default: null },
+    // The live KPI matrix (KPICategory::catalog()). Drives the order and the
+    // display names of the side panel's per-category breakdown, so a category
+    // renamed, re-weighted or added on the KPI Catalog page shows up here too.
+    categories:       { type: Array,  default: () => [] },
     trends:           { type: Object, default: () => ({}) },  // province name → [{year, total_pct, bucket, ...}]
     selectedYear:     { type: Number, default: null },
     selectedTier:     { type: String, default: 'all' },
@@ -432,7 +436,7 @@ const cstcNamesForRegion = (regionCode) =>
 // fall back to score-threshold coloring.
 // Gold / silver / bronze - matches the podium, charts, and leaderboard buckets.
 const BUCKET_COLOR = { Top: '#ca8a04', Average: '#64748b', Low: '#9a3412' };
-const BUCKET_LABEL = { Top: 'Top Performers', Average: 'Average Performers', Low: 'Low Performers' };
+const BUCKET_LABEL = { Top: 'Best Performers', Average: 'Better Performers', Low: 'Good Performers' };
 const tierInfo = (entry) => {
     if (!entry) return { color: '#ffffff', label: 'No data' };
     if (entry.status === 'no_director') return { color: '#ffffff', label: 'No director assigned' };
@@ -452,18 +456,28 @@ const scoreColor = (score) => {
     return '#9a3412';                    // bronze
 };
 
-// Full per-category breakdown for the side panel. Always returns CORE → STRATEGIC
-// → SUPPORT in matrix-weight order, with isStrongest/isWeakest flags so the
-// panel can mark the leader and laggard with arrow markers.
-const CATEGORY_FULL_NAMES = { CORE: 'Core', STRATEGIC: 'Strategic', SUPPORT: 'Support' };
-const CATEGORY_ORDER      = ['CORE', 'STRATEGIC', 'SUPPORT'];
+// Full per-category breakdown for the side panel, in matrix order (heaviest
+// category first), with isStrongest/isWeakest flags so the panel can mark the
+// leader and laggard with arrow markers.
+//
+// The order and the display names come from the `categories` prop — the live
+// KPI matrix. When a caller doesn't pass it (older embeds), we fall back to
+// whatever codes the score row itself carries, so the panel still renders.
+const categoryOrder = computed(() =>
+    props.categories.length
+        ? props.categories.map(c => ({ code: c.code, name: c.name }))
+        : null
+);
+
 const categoryBreakdown = (entry) => {
     if (!entry?.subtotals_pct) return [];
-    const list = CATEGORY_ORDER
-        .filter(code => entry.subtotals_pct[code] !== undefined)
-        .map(code => ({
+    const order = categoryOrder.value
+        ?? Object.keys(entry.subtotals_pct).map(code => ({ code, name: code }));
+    const list = order
+        .filter(({ code }) => entry.subtotals_pct[code] !== undefined)
+        .map(({ code, name }) => ({
             code,
-            name:  CATEGORY_FULL_NAMES[code] ?? code,
+            name,
             score: Math.round(entry.subtotals_pct[code] * 10) / 10,
         }));
     if (list.length === 0) return [];

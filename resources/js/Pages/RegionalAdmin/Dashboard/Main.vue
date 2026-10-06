@@ -123,17 +123,7 @@
             <!-- Table view -->
             <v-data-table
                 v-if="viewMode === 'table'"
-                :headers="[
-                    { title: 'Rank',         key: 'rank',       width: '70px',  sortable: true  },
-                    { title: 'Province',     key: 'province',                   sortable: true  },
-                    { title: 'Director',     key: 'director',                   sortable: false },
-                    { title: 'Tier',         key: 'category',   width: '90px',  align: 'center', sortable: true  },
-                    { title: 'CORE 60%',     key: 'core',       width: '90px',  align: 'center', sortable: false },
-                    { title: 'FUNC 30%',     key: 'functional', width: '90px',  align: 'center', sortable: false },
-                    { title: 'SUPP 10%',     key: 'support',    width: '90px',  align: 'center', sortable: false },
-                    { title: 'Score',        key: 'total_pct',  width: '120px', align: 'center', sortable: true  },
-                    { title: 'Performance',  key: 'label',      width: '150px', sortable: false },
-                ]"
+                :headers="tableHeaders"
                 :items="rankedProvinces"
                 :search="searchTerm"
                 :row-props="tableRowProps"
@@ -164,14 +154,9 @@
                 <template #item.category="{ item }">
                     <v-chip :color="tierColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-uppercase">{{ item.category }}</v-chip>
                 </template>
-                <template #item.core="{ item }">
-                    <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'CORE' }">{{ (item.subtotals_pct?.CORE ?? 0).toFixed(1) }}%</span>
-                </template>
-                <template #item.functional="{ item }">
-                    <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'FUNCTIONAL' }">{{ (item.subtotals_pct?.FUNCTIONAL ?? 0).toFixed(1) }}%</span>
-                </template>
-                <template #item.support="{ item }">
-                    <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'SUPPORT' }">{{ (item.subtotals_pct?.SUPPORT ?? 0).toFixed(1) }}%</span>
+                <!-- One subtotal column per category in the matrix; see tableHeaders. -->
+                <template v-for="cat in kpiCategories" :key="cat.code" #[cat.slotName]="{ item }">
+                    <span class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === cat.code }">{{ subtotalPct(item, cat.code).toFixed(1) }}%</span>
                 </template>
                 <template #item.total_pct="{ item }">
                     <div v-if="item.rank != null">
@@ -231,9 +216,9 @@
                         </div>
                         <div v-if="top3.length" class="podium-breakdown">
                             <div v-for="p in top3" :key="p.province_id" class="breakdown-col">
-                                <div v-for="cat in ['CORE','FUNCTIONAL','SUPPORT']" :key="cat" class="breakdown-row">
-                                    <span class="breakdown-label">{{ cat }}</span>
-                                    <span class="breakdown-score">{{ (p.subtotals_pct?.[cat] ?? 0).toFixed(1) }}%</span>
+                                <div v-for="cat in kpiCategories" :key="cat.code" class="breakdown-row">
+                                    <span class="breakdown-label">{{ cat.code }}</span>
+                                    <span class="breakdown-score">{{ subtotalPct(p, cat.code).toFixed(1) }}%</span>
                                 </div>
                             </div>
                         </div>
@@ -286,10 +271,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
+import { useKpiCategories, subtotalPct } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 import { RiGroupLine, RiUserStarLine, RiCheckboxCircleLine, RiBuildingLine } from '@remixicon/vue';
 
 const props = defineProps({
@@ -330,12 +317,42 @@ const tierSelectItems = computed(() =>
     tiers.map(t => ({ value: t.value, label: t.label }))
 );
 
+// The category filter, the leaderboard's subtotal columns and the podium
+// breakdown are all built from the live matrix, so a renamed, re-weighted or
+// newly added category shows up here without an edit to this file.
+const kpiCategories = useKpiCategories(() => props.kpi_categories);
+
 const categorySelectItems = computed(() => [
     { value: 'overall', label: 'Overall' },
-    ...props.kpi_categories.map(c => ({
+    ...kpiCategories.value.map(c => ({
         value: c.code,
-        label: `${c.code} (${Math.round(c.weight * 100)}%)`,
+        label: `${c.code} (${c.weightLabel})`,
     })),
+]);
+
+// A category the user had filtered on can disappear from the matrix (renamed
+// or removed on the KPI Catalog page). Fall back to Overall rather than
+// leaving the page filtered on a code that no longer scores anything.
+watch(kpiCategories, (cats) => {
+    if (selectedCategory.value !== 'overall' && !cats.some(c => c.code === selectedCategory.value)) {
+        selectedCategory.value = 'overall';
+    }
+});
+
+// Live: a catalog edit changes both the category labels and the scores derived
+// from their weights, so refresh the rankings alongside the matrix.
+useKpiCatalogSync(['kpi_categories', 'rankings_by_year']);
+
+const tableHeaders = computed(() => [
+    { title: 'Rank',        key: 'rank',      width: '70px',  sortable: true  },
+    { title: 'Province',    key: 'province',                  sortable: true  },
+    { title: 'Director',    key: 'director',                  sortable: false },
+    { title: 'Tier',        key: 'category',  width: '90px',  align: 'center', sortable: true  },
+    ...kpiCategories.value.map(c => ({
+        title: c.headerLabel, key: c.columnKey, width: '90px', align: 'center', sortable: false,
+    })),
+    { title: 'Score',       key: 'total_pct', width: '120px', align: 'center', sortable: true  },
+    { title: 'Performance', key: 'label',     width: '150px', sortable: false },
 ]);
 
 // ── Score helpers ─────────────────────────────────────────────────────────
