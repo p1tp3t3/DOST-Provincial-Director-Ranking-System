@@ -1,4 +1,5 @@
 ﻿<template>
+        <Head title="Admins" />
         <AddAdminModal v-model:open="open" />
 
         <div class="grid gap-4 w-full">
@@ -27,6 +28,7 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AdminList from '@/Components/Lists/AdminList.vue';
 import AddAdminModal from '@/Components/Modals/Add/AddAdminModal.vue';

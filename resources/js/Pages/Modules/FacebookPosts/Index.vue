@@ -1,5 +1,5 @@
 <template>
-    <Head :title="`Facebook Posts - ${director.name}`" />
+    <Head title="Facebook" />
     <div class="d-flex flex-column gap-3">
 
         <!-- Breadcrumb -->

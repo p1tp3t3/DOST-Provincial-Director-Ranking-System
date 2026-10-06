@@ -221,7 +221,7 @@
 <div class="footer">
     <table>
         <tr>
-            <td>PRISM - PSTO Ranking and Information System for Management</td>
+            <td>PRISM - Provincial Science and Technology Office Ranking and Information System for Management</td>
             <td>CONFIDENTIAL - For internal use only</td>
         </tr>
     </table>

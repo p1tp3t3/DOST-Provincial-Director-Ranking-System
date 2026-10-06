@@ -23,7 +23,10 @@ const vuetify = createVuetify({
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-    title: (title) => title ? `${title} - DOST - PRISM` : 'DOST - PRISM',
+    // Browser tab reads "DOST - PRISM | Dashboard". Every page passes a short,
+    // ideally one-word name via <Head title="…">; a page that passes none
+    // falls back to the bare app name rather than showing a stray separator.
+    title: (title) => title ? `DOST - PRISM | ${title}` : 'DOST - PRISM',
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
         const page  = pages[`./Pages/${name}.vue`];

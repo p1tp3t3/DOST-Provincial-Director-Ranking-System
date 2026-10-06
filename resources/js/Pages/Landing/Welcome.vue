@@ -15,6 +15,45 @@ const props = defineProps({
     canLogin:    { type: Boolean, default: true },
     blogs:       { type: Array,   default: () => [] },
     provinces:   { type: Array,   default: () => [] },
+    // Live scoring framework: { categories: [{code, name, weight, kpi_count}], kpi_count }
+    // The public copy below reads from this so it can't drift from what the
+    // system actually scores after an admin edits the KPI matrix.
+    kpi_framework: { type: Object, default: () => ({ categories: [], kpi_count: 0 }) },
+});
+
+// Colours match the scoring bar's blue ramp: heaviest category darkest.
+const SCORING_RAMP = ['#0b57a8', '#2079c4', '#3f93e0', '#68aeeb', '#93c8f3'];
+
+const scoringCategories = computed(() =>
+    (props.kpi_framework.categories ?? []).map((c, i) => {
+        const pct = (Number(c.weight) || 0) * 100;
+        return {
+            code:   c.code,
+            name:   c.name,
+            pct,
+            label:  `${Number.isInteger(pct) ? pct : Math.round(pct * 10) / 10}%`,
+            color:  SCORING_RAMP[i % SCORING_RAMP.length],
+        };
+    })
+);
+
+const kpiCount      = computed(() => props.kpi_framework.kpi_count ?? 0);
+const categoryCount = computed(() => scoringCategories.value.length);
+
+// "Core, Strategic, and Support" — reads naturally however many there are.
+const categoryNameList = computed(() => {
+    const names = scoringCategories.value.map(c => c.name);
+    if (names.length <= 1) return names[0] ?? '';
+    if (names.length === 2) return names.join(' and ');
+    return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+});
+
+// "Core (60%), Strategic (25%), and Support (15%)" for the feature blurb.
+const categoryWeightList = computed(() => {
+    const parts = scoringCategories.value.map(c => `${c.name} (${c.label})`);
+    if (parts.length <= 1) return parts[0] ?? '';
+    if (parts.length === 2) return parts.join(' and ');
+    return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
 });
 
 const provinceByName = computed(() => {
@@ -23,12 +62,12 @@ const provinceByName = computed(() => {
     return map;
 });
 
-const stats = [
+const stats = computed(() => [
     { value: '17',  label: 'Regions Covered' },
     { value: '83',  label: 'Provinces & Clusters' },
-    { value: '3',   label: 'Categories' },
-    { value: '37',  label: 'Performance KPIs' },
-];
+    { value: String(categoryCount.value), label: 'Categories' },
+    { value: String(kpiCount.value),      label: 'Performance KPIs' },
+]);
 
 const pillars = [
     { icon: RiMicroscopeLine, title: 'Research & Development',
@@ -41,7 +80,7 @@ const pillars = [
       text: 'Nurturing the next generation of Filipino scientists, engineers, and innovators through grants and training programs.' },
 ];
 
-const features = [
+const features = computed(() => [
     { icon: RiDashboard3Line, title: 'Performance Dashboard',
       text: 'See PSTD rankings four ways - an awards podium, a sortable table, year-over-year trends, and a live map - all filterable by tier, region, island, and category.' },
     { icon: RiMapPin2Line, title: 'Interactive Maps',
@@ -49,12 +88,12 @@ const features = [
     { icon: RiBuilding2Line, title: 'Province Directories',
       text: 'Browse every province\'s profile - its provincial S&T director, staff, classification tier, and region - in one organized place.' },
     { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
-      text: 'A transparent, weighted scoring of 37 indicators across Core (60%), Strategic (30%), and Support (10%) categories, with adjective ratings.' },
+      text: `A transparent, weighted scoring of ${kpiCount.value} indicators across ${categoryWeightList.value} categories, with adjective ratings.` },
     { icon: RiBarChart2Line, title: 'Regional Analytics',
       text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
     { icon: RiLineChartLine, title: 'Trends Over Time',
       text: 'Track how each province and director performs across reporting years to spot momentum, plateaus, and turnarounds.' },
-];
+]);
 
 const year = new Date().getFullYear();
 const mobileOpen = ref(false);
@@ -210,7 +249,7 @@ const sampleDirector = computed(() => {
                                 <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
                             </div>
                             <h1 class="hero-title">
-                                PSTO
+                                Provincial Science and Technology Office
                                 <span class="hero-title-accent">Ranking &amp; Information System for Management</span>
                             </h1>
                             <p class="hero-sub">
@@ -322,8 +361,9 @@ const sampleDirector = computed(() => {
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Covering all 83 provinces and clusters across 17 regions, the system uses a structured
-                    scoring framework with 37 performance indicators grouped into three categories -
-                    Core, Strategic, and Support - to produce transparent, evidence-based rankings.
+                    scoring framework with {{ kpiCount }} performance indicators grouped into
+                    {{ categoryCount }} categories - {{ categoryNameList }} - to produce transparent,
+                    evidence-based rankings.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Designed to promote excellence and accountability in regional S&amp;T leadership,
@@ -334,17 +374,20 @@ const sampleDirector = computed(() => {
                 <div class="scoring-card reveal">
                     <div class="scoring-head">
                         <span class="scoring-head-title">Scoring Framework</span>
-                        <span class="scoring-head-sub">37 indicators · 3 categories</span>
+                        <span class="scoring-head-sub">{{ kpiCount }} indicators · {{ categoryCount }} categories</span>
                     </div>
                     <div class="scoring-keys">
-                        <span class="scoring-key"><span class="scoring-dot" style="background:#0b57a8;"></span>Core <b>60%</b></span>
-                        <span class="scoring-key"><span class="scoring-dot" style="background:#2079c4;"></span>Strategic <b>30%</b></span>
-                        <span class="scoring-key"><span class="scoring-dot" style="background:#3f93e0;"></span>Support <b>10%</b></span>
+                        <span v-for="cat in scoringCategories" :key="cat.code" class="scoring-key">
+                            <span class="scoring-dot" :style="{ background: cat.color }"></span>{{ cat.name }} <b>{{ cat.label }}</b>
+                        </span>
                     </div>
                     <div class="scoring-stack">
-                        <div class="scoring-seg" style="width:60%; background:#0b57a8;"><span>60%</span></div>
-                        <div class="scoring-seg" style="width:30%; background:#2079c4;"><span>30%</span></div>
-                        <div class="scoring-seg" style="width:10%; background:#3f93e0;"><span>10%</span></div>
+                        <div
+                            v-for="cat in scoringCategories"
+                            :key="cat.code"
+                            class="scoring-seg"
+                            :style="{ width: `${cat.pct}%`, background: cat.color }"
+                        ><span>{{ cat.label }}</span></div>
                     </div>
                 </div>
 
@@ -474,11 +517,16 @@ const sampleDirector = computed(() => {
                                         <div class="prov-prism">
                                             <div class="prov-prism-head">PRISM Scoring Framework</div>
                                             <div class="prov-prism-bar">
-                                                <div class="prov-prism-seg" style="width:60%;background:#0b57a8;">Core 60%</div>
-                                                <div class="prov-prism-seg" style="width:30%;background:#2079c4;">Strategic 30%</div>
-                                                <div class="prov-prism-seg" style="width:10%;background:#3f93e0;font-size:9px;">10%</div>
+                                                <!-- Narrow slices drop the name and show the percent alone,
+                                                     so the label still fits whatever the split happens to be. -->
+                                                <div
+                                                    v-for="cat in scoringCategories"
+                                                    :key="cat.code"
+                                                    class="prov-prism-seg"
+                                                    :style="{ width: `${cat.pct}%`, background: cat.color, fontSize: cat.pct < 15 ? '9px' : null }"
+                                                >{{ cat.pct < 15 ? cat.label : `${cat.name} ${cat.label}` }}</div>
                                             </div>
-                                            <div class="prov-prism-labels">37 indicators · 3 categories · evaluated annually</div>
+                                            <div class="prov-prism-labels">{{ kpiCount }} indicators · {{ categoryCount }} categories · evaluated annually</div>
                                         </div>
 
                                         <hr class="prov-sep" />

@@ -1,5 +1,5 @@
 <template>
-    <Head :title="`Edit KPI Data - ${province.name}`" />
+    <Head title="Editor" />
     <div class="d-flex flex-column gap-3">
 
         <!-- Breadcrumb -->
@@ -213,9 +213,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
-import { useEcho } from '@laravel/echo-vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { categoryVisual } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 
 const props = defineProps({
     province:          { type: Object, required: true },
@@ -269,9 +270,12 @@ const addableYears = computed(() => {
 });
 
 const tierColor = (cat) => ({ micro: 'blue-grey', small: 'teal', medium: 'indigo', large: 'deep-purple' }[cat] ?? 'grey');
-const catColor  = (code) => ({ CORE: 'indigo', STRATEGIC: 'teal', SUPPORT: 'deep-purple' }[code] ?? 'blue-grey');
-const catBg     = (code) => ({ CORE: '#eef2ff', STRATEGIC: '#e0f2f1', SUPPORT: '#ede7f6' }[code] ?? '#f1f5f9');
-const catIcon   = (code) => ({ CORE: 'mdi-rocket-launch-outline', STRATEGIC: 'mdi-shield-outline', SUPPORT: 'mdi-cog-outline' }[code] ?? 'mdi-chart-bar');
+// Shared with the KPI Catalog page and the province profile, so a category
+// looks the same everywhere and one added later still gets its own colour.
+const catIndex  = (code) => Math.max(0, props.kpi_categories.findIndex(c => c.code === code));
+const catColor  = (code) => categoryVisual(code, catIndex(code)).color;
+const catBg     = (code) => categoryVisual(code, catIndex(code)).bg;
+const catIcon   = (code) => categoryVisual(code, catIndex(code)).icon;
 
 const save = () => {
     const values = [];
@@ -308,11 +312,10 @@ watch(() => props.year, (y) => { selectedYear.value = y; });
 // Real-time: the KPI catalog (name/category/weight) is managed on a separate,
 // general page (/kpi-catalog) — a change made there affects every province's
 // live score, so refresh this screen's weights/categories to match.
-const { leaveChannel } = useEcho('kpi-catalog', 'KpiCatalogUpdated', () => {
-    if (isDirty.value) return; // don't clobber unsaved local edits
-    router.reload({ only: ['kpi_categories'], preserveScroll: true, preserveState: true });
-});
-onBeforeUnmount(() => leaveChannel());
+useKpiCatalogSync(
+    ['kpi_categories'],
+    { canReload: () => !isDirty.value },  // don't clobber unsaved local edits
+);
 </script>
 
 <style scoped>

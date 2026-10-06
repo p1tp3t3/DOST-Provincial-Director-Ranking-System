@@ -1,4 +1,5 @@
 <template>
+        <Head title="Maintenance" />
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -683,7 +684,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     backups:                  { type: Array,   default: () => [] },

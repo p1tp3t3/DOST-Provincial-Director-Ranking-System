@@ -69,23 +69,6 @@ class DashboardController extends Controller
     {
         $svc = new RankingService();
 
-        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
-            ->orderBy('sort_order')->get()
-            ->map(fn($cat) => [
-                'id'     => $cat->id,
-                'code'   => $cat->code,
-                'name'   => $cat->name,
-                'weight' => (float) $cat->weight,
-                'kpis'   => $cat->kpis->map(fn($k) => [
-                    'id'              => $k->id,
-                    'code'            => $k->code,
-                    'name'            => $k->name,
-                    'weight'          => (float) $k->weight,
-                    'is_scored'       => (bool) $k->is_scored,
-                    'inverse_scoring' => (bool) $k->inverse_scoring,
-                ])->values()->toArray(),
-            ])->values()->toArray();
-
         $rankings = $svc->rankAllYears($provinceIds);
         foreach ($rankings as &$tiers) {
             foreach ($tiers as &$records) {
@@ -98,7 +81,7 @@ class DashboardController extends Controller
 
         return [
             'available_years'  => $svc->availableYears(),
-            'kpi_categories'   => $categories,
+            'kpi_categories'   => KPICategory::catalog(),
             'rankings_by_year' => $rankings,
             'regions'          => Region::orderBy('name')->get(['id', 'name', 'island_under']),
         ];
@@ -135,7 +118,8 @@ class DashboardController extends Controller
     }
 
     // Shared province-level dashboard payload used by provincial_admin.
-    // Returns employees, director, ranking, and recent logs for the given province.
+    // Returns employees, director, ranking, the category matrix, and recent
+    // logs for the given province.
     private static function build_province_payload(int $provinceId): array
     {
         $employees = User::where('role', 'employee')
@@ -196,6 +180,9 @@ class DashboardController extends Controller
         return [
             'total_employees'  => $employees->count(),
             'employees'        => $employees,
+            // The per-category score cards read their label and weight from
+            // here, so a rename or re-weight reaches this dashboard too.
+            'kpi_categories'   => KPICategory::catalog(),
             'director'         => $director ? [
                 'id'               => $director->id,
                 'dost_employee_id' => $director->dost_employee_id,

@@ -1,5 +1,5 @@
 <template>
-    <Head :title="post ? 'Edit Post' : 'New Post'" />
+    <Head title="Post" />
 
     <div class="grid gap-4 w-full">
 

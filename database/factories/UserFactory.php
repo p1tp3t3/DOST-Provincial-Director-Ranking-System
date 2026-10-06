@@ -25,6 +25,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            // users.role is a non-nullable enum, so it has to be set here or
+            // every factory-made user fails the NOT NULL constraint.
+            'role' => 'employee',
+            // Set explicitly: the DB default is not hydrated onto the returned
+            // model, so ActivationStatusMiddleware would see null and redirect.
+            'activate' => true,
             'email' => fake()->unique()->safeEmail(),
             'username' => fake()->unique()->userName(),
             'password' => static::$password ??= Hash::make('password'),

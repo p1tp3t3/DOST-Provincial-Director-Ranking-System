@@ -1,4 +1,5 @@
 <template>
+    <Head title="Login" />
     <div class="auth-root">
         <div class="auth-bg"></div>
         <div class="particle p1"></div>
@@ -130,7 +131,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     password: { type: String, required: true },
