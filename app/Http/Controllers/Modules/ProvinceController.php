@@ -24,13 +24,13 @@ class ProvinceController extends Controller
         $query = Province::with(['directorAssignments.profile', 'users']);
 
         $regionInfo = null;
-        if (in_array(auth()->user()->role, ['regional_admin', 'regional_director'])) {
+        if (auth()->user()->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             $query->whereIn('id', $region->provinces->pluck('id'));
 
             $regDir = User::with('profile')
                 ->where('region_id', $region->id)
-                ->where('role', 'regional_director')
+                ->whereRole('regional_director')
                 ->first();
 
             $regionInfo = [
@@ -57,7 +57,7 @@ class ProvinceController extends Controller
     public function province_profile_index($id) {
         $decryptedId = Crypt::decrypt($id);
 
-        if (in_array(auth()->user()->role, ['regional_admin', 'regional_director'])) {
+        if (auth()->user()->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             if (!$region->provinces->pluck('id')->contains((int) $decryptedId)) {
                 abort(403);
@@ -66,7 +66,7 @@ class ProvinceController extends Controller
 
         $data = Province::with([
                             'directorAssignments.profile',
-                            'users' => fn($q) => $q->where('role', 'employee')->with('profile.employeeProfile'),
+                            'users' => fn($q) => $q->whereRole('employee')->with('profile.employeeProfile'),
                         ])
                         ->where('id', $decryptedId)
                         ->get();
@@ -134,13 +134,14 @@ class ProvinceController extends Controller
         ]);
 
         $admin = User::create([
-            'role'        => 'provincial_admin',
             'username'    => $data['admin_username'],
             'email'       => $data['admin_email'],
             'password'    => bcrypt($data['admin_password']),
         ]);
+        $admin->assignRole('provincial_admin');
 
         $admin->provinces()->attach($province->id);
+        $admin->ensureEmployeeProfile();
 
         return redirect()->back();
     }

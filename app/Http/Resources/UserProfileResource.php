@@ -15,6 +15,12 @@ class UserProfileResource extends JsonResource
     public function toArray(Request $request): array
     {
         $profile = $this->profile;
+        $roles   = $this->roles->map(fn ($r) => [
+            'id'       => $r->id,
+            'name'     => $r->name,
+            'locked'   => (bool) $r->pivot->locked,
+            'added_at' => $r->pivot->created_at?->format('M d, Y'),
+        ]);
 
         // Users without a profile (super_admin, sub_admin, provincial_admin)
         if (!$profile) {
@@ -22,6 +28,7 @@ class UserProfileResource extends JsonResource
                 'id'                  => $this->id,
                 'id_number'           => $this->dost_employee_id,
                 'role'                => $this->role,
+                'roles'               => $roles,
                 'province'            => $this->province?->name,
                 'name'                => $this->username ?? $this->email,
                 'profile_picture'     => null,
@@ -56,6 +63,7 @@ class UserProfileResource extends JsonResource
             'id'                  => $this->id,
             'id_number'           => $this->dost_employee_id,
             'role'                => $this->role,
+            'roles'               => $roles,
             'province'            => $this->province?->name,
             'name'                => implode(' ', $nameParts),
             'profile_picture'     => $profile->profile_picture,

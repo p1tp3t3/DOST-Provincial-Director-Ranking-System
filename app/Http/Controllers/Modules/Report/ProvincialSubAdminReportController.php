@@ -56,7 +56,7 @@ class ProvincialSubAdminReportController extends Controller
         if (!$p) return [];
 
         $director = User::whereProvince($provinceId)
-            ->where('role', 'provincial_director')
+            ->whereRole('provincial_director')
             ->with('profile')
             ->first();
 
@@ -83,7 +83,7 @@ class ProvincialSubAdminReportController extends Controller
 
         $byRole    = $users->groupBy('role')->map->count();
         $employees = User::whereProvince($provinceId)
-            ->where('role', 'employee')
+            ->whereRole('employee')
             ->with('profile.employeeProfile')
             ->get();
 
@@ -105,7 +105,7 @@ class ProvincialSubAdminReportController extends Controller
         if (!$provinceId) return [];
 
         return User::whereProvince($provinceId)
-            ->where('role', 'employee')
+            ->whereRole('employee')
             ->with(['profile.employeeProfile'])
             ->latest()
             ->limit($limit)
@@ -127,7 +127,7 @@ class ProvincialSubAdminReportController extends Controller
         if (!$provinceId) return [];
 
         $director = User::whereProvince($provinceId)
-            ->where('role', 'provincial_director')
+            ->whereRole('provincial_director')
             ->first();
         if (!$director) return [];
 

@@ -118,7 +118,7 @@ class LinkageController extends Controller
     {
         $user     = Auth::user();
         $director = User::where('id', $directorId)
-            ->where('role', 'provincial_director')
+            ->whereRole('provincial_director')
             ->with('profile')
             ->firstOrFail();
 

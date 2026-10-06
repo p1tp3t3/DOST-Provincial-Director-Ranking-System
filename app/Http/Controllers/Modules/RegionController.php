@@ -13,7 +13,7 @@ class RegionController extends Controller
     public function index()
     {
         $user   = Auth::user();
-        $scoped = in_array($user->role, ['regional_admin', 'regional_director']);
+        $scoped = $user->role === 'regional_director';
 
         $query = Region::with([
             'provinces' => fn ($q) => $q
@@ -30,7 +30,7 @@ class RegionController extends Controller
         // Load regional directors keyed by region_id
         $regionalDirs = User::with('profile')
             ->whereIn('region_id', $regions->pluck('id'))
-            ->where('role', 'regional_director')
+            ->whereRole('regional_director')
             ->get()
             ->groupBy('region_id');
 

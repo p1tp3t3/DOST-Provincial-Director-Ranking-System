@@ -38,6 +38,27 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         ActivityLogHelper::login();
 
+        $user   = Auth::user();
+        $locked = $user->lockedRoles();
+
+        if ($locked->isEmpty()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'identifier' => 'Your account has no active role. Contact an administrator.',
+            ]);
+        }
+
+        if ($locked->count() === 1) {
+            if ($user->active_role_id !== $locked->first()->id) {
+                $user->forceFill(['active_role_id' => $locked->first()->id])->save();
+            }
+        } elseif (!$locked->contains('id', $user->active_role_id)) {
+            return redirect()->route('role.choose');
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

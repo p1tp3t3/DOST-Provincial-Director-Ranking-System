@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\ActivityLogHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class SuperAdminLoginController extends Controller
     {
         $this->authorizeGate($password);
 
-        if (Auth::check() && Auth::user()->role === 'super_admin') {
+        if (Auth::check() && Auth::user()->hasLockedRole('super_admin')) {
             return redirect('/dashboard');
         }
 
@@ -57,9 +58,14 @@ class SuperAdminLoginController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back();
         }
-        if ($user->role !== 'super_admin') {
+        if (!$user->hasLockedRole('super_admin')) {
             return back();
         }
+
+        // Break-glass always lands them in the super-admin console, regardless
+        // of whichever role they last had active.
+        $superAdminRoleId = Role::where('name', 'super_admin')->value('id');
+        $user->forceFill(['active_role_id' => $superAdminRoleId])->save();
 
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();

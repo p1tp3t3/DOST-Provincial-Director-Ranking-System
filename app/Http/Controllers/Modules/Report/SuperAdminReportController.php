@@ -55,9 +55,7 @@ class SuperAdminReportController extends Controller
 
     private function get_user_stats(): array
     {
-        $counts = User::selectRaw('role, COUNT(*) as count')
-                      ->groupBy('role')
-                      ->pluck('count', 'role');
+        $counts = $this->role_counts();
 
         return [
             'total'                => User::count(),
@@ -71,10 +69,20 @@ class SuperAdminReportController extends Controller
 
     private function get_role_counts(): array
     {
-        return User::selectRaw('role, COUNT(*) as count')
-                   ->groupBy('role')
-                   ->pluck('count', 'role')
-                   ->toArray();
+        return $this->role_counts()->toArray();
+    }
+
+    // Users currently holding each role (locked assignments) — a user with
+    // two locked roles (e.g. employee + one admin role) counts toward both.
+    private function role_counts()
+    {
+        return User::query()
+            ->join('user_roles', 'user_roles.user_id', '=', 'users.id')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.locked', true)
+            ->selectRaw('roles.name as role, COUNT(DISTINCT users.id) as count')
+            ->groupBy('roles.name')
+            ->pluck('count', 'role');
     }
 
     private function get_recent_users(int $limit = 6): array

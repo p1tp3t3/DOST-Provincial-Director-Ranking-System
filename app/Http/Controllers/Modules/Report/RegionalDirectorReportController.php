@@ -12,14 +12,14 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class RegionalAdminReportController extends Controller
+class RegionalDirectorReportController extends Controller
 {
     public function index()
     {
         $region      = Region::with('provinces')->findOrFail(Auth::user()->region_id);
         $provinceIds = $region->provinces->pluck('id')->toArray();
 
-        return inertia('RegionalAdmin/Report/Main', [
+        return inertia('RegionalDirector/Report/Main', [
             'region'             => ['id' => $region->id, 'name' => $region->name, 'island_under' => $region->island_under],
             'province_stats'     => $this->get_province_stats($region),
             'user_stats'         => $this->get_user_stats($provinceIds),
@@ -42,7 +42,7 @@ class RegionalAdminReportController extends Controller
         $region      = Region::with('provinces')->findOrFail(Auth::user()->region_id);
         $provinceIds = $region->provinces->pluck('id')->toArray();
 
-        $pdf = Pdf::loadView('reports.regional-admin-report', [
+        $pdf = Pdf::loadView('reports.regional-director-report', [
             'region'            => ['id' => $region->id, 'name' => $region->name, 'island_under' => $region->island_under],
             'province_stats'    => $this->get_province_stats($region),
             'user_stats'        => $this->get_user_stats($provinceIds),
@@ -55,7 +55,7 @@ class RegionalAdminReportController extends Controller
             'generated_by'      => Auth::user()?->username ?? 'System',
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('regional-admin-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('regional-director-report-' . now()->format('Y-m-d') . '.pdf');
     }
 
     // ── Helpers ───────────────────────────────────────────────
@@ -73,8 +73,8 @@ class RegionalAdminReportController extends Controller
                 'name'        => $p->name,
                 'category'    => $p->category,
                 'director'    => $name ?: '—',
-                'employees'   => User::whereProvince($p->id)->where('role', 'employee')->count(),
-                'admins'      => User::whereProvince($p->id)->where('role', 'provincial_admin')->count(),
+                'employees'   => User::whereProvince($p->id)->whereRole('employee')->count(),
+                'admins'      => User::whereProvince($p->id)->whereRole('provincial_admin')->count(),
                 'total_users' => User::whereProvince($p->id)->count(),
             ];
         })->sortBy('name')->values()->toArray();
@@ -83,8 +83,11 @@ class RegionalAdminReportController extends Controller
     private function get_user_stats(array $provinceIds): array
     {
         $counts = User::whereProvinceIn($provinceIds)
-            ->selectRaw('role, COUNT(*) as count')
-            ->groupBy('role')
+            ->join('user_roles', 'user_roles.user_id', '=', 'users.id')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.locked', true)
+            ->selectRaw('roles.name as role, COUNT(DISTINCT users.id) as count')
+            ->groupBy('roles.name')
             ->pluck('count', 'role');
 
         return [

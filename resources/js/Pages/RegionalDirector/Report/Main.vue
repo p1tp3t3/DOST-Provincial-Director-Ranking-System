@@ -292,7 +292,7 @@ const testRecentLogs = [
     { id:1, name:'Maria Santos',    employee_id:'DOST-DIR-001', role:'provincial_director', type:'login',    description:'Provincial director logged in.',                       created_at:'Jun 1, 2026 8:02 AM' },
     { id:2, name:'Eduardo Santos',  employee_id:'DOST-ADM-003', role:'provincial_admin',    type:'generate', description:'Generated 14 employee accounts from CSV.',              created_at:'Jun 1, 2026 8:45 AM' },
     { id:3, name:'Jose Dela Cruz',  employee_id:'DOST-DIR-002', role:'provincial_director', type:'update',   description:'Updated KPI accomplishment for Q2 2026.',               created_at:'Jun 1, 2026 9:10 AM' },
-    { id:4, name:'Ramon Cruz',      employee_id:'DOST-RA-001',  role:'regional_admin',      type:'export',   description:'Exported regional report PDF for June 2026.',           created_at:'Jun 1, 2026 10:05 AM'},
+    { id:4, name:'Ramon Cruz',      employee_id:'DOST-RD-001',  role:'regional_director',   type:'export',   description:'Exported regional report PDF for June 2026.',           created_at:'Jun 1, 2026 10:05 AM'},
     { id:5, name:'Ana Villanueva',  employee_id:'DOST-DIR-003', role:'provincial_director', type:'view',     description:'Viewed employee list for Davao Oriental.',              created_at:'Jun 1, 2026 10:30 AM'},
     { id:6, name:'Ramon Bautista',  employee_id:'DOST-DIR-005', role:'provincial_director', type:'login',    description:'Provincial director logged in.',                        created_at:'Jun 1, 2026 11:15 AM'},
 ];
@@ -352,7 +352,7 @@ const exportPDF = async () => {
         if (dateFrom.value) params.set('date_from', dateFrom.value);
         if (dateTo.value)   params.set('date_to',   dateTo.value);
 
-        const res = await fetch(`/regional-admin-report/export?${params.toString()}`, {
+        const res = await fetch(`/regional-director-report/export?${params.toString()}`, {
             credentials: 'same-origin',
         });
 
@@ -362,7 +362,7 @@ const exportPDF = async () => {
         const url      = URL.createObjectURL(blob);
         const a        = document.createElement('a');
         a.href         = url;
-        a.download     = `regional-admin-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+        a.download     = `regional-director-report-${new Date().toISOString().slice(0, 10)}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -383,12 +383,12 @@ const bucketColor = (b) => ({
 }[b] ?? 'grey');
 
 const roleColor = (r) => ({
-    super_admin: 'indigo', sub_admin: 'purple', regional_admin: 'deep-purple', provincial_admin: 'teal',
+    super_admin: 'indigo', sub_admin: 'purple', regional_director: 'deep-purple', provincial_admin: 'teal',
     provincial_director: 'blue', employee: 'success',
 }[r] ?? 'grey');
 
 const roleLabel = (r) => ({
-    super_admin: 'Super Admin', sub_admin: 'Sub Admin', regional_admin: 'Regional Admin',
+    super_admin: 'Super Admin', sub_admin: 'Sub Admin', regional_director: 'Regional Director',
     provincial_admin: 'Prov. Admin',
     provincial_director: 'Director', employee: 'Employee',
 }[r] ?? r);

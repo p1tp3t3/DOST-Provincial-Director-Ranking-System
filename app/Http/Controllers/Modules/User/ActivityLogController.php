@@ -15,7 +15,7 @@ class ActivityLogController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role === 'regional_admin') {
+        if ($user->role === 'regional_director') {
             $region      = Region::with('provinces')->findOrFail($user->region_id);
             $provinceIds = $region->provinces->pluck('id')->toArray();
             return $query->whereHas('user', fn($q) => $q->whereProvinceIn($provinceIds));

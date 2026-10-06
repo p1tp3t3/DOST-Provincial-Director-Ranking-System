@@ -297,7 +297,7 @@ const testProvince = {
 };
 
 const testUserStats = {
-    total: 26, employees: 18, admins: 3, sub_admins: 2, directors: 1,
+    total: 26, employees: 18, admins: 3, directors: 1,
     permanent: 10, cos: 5, jo: 3,
 };
 

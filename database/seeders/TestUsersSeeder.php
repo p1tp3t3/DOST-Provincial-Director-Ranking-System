@@ -7,12 +7,14 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class TestUsersSeeder extends Seeder
 {
     public function run(): void
     {
         $provinceId = DB::table('provinces')->value('id');
+        $regionId   = DB::table('region')->value('id');
 
         $users = [
             [
@@ -24,8 +26,15 @@ class TestUsersSeeder extends Seeder
             [
                 'role'     => 'sub_admin',
                 'email'    => 'subadmin@pdris.test',
-                'username' => 'subadmin',
+                'username' => 'test_subadmin', // 'subadmin' is DatabaseSeeder's permanent sub admin
                 'name'     => ['Test', '', 'SubAdmin'],
+            ],
+            [
+                'role'      => 'regional_director',
+                'email'     => 'regdir@pdris.test',
+                'username'  => 'regdir',
+                'region_id' => $regionId,
+                'name'      => ['Test', '', 'RegionalDirector'],
             ],
             [
                 'role'        => 'provincial_admin',
@@ -54,14 +63,23 @@ class TestUsersSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
-                    'username' => $data['username'],
-                    'password' => Hash::make('password'),
-                    'role'     => $data['role'],
+                    'username'  => $data['username'],
+                    'password'  => Hash::make('password'),
+                    'region_id' => $data['region_id'] ?? null,
                 ]
             );
-
+            // Province first, so assignRole()'s one-director-per-province check sees it.
             if (!empty($data['province_id'])) {
                 $user->provinces()->syncWithoutDetaching([$data['province_id']]);
+            }
+
+            try {
+                $user->assignRole($data['role']);
+            } catch (ValidationException $e) {
+                // Every province/region already has a seeded director, so a test
+                // director can't hold that slot — give the role suspended instead.
+                $user->assignRole($data['role'], false);
+                $this->command->warn("  {$data['email']}: {$data['role']} added suspended — " . $e->getMessage());
             }
 
             Profile::firstOrCreate(
@@ -74,6 +92,7 @@ class TestUsersSeeder extends Seeder
                     'education_attainment' => ['data' => []],
                 ]
             );
+            $user->ensureEmployeeProfile();
 
             $this->command->line("  Created <info>{$data['role']}</info> → {$data['email']} / password");
         }
