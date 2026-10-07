@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Modules;
 
+use App\Helpers\RichTextSanitizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProvinceCreationRequest;
 use App\Http\Resources\ProvinceProfileResource;
@@ -171,9 +172,14 @@ class ProvinceController extends Controller
         abort_unless($province, 404);
 
         $data = $request->validate([
-            'description' => ['nullable', 'string', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:20000'],
             'image'       => ['nullable', 'image', 'max:4096'],
         ]);
+
+        // Formatted text from the editor (no links/embeds) — rendered with v-html on the landing page.
+        $data['description'] = RichTextSanitizer::isBlank($data['description'] ?? null)
+            ? null
+            : RichTextSanitizer::clean($data['description'], RichTextSanitizer::TEXT_ONLY);
 
         if ($request->hasFile('image')) {
             if ($province->image_url && Str::startsWith($province->image_url, '/storage/')) {

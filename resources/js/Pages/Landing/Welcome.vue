@@ -438,8 +438,10 @@ const sampleDirector = computed(() => {
                                         </div>
 
                                         <!-- Description -->
-                                        <p class="prov-desc">
-                                            {{ selectedProvince.description || `${selectedProvince.name} is a province under ${selectedProvince.region}, located in the ${selectedProvince.island} island group of the Philippines. It is part of DOST's provincial S&T director network.` }}
+                                        <!-- Rich text from Province Info, sanitized server-side on save -->
+                                        <div v-if="selectedProvince.description" class="prov-desc prov-desc-html" v-html="selectedProvince.description"></div>
+                                        <p v-else class="prov-desc">
+                                            {{ `${selectedProvince.name} is a province under ${selectedProvince.region}, located in the ${selectedProvince.island} island group of the Philippines. It is part of DOST's provincial S&T director network.` }}
                                         </p>
 
                                         <!-- Sibling provinces -->
@@ -610,6 +612,20 @@ const sampleDirector = computed(() => {
 </template>
 
 <style scoped>
+/* ── Province description (rich text) ─────────────────────────────────────── */
+.prov-desc-html :deep(p) { margin: 0 0 0.6em; }
+.prov-desc-html :deep(p:last-child) { margin-bottom: 0; }
+.prov-desc-html :deep(h2) { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0.8em 0 0.4em; }
+.prov-desc-html :deep(h3) { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0.8em 0 0.4em; }
+.prov-desc-html :deep(ul),
+.prov-desc-html :deep(ol) { padding-left: 1.3em; margin: 0 0 0.6em; }
+.prov-desc-html :deep(ul) { list-style: disc; }
+.prov-desc-html :deep(ol) { list-style: decimal; }
+.prov-desc-html :deep(blockquote) { border-left: 3px solid #cbd5e1; padding-left: 0.8em; color: #64748b; margin: 0 0 0.6em; }
+.prov-desc-html :deep(a) { color: #1d4ed8; text-decoration: underline; }
+.prov-desc-html :deep(.video-embed) { position: relative; padding-top: 56.25%; margin: 0 0 0.6em; }
+.prov-desc-html :deep(.video-embed iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 8px; }
+
 /* ── DOST palette ─────────────────────────────────────────────────────────── */
 .landing {
     --dost:        #0b57a8;
