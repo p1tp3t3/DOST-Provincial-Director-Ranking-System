@@ -9,7 +9,10 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
+    // Login signs out any account with no active role, so give it one the
+    // same way every real account-creation path does.
     $user = User::factory()->create();
+    $user->assignRole('employee');
 
     $response = $this->post('/login', [
         'identifier' => $user->email,
