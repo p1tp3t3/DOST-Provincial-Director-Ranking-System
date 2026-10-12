@@ -37,7 +37,6 @@ const getRoleLabel = () => {
     const label = {
         'super_admin':        'System Administrator',
         'sub_admin':          'Sub Administrator',
-        'regional_admin':     `Regional Administrator of ${authUser.value?.region?.name}`,
         'regional_director':  `Regional Director of ${authUser.value?.region?.name}`,
         'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
         'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
@@ -78,7 +77,6 @@ const tabs = computed(() => {
                 { name: 'KPI Data Editor',      href: '/kpi-data',             icon: RiEdit2Fill      },
                 { name: 'KPI Catalog',          href: '/kpi-catalog',          icon: RiArchiveStackFill },
                 { name: 'Blog Posts',           href: '/blogs',                icon: RiNewspaperLine  },
-                { name: 'User List',            href: '/users',                icon: RiTeamFill       },
                 { name: 'Employees',            href: '/employees',            icon: RiTeamFill       },
                 { name: 'Reports',              href: '/sub-admin-report',     icon: RiFileChartFill  },
             ];
@@ -104,19 +102,13 @@ const tabs = computed(() => {
                 { name: 'Employees', href: '/employees', icon: RiTeamFill       },
                 { name: 'Reports',   href: '/provincial-director-report',    icon: RiFileList3Fill  },
             ];
-        case 'regional_admin':
+        case 'regional_director':
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
                 { name: 'User List',            href: '/users',                icon: RiTeamFill       },
                 { name: 'Activity Logs',        href: '/activity-logs',        icon: RiListView       },
-                { name: 'Reports',              href: '/regional-admin-report', icon: RiFileChartFill  },
-            ];
-        case 'regional_director':
-            return [
-                { name: 'Dashboard',            href: '/dashboard',                  icon: RiDashboard2Fill },
-                { name: 'Province Directories', href: '/province-directories',       icon: RiFolder2Fill    },
-                { name: 'Reports',              href: '/regional-admin-report',      icon: RiFileChartFill  },
+                { name: 'Reports',              href: '/regional-director-report', icon: RiFileChartFill  },
             ];
         case 'employee':
             return [

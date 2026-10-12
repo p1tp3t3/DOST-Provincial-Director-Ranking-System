@@ -95,13 +95,12 @@
     <div class="section-title">Summary</div>
     <table class="cards-table">
         <tr>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['total'] }}</div><div class="lbl">Total Users</div></div></td>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['employees'] }}</div><div class="lbl">Employees</div></div></td>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['directors'] }}</div><div class="lbl">Directors</div></div></td>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['admins'] }}</div><div class="lbl">Admins</div></div></td>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['sub_admins'] }}</div><div class="lbl">Sub Admins</div></div></td>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['permanent'] }}</div><div class="lbl">Permanent</div></div></td>
-            <td style="width:14.28%;"><div class="card-box"><div class="num">{{ $user_stats['cos'] }}</div><div class="lbl">COS</div></div></td>
+            <td style="width:16.66%;"><div class="card-box"><div class="num">{{ $user_stats['total'] }}</div><div class="lbl">Total Users</div></div></td>
+            <td style="width:16.66%;"><div class="card-box"><div class="num">{{ $user_stats['employees'] }}</div><div class="lbl">Employees</div></div></td>
+            <td style="width:16.66%;"><div class="card-box"><div class="num">{{ $user_stats['directors'] }}</div><div class="lbl">Directors</div></div></td>
+            <td style="width:16.66%;"><div class="card-box"><div class="num">{{ $user_stats['admins'] }}</div><div class="lbl">Admins</div></div></td>
+            <td style="width:16.66%;"><div class="card-box"><div class="num">{{ $user_stats['permanent'] }}</div><div class="lbl">Permanent</div></div></td>
+            <td style="width:16.66%;"><div class="card-box"><div class="num">{{ $user_stats['cos'] }}</div><div class="lbl">COS</div></div></td>
         </tr>
     </table>
 </div>

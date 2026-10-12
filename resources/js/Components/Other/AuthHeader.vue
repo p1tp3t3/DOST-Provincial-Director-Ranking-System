@@ -33,6 +33,21 @@
                 </v-avatar>
             </template>
         </v-list-item>
+        <template v-if="lockedRoles.length > 1">
+            <v-divider class="my-2"></v-divider>
+            <v-list-subheader>Switch Role</v-list-subheader>
+            <v-list-item
+                v-for="r in lockedRoles"
+                :key="r.id"
+                :title="ROLE_LABELS[r.name] ?? r.name"
+                :active="r.name === authUser?.role"
+                @click="switchRole(r)"
+            >
+                <template #prepend>
+                    <v-icon size="small" :icon="r.name === authUser?.role ? 'mdi-check-circle' : 'mdi-circle-outline'" />
+                </template>
+            </v-list-item>
+        </template>
         <v-divider class="my-2"></v-divider>
         <v-list-item prepend-icon="mdi-cog" title="Settings" value="settings" @click="router.visit('/settings')"></v-list-item>
         <v-divider class="my-2"></v-divider>
@@ -55,7 +70,7 @@ const authUser = computed(() => page.props.auth?.user ?? null);
 const ROLE_LABELS = {
     super_admin:          'System Administrator',
     sub_admin:            'Sub Administrator',
-    regional_admin:       'Regional Administrator',
+    regional_director:    'Regional Director',
     provincial_admin:     'Provincial Administrator',
     provincial_director:  'Provincial Director',
     employee:             'Employee',
@@ -65,7 +80,7 @@ const roleLabel = computed(() => {
     const prov = authUser.value?.province?.name;
     const reg = authUser.value?.region?.name;
     if (!base) return '';
-    if (authUser.value?.role === 'regional_admin' && reg) return `${base} of ${reg}`;
+    if (authUser.value?.role === 'regional_director' && reg) return `${base} of ${reg}`;
     if (authUser.value?.role === 'provincial_director' && prov) return `${base} of ${prov}`;
     if (prov && ['provincial_admin', 'employee'].includes(authUser.value?.role)) return `${base} (${prov})`;
     return base;
@@ -79,6 +94,13 @@ const avatarSrc = computed(() => {
 
 const goToProfile = () => {
     if (authUser.value?.id) router.visit(`/profile/${authUser.value.id}`);
+};
+
+const lockedRoles = computed(() => (authUser.value?.roles ?? []).filter(r => r.locked));
+
+const switchRole = (role) => {
+    if (role.name === authUser.value?.role) return;
+    router.patch('/switch-role', { role: role.name });
 };
 
 const toggleDrawer = () => {

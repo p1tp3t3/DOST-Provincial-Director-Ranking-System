@@ -26,6 +26,12 @@ class UserResource extends JsonResource
             'id'                => $this->id,
             'employee_id'       => $this->dost_employee_id,
             'role'              => $this->role,
+            'roles'             => $this->roles->map(fn ($r) => [
+                'id'       => $r->id,
+                'name'     => $r->name,
+                'locked'   => (bool) $r->pivot->locked,
+                'added_at' => $r->pivot->created_at?->format('M d, Y'),
+            ]),
             'activate'          => (bool) $this->activate,
             'profile_picture'   => $profile?->profile_picture,
             'name'              => trim($firstName . ' ' . $middleName . $lastName),

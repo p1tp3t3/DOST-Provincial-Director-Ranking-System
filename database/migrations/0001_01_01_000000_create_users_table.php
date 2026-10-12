@@ -31,16 +31,8 @@ return new class extends Migration
         
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->enum('role', [
-                'super_admin',
-                'sub_admin',
-                'regional_admin',
-                'regional_director',
-                'provincial_admin',
-                'provincial_sub_admin',
-                'provincial_director',
-                'employee'
-            ]);
+            // Roles live in the roles/user_roles tables (see the
+            // 2026_10_06_1403* migrations) — a user can hold several.
             $table->foreignId('region_id')
                   ->nullable()
                   ->constrained('region')

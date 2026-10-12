@@ -18,10 +18,7 @@ class DashboardController extends Controller
         switch (auth()->user()->role) {
             case 'super_admin':           return self::super_admin_dashboard();
             case 'sub_admin':             return self::sub_admin_dashboard();
-            // A regional director oversees their region; they get the same
-            // region-performance overview the regional admin sees.
-            case 'regional_admin':
-            case 'regional_director':     return self::regional_admin_dashboard();
+            case 'regional_director':     return self::regional_director_dashboard();
             case 'provincial_admin':      return self::provincial_admin_dashboard();
             case 'provincial_director':   return self::director_dashboard();
             case 'employee':              return self::employee_dashboard();
@@ -46,8 +43,8 @@ class DashboardController extends Controller
         return inertia('Admin/Dashboard/Main', [
             'total_provinces'             => Province::count(),
             'total_users'                 => User::count(),
-            'total_directors'             => User::where('role', 'provincial_director')->count(),
-            'total_employees'             => User::where('role', 'employee')->count(),
+            'total_directors'             => User::whereRole('provincial_director')->count(),
+            'total_employees'             => User::whereRole('employee')->count(),
             'active_reporting_provinces'  => $activeProvinces,
             ...$payload,
         ]);
@@ -103,8 +100,8 @@ class DashboardController extends Controller
         return inertia('Admin/Dashboard/Main', [
             'total_provinces'            => Province::count(),
             'total_users'                => User::count(),
-            'total_directors'            => User::where('role', 'provincial_director')->count(),
-            'total_employees'            => User::where('role', 'employee')->count(),
+            'total_directors'            => User::whereRole('provincial_director')->count(),
+            'total_employees'            => User::whereRole('employee')->count(),
             'active_reporting_provinces' => $activeProvinces,
             ...$payload,
         ]);
@@ -122,7 +119,7 @@ class DashboardController extends Controller
     // logs for the given province.
     private static function build_province_payload(int $provinceId): array
     {
-        $employees = User::where('role', 'employee')
+        $employees = User::whereRole('employee')
             ->whereProvince($provinceId)
             ->with('profile')
             ->get()
@@ -138,7 +135,7 @@ class DashboardController extends Controller
                 'profile_picture' => $e->profile?->profile_picture,
             ]);
 
-        $director = User::where('role', 'provincial_director')
+        $director = User::whereRole('provincial_director')
             ->whereProvince($provinceId)
             ->with('profile')
             ->first();
@@ -244,7 +241,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function regional_admin_dashboard()
+    private function regional_director_dashboard()
     {
         $user        = auth()->user();
         $region      = Region::with('provinces')->findOrFail($user->region_id);
@@ -260,13 +257,13 @@ class DashboardController extends Controller
                 ->distinct()->count('up.province_id')
             : 0;
 
-        return inertia('RegionalAdmin/Dashboard/Main', [
+        return inertia('RegionalDirector/Dashboard/Main', [
             'region_name'                => $region->name,
             'region_id'                  => $region->id,
             'total_provinces'            => count($provinceIds),
             'total_users'                => User::whereProvinceIn($provinceIds)->count(),
-            'total_directors'            => User::where('role', 'provincial_director')->whereProvinceIn($provinceIds)->count(),
-            'total_employees'            => User::where('role', 'employee')->whereProvinceIn($provinceIds)->count(),
+            'total_directors'            => User::whereRole('provincial_director')->whereProvinceIn($provinceIds)->count(),
+            'total_employees'            => User::whereRole('employee')->whereProvinceIn($provinceIds)->count(),
             'active_reporting_provinces' => $activeProvinces,
             ...self::build_ranking_payload($provinceIds),
         ]);

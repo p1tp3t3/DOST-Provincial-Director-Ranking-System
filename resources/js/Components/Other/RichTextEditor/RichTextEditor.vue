@@ -11,6 +11,9 @@ const props = defineProps({
     label: { type: String, default: '' },
     hint: { type: String, default: '' },
     errorMessages: { type: [String, Array], default: () => [] },
+    // Text formatting only — no links and no video embeds (e.g. province descriptions).
+    simple: { type: Boolean, default: false },
+    placeholder: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -33,16 +36,23 @@ const editor = useEditor({
     extensions: [
         StarterKit.configure({
             heading: { levels: [2, 3] },
-        }),
-        Link.configure({
-            openOnClick: false,
-            autolink: true,
-            HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+            // StarterKit v3 bundles Link; it's configured separately below (or left out in simple mode).
+            link: false,
         }),
         Placeholder.configure({
-            placeholder: 'Write the article body… paste a YouTube or Google Drive link to embed a video.',
+            placeholder: props.placeholder
+                || (props.simple
+                    ? ''
+                    : 'Write the article body… paste a YouTube or Google Drive link to embed a video.'),
         }),
-        VideoEmbed,
+        ...(props.simple ? [] : [
+            Link.configure({
+                openOnClick: false,
+                autolink: true,
+                HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+            }),
+            VideoEmbed,
+        ]),
     ],
     onUpdate: ({ editor: e }) => emit('update:modelValue', e.getHTML()),
 });
@@ -140,6 +150,7 @@ const errorList = () =>
                     <v-icon size="18">mdi-format-quote-close</v-icon>
                 </button>
 
+                <template v-if="!simple">
                 <span class="rte-divider" />
 
                 <button type="button" class="rte-btn" :class="{ 'rte-btn--active': isActive('link') }"
@@ -170,6 +181,7 @@ const errorList = () =>
                         </div>
                     </v-card>
                 </v-menu>
+                </template>
 
                 <span class="rte-spacer" />
 
@@ -194,7 +206,7 @@ const errorList = () =>
 
             <EditorContent :editor="editor" class="rte-content" />
 
-            <div class="rte-hint">
+            <div v-if="!simple" class="rte-hint">
                 You can also paste a YouTube or Google Drive link directly into the text — it embeds automatically.
             </div>
         </div>

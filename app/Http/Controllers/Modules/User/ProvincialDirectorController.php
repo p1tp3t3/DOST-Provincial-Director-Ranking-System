@@ -13,9 +13,9 @@ class ProvincialDirectorController extends Controller
     public function index() {
         $query = User::has('profile')
                     ->with(['provinces', 'profile'])
-                    ->where('role', 'provincial_director');
+                    ->whereRole('provincial_director');
 
-        if (auth()->user()->role === 'regional_admin') {
+        if (auth()->user()->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             $query->whereProvinceIn($region->provinces->pluck('id')->toArray());
         }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Modules;
 
+use App\Helpers\RichTextSanitizer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProvinceCreationRequest;
 use App\Http\Resources\ProvinceProfileResource;
@@ -24,13 +25,13 @@ class ProvinceController extends Controller
         $query = Province::with(['directorAssignments.profile', 'users']);
 
         $regionInfo = null;
-        if (in_array(auth()->user()->role, ['regional_admin', 'regional_director'])) {
+        if (auth()->user()->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             $query->whereIn('id', $region->provinces->pluck('id'));
 
             $regDir = User::with('profile')
                 ->where('region_id', $region->id)
-                ->where('role', 'regional_director')
+                ->whereRole('regional_director')
                 ->first();
 
             $regionInfo = [
@@ -57,7 +58,7 @@ class ProvinceController extends Controller
     public function province_profile_index($id) {
         $decryptedId = Crypt::decrypt($id);
 
-        if (in_array(auth()->user()->role, ['regional_admin', 'regional_director'])) {
+        if (auth()->user()->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
             if (!$region->provinces->pluck('id')->contains((int) $decryptedId)) {
                 abort(403);
@@ -66,7 +67,7 @@ class ProvinceController extends Controller
 
         $data = Province::with([
                             'directorAssignments.profile',
-                            'users' => fn($q) => $q->where('role', 'employee')->with('profile.employeeProfile'),
+                            'users' => fn($q) => $q->whereRole('employee')->with('profile.employeeProfile'),
                         ])
                         ->where('id', $decryptedId)
                         ->get();
@@ -121,13 +122,14 @@ class ProvinceController extends Controller
         ]);
 
         $admin = User::create([
-            'role'        => 'provincial_admin',
             'username'    => $data['admin_username'],
             'email'       => $data['admin_email'],
             'password'    => bcrypt($data['admin_password']),
         ]);
+        $admin->assignRole('provincial_admin');
 
         $admin->provinces()->attach($province->id);
+        $admin->ensureEmployeeProfile();
 
         return redirect()->back();
     }
@@ -157,9 +159,14 @@ class ProvinceController extends Controller
         abort_unless($province, 404);
 
         $data = $request->validate([
-            'description' => ['nullable', 'string', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:20000'],
             'image'       => ['nullable', 'image', 'max:4096'],
         ]);
+
+        // Formatted text from the editor (no links/embeds) — rendered with v-html on the landing page.
+        $data['description'] = RichTextSanitizer::isBlank($data['description'] ?? null)
+            ? null
+            : RichTextSanitizer::clean($data['description'], RichTextSanitizer::TEXT_ONLY);
 
         if ($request->hasFile('image')) {
             if ($province->image_url && Str::startsWith($province->image_url, '/storage/')) {

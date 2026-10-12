@@ -22,19 +22,13 @@
                 <v-col cols="12" md="8">
                     <v-card class="elevation-1 rounded-md pa-5 d-flex flex-column gap-4">
 
-                        <v-textarea
+                        <RichTextEditor
                             v-model="form.description"
                             label="Description"
-                            variant="outlined"
-                            density="comfortable"
-                            rows="6"
-                            auto-grow
-                            counter="2000"
-                            maxlength="2000"
+                            simple
+                            placeholder="Tell visitors about this province — its focus areas, achievements, or what makes it distinct."
                             :error-messages="form.errors.description"
                             hint="Shown under the province's name on the public landing page"
-                            persistent-hint
-                            placeholder="Tell visitors about this province — its focus areas, achievements, or what makes it distinct."
                         />
 
                         <div class="d-flex justify-end">
@@ -97,6 +91,7 @@
 <script setup>
 import { ref, onUnmounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import RichTextEditor from '@/Components/Other/RichTextEditor/RichTextEditor.vue';
 
 const props = defineProps({
     province: { type: Object, required: true },

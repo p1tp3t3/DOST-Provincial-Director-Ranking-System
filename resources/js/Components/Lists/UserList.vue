@@ -1,4 +1,12 @@
 <template>
+    <v-snackbar
+        :model-value="!!listError"
+        color="error"
+        timeout="6000"
+        location="top"
+        @update:model-value="v => { if (!v) listError = '' }"
+    >{{ listError }}</v-snackbar>
+
     <!-- Toolbar -->
     <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-3">
         <div class="d-flex align-center gap-3 flex-wrap">
@@ -231,18 +239,6 @@
                                 :error-messages="editErrors.dost_employee_id"
                             />
                         </v-col>
-                        <v-col cols="12" sm="6">
-                            <v-select
-                                v-model="editForm.role"
-                                :items="roleOptions"
-                                item-title="label"
-                                item-value="value"
-                                label="Role"
-                                variant="outlined"
-                                density="compact"
-                                :error-messages="editErrors.role"
-                            />
-                        </v-col>
                         <v-col cols="12">
                             <v-select
                                 v-model="editForm.province_id"
@@ -257,6 +253,67 @@
                             />
                         </v-col>
                     </v-row>
+
+                    <v-divider class="my-3" />
+                    <div class="text-caption text-medium-emphasis text-uppercase font-weight-medium mb-2">Roles</div>
+                    <v-alert v-if="roleError" type="error" variant="tonal" density="compact" class="mb-2" closable @click:close="roleError = ''">
+                        {{ roleError }}
+                    </v-alert>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div
+                            v-for="role in editForm.roles"
+                            :key="role.id"
+                            class="d-flex align-center gap-2 pa-2 rounded-lg bg-grey-lighten-5"
+                        >
+                            <v-chip size="small" :color="roleColor(role.name)" variant="tonal" class="font-weight-medium" style="min-width:140px;">
+                                {{ role.name }}
+                            </v-chip>
+                            <span class="text-caption text-medium-emphasis flex-grow-1">Added {{ role.added_at }}</span>
+                            <v-switch
+                                :model-value="role.locked"
+                                :loading="roleBusyId === role.id"
+                                :disabled="roleBusyId === role.id"
+                                color="success"
+                                density="compact"
+                                hide-details
+                                :label="role.locked ? 'Active' : 'Suspended'"
+                                @update:model-value="toggleRoleLock(role)"
+                            />
+                            <v-tooltip v-if="role.name === 'employee'" text="Employee is permanent and cannot be removed" location="top">
+                                <template #activator="{ props: tip }">
+                                    <v-btn v-bind="tip" icon size="x-small" variant="text" color="error" disabled>
+                                        <v-icon size="16">mdi-trash-can-outline</v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+                            <v-btn
+                                v-else
+                                icon size="x-small" variant="text" color="error"
+                                :disabled="roleBusyId === role.id"
+                                @click="removeRole(role)"
+                            >
+                                <v-icon size="16">mdi-trash-can-outline</v-icon>
+                            </v-btn>
+                        </div>
+                    </div>
+                    <div class="d-flex align-center gap-2">
+                        <v-select
+                            v-model="newRole"
+                            :items="addableRoles"
+                            item-title="label"
+                            item-value="value"
+                            label="Add role"
+                            variant="outlined"
+                            density="compact"
+                            hide-details
+                            style="max-width:240px;"
+                        />
+                        <v-btn
+                            variant="tonal" color="primary" size="small"
+                            :loading="addingRole" :disabled="!newRole"
+                            @click="addRole"
+                        >Add</v-btn>
+                    </div>
 
                     <v-divider class="my-3" />
                     <div class="text-caption text-medium-emphasis text-uppercase font-weight-medium mb-2">Password</div>
@@ -402,14 +459,14 @@ const toggling     = ref(null);
 const localState   = ref({});  // userId → boolean override for instant UI feedback
 
 const isSuperAdmin  = computed(() => page.props.auth?.user?.role === 'super_admin');
-// Regional Admin gets a read-only view of this list — create/edit/delete/activation
+// Regional Director gets a read-only view of this list — create/edit/delete/activation
 // stay restricted to the roles the corresponding routes actually allow.
 const canManage     = computed(() => ['super_admin', 'provincial_admin'].includes(page.props.auth?.user?.role));
 // Province/Region columns only add value when the list spans more than one of
-// each. Regional Admin's list spans many provinces but a single region, so
+// each. Regional Director's list spans many provinces but a single region, so
 // Region would just repeat the same value on every row — show Province only.
 // Super Admin/Sub Admin see the whole country, so both columns earn their place.
-const showProvinceColumn = computed(() => ['super_admin', 'sub_admin', 'regional_admin'].includes(page.props.auth?.user?.role));
+const showProvinceColumn = computed(() => ['super_admin', 'sub_admin', 'regional_director'].includes(page.props.auth?.user?.role));
 const showRegionColumn   = computed(() => ['super_admin', 'sub_admin'].includes(page.props.auth?.user?.role));
 const isOwnAccount  = (id) => page.props.auth?.user?.id === id;
 const getActivate   = (user) => localState.value[user.id] ?? user.activate;
@@ -427,7 +484,6 @@ const openEdit = (user) => {
         username:              user.username,
         email:                 user.email,
         dost_employee_id:      user.employee_id,
-        role:                  user.role,
         province_id:           user.province_id,
         password:              '',
         password_confirmation: '',
@@ -438,6 +494,7 @@ const openEdit = (user) => {
         suffix:                user.suffix ?? '',
         length_of_service:     user.length_of_service ?? '',
         _userId:               user.id,
+        roles:                 user.roles ?? [],
     };
     editDialog.value = true;
 };
@@ -458,6 +515,72 @@ const saveEdit = async () => {
     }
 };
 
+// ── Role management (edit dialog) ──────────────────────────────
+// Separate from saveEdit()/the fields above — roles have their own
+// add/lock/remove endpoints since a user can hold several at once.
+const newRole      = ref(null);
+const addingRole    = ref(false);
+const roleBusyId    = ref(null); // role id currently being toggled/removed
+const roleError     = ref('');
+
+const heldRoleNames = computed(() => (editForm.value.roles ?? []).map(r => r.name));
+const addableRoles  = computed(() => roleOptions.filter(r => !heldRoleNames.value.includes(r.value)));
+
+const resyncEditRoles = () => {
+    router.reload({
+        only: ['users'],
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            const updated = props.list.data.find(u => u.id === editForm.value._userId);
+            if (updated) editForm.value.roles = updated.roles ?? [];
+        },
+    });
+};
+
+const addRole = async () => {
+    if (!newRole.value) return;
+    addingRole.value = true;
+    roleError.value  = '';
+    try {
+        await axios.post(`/users/${editForm.value._userId}/roles`, { role: newRole.value });
+        newRole.value = null;
+        resyncEditRoles();
+    } catch (err) {
+        roleError.value = err.response?.data?.message ?? 'Could not add that role.';
+    } finally {
+        addingRole.value = false;
+    }
+};
+
+const toggleRoleLock = async (role) => {
+    roleBusyId.value = role.id;
+    roleError.value  = '';
+    try {
+        await axios.patch(`/users/${editForm.value._userId}/roles/${role.id}`, { locked: !role.locked });
+        resyncEditRoles();
+    } catch (err) {
+        roleError.value = err.response?.data?.message ?? 'Could not update that role.';
+    } finally {
+        roleBusyId.value = null;
+    }
+};
+
+const removeRole = async (role) => {
+    roleBusyId.value = role.id;
+    roleError.value  = '';
+    try {
+        await axios.delete(`/users/${editForm.value._userId}/roles/${role.id}`);
+        resyncEditRoles();
+    } catch (err) {
+        roleError.value = err.response?.data?.message ?? 'Could not remove that role.';
+    } finally {
+        roleBusyId.value = null;
+    }
+};
+
+const listError = ref('');
+
 const toggleActivation = (user) => {
     if (toggling.value || isOwnAccount(user.id)) return;
 
@@ -471,9 +594,10 @@ const toggleActivation = (user) => {
     router.patch(`/users/${user.id}/toggle-activation`, {}, {
         preserveScroll: true,
         preserveState:  true,
-        onError: () => {
+        onError: (errors) => {
             // Revert on failure
             localState.value = { ...localState.value, [user.id]: prev };
+            listError.value = errors.role ?? 'Could not change activation status.';
         },
         onFinish: () => { toggling.value = null; },
     });
@@ -509,7 +633,6 @@ const changePage = (page) => {
 const roleOptions = [
     { label: 'Super Admin',         value: 'super_admin'         },
     { label: 'Sub Admin',           value: 'sub_admin'           },
-    { label: 'Regional Admin',      value: 'regional_admin'      },
     { label: 'Regional Director',   value: 'regional_director'   },
     { label: 'Provincial Admin',    value: 'provincial_admin'    },
     { label: 'Provincial Director', value: 'provincial_director' },
@@ -519,8 +642,11 @@ const roleOptions = [
 const filtered = computed(() => props.list.data);
 
 const roleColor = (role) => {
-    const map = { admin: 'indigo', 'sub-admin': 'purple', director: 'blue', employee: 'teal' };
-    return map[role?.toLowerCase()] ?? 'grey';
+    const map = {
+        super_admin: 'deep-purple', sub_admin: 'indigo', regional_director: 'orange',
+        provincial_admin: 'teal', provincial_director: 'blue', employee: 'success',
+    };
+    return map[role] ?? 'grey';
 };
 
 const confirmDelete = (user) => {

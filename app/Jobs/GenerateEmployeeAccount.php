@@ -40,12 +40,12 @@ class GenerateEmployeeAccount implements ShouldQueue
             }
 
             $user = User::create([
-                'role'             => 'employee',
                 'dost_employee_id' => $dostId,
                 'email'            => $email,
                 'username'         => $username,
                 'password'         => $password,   // default password = generated password
             ]);
+            $user->assignRole('employee');
 
             $user->provinces()->attach($this->provinceId);
 

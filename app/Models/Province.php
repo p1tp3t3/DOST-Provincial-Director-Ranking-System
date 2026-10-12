@@ -153,7 +153,7 @@ class Province extends Model
     }
 
     public function directorAssignments() {
-        return $this->users()->where('role', 'provincial_director');
+        return $this->users()->whereRole('provincial_director');
     }
 
     public function provincialKpis() {

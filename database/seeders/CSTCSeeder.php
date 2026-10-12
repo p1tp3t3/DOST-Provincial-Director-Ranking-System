@@ -32,7 +32,7 @@ class CSTCSeeder extends Seeder
 
             // Skip creating if director already exists
             $existing = User::whereProvince($province->id)
-                ->where('role', 'provincial_director')
+                ->whereRole('provincial_director')
                 ->first();
             if ($existing) {
                 $allDirectorMap[$row['province']] = $existing->id;
@@ -42,9 +42,9 @@ class CSTCSeeder extends Seeder
             [$first, $middle, $last] = self::parseName($row['full_name']);
 
             $user = User::factory()->create([
-                'role'             => 'provincial_director',
                 'dost_employee_id' => sprintf('cstc-%s-%d', strtolower(substr($row['province'], 0, 3)), rand(100, 999)),
             ]);
+            $user->assignRole('provincial_director');
             $user->provinces()->attach($province->id);
 
             Profile::create([
@@ -61,6 +61,7 @@ class CSTCSeeder extends Seeder
                     ],
                 ],
             ]);
+            $user->ensureEmployeeProfile();
 
             $directorMap[$row['province']]    = $user->id;
             $allDirectorMap[$row['province']] = $user->id;
@@ -101,11 +102,14 @@ class CSTCSeeder extends Seeder
 
         $this->command->info("CSTC KPI scores inserted: " . count($batch));
 
-        // Create employees (skip if already seeded for that province)
+        // Create employees (skip if this seeder already seeded that cluster's
+        // staff). Keyed on the cstc-emp-* IDs assigned below rather than "has
+        // an employee": every user holds the employee role, including the
+        // cluster's own director/admin, so a role check would skip them all.
         $employeeRows   = require __DIR__ . '/data/cstc-employees.php';
         $seededProvinces = DB::table('user_province')
             ->join('users', 'users.id', '=', 'user_province.user_id')
-            ->where('users.role', 'employee')
+            ->where('users.dost_employee_id', 'like', 'cstc-emp-%')
             ->whereIn('user_province.province_id', $provinces->pluck('id'))
             ->pluck('user_province.province_id')
             ->unique()
@@ -120,9 +124,9 @@ class CSTCSeeder extends Seeder
             [$first, $middle, $last] = self::parseName($row['full_name']);
 
             $user = User::factory()->create([
-                'role'             => 'employee',
                 'dost_employee_id' => sprintf('cstc-emp-%s-%02d', strtolower(substr($row['province'], 0, 3)), $i + 1),
             ]);
+            $user->assignRole('employee');
             $user->provinces()->attach($province->id);
 
             $rawStatus = strtolower(trim($row['status'] ?? ''));

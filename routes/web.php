@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\RoleSwitchController;
 use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
@@ -18,9 +19,10 @@ use App\Http\Controllers\Modules\Report\ProvincialAdminReportController;
 use App\Http\Controllers\Modules\Report\SubAdminReportController;
 use App\Http\Controllers\Modules\User\ActivityLogController;
 use App\Http\Controllers\Modules\Report\ProvincialSubAdminReportController;
-use App\Http\Controllers\Modules\Report\RegionalAdminReportController;
+use App\Http\Controllers\Modules\Report\RegionalDirectorReportController;
 use App\Http\Controllers\Modules\User\ProvincialDirectorController;
 use App\Http\Controllers\Modules\User\UserController;
+use App\Http\Controllers\Modules\User\UserRoleController;
 use App\Http\Controllers\Modules\SettingsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +58,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::get('/dashboard',       [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/settings',        [SettingsController::class, 'index'])->name('settings');
 
+    // A user holding 2+ roles picks which one is active here; see RoleSwitchController.
+    Route::get('/choose-role',   [RoleSwitchController::class, 'edit'])->name('role.choose');
+    Route::patch('/switch-role', [RoleSwitchController::class, 'update'])->name('role.switch');
+
     Route::middleware('profile-view')->group(function () {
 
         Route::get('/profile/{id}', [ProfileController::class, 'index']);
@@ -75,6 +81,9 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // ── Super Admin only ───────────────────────────────────────
     Route::middleware('super-admin')->group(function () {
         Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::post('/users/{id}/roles',              [UserRoleController::class, 'store']);
+        Route::patch('/users/{id}/roles/{roleId}',    [UserRoleController::class, 'update']);
+        Route::delete('/users/{id}/roles/{roleId}',   [UserRoleController::class, 'destroy']);
 
         Route::get('/maintenance',                                    [MaintenanceController::class, 'index']);
         Route::post('/maintenance/backup',                            [MaintenanceController::class, 'create_backup']);
@@ -124,16 +133,16 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/kpi-catalog/snapshots/{snapshot}',       [KpiCatalogSnapshotController::class, 'destroy']);
     });
 
-    // ── Activity Logs: Super Admin + Provincial Admin + Regional Admin ────
-    Route::middleware('role:super_admin,provincial_admin,regional_admin')->group(function () {
+    // ── Activity Logs: Super Admin + Provincial Admin + Regional Director ────
+    Route::middleware('role:super_admin,provincial_admin,regional_director')->group(function () {
         Route::get('/activity-logs',        [ActivityLogController::class, 'index']);
         Route::get('/activity-logs/report', [ActivityLogController::class, 'generate_logs_report']);
     });
 
-    // Read-only user list also available to Sub Admin (nationwide) and Regional
-    // Admin (scoped to their own region); management actions below stay
-    // restricted to Super Admin/Provincial Admin.
-    Route::middleware('role:super_admin,sub_admin,provincial_admin,regional_admin')->group(function () {
+    // Read-only user list also available to Regional Director (scoped to their
+    // own region); management actions below stay restricted to Super
+    // Admin/Provincial Admin. Sub Admin has no user list access.
+    Route::middleware('role:super_admin,provincial_admin,regional_director')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
     });
 
@@ -177,11 +186,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/regions', [RegionController::class, 'index']);
     });
 
-    // ── Regional Admin + Regional Director (region overview / map / report) ──
-    Route::middleware('role:regional_admin,regional_director')->group(function () {
+    // ── Regional Director (region overview / map / report) ──
+    Route::middleware('role:regional_director')->group(function () {
         Route::get('/regional-performance-map', [DashboardController::class, 'regional_map_index'])->name('regional-performance-map');
-        Route::get('/regional-admin-report',        [RegionalAdminReportController::class, 'index']);
-        Route::get('/regional-admin-report/export', [RegionalAdminReportController::class, 'export']);
+        Route::get('/regional-director-report',        [RegionalDirectorReportController::class, 'index']);
+        Route::get('/regional-director-report/export', [RegionalDirectorReportController::class, 'export']);
     });
 
 
@@ -200,12 +209,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::put('/province-info',  [ProvinceController::class, 'update_own_info']);
     });
 
-    // ── Evidence-based KPI modules (Super Admin + Provincial Sub Admin + Provincial Admin) ──
+    // ── Evidence-based KPI modules (Super Admin + Provincial Admin) ──
     // Each module backs a specific KPI. The accomplishment field for that KPI
     // is locked and derived from the count of records here.
-    // Union of main (provincial_sub_admin) + pete's change (provincial_admin) so
-    // neither role loses access during the merge.
-    Route::middleware('role:super_admin,provincial_sub_admin,provincial_admin')->group(function () {
+    Route::middleware('role:super_admin,provincial_admin')->group(function () {
         // Linkages → func_linkages_established
         Route::get('/linkages/{director}/{year}',                 [LinkageController::class, 'index']);
         Route::post('/linkages/{director}/{year}',                [LinkageController::class, 'store']);
@@ -219,8 +226,8 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/facebook-posts/{director}/{year}/{post}',    [FacebookPostController::class, 'destroy']);
     });
 
-    // ── Provincial Sub Admin + Provincial Admin ────────────────
-    Route::middleware('role:provincial_sub_admin,provincial_admin')->group(function () {
+    // ── Provincial Admin ────────────────────────────────────────
+    Route::middleware('role:provincial_admin')->group(function () {
         Route::get('/provincial-sub-admin-report',        [ProvincialSubAdminReportController::class, 'index']);
         Route::get('/provincial-sub-admin-report/export', [ProvincialSubAdminReportController::class, 'export']);
     });

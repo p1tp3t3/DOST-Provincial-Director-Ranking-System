@@ -66,8 +66,8 @@ class SubAdminReportController extends Controller
                 'name'        => $p->name,
                 'category'    => $p->category,
                 'director'    => $name ?: '—',
-                'employees'   => User::whereProvince($p->id)->where('role', 'employee')->count(),
-                'admins'      => User::whereProvince($p->id)->where('role', 'provincial_admin')->count(),
+                'employees'   => User::whereProvince($p->id)->whereRole('employee')->count(),
+                'admins'      => User::whereProvince($p->id)->whereRole('provincial_admin')->count(),
                 'total_users' => User::whereProvince($p->id)->count(),
             ];
         })->sortBy('name')->values()->toArray();
@@ -75,9 +75,13 @@ class SubAdminReportController extends Controller
 
     private function get_user_stats(): array
     {
-        $counts = User::selectRaw('role, COUNT(*) as count')
-                      ->groupBy('role')
-                      ->pluck('count', 'role');
+        $counts = User::query()
+            ->join('user_roles', 'user_roles.user_id', '=', 'users.id')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.locked', true)
+            ->selectRaw('roles.name as role, COUNT(DISTINCT users.id) as count')
+            ->groupBy('roles.name')
+            ->pluck('count', 'role');
 
         return [
             'total'                => User::count(),

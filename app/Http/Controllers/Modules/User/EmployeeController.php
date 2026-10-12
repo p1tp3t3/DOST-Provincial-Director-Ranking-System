@@ -18,7 +18,7 @@ class EmployeeController extends Controller
         $user = auth()->user();
         $data = User::has('profile.employeeProfile')
                     ->with(['provinces', 'profile.employeeProfile'])
-                    ->where('role', 'employee')
+                    ->whereRole('employee')
                     ->when($user->role !== 'sub_admin', function ($query) use ($user) {
                         $query->whereProvince($user->province_id);
                     })

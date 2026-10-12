@@ -43,7 +43,6 @@ class UserController extends Controller
         $user = User::with('profile')->findOrFail($id);
 
         $validated = $request->validate([
-            'role'                  => ['required', 'in:super_admin,sub_admin,regional_admin,regional_director,provincial_admin,provincial_sub_admin,provincial_director,employee'],
             'province_id'           => ['nullable', 'exists:provinces,id'],
             'dost_employee_id'      => ['nullable', 'string', 'unique:users,dost_employee_id,' . $id],
             'username'              => ['required', 'string', 'unique:users,username,' . $id],
@@ -58,10 +57,21 @@ class UserController extends Controller
             'length_of_service'     => ['nullable', 'string', 'max:50'],
         ]);
 
+        // Moving an active provincial director into another province must not
+        // give that province a second active director.
+        $newProvinceId = $validated['province_id'] ? (int) $validated['province_id'] : null;
+        if ($newProvinceId && $newProvinceId !== $user->province_id
+            && $user->activate && $user->hasLockedRole('provincial_director')) {
+            try {
+                $user->assertDirectorSlotFree('provincial_director', $newProvinceId);
+            } catch (ValidationException $e) {
+                throw ValidationException::withMessages(['province_id' => $e->getMessage()]);
+            }
+        }
+
         DB::beginTransaction();
         try {
             $userFields = [
-                'role'             => $validated['role'],
                 'dost_employee_id' => $validated['dost_employee_id'],
                 'username'         => $validated['username'],
                 'email'            => $validated['email'],
@@ -99,6 +109,14 @@ class UserController extends Controller
 
         if ($user->id === Auth::id()) {
             return response()->json(['message' => 'You cannot change the activation status of your own account.'], 403);
+        }
+
+        // Re-activating a director would put them back in their province/region
+        // slot — refuse if someone else is already the active director there.
+        if (!$user->activate) {
+            foreach ($user->lockedDirectorRoles() as $roleName) {
+                $user->assertDirectorSlotFree($roleName);
+            }
         }
 
         $user->update(['activate' => !$user->activate]);
@@ -159,8 +177,8 @@ class UserController extends Controller
         $search = $request->input('search');
         $role   = $request->input('role');
 
-        $admins = User::with(['profile', 'provinces', 'region'])
-                      ->whereIn('role', ['super_admin', 'sub_admin', 'regional_admin', 'provincial_admin'])
+        $admins = User::with(['profile', 'provinces', 'region', 'roles', 'activeRole'])
+                      ->whereRoleIn(['super_admin', 'sub_admin', 'regional_director', 'provincial_admin'])
                       ->when($search, function ($q, $search) {
                           $q->where(function ($q) use ($search) {
                               $q->whereHas('profile', fn($p) =>
@@ -170,7 +188,7 @@ class UserController extends Controller
                               ->orWhere('username', 'like', "%{$search}%");
                           });
                       })
-                      ->when($role, fn($q, $role) => $q->where('role', $role))
+                      ->when($role, fn($q, $role) => $q->whereRole($role))
                       ->latest('created_at')
                       ->paginate(20)
                       ->withQueryString();
@@ -211,12 +229,12 @@ class UserController extends Controller
             $province   = Province::findOrFail($provinceId);
 
             $user = User::create([
-                'role'             => $data['role'],
                 'dost_employee_id' => $data['dost_employee_id'],
                 'email'            => $data['email'],
                 'username'         => $data['username'],
                 'password'         => $data['password'],
             ]);
+            $user->assignRole($data['role']);
 
             $user->provinces()->attach($province->id);
 
@@ -243,6 +261,10 @@ class UserController extends Controller
                     'work_specification'  => json_encode([]),
                 ]);
             }
+            // Every user is an employee — admin-tier registrations get a
+            // default employee record too (the form only asks position/status
+            // for plain employees).
+            $user->ensureEmployeeProfile();
 
             DB::commit();
             ActivityLogHelper::createUser($user);
@@ -260,12 +282,13 @@ class UserController extends Controller
     public function admin_store(AdminRegistrationRequest $request)
     {
         $data = $request->validated();
-        User::create([
-            'role'             => $data['role'],
+        $user = User::create([
             'email'            => $data['email'],
             'username'         => $data['username'],
             'password'         => $data['password'],
         ]);
+        $user->assignRole($data['role']);
+        $user->ensureEmployeeProfile();
 
         return response()->json(['message' => 'New admin registered successfully.']);
     }
@@ -474,7 +497,7 @@ class UserController extends Controller
     public function get_users(?string $search = null, ?string $role = null)
     {
         $data = User::has('profile')
-                    ->with(['profile', 'provinces.region', 'region'])
+                    ->with(['profile', 'provinces.region', 'region', 'roles', 'activeRole'])
                     ->when($search, function ($q, $search) {
                         $q->where(function ($q) use ($search) {
                             $q->whereHas('profile', fn($p) =>
@@ -484,11 +507,11 @@ class UserController extends Controller
                             ->orWhere('dost_employee_id', 'like', "%{$search}%");
                         });
                     })
-                    ->when($role, fn($q, $role) => $q->where('role', $role));
+                    ->when($role, fn($q, $role) => $q->whereRole($role));
 
         $actor = auth()->user();
 
-        if ($actor->role === 'regional_admin') {
+        if ($actor->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail($actor->region_id);
             $data->whereProvinceIn($region->provinces->pluck('id')->toArray());
         } elseif ($actor->province_id) {

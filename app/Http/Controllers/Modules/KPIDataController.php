@@ -40,7 +40,10 @@ class KPIDataController extends Controller
 
         $directors = DB::table('user_province as up')
             ->join('users as u', 'u.id', '=', 'up.user_id')
-            ->where('u.role', 'provincial_director')
+            ->join('user_roles as ur', 'ur.user_id', '=', 'u.id')
+            ->join('roles as r', 'r.id', '=', 'ur.role_id')
+            ->where('r.name', 'provincial_director')
+            ->where('ur.locked', true)
             ->select('up.province_id', 'up.user_id as director_id');
 
         $provinces = DB::table('provinces as p')
@@ -88,7 +91,7 @@ class KPIDataController extends Controller
         $province   = Province::findOrFail($provinceId);
 
         $director = User::whereProvince($provinceId)
-                        ->where('role', 'provincial_director')
+                        ->whereRole('provincial_director')
                         ->with('profile')
                         ->first();
 
@@ -150,7 +153,7 @@ class KPIDataController extends Controller
         ]);
 
         $director = User::where('id', $directorId)
-            ->where('role', 'provincial_director')->firstOrFail();
+            ->whereRole('provincial_director')->firstOrFail();
 
         $modularKpiIds = KPI::whereIn('code', array_keys(self::MODULAR_KPI_CODES))->pluck('id')->all();
 

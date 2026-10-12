@@ -183,7 +183,7 @@ const targetAdmin  = ref(null);
 const roleOptions = [
     { label: 'Super Admin',            value: 'super_admin'            },
     { label: 'Sub Admin',              value: 'sub_admin'              },
-    { label: 'Regional Admin',         value: 'regional_admin'         },
+    { label: 'Regional Director',      value: 'regional_director'      },
     { label: 'Provincial Admin',       value: 'provincial_admin'       },
 ];
 
@@ -212,7 +212,7 @@ const roleLabel = (role) => {
     const map = {
         super_admin:          'Super Admin',
         sub_admin:            'Sub Admin',
-        regional_admin:       'Regional Admin',
+        regional_director:    'Regional Director',
         provincial_admin:     'Provincial Admin',
     };
     return map[role] ?? role;
@@ -222,7 +222,7 @@ const roleColor = (role) => {
     const map = {
         super_admin:          'deep-purple',
         sub_admin:            'indigo',
-        regional_admin:       'orange',
+        regional_director:    'orange',
         provincial_admin:     'teal',
     };
     return map[role] ?? 'grey';
@@ -232,7 +232,7 @@ const roleIcon = (role) => {
     const map = {
         super_admin:          'mdi-shield-crown-outline',
         sub_admin:            'mdi-shield-account-outline',
-        regional_admin:       'mdi-map-marker-radius-outline',
+        regional_director:    'mdi-map-marker-radius-outline',
         provincial_admin:     'mdi-account-cog-outline',
     };
     return map[role] ?? 'mdi-account-outline';

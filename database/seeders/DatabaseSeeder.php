@@ -149,10 +149,10 @@ class DatabaseSeeder extends Seeder
         }
 
         $superAdmin = User::factory()->create([
-            'role'     => 'super_admin',
             'email'    => 'vinzmuloc@gmail.com',
             'username' => 'vinzmuloc',
         ]);
+        $superAdmin->assignRole('super_admin');
         Profile::create([
             'user_id'              => $superAdmin->id,
             'first_name'           => 'Vince',
@@ -161,13 +161,23 @@ class DatabaseSeeder extends Seeder
             'length_of_service'    => '',
             'education_attainment' => ['data' => []],
         ]);
+        $superAdmin->ensureEmployeeProfile();
 
-        User::factory()->create(['role' => 'sub_admin']);
-
-        // One Regional Admin per region (region-scoped, no province assignment).
-        foreach ($regions as $region) {
-            User::factory()->create(['role' => 'regional_admin', 'region_id' => $region->id]);
-        }
+        // Fixed, permanent login — stays identical on every reseed, not Faker-random.
+        $subAdmin = User::factory()->create([
+            'username' => 'subadmin',
+            'email'    => 'subadmin@dost.test',
+        ]);
+        $subAdmin->assignRole('sub_admin');
+        Profile::create([
+            'user_id'              => $subAdmin->id,
+            'first_name'           => 'Sub',
+            'middle_name'          => '',
+            'last_name'            => 'Admin',
+            'length_of_service'    => '',
+            'education_attainment' => ['data' => []],
+        ]);
+        $subAdmin->ensureEmployeeProfile();
 
         // One Regional Director per region. No real roster yet, so each is simply
         // named after the region it oversees (e.g. "NCR", "Region I"). Region-scoped
@@ -176,12 +186,12 @@ class DatabaseSeeder extends Seeder
         foreach ($regions as $region) {
             $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $region->name)); // "region_i", "ncr"
             $regionalDirector = User::factory()->create([
-                'role'             => 'regional_director',
                 'region_id'        => $region->id,
                 'username'         => 'regdir_' . $slug,
                 'email'            => 'regdir_' . $slug . '@dost.test',
                 'dost_employee_id' => 'rd-' . $region->id,
             ]);
+            $regionalDirector->assignRole('regional_director');
             Profile::create([
                 'user_id'              => $regionalDirector->id,
                 'first_name'           => fake()->firstName(),
@@ -190,6 +200,7 @@ class DatabaseSeeder extends Seeder
                 'length_of_service'    => (string) fake()->numberBetween(1, 20),
                 'education_attainment' => ['data' => []],
             ]);
+            $regionalDirector->ensureEmployeeProfile();
         }
 
         foreach ($directorRows as $dir) {
@@ -198,9 +209,9 @@ class DatabaseSeeder extends Seeder
 
             // Create Provincial Director
             $director = User::factory()->create([
-                'role'             => 'provincial_director',
                 'dost_employee_id' => self::generate_emp_id(),
             ]);
+            $director->assignRole('provincial_director');
             $director->provinces()->attach($province->id);
             self::generate_profile_from_data($director, [
                 'full_name'           => $dir['full_name'],
@@ -209,14 +220,15 @@ class DatabaseSeeder extends Seeder
                 'education_master'    => $dir['education_master'],
                 'education_doctorate' => $dir['education_doctorate'],
             ]);
+            $director->ensureEmployeeProfile();
 
             // Create Employees from real data
             $provEmployees = $employeesByProvince[$dir['province']] ?? [];
             foreach ($provEmployees as $i => $emp) {
                 $employee = User::factory()->create([
-                    'role'             => 'employee',
                     'dost_employee_id' => "emp-p{$province->id}-" . sprintf('%02d', $i + 1),
                 ]);
+                $employee->assignRole('employee');
                 $employee->provinces()->attach($province->id);
                 self::generate_profile_from_data($employee, [
                     'full_name'           => $emp['full_name'],
@@ -231,9 +243,23 @@ class DatabaseSeeder extends Seeder
             }
 
             // Create Provincial Admin + Provincial Sub Admin (no real data available)
-            $provincialAdmin = User::factory()->create(['role' => 'provincial_admin']);
+            // Fixed, permanent login — stays identical on every reseed, not Faker-random.
+            $provSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $province->name));
+            $provincialAdmin = User::factory()->create([
+                'username' => 'provadmin_' . $provSlug,
+                'email'    => 'provadmin_' . $provSlug . '@dost.test',
+            ]);
+            $provincialAdmin->assignRole('provincial_admin');
             $provincialAdmin->provinces()->attach($province->id);
-            
+            Profile::create([
+                'user_id'              => $provincialAdmin->id,
+                'first_name'           => 'Provincial Admin',
+                'middle_name'          => '',
+                'last_name'            => $province->name,
+                'length_of_service'    => '',
+                'education_attainment' => ['data' => []],
+            ]);
+            $provincialAdmin->ensureEmployeeProfile();
         }
     }
 
