@@ -23,30 +23,28 @@ use Throwable;
  */
 class KPICatalogController extends Controller
 {
+    // Mirrors the kpis.code column length; codes longer than this are truncated.
+    private const CODE_MAX_LENGTH = 60;
+
     public function index()
     {
-        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
-            ->orderBy('sort_order')->get()
-            ->map(fn($cat) => [
-                'id'     => $cat->id,
-                'code'   => $cat->code,
-                'name'   => $cat->name,
-                'weight' => (float) $cat->weight,
-                'kpis'   => $cat->kpis->map(fn($k) => [
-                    'id'              => $k->id,
-                    'category_id'     => $k->category_id,
-                    'code'            => $k->code,
-                    'name'            => $k->name,
-                    'weight'          => (float) $k->weight,
-                    'is_scored'       => (bool) $k->is_scored,
-                    'inverse_scoring' => (bool) $k->inverse_scoring,
-                    'derivation_type' => $k->derivation_type,
-                ])->values()->toArray(),
-            ])->values()->toArray();
+        $categories = KPICategory::catalog();
 
         return inertia('Admin/KpiCatalog/Main', [
             'kpi_categories'   => $categories,
             'category_options' => KPICategory::orderBy('sort_order')->get(['id', 'code', 'name']),
+            'snapshots'        => \App\Models\KpiCatalogSnapshot::with('creator:id,username')
+                ->orderByDesc('is_baseline')->orderByDesc('created_at')
+                ->get()
+                ->map(fn($s) => [
+                    'id'          => $s->id,
+                    'label'       => $s->label,
+                    'note'        => $s->note,
+                    'is_baseline' => (bool) $s->is_baseline,
+                    'kpi_count'   => count($s->payload['kpis'] ?? []),
+                    'created_by'  => $s->creator?->username,
+                    'created_at'  => $s->created_at?->toDateTimeString(),
+                ])->values()->toArray(),
         ]);
     }
 
@@ -167,9 +165,12 @@ class KPICatalogController extends Controller
             return response()->json(['message' => 'The CSV file is empty or could not be parsed.'], 422);
         }
 
-        $categories = KPICategory::all(['id', 'code', 'name']);
+        $categories = KPICategory::orderBy('sort_order')->get(['id', 'code', 'name']);
         $byCode = $categories->keyBy(fn($c) => strtolower($c->code));
         $byName = $categories->keyBy(fn($c) => strtolower($c->name));
+        // Spelled into the error message below so the hint names whatever
+        // categories the matrix actually has, not a frozen Core/Strategic/Support.
+        $categoryList = $categories->pluck('name')->join(', ', ' or ');
 
         $existingNames = KPI::pluck('name')->map(fn($n) => strtolower(trim($n)))->flip();
         $seenNames = [];
@@ -197,7 +198,7 @@ class KPICatalogController extends Controller
             if ($catRaw === '') {
                 $errors['category'] = 'Category is required.';
             } elseif (!$category) {
-                $errors['category'] = 'Unknown category — use Core, Strategic, or Support.';
+                $errors['category'] = "Unknown category — use {$categoryList}.";
             }
 
             $weight = is_numeric($weightRaw) ? (float) $weightRaw : null;
@@ -314,14 +315,23 @@ class KPICatalogController extends Controller
 
     // Unique, URL/DB-safe code derived from the name (e.g. "Trainings Conducted"
     // → "custom_trainings_conducted"), disambiguated with a numeric suffix on clash.
+    // Long names are truncated so the result always fits kpis.code (60 chars).
     private function generateKpiCode(string $name): string
     {
         $base = 'custom_' . Str::slug($name, '_');
-        $code = $base;
+        $code = $this->fitKpiCode($base, '');
         $i = 1;
         while (KPI::withTrashed()->where('code', $code)->exists()) {
-            $code = $base . '_' . (++$i);
+            $code = $this->fitKpiCode($base, '_' . (++$i));
         }
         return $code;
+    }
+
+    // Trims the base so base + suffix stays within the column limit, keeping
+    // the suffix intact since that is what makes the code unique.
+    private function fitKpiCode(string $base, string $suffix): string
+    {
+        $base = substr($base, 0, self::CODE_MAX_LENGTH - strlen($suffix));
+        return rtrim($base, '_') . $suffix;
     }
 }

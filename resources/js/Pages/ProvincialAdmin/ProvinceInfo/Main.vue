@@ -1,5 +1,5 @@
 <template>
-    <Head title="Province Info" />
+    <Head title="Province" />
 
     <div class="grid gap-4 w-full">
 

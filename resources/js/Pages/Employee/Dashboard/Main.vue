@@ -211,23 +211,11 @@
                     </v-chip>
                 </template>
 
-                <template #item.core="{ item }">
+                <!-- One subtotal column per category in the matrix — the columns
+                     themselves are built in tableHeaders below. -->
+                <template v-for="cat in kpiCategories" :key="cat.code" #[cat.slotName]="{ item }">
                     <span v-if="item.status === 'ranked'" class="text-caption">
-                        {{ item.subtotals_pct?.CORE?.toFixed(1) ?? '—' }}%
-                    </span>
-                    <span v-else class="text-caption text-disabled">—</span>
-                </template>
-
-                <template #item.strategic="{ item }">
-                    <span v-if="item.status === 'ranked'" class="text-caption">
-                        {{ item.subtotals_pct?.STRATEGIC?.toFixed(1) ?? '—' }}%
-                    </span>
-                    <span v-else class="text-caption text-disabled">—</span>
-                </template>
-
-                <template #item.support="{ item }">
-                    <span v-if="item.status === 'ranked'" class="text-caption">
-                        {{ item.subtotals_pct?.SUPPORT?.toFixed(1) ?? '—' }}%
+                        {{ subtotalPct(item, cat.code).toFixed(1) }}%
                     </span>
                     <span v-else class="text-caption text-disabled">—</span>
                 </template>
@@ -251,7 +239,7 @@
 
         </v-card>
 
-        <!-- Top Performers Chart + Distribution Donut -->
+        <!-- Best Performers Chart + Distribution Donut -->
         <v-row dense>
             <v-col cols="12" md="8">
                 <v-card border elevation="0" rounded="lg" class="overflow-hidden">
@@ -316,6 +304,8 @@
 import { ref, computed } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
+import { useKpiCategories, subtotalPct } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 
 const props = defineProps({
     my_province:      { type: String, default: null },
@@ -324,6 +314,12 @@ const props = defineProps({
     kpi_categories:   { type: Array,  default: () => [] },
     available_years:  { type: Array,  default: () => [] },
 });
+
+const kpiCategories = useKpiCategories(() => props.kpi_categories);
+
+// Live: a catalog edit changes both the category labels and the scores derived
+// from their weights, so refresh the rankings alongside the matrix.
+useKpiCatalogSync(['kpi_categories', 'rankings_by_year']);
 
 const page     = usePage();
 const authUser = computed(() => page.props.auth?.user ?? null);
@@ -402,17 +398,19 @@ const tierColor      = (c) => ({ micro: 'blue-grey', small: 'teal', medium: 'ind
 
 // ── Table ─────────────────────────────────────────────────────────────────────
 
-const tableHeaders = [
+// The per-category columns come from the live matrix, so a renamed or
+// re-weighted category retitles its column here with no edit to this file.
+const tableHeaders = computed(() => [
     { title: 'Rank',     key: 'rank',      width: '64px',  sortable: false },
     { title: 'Performer', key: 'bucket',   width: '110px', sortable: false },
     { title: 'Province', key: 'province',  sortable: true  },
     { title: 'Director', key: 'director',  sortable: false },
     { title: 'Tier',     key: 'category',  width: '90px',  align: 'center', sortable: true  },
-    { title: 'CORE 60%', key: 'core',      width: '90px',  align: 'center', sortable: false },
-    { title: 'STRAT 30%',key: 'strategic', width: '90px',  align: 'center', sortable: false },
-    { title: 'SUPP 10%', key: 'support',   width: '90px',  align: 'center', sortable: false },
+    ...kpiCategories.value.map(c => ({
+        title: c.headerLabel, key: c.columnKey, width: '90px', align: 'center', sortable: false,
+    })),
     { title: 'Total',    key: 'total_pct', width: '200px', sortable: true  },
-];
+]);
 
 // Highlight the employee's own province row
 const rowProps = ({ item }) => ({
@@ -483,7 +481,7 @@ const pieSeries = computed(() => {
 
 const pieOptions = {
     chart:   { type: 'donut', fontFamily: 'inherit', toolbar: { show: false } },
-    labels:  ['Top Performer', 'Average Performer', 'Low Performer'],
+    labels:  ['Best Performer', 'Better Performer', 'Good Performer'],
     colors:  ['#15803d', '#ca8a04', '#b91c1c'],
     legend:  { position: 'bottom', fontSize: '11px', fontFamily: 'inherit' },
     dataLabels: { style: { fontSize: '11px', fontFamily: 'inherit', fontWeight: '600' } },

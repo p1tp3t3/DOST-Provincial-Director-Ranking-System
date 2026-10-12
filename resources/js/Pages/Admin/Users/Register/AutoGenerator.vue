@@ -1,4 +1,5 @@
 ﻿<template>
+        <Head title="Generator" />
         <div class="grid gap-4 w-full">
 
             <!-- ── SUPER ADMIN VIEW ───────────────────────────────── -->
@@ -397,7 +398,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
+import { Head, usePage, router } from '@inertiajs/vue3';
 
 const page = usePage();
 const role = computed(() => page.props.auth?.user?.role);

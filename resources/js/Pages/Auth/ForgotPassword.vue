@@ -1,4 +1,5 @@
 <template>
+    <Head title="Recovery" />
     <div class="auth-root">
         <div class="auth-bg"></div>
         <div class="particle p1"></div>
@@ -133,7 +134,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     status: { type: String, default: null },

@@ -1,4 +1,5 @@
 <template>
+        <Head title="Register" />
         <div class="grid gap-4 w-full">
 
             <!-- Header -->
@@ -327,7 +328,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 
 const formRef   = ref(null);
 const submitting = ref(false);

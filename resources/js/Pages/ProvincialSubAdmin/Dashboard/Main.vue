@@ -104,11 +104,11 @@
                     <v-divider />
                     <div class="pa-4">
                         <v-row>
-                            <v-col v-for="cat in kpiCategories" :key="cat.code" cols="12" md="4">
+                            <v-col v-for="cat in kpiCategories" :key="cat.code" cols="12" :md="categoryColSpan">
                                 <div class="d-flex align-center justify-space-between mb-1">
                                     <span class="text-caption font-weight-medium">
                                         {{ cat.label }}
-                                        <span class="text-disabled ml-1">{{ cat.weight }}</span>
+                                        <span class="text-disabled ml-1">{{ cat.weightLabel }}</span>
                                     </span>
                                     <span class="text-caption font-weight-bold" :style="{ color: bucketHex(province_ranking.bucket) }">
                                         {{ (province_ranking.subtotals_pct[cat.code] ?? 0).toFixed(1) }}%
@@ -116,7 +116,7 @@
                                 </div>
                                 <v-progress-linear
                                     :model-value="province_ranking.subtotals_pct[cat.code] ?? 0"
-                                    color="indigo"
+                                    :color="cat.color"
                                     height="8"
                                     rounded
                                     bg-color="grey-lighten-3"
@@ -153,7 +153,7 @@
                         <div class="d-flex flex-column gap-2 flex-1">
                             <div v-for="cat in kpiCategories" :key="cat.code" class="d-flex align-center gap-2">
                                 <v-icon size="14" color="teal">mdi-check-circle-outline</v-icon>
-                                <span class="text-caption">{{ cat.label }} KPIs <span class="text-disabled">({{ cat.weight }})</span></span>
+                                <span class="text-caption">{{ cat.label }} KPIs <span class="text-disabled">({{ cat.weightLabel }})</span></span>
                             </div>
                         </div>
                         <div class="d-flex align-center justify-end mt-4">
@@ -297,6 +297,8 @@ import { router } from '@inertiajs/vue3';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import DirectorInfoCard from '@/Components/Cards/DirectorInfoCard.vue';
 import NewEmployeeList from '@/Components/Lists/NewEmployeeList.vue';
+import { useKpiCategories } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 import {
     RiGroup2Line,
     RiMedalLine,
@@ -314,13 +316,21 @@ const props = defineProps({
     my_region:        { type: String, default: null },
     rankings_by_year: { type: Object, default: () => ({}) },
     available_years:  { type: Array,  default: () => [] },
+    kpi_categories:   { type: Array,  default: () => [] },
 });
 
-const kpiCategories = [
-    { code: 'CORE',       label: 'Core',       weight: '60%' },
-    { code: 'STRATEGIC',  label: 'Strategic',  weight: '30%' },
-    { code: 'SUPPORT',    label: 'Support',    weight: '10%' },
-];
+// Names, weights and colours all come from the live KPI matrix — see
+// resources/js/Data/kpiCategories.js.
+const kpiCategories = useKpiCategories(() => props.kpi_categories);
+
+// The score cards split the row evenly however many categories there are.
+const categoryColSpan = computed(() =>
+    Math.max(3, Math.floor(12 / Math.max(1, kpiCategories.value.length)))
+);
+
+// Live: a catalog edit changes the category labels, this province's subtotals
+// and the regional leaderboard below, so refresh all three together.
+useKpiCatalogSync(['kpi_categories', 'province_ranking', 'rankings_by_year']);
 
 const directorCard = computed(() => ({
     user_id:         props.director?.id ?? null,

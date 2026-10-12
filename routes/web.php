@@ -7,6 +7,7 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Modules\BlogController;
 use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPICatalogController;
+use App\Http\Controllers\Modules\KpiCatalogSnapshotController;
 use App\Http\Controllers\Modules\KPIDataController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
@@ -125,6 +126,11 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::delete('/kpi-catalog/kpis/{kpi}',       [KPICatalogController::class, 'destroy']);
         Route::post('/kpi-catalog/kpis/verify-csv',    [KPICatalogController::class, 'verifyCsv']);
         Route::post('/kpi-catalog/kpis/commit-csv',    [KPICatalogController::class, 'commitCsv']);
+
+        // Catalog save files (restorable versions of the matrix)
+        Route::post('/kpi-catalog/snapshots',                    [KpiCatalogSnapshotController::class, 'store']);
+        Route::post('/kpi-catalog/snapshots/{snapshot}/restore', [KpiCatalogSnapshotController::class, 'restore']);
+        Route::delete('/kpi-catalog/snapshots/{snapshot}',       [KpiCatalogSnapshotController::class, 'destroy']);
     });
 
     // ── Activity Logs: Super Admin + Provincial Admin + Regional Director ────

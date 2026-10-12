@@ -115,25 +115,10 @@ class KPIDataController extends Controller
             ->map(fn($r) => ['target' => $r->target, 'accomplished' => $r->accomplished])
             ->toArray();
 
-        $categories = KPICategory::with(['kpis' => fn($q) => $q->orderBy('sort_order')])
-            ->orderBy('sort_order')->get()
-            ->map(fn($cat) => [
-                'id'     => $cat->id,
-                'code'   => $cat->code,
-                'name'   => $cat->name,
-                'weight' => (float) $cat->weight,
-                'kpis'   => $cat->kpis->map(fn($k) => [
-                    'id'              => $k->id,
-                    'code'            => $k->code,
-                    'name'            => $k->name,
-                    'weight'          => (float) $k->weight,
-                    'is_scored'       => (bool) $k->is_scored,
-                    'inverse_scoring' => (bool) $k->inverse_scoring,
-                    'derivation_type' => $k->derivation_type,
-                    'target'          => $values[$k->id]['target']       ?? '',
-                    'accomplished'    => $values[$k->id]['accomplished'] ?? '',
-                ])->values()->toArray(),
-            ])->values()->toArray();
+        $categories = KPICategory::catalog(fn($k) => [
+            'target'       => $values[$k->id]['target']       ?? '',
+            'accomplished' => $values[$k->id]['accomplished'] ?? '',
+        ]);
 
         $profile = $director->profile;
         $directorName = $profile

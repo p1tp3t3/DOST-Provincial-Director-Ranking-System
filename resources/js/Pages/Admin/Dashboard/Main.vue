@@ -195,7 +195,7 @@
                                 <div class="perf-col-head">
                                     <div class="d-flex align-center gap-2">
                                         <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
-                                        <span class="text-body-2 font-weight-bold">Top Performers</span>
+                                        <span class="text-body-2 font-weight-bold">Best Performers</span>
                                     </div>
                                     <div class="text-caption text-medium-emphasis">Top 20% of each tier · {{ top10Data.names.length }} {{ top10Data.names.length === 1 ? 'province' : 'provinces' }}</div>
                                 </div>
@@ -210,7 +210,7 @@
                                     />
                                     <div v-else class="perf-empty">
                                         <v-icon size="40" color="blue-grey">mdi-podium-gold</v-icon>
-                                        <div class="text-body-2 font-weight-medium">No Top Performers</div>
+                                        <div class="text-body-2 font-weight-medium">No Best Performers</div>
                                         <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
                                     </div>
                                 </div>
@@ -219,7 +219,7 @@
                                 <div class="perf-col-head">
                                     <div class="d-flex align-center gap-2">
                                         <v-icon size="15" color="warning">mdi-trending-neutral</v-icon>
-                                        <span class="text-body-2 font-weight-bold">Average Performers</span>
+                                        <span class="text-body-2 font-weight-bold">Better Performers</span>
                                     </div>
                                     <div class="text-caption text-medium-emphasis">Middle 70% of each tier · {{ avgData.names.length }} {{ avgData.names.length === 1 ? 'province' : 'provinces' }}</div>
                                 </div>
@@ -235,7 +235,7 @@
                                     </div>
                                     <div v-else class="perf-empty">
                                         <v-icon size="40" color="blue-grey">mdi-trending-neutral</v-icon>
-                                        <div class="text-body-2 font-weight-medium">No Average Performers</div>
+                                        <div class="text-body-2 font-weight-medium">No Better Performers</div>
                                         <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
                                     </div>
                                 </div>
@@ -244,7 +244,7 @@
                                 <div class="perf-col-head">
                                     <div class="d-flex align-center gap-2">
                                         <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
-                                        <span class="text-body-2 font-weight-bold">Low Performers</span>
+                                        <span class="text-body-2 font-weight-bold">Good Performers</span>
                                     </div>
                                     <div class="text-caption text-medium-emphasis">Bottom 10% of each tier · {{ underData.names.length }} {{ underData.names.length === 1 ? 'province' : 'provinces' }}</div>
                                 </div>
@@ -259,7 +259,7 @@
                                     />
                                     <div v-else class="perf-empty">
                                         <v-icon size="40" color="success">mdi-check-decagram-outline</v-icon>
-                                        <div class="text-body-2 font-weight-medium">No Low Performers</div>
+                                        <div class="text-body-2 font-weight-medium">No Good Performers</div>
                                         <div class="text-caption text-medium-emphasis">Tier is too small to bucket, or no rankings yet</div>
                                     </div>
                                 </div>
@@ -379,7 +379,7 @@
                                     <div class="pa-2" style="max-width:340px;">
                                         <div class="font-weight-bold mb-1">Weighted PRISM Matrix Score</div>
 
-                                        <div class="text-caption font-weight-medium mt-1">How each of the 37 KPIs is scored</div>
+                                        <div class="text-caption font-weight-medium mt-1">How each of the {{ scoredKpiCount }} KPIs is scored</div>
                                         <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
                                             <li>Accomplishment % vs target becomes an adjective rating</li>
                                             <li>Outstanding 1.0 &middot; Very Satisfactory 0.8 &middot; Satisfactory 0.6</li>
@@ -389,9 +389,9 @@
 
                                         <div class="text-caption font-weight-medium mt-2">Category weights</div>
                                         <ul class="text-caption" style="margin:2px 0 0; padding-left:16px; list-style:disc; line-height:1.6; opacity:.85;">
-                                            <li><b>CORE</b> 60%</li>
-                                            <li><b>STRATEGIC</b> 30%</li>
-                                            <li><b>SUPPORT</b> 10%</li>
+                                            <li v-for="cat in kpiCategories" :key="cat.code">
+                                                <b>{{ cat.code }}</b> {{ cat.weightLabel }}
+                                            </li>
                                         </ul>
 
                                         <div class="text-caption font-weight-medium mt-2">Ranking &amp; tiers</div>
@@ -514,21 +514,11 @@
                             </v-chip>
                         </template>
 
-                        <template #item.core="{ item }">
-                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'CORE' }">
-                                {{ item.subtotals_pct.CORE.toFixed(1) }}%
-                            </span>
-                            <span v-else class="text-caption text-disabled">-</span>
-                        </template>
-                        <template #item.strategic="{ item }">
-                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'STRATEGIC' }">
-                                {{ item.subtotals_pct.STRATEGIC.toFixed(1) }}%
-                            </span>
-                            <span v-else class="text-caption text-disabled">-</span>
-                        </template>
-                        <template #item.support="{ item }">
-                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === 'SUPPORT' }">
-                                {{ item.subtotals_pct.SUPPORT.toFixed(1) }}%
+                        <!-- One subtotal column per category in the matrix — see
+                             categoryHeaders below for where the columns come from. -->
+                        <template v-for="cat in kpiCategories" :key="cat.code" #[cat.slotName]="{ item }">
+                            <span v-if="isRanked(item)" class="text-caption cat-cell" :class="{ 'cat-cell--active': selectedCategory === cat.code }">
+                                {{ subtotalPct(item, cat.code).toFixed(1) }}%
                             </span>
                             <span v-else class="text-caption text-disabled">-</span>
                         </template>
@@ -565,6 +555,7 @@
                             key="ph-map-dashboard"
                             :scores="mapFilteredScores"
                             :ranking-pool="mapRankingPool"
+                            :categories="kpi_categories"
                             :trends="trendsByProvince"
                             :selected-year="selectedYear"
                             :selected-tier="selectedTier"
@@ -627,9 +618,9 @@
                                 <!-- Top 3 category-subtotal breakdown -->
                                 <div v-if="top3.length" class="podium-breakdown">
                                     <div v-for="(p, idx) in top3" :key="p.province" class="breakdown-col">
-                                        <div v-for="cat in ['CORE','STRATEGIC','SUPPORT']" :key="cat" class="breakdown-row">
-                                            <span class="breakdown-label">{{ cat }}</span>
-                                            <span class="breakdown-score">{{ p.subtotals_pct[cat].toFixed(1) }}%</span>
+                                        <div v-for="cat in kpiCategories" :key="cat.code" class="breakdown-row">
+                                            <span class="breakdown-label">{{ cat.code }}</span>
+                                            <span class="breakdown-score">{{ subtotalPct(p, cat.code).toFixed(1) }}%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -665,7 +656,7 @@
                                             </div>
                                             <div class="score-text">
                                                 <span class="score-pct" :style="{ color: bucketColor(item.bucket) }">{{ getScore(item).toFixed(2) }}%</span>
-                                                <span class="score-counts">CORE {{ item.subtotals_pct.CORE.toFixed(1) }} · STRAT {{ item.subtotals_pct.STRATEGIC.toFixed(1) }} · SUPP {{ item.subtotals_pct.SUPPORT.toFixed(1) }}</span>
+                                                <span class="score-counts">{{ subtotalSummary(item) }}</span>
                                             </div>
                                         </template>
                                         <span v-else class="text-caption text-disabled" style="margin:auto;">No data</span>
@@ -692,6 +683,8 @@ import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
 import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
+import { useKpiCategories, subtotalPct } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 const props = defineProps({
     total_users:                { type: Number, default: 0 },
     active_reporting_provinces: { type: Number, default: 0 },
@@ -707,7 +700,7 @@ const props = defineProps({
 
 const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
 const selectedTier     = ref('micro');
-const selectedCategory = ref('overall'); // 'overall' | 'CORE' | 'STRATEGIC' | 'SUPPORT'
+const selectedCategory = ref('overall'); // 'overall' | any code from kpi_categories
 const selectedIsland   = ref('all');
 const selectedRegion   = ref('all');
 const selectedProvince = ref('all');
@@ -755,15 +748,57 @@ const tiers = [
     { value: 'large',  label: 'Large'  },
 ];
 
-// Category options derived from the kpi_categories prop so the weight labels
-// stay in sync with whatever the matrix says.
+// Everything category-shaped on this page — the filter chips, the leaderboard
+// subtotal columns, the podium breakdown and the scoring tooltip — is driven
+// by the live matrix, so renaming a category, moving a KPI into it, or
+// re-weighting one lands here with no edit to this file.
+const kpiCategories = useKpiCategories(() => props.kpi_categories);
+
 const categoryOptions = computed(() =>
-    props.kpi_categories.map(c => ({
+    kpiCategories.value.map(c => ({
         value:  c.code,
         label:  c.code,
-        weight: `${Math.round(c.weight * 100)}%`,
+        weight: c.weightLabel,
     }))
 );
+
+// A category the user had filtered on can disappear from the matrix (renamed
+// or removed on the KPI Catalog page). Fall back to Overall rather than
+// leaving the page filtered on a code that no longer scores anything.
+watch(kpiCategories, (cats) => {
+    if (selectedCategory.value !== 'overall' && !cats.some(c => c.code === selectedCategory.value)) {
+        selectedCategory.value = 'overall';
+    }
+});
+
+// Live: a catalog edit changes both the category labels and the scores derived
+// from their weights, so refresh the rankings alongside the matrix.
+useKpiCatalogSync(['kpi_categories', 'rankings_by_year']);
+
+// One leaderboard column per category, paired with the dynamic slot above.
+const categoryHeaders = computed(() =>
+    kpiCategories.value.map(c => ({
+        title:    c.headerLabel,
+        key:      c.columnKey,
+        width:    '90px',
+        align:    'center',
+        sortable: false,
+    }))
+);
+
+// Total scored indicators across the matrix, for the scoring tooltip.
+const scoredKpiCount = computed(() =>
+    props.kpi_categories.reduce(
+        (n, c) => n + (c.kpis ?? []).filter(k => k.is_scored).length, 0)
+);
+
+// "CORE 41.2 · STRATEGIC 18.0 · SUPPORT 9.4" — the one-line subtotal summary
+// under each podium row. Codes are abbreviated to keep the line from wrapping
+// when the matrix carries more than a handful of categories.
+const subtotalSummary = (row) =>
+    kpiCategories.value
+        .map(c => `${c.code.slice(0, 5)} ${subtotalPct(row, c.code).toFixed(1)}`)
+        .join(' · ');
 
 const tierLabel = computed(() =>
     selectedTier.value === 'all'
@@ -976,9 +1011,7 @@ const tableHeaders = computed(() => {
         { title: 'Province', key: 'province', sortable: true  },
         { title: 'Director', key: 'director', sortable: false },
         { title: 'Tier',     key: 'category', width: '90px',  align: 'center', sortable: true  },
-        { title: 'CORE 60%', key: 'core',     width: '90px',  align: 'center', sortable: false },
-        { title: 'STRAT 30%', key: 'strategic', width: '90px', align: 'center', sortable: false },
-        { title: 'SUPP 10%', key: 'support',  width: '90px',  align: 'center', sortable: false },
+        ...categoryHeaders.value,
         { title: 'Total',    key: 'total_pct', width: '110px', align: 'center', sortable: true  },
     ];
     return selectedTier.value === 'all' ? cols.filter(c => c.key !== 'bucket') : cols;
@@ -1474,7 +1507,7 @@ watch(searchTarget, async (province) => {
 .dashboard-root :deep(.font-weight-black) { font-weight: 600 !important; }
 .dashboard-root :deep(.font-weight-medium) { font-weight: 500 !important; }
 
-/* Section titles (Top / Average / Low Performers, PRISM Ranking Matrix,
+/* Section titles (Best / Better / Good Performers, PRISM Ranking Matrix,
    podium banner) - semibold + tighter tracking, but still Inter, so they
    sit in the same family as the rows beneath them. */
 .dashboard-root .chart-header :deep(.font-weight-bold),
@@ -1651,16 +1684,18 @@ watch(searchTarget, async (province) => {
 .podium-breakdown { display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
 .breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 .breakdown-row    { display: flex; align-items: center; gap: 6px; cursor: default; }
-/* Label width tuned so the longest label ("STRATEGIC") fits at 13px without
+/* Label width tuned so a 9-character code ("STRATEGIC") fits at 13px without
    crowding the score. Was 120px which overflowed when the podium-stage
-   shrinks (42% width) - that's what was pushing the SUPPORT row off-screen
-   or causing horizontal overflow per column. */
-.breakdown-label  { font-size: 13px; font-weight: 600; color: #475569; width: 78px; flex-shrink: 0; white-space: nowrap; }
+   shrinks (42% width) - that's what was pushing the last row off-screen
+   or causing horizontal overflow per column. Category codes are admin-editable,
+   so a longer one ellipsises here rather than widening the column. */
+.breakdown-label  { font-size: 13px; font-weight: 600; color: #475569; width: 78px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .breakdown-score  { font-size: 14px; font-weight: 700; min-width: 50px; text-align: right; flex-shrink: 0; margin-left: auto; }
 
-.score-text { display: flex; flex-direction: column; line-height: 1.25; }
+.score-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .score-pct  { font-size: 18px; font-weight: 700; white-space: nowrap; }
-.score-counts { font-size: 13px; color: rgba(0, 0, 0, 0.6); white-space: nowrap; }
+/* Grows with the number of categories, so it truncates instead of overflowing. */
+.score-counts { font-size: 13px; color: rgba(0, 0, 0, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Highlights the column matching the active category filter so the user can
    instantly see which value drives the current sort + bucket. */

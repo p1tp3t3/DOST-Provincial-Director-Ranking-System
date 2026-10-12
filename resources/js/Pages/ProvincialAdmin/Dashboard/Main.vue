@@ -101,11 +101,11 @@
             <v-divider />
             <div class="pa-4">
                 <v-row>
-                    <v-col v-for="cat in kpiCategories" :key="cat.code" cols="12" md="4">
+                    <v-col v-for="cat in kpiCategories" :key="cat.code" cols="12" :md="categoryColSpan">
                         <div class="d-flex align-center justify-space-between mb-1">
                             <span class="text-caption font-weight-medium">
                                 {{ cat.label }}
-                                <span class="text-disabled ml-1">{{ cat.weight }}</span>
+                                <span class="text-disabled ml-1">{{ cat.weightLabel }}</span>
                             </span>
                             <span class="text-caption font-weight-bold" :style="{ color: bucketHex(province_ranking.bucket) }">
                                 {{ (province_ranking.subtotals_pct[cat.code] ?? 0).toFixed(1) }}%
@@ -113,7 +113,7 @@
                         </div>
                         <v-progress-linear
                             :model-value="province_ranking.subtotals_pct[cat.code] ?? 0"
-                            color="indigo"
+                            :color="cat.color"
                             height="8"
                             rounded
                             bg-color="grey-lighten-3"
@@ -180,6 +180,8 @@ import { Head } from '@inertiajs/vue3';
 import QuantityCard from '@/Components/Cards/QuantityCard.vue';
 import DirectorInfoCard from '@/Components/Cards/DirectorInfoCard.vue';
 import NewEmployeeList from '@/Components/Lists/NewEmployeeList.vue';
+import { useKpiCategories } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 import {
     RiGroup2Line,
     RiMedalLine,
@@ -194,13 +196,21 @@ const props = defineProps({
     province_ranking: { type: Object,      default: null },
     latest_year:      { type: Number,      default: null },
     recent_logs:      { type: Array,       default: () => [] },
+    kpi_categories:   { type: Array,       default: () => [] },
 });
 
-const kpiCategories = [
-    { code: 'CORE',       label: 'Core',       weight: '60%' },
-    { code: 'STRATEGIC',  label: 'Strategic',  weight: '30%' },
-    { code: 'SUPPORT',    label: 'Support',    weight: '10%' },
-];
+// Names, weights and colours all come from the live KPI matrix — see
+// resources/js/Data/kpiCategories.js.
+const kpiCategories = useKpiCategories(() => props.kpi_categories);
+
+// The score cards split the row evenly however many categories there are.
+const categoryColSpan = computed(() =>
+    Math.max(3, Math.floor(12 / Math.max(1, kpiCategories.value.length)))
+);
+
+// Live: a catalog edit changes both the category labels and this province's
+// per-category subtotals, so refresh its ranking alongside the matrix.
+useKpiCatalogSync(['kpi_categories', 'province_ranking']);
 
 const directorCard = computed(() => ({
     user_id:           props.director?.id ?? null,

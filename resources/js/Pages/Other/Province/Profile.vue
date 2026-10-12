@@ -1,4 +1,5 @@
 <template>
+        <Head :title="profile.name || 'Province'" />
         <div class="d-flex flex-column gap-3">
 
             <!-- Breadcrumb -->
@@ -153,7 +154,7 @@
                                 <div>
                                     <div>
                                         <span class="text-body-2 font-weight-medium">{{ category.name }}</span>
-                                        <span class="text-caption text-medium-emphasis ms-2">Weight {{ (category.weight * 100).toFixed(0) }}%</span>
+                                        <span class="text-caption text-medium-emphasis ms-2">Weight {{ formatWeight(category.weight) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -277,7 +278,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { categoryVisual, formatWeight } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 
 const props = defineProps({
     province_profile: { type: Object },
@@ -286,7 +289,9 @@ const props = defineProps({
 });
 
 const profile        = props.province_profile?.data[0] ?? {};
-const kpiCategories  = props.kpi_categories ?? [];
+// Computed rather than a plain snapshot: a live catalog refresh (below)
+// replaces this prop, and the KPI list has to follow it.
+const kpiCategories  = computed(() => props.kpi_categories ?? []);
 const availableYears = props.available_years ?? [];
 
 const search      = ref('');
@@ -295,8 +300,12 @@ const selectedYear = ref(availableYears[0] ?? null);
 
 const scoredKpis = (category) => (category.kpis ?? []).filter(k => k.is_scored);
 const totalScoredKpis = computed(() =>
-    kpiCategories.reduce((sum, c) => sum + scoredKpis(c).length, 0)
+    kpiCategories.value.reduce((sum, c) => sum + scoredKpis(c).length, 0)
 );
+
+// Live: this page lists every KPI with its name, weight and category, so a
+// catalog edit has to land here too.
+useKpiCatalogSync(['kpi_categories']);
 
 const scoreFor = (kpi, field) => {
     if (!selectedYear.value) return null;
@@ -324,13 +333,11 @@ const accomplishedColor = (kpi) => {
     return a >= t ? 'success' : 'warning';
 };
 
-const CATEGORY_VISUALS = {
-    CORE:       { icon: 'mdi-rocket-launch-outline', color: 'indigo' },
-    STRATEGIC: { icon: 'mdi-shield-outline',        color: 'teal' },
-    SUPPORT:    { icon: 'mdi-cog-outline',           color: 'deep-purple' },
-};
-const categoryIcon   = (code) => CATEGORY_VISUALS[code]?.icon  ?? 'mdi-chart-bar';
-const categoryAccent = (code) => CATEGORY_VISUALS[code]?.color ?? 'blue-grey';
+// Shared with the KPI Catalog page and the KPI Data editor, so a category
+// looks the same everywhere and one added later still gets its own colour.
+const catIndex       = (code) => Math.max(0, kpiCategories.value.findIndex(c => c.code === code));
+const categoryIcon   = (code) => categoryVisual(code, catIndex(code)).icon;
+const categoryAccent = (code) => categoryVisual(code, catIndex(code)).color;
 
 // Edit shortcut - visible only to super_admin since the editor route is
 // behind the super-admin middleware. The encrypted province id is already

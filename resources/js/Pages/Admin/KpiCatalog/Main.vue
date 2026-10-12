@@ -1,5 +1,5 @@
 <template>
-    <Head title="KPI Catalog" />
+    <Head title="Catalog" />
     <div class="d-flex flex-column gap-3">
 
         <!-- Header -->
@@ -14,6 +14,13 @@
                     </div>
                 </div>
                 <div class="d-flex align-center gap-2">
+                    <v-btn
+                        size="small"
+                        variant="outlined"
+                        color="blue-grey"
+                        prepend-icon="mdi-history"
+                        @click="versionsOpen = true"
+                    >Versions</v-btn>
                     <v-btn
                         size="small"
                         variant="outlined"
@@ -357,7 +364,7 @@
                     <v-alert type="info" variant="tonal" density="compact" icon="mdi-information-outline">
                         <div class="text-caption">
                             CSV columns: <strong>name, category, weight</strong>. Category must be
-                            <em>Core</em>, <em>Strategic</em>, or <em>Support</em>. Weight is a percent (e.g. 5 for 5%).
+                            <em>{{ categoryNameList }}</em>. Weight is a percent (e.g. 5 for 5%).
                         </div>
                     </v-alert>
                     <div class="d-flex align-center justify-space-between">
@@ -375,8 +382,8 @@
                                 <tr><th>name</th><th>category</th><th>weight</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td>Trainings Conducted</td><td>Strategic</td><td>3</td></tr>
-                                <tr><td>Linkages Established</td><td>Core</td><td>5</td></tr>
+                                <tr><td>Trainings Conducted</td><td>{{ sampleCategoryNames[0] }}</td><td>3</td></tr>
+                                <tr><td>Linkages Established</td><td>{{ sampleCategoryNames[1] }}</td><td>5</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -468,25 +475,220 @@
             </v-card>
         </v-dialog>
 
+        <!-- Versions (catalog save files) -->
+        <v-dialog v-model="versionsOpen" max-width="720" persistent scrollable>
+            <v-card rounded="lg">
+                <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center gap-2">
+                    <v-icon size="20" color="blue-grey">mdi-history</v-icon>
+                    Catalog Versions
+                </v-card-title>
+                <v-divider />
+
+                <v-card-text style="max-height:60vh;">
+                    <v-alert type="info" variant="tonal" density="compact" class="mb-4 text-caption">
+                        A version stores the matrix itself — KPI names, categories and weights.
+                        Restoring one never changes targets or accomplishments already entered for
+                        a province; KPIs added since are just removed from the matrix and their
+                        history is kept.
+                    </v-alert>
+
+                    <!-- Save current -->
+                    <div class="d-flex align-center gap-2 mb-4">
+                        <v-text-field
+                            v-model="newVersionLabel"
+                            label="Name this version"
+                            placeholder="e.g. Before 2026 revision"
+                            density="compact"
+                            variant="outlined"
+                            hide-details
+                            maxlength="120"
+                        />
+                        <v-btn
+                            color="indigo"
+                            variant="flat"
+                            size="small"
+                            prepend-icon="mdi-content-save-outline"
+                            :loading="savingVersion"
+                            :disabled="!newVersionLabel.trim()"
+                            @click="saveVersion"
+                        >Save current</v-btn>
+                    </div>
+
+                    <v-divider class="mb-3" />
+
+                    <div v-if="!snapshots.length" class="text-caption text-medium-emphasis py-4 text-center">
+                        No saved versions yet.
+                    </div>
+
+                    <v-card
+                        v-for="snap in snapshots"
+                        :key="snap.id"
+                        border
+                        elevation="0"
+                        rounded="lg"
+                        class="mb-2"
+                    >
+                        <div class="d-flex align-center gap-3 px-3 py-2 flex-wrap">
+                            <v-icon size="18" :color="snap.is_baseline ? 'amber-darken-2' : 'blue-grey'">
+                                {{ snap.is_baseline ? 'mdi-shield-star-outline' : 'mdi-content-save-outline' }}
+                            </v-icon>
+                            <div class="flex-grow-1" style="min-width:200px;">
+                                <div class="text-body-2 font-weight-bold d-flex align-center gap-2">
+                                    {{ snap.label }}
+                                    <v-chip v-if="snap.is_baseline" size="x-small" color="amber-darken-2" variant="tonal">
+                                        Original
+                                    </v-chip>
+                                </div>
+                                <div class="text-caption text-medium-emphasis">
+                                    {{ snap.kpi_count }} KPIs
+                                    <template v-if="snap.created_at"> · {{ snap.created_at }}</template>
+                                    <template v-if="snap.created_by"> · by {{ snap.created_by }}</template>
+                                </div>
+                                <div v-if="snap.note" class="text-caption text-medium-emphasis mt-1">{{ snap.note }}</div>
+                            </div>
+                            <v-btn
+                                size="small"
+                                variant="tonal"
+                                color="indigo"
+                                prepend-icon="mdi-restore"
+                                @click="askRestore(snap)"
+                            >Restore</v-btn>
+                            <v-tooltip location="top" :text="snap.is_baseline ? 'The original cannot be deleted' : 'Delete this version'">
+                                <template #activator="{ props: tip }">
+                                    <span v-bind="tip">
+                                        <v-btn
+                                            icon
+                                            size="x-small"
+                                            variant="text"
+                                            color="error"
+                                            :disabled="snap.is_baseline"
+                                            @click="deleteVersion(snap)"
+                                        ><v-icon size="16">mdi-trash-can-outline</v-icon></v-btn>
+                                    </span>
+                                </template>
+                            </v-tooltip>
+                        </div>
+                    </v-card>
+                </v-card-text>
+
+                <v-divider />
+                <v-card-actions class="px-4 py-3">
+                    <v-spacer />
+                    <v-btn variant="text" size="small" @click="versionsOpen = false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Restore confirmation -->
+        <v-dialog v-model="restoreDialogOpen" max-width="460" persistent>
+            <v-card rounded="lg">
+                <v-card-title class="text-subtitle-1 font-weight-bold">Restore this version?</v-card-title>
+                <v-card-text class="text-body-2">
+                    The catalog will be replaced with
+                    <strong>{{ restoreTarget?.label }}</strong> ({{ restoreTarget?.kpi_count }} KPIs).
+                    <div class="text-caption text-medium-emphasis mt-2">
+                        Entered targets and accomplishments are not affected. Save the current
+                        matrix as its own version first if you might want it back.
+                    </div>
+                </v-card-text>
+                <v-card-actions class="px-4 pb-3">
+                    <v-spacer />
+                    <v-btn variant="text" size="small" @click="restoreDialogOpen = false">Cancel</v-btn>
+                    <v-btn
+                        variant="flat"
+                        color="indigo"
+                        size="small"
+                        :loading="restoring"
+                        @click="doRestore"
+                    >Restore</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
-import { useEcho } from '@laravel/echo-vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { categoryVisual } from '@/Data/kpiCategories';
+import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 
 const props = defineProps({
     kpi_categories:    { type: Array, default: () => [] },
     category_options:  { type: Array, default: () => [] },
+    snapshots:         { type: Array, default: () => [] },
 });
+
+// ── Catalog versions ("save files") ───────────────────────────────────
+const snapshots         = computed(() => props.snapshots);
+const versionsOpen      = ref(false);
+const newVersionLabel   = ref('');
+const savingVersion     = ref(false);
+const restoreDialogOpen = ref(false);
+const restoreTarget     = ref(null);
+const restoring         = ref(false);
+
+const saveVersion = () => {
+    savingVersion.value = true;
+    router.post('/kpi-catalog/snapshots', { label: newVersionLabel.value.trim() }, {
+        preserveScroll: true,
+        onSuccess: () => { newVersionLabel.value = ''; },
+        onFinish:  () => { savingVersion.value = false; },
+    });
+};
+
+const askRestore = (snap) => {
+    restoreTarget.value     = snap;
+    restoreDialogOpen.value = true;
+};
+
+const doRestore = () => {
+    if (!restoreTarget.value) return;
+    restoring.value = true;
+    router.post(`/kpi-catalog/snapshots/${restoreTarget.value.id}/restore`, {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            restoreDialogOpen.value = false;
+            versionsOpen.value      = false;
+            // Restoring is an explicit "throw away what's on screen", so resync
+            // even when there are unsaved edits the watcher would otherwise keep.
+            resyncForm();
+        },
+        onFinish: () => { restoring.value = false; },
+    });
+};
+
+const deleteVersion = (snap) => {
+    if (snap.is_baseline) return;
+    router.delete(`/kpi-catalog/snapshots/${snap.id}`, { preserveScroll: true });
+};
 
 const categoryOptions = computed(() => props.category_options);
 const categoryNameById = computed(() => Object.fromEntries(categoryOptions.value.map(c => [c.id, c.name])));
 
-const catColor = (code) => ({ CORE: 'indigo', STRATEGIC: 'teal', SUPPORT: 'deep-purple' }[code] ?? 'blue-grey');
-const catBg    = (code) => ({ CORE: '#eef2ff', STRATEGIC: '#e0f2f1', SUPPORT: '#ede7f6' }[code] ?? '#f1f5f9');
-const catIcon  = (code) => ({ CORE: 'mdi-rocket-launch-outline', STRATEGIC: 'mdi-shield-outline', SUPPORT: 'mdi-cog-outline' }[code] ?? 'mdi-chart-bar');
+// The CSV helper text and template name the real categories rather than a
+// frozen "Core, Strategic, or Support", so they track the matrix.
+const categoryNames = computed(() => categoryOptions.value.map(c => c.name));
+const categoryNameList = computed(() => {
+    const names = categoryNames.value;
+    if (names.length <= 1) return names[0] ?? '';
+    return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+});
+// Two illustrative rows; falls back to the first category when only one exists.
+const sampleCategoryNames = computed(() => {
+    const names = categoryNames.value;
+    if (!names.length) return ['Core', 'Core'];
+    return [names[Math.min(1, names.length - 1)], names[0]];
+});
+
+// Shared with the KPI Data editor and the province profile so a category looks
+// the same everywhere; a category an admin adds later gets its own colour from
+// the fallback palette rather than all of them collapsing to grey.
+const catIndex = (code) => Math.max(0, props.kpi_categories.findIndex(c => c.code === code));
+const catColor = (code) => categoryVisual(code, catIndex(code)).color;
+const catBg    = (code) => categoryVisual(code, catIndex(code)).bg;
+const catIcon  = (code) => categoryVisual(code, catIndex(code)).icon;
 
 // Weight is stored as a 0-1 decimal server-side, edited here as a 0-100 percent.
 const toPercent = (decimal) => Math.round(Number(decimal) * 10000) / 100;
@@ -634,11 +836,10 @@ watch(() => props.kpi_categories, () => {
 });
 
 // ── Real-time: another admin's catalog change refreshes this screen ───────
-const { leaveChannel } = useEcho('kpi-catalog', 'KpiCatalogUpdated', () => {
-    if (isDirty.value) return; // don't clobber unsaved local edits
-    router.reload({ only: ['kpi_categories', 'category_options'], preserveScroll: true, preserveState: true });
-});
-onBeforeUnmount(() => leaveChannel());
+useKpiCatalogSync(
+    ['kpi_categories', 'category_options', 'snapshots'],
+    { canReload: () => !isDirty.value },  // don't clobber unsaved local edits
+);
 
 // ── Bulk Add via CSV (name, category, weight) ─────────────────────────────
 const csvDialogOpen      = ref(false);
@@ -673,8 +874,8 @@ const closeCsvDialog = () => {
 const downloadCsvTemplate = () => {
     const headers = 'name,category,weight';
     const rows = [
-        'Trainings Conducted,Strategic,3',
-        'Linkages Established,Core,5',
+        `Trainings Conducted,${sampleCategoryNames.value[0]},3`,
+        `Linkages Established,${sampleCategoryNames.value[1]},5`,
     ];
     const csv = `${headers}\n${rows.join('\n')}\n`;
 

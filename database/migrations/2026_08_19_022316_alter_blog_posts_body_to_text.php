@@ -12,7 +12,11 @@ return new class extends Migration
     {
         $posts = DB::table('blog_posts')->select('id', 'body')->get();
 
-        DB::statement('ALTER TABLE blog_posts MODIFY body LONGTEXT NOT NULL');
+        // SQLite has no MODIFY COLUMN and stores JSON as TEXT already, so the
+        // column swap is a no-op there; only run it on MySQL/MariaDB.
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE blog_posts MODIFY body LONGTEXT NOT NULL');
+        }
 
         foreach ($posts as $post) {
             $paragraphs = json_decode($post->body, true) ?: [];
@@ -39,6 +43,8 @@ return new class extends Migration
             ]);
         }
 
-        DB::statement('ALTER TABLE blog_posts MODIFY body JSON NOT NULL');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE blog_posts MODIFY body JSON NOT NULL');
+        }
     }
 };
