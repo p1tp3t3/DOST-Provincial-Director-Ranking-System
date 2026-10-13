@@ -319,10 +319,8 @@ onMounted(async () => {
     fsBtnEl.setAttribute('role', 'button');
     fsBtnEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
     L.DomEvent.on(fsBtnEl, 'click', L.DomEvent.stop).on(fsBtnEl, 'click', toggleFullscreen);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd', maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    }).addTo(map);
+    // No basemap tiles: only the Philippine province shapes (and our own labels) are drawn,
+    // so no foreign country/sea names appear. The container background acts as the sea.
 
     const geojson = await (await fetch('/geo/philippines-provinces.geojson')).json();
 
@@ -354,6 +352,13 @@ onMounted(async () => {
     }
     legendGroups.value = ISLANDS.map(i => ({ island: i.value, label: i.label, regions: groups[i.value] ?? [] }))
         .filter(g => g.regions.length);
+
+    // Land base: every province in white with a slate outline, under the styled layer,
+    // so the archipelago stays readable even where provinces are dimmed (no basemap tiles).
+    L.geoJSON(geojson, {
+        interactive: false,
+        style: { fillColor: '#ffffff', fillOpacity: 1, color: '#475569', weight: 1 },
+    }).addTo(map);
 
     geoLayer = L.geoJSON(geojson, {
         style: styleFor,

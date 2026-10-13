@@ -28,7 +28,7 @@
                             <a v-if="panel.directorId" :href="`/profile/${panel.directorId}`" class="panel-subtitle panel-name-link">{{ panel.director }}</a>
                             <div v-else class="panel-subtitle">{{ panel.director || 'Vacant' }}</div>
                         </div>
-                        <button class="panel-close" @click="panel = null">
+                        <button class="panel-close" @click="unselectProvince">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                     </div>
@@ -1083,9 +1083,25 @@ const findCstc = (name) => {
     return key ? { key, bounds: cstcData[key] } : null;
 };
 
+// Clear the province selection and bring the map colours back. A map click also
+// selects the province's region/island, so fall back to whatever the dashboard
+// filters say (empty when the map is used on its own) instead of keeping those.
+const unselectProvince = () => {
+    selProvince.value = '';
+    selCstc.value     = '';
+    selIsland.value   = (props.island && props.island !== 'all') ? props.island.toLowerCase() : '';
+    selRegion.value   = (props.region && props.region !== 'all') ? String(REGION_NAME_TO_CODE[props.region] ?? '') : '';
+    pendingFly = false;
+    refreshStyle();
+    refreshCstcStyle();
+    panel.value = selRegion.value
+        ? buildRegionPanel(Number(selRegion.value))
+        : (selIsland.value ? buildIslandPanel(selIsland.value) : null);
+};
+
 const onProvinceChange = () => {
     pendingFly = false;
-    if (!selProvince.value) { selCstc.value = ''; refreshStyle(); refreshCstcStyle(); panel.value = null; return; }
+    if (!selProvince.value) { unselectProvince(); return; }
 
     const prov = provinces.find(p => p.name === selProvince.value);
     if (prov) {
@@ -1249,10 +1265,8 @@ onMounted(async () => {
     });
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd', maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    }).addTo(map);
+    // No basemap tiles: only the Philippine province shapes (and our own labels) are drawn,
+    // so no foreign country/sea names appear. The container background acts as the sea.
 
     const res     = await fetch('/geo/philippines-provinces.geojson');
     const geojson = await res.json();
@@ -1279,6 +1293,13 @@ onMounted(async () => {
         .sort((a, b) => a - b)
         .filter(c => REGION_LABELS[c])
         .map(c => ({ code: c, label: REGION_LABELS[c] }));
+
+    // Land base: every province in white with a slate outline, under the styled layer,
+    // so the archipelago stays readable even where provinces are dimmed (no basemap tiles).
+    L.geoJSON(geojson, {
+        interactive: false,
+        style: { fillColor: '#ffffff', fillOpacity: 1, color: '#475569', weight: 1 },
+    }).addTo(map);
 
     geoLayer = L.geoJSON(geojson, {
         style:         f => styleFor(f, sm, selRegion.value, selProvince.value),
@@ -1311,6 +1332,9 @@ onMounted(async () => {
             });
 
             layer.on('click', () => {
+                // Clicking the selected province again unselects it
+                if (selProvince.value === name) { unselectProvince(); return; }
+
                 // Sync dropdowns
                 const island = REGION_TO_ISLAND[regionCode];
                 if (island && selIsland.value !== island) {
@@ -1376,8 +1400,10 @@ onMounted(async () => {
             });
 
             layer.on('click', () => {
+                if (selCstc.value === cstcName) { unselectProvince(); return; }
                 selRegion.value = selProvince.value = '';
                 selCstc.value = cstcName;
+                refreshStyle();
                 refreshCstcStyle();
                 panel.value = buildCstcPanel(cstcName);
                 const bounds = cstcData[cstcName];
@@ -1435,6 +1461,7 @@ onBeforeUnmount(() => {
 .ph-map {
     height: v-bind(height); width: 100%; z-index: 0;
     border-radius: 0 0 8px 8px;
+    background: #f1f5f9; /* acts as the sea — no basemap tiles behind the provinces */
 }
 
 /* Pseudo-fullscreen: the .ph-map-wrap is teleported to <body> and pinned over

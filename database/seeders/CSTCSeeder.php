@@ -41,7 +41,11 @@ class CSTCSeeder extends Seeder
 
             [$first, $middle, $last] = self::parseName($row['full_name']);
 
+            // Fixed login (provdir_<cluster>@dost.test) — stays identical on every reseed.
+            $provSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $province->name));
             $user = User::factory()->create([
+                'username'         => 'provdir_' . $provSlug,
+                'email'            => 'provdir_' . $provSlug . '@dost.test',
                 'dost_employee_id' => sprintf('cstc-%s-%d', strtolower(substr($row['province'], 0, 3)), rand(100, 999)),
             ]);
             $user->assignRole('provincial_director');

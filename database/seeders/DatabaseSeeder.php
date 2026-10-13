@@ -207,8 +207,13 @@ class DatabaseSeeder extends Seeder
             $province = $provinces[$dir['province']] ?? null;
             if (!$province) continue;
 
+            $provSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $province->name));
+
             // Create Provincial Director
+            // Fixed login (provdir_<province>@dost.test) — stays identical on every reseed.
             $director = User::factory()->create([
+                'username'         => 'provdir_' . $provSlug,
+                'email'            => 'provdir_' . $provSlug . '@dost.test',
                 'dost_employee_id' => self::generate_emp_id(),
             ]);
             $director->assignRole('provincial_director');
@@ -244,7 +249,6 @@ class DatabaseSeeder extends Seeder
 
             // Create Provincial Admin + Provincial Sub Admin (no real data available)
             // Fixed, permanent login — stays identical on every reseed, not Faker-random.
-            $provSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $province->name));
             $provincialAdmin = User::factory()->create([
                 'username' => 'provadmin_' . $provSlug,
                 'email'    => 'provadmin_' . $provSlug . '@dost.test',
