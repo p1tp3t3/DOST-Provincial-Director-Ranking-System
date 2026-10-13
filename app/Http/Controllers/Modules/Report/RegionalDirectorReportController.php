@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Region;
 use App\Models\User;
+use App\Services\RankingRelease;
 use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -104,12 +105,15 @@ class RegionalDirectorReportController extends Controller
     private function get_director_rankings(array $provinceIds, int $limit = 8): array
     {
         $svc   = new RankingService();
-        $years = $svc->availableYears();
+        // Rankings only for released years (see RankingRelease).
+        $years = app(RankingRelease::class)->releasedYears();
         if (empty($years)) return [];
         $latestYear = $years[0];
 
+        // Official national standing within each tier — the region's provinces
+        // are never ranked among themselves.
         $rows = [];
-        foreach ($svc->rankByYear($latestYear, $provinceIds) as $tier => $tierRows) {
+        foreach ($svc->officialRankingsFor($latestYear, $provinceIds) as $tier => $tierRows) {
             foreach ($tierRows as $r) {
                 $rows[] = [
                     'id'           => $r['province_id'],
@@ -117,6 +121,7 @@ class RegionalDirectorReportController extends Controller
                     'province'     => $r['province'],
                     'tier'         => $tier,
                     'tier_rank'    => $r['rank'],
+                    'tier_size'    => $r['tier_size'],
                     'bucket'       => $r['bucket'],
                     'total_pct'    => $r['total_pct'],
                     'adjective'    => $r['adjective_label'],

@@ -141,19 +141,16 @@
                         <div class="pa-4 d-flex flex-column gap-3">
                             <div v-for="(d, i) in directors" :key="d.id + '-' + d.tier">
                                 <div class="d-flex align-center gap-2 mb-1">
-                                    <!-- Rank badge -->
-                                    <v-avatar
-                                        :color="i === 0 ? 'amber' : i === 1 ? 'grey-lighten-1' : i === 2 ? 'brown-lighten-2' : 'blue-lighten-5'"
-                                        size="22"
-                                        rounded="sm"
-                                    >
-                                        <span class="text-caption font-weight-bold" style="font-size:10px;">{{ i + 1 }}</span>
-                                    </v-avatar>
                                     <div class="flex-1-1">
                                         <div class="d-flex align-center justify-space-between">
                                             <div>
                                                 <div class="text-body-2 font-weight-medium">{{ d.name || '—' }}</div>
-                                                <div class="text-caption text-medium-emphasis">{{ d.province }}</div>
+                                                <!-- Official national rank within the tier; the region's
+                                                     provinces are not ranked against each other. -->
+                                                <div class="text-caption text-medium-emphasis">
+                                                    {{ d.province }} · <span class="text-capitalize">{{ d.tier }}</span>
+                                                    <template v-if="d.tier_rank"> · #{{ d.tier_rank }} of {{ d.tier_size }} nationally</template>
+                                                </div>
                                             </div>
                                             <div class="text-right">
                                                 <div class="text-body-2 font-weight-bold" :style="{ color: rateColor(d.total_pct) }">
@@ -381,7 +378,7 @@ const exportPDF = async () => {
 const rateColor = (rate) => rate >= 70 ? 'success' : rate >= 40 ? 'warning' : 'error';
 
 const bucketColor = (b) => ({
-    Top: 'success', Average: 'warning', Under: 'error',
+    Top: 'success', Average: 'warning', Low: 'error',
 }[b] ?? 'grey');
 
 const roleColor = (r) => ({

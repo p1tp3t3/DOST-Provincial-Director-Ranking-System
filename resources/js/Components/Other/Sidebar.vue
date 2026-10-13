@@ -21,6 +21,7 @@ import {
     RiNewspaperLine,
     RiMapPin2Fill,
     RiArchiveStackFill,
+    RiCheckboxCircleFill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -91,6 +92,7 @@ const tabs = computed(() => {
                         { name: 'Auto User Generator', href: '/users/auto-generator',  icon: RiFile2Fill   },
                     ]
                 },
+                { name: 'KPI Entry',       href: '/provincial-kpi', icon: RiEdit2Fill },
                 { name: 'Province Info',   href: '/province-info',  icon: RiMapPin2Fill },
                 { name: 'Employees',        href: '/employees',       icon: RiTeamFill  },
                 { name: 'Activity Logs',    href: '/activity-logs',   icon: RiListView  },
@@ -98,8 +100,9 @@ const tabs = computed(() => {
             ];
         case 'provincial_director':
             return [
-                { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Employees', href: '/employees', icon: RiTeamFill       },
+                { name: 'Dashboard',  href: '/dashboard',      icon: RiDashboard2Fill     },
+                { name: 'KPI Review', href: '/provincial-kpi', icon: RiCheckboxCircleFill },
+                { name: 'Employees',  href: '/employees',      icon: RiTeamFill           },
                 { name: 'Reports',   href: '/provincial-director-report',    icon: RiFileList3Fill  },
             ];
         case 'regional_director':

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\KPICategory;
-use App\Models\Province;
+use App\Models\KpiQuarterApproval;
 use App\Models\Region;
 use App\Models\User;
+use App\Services\ProvinceOverviewService;
+use App\Services\RankingRelease;
 use App\Services\RankingService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -16,8 +18,8 @@ class DashboardController extends Controller
     public function index()
     {
         switch (auth()->user()->role) {
-            case 'super_admin':           return self::super_admin_dashboard();
-            case 'sub_admin':             return self::sub_admin_dashboard();
+            case 'super_admin':
+            case 'sub_admin':             return self::national_dashboard();
             case 'regional_director':     return self::regional_director_dashboard();
             case 'provincial_admin':      return self::provincial_admin_dashboard();
             case 'provincial_director':   return self::director_dashboard();
@@ -25,29 +27,116 @@ class DashboardController extends Controller
         }
     }
 
-    private function super_admin_dashboard()
+    // Super Admin and Sub Admin share the national dashboard.
+    private function national_dashboard()
     {
-        $payload = self::build_ranking_payload();
+        return inertia('Admin/Dashboard/Main', self::build_dashboard_payload());
+    }
 
-        // Provinces that reported any KPI data for the most recent year — lets the
-        // central office spot data-collection gaps at a glance.
-        $latestYear  = $payload['available_years'][0] ?? null;
-        $activeProvinces = $latestYear
-            ? DB::table('provincial_director_kpis as pk')
-                ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
-                ->join('user_province as up', 'up.user_id', '=', 'u.id')
-                ->where('pk.year', $latestYear)
-                ->distinct()->count('up.province_id')
-            : 0;
+    // A regional director gets the same dashboard, limited to the provinces in
+    // their region. Only provincial offices are ranked: each province keeps the
+    // official rank it earned in its tier nationally — the region's provinces
+    // are never ranked among themselves.
+    private function regional_director_dashboard()
+    {
+        $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
 
         return inertia('Admin/Dashboard/Main', [
-            'total_provinces'             => Province::count(),
-            'total_users'                 => User::count(),
-            'total_directors'             => User::whereRole('provincial_director')->count(),
-            'total_employees'             => User::whereRole('employee')->count(),
-            'active_reporting_provinces'  => $activeProvinces,
-            ...$payload,
+            'scope' => ['region' => $region->name],
+            ...self::build_dashboard_payload($region->provinces->pluck('id')->toArray()),
         ]);
+    }
+
+    // What a province row carries only once its year's rankings are released.
+    private const RANKING_FIELDS = [
+        'rank', 'bucket', 'tier_size', 'total', 'total_pct', 'adjective_label',
+        'subtotals', 'subtotals_pct', 'kpi_scores', 'category_ranks',
+    ];
+
+    // Payload for the shared dashboard. Released years (see RankingRelease)
+    // carry official rankings; years still waiting for release — including the
+    // current year, from day one — carry only each province's submission
+    // progress, so their partial scores aren't shown anywhere. $provinceIds
+    // limits which provinces are returned without changing anyone's rank.
+    private static function build_dashboard_payload(?array $provinceIds = null): array
+    {
+        $svc     = new RankingService();
+        $release = app(RankingRelease::class);
+
+        $released = $release->releasedYears();
+        $pending  = $release->pendingYears();
+        $current  = (int) now()->year;
+        if (!in_array($current, $released, true) && !in_array($current, $pending, true) && !$release->isReleased($current)) {
+            array_unshift($pending, $current);
+        }
+
+        // Entry KPIs are the ones a director fills in by hand (the delinquency %
+        // is derived from two of them); the scored ones also need a target.
+        $entryKpis   = DB::table('kpis')->whereNull('deleted_at')->whereNull('derivation_type')->get(['id', 'is_scored']);
+        $submissions = self::count_submissions($provinceIds, $entryKpis);
+        $approved    = KpiQuarterApproval::query()
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('province_id', $provinceIds))
+            ->selectRaw('province_id, year, COUNT(DISTINCT quarter) as quarters')
+            ->groupBy('province_id', 'year')->get()
+            ->mapWithKeys(fn($r) => ["{$r->year}-{$r->province_id}" => (int) $r->quarters]);
+
+        $build = function (int $year, bool $isReleased) use ($svc, $provinceIds, $submissions, $approved) {
+            $tiers = $provinceIds === null ? $svc->rankByYear($year) : $svc->officialRankingsFor($year, $provinceIds);
+            foreach ($tiers as &$rows) {
+                foreach ($rows as &$row) {
+                    $row['province_url_id']   = Crypt::encrypt($row['province_id']);
+                    $row['submission']        = $submissions[$year][$row['province_id']] ?? ['accomplished' => 0, 'targets' => 0];
+                    $row['approved_quarters'] = $approved["{$year}-{$row['province_id']}"] ?? 0;
+                    if (!$isReleased) {
+                        $row = array_diff_key($row, array_flip(self::RANKING_FIELDS));
+                    }
+                }
+            }
+            unset($rows, $row);
+            return $tiers;
+        };
+
+        return [
+            'available_years'     => $released,
+            'pending_years'       => $pending,
+            'release'             => collect([...$released, ...$pending])->mapWithKeys(fn($y) => [$y => $release->status($y)]),
+            'kpi_categories'      => KPICategory::catalog(),
+            'rankings_by_year'    => collect($released)->mapWithKeys(fn($y) => [$y => $build($y, true)]),
+            'pending_by_year'     => collect($pending)->mapWithKeys(fn($y) => [$y => $build($y, false)]),
+            'submission_expected' => [
+                'accomplished' => $entryKpis->count(),
+                'targets'      => $entryKpis->where('is_scored', true)->count(),
+            ],
+        ];
+    }
+
+    // Per year and province: how many entry KPIs have an accomplishment, and how
+    // many scored ones have a usable (> 0) target. Values are parsed the same way
+    // RankingService scores them, so "blank", "-" and "n/a" count as missing.
+    private static function count_submissions(?array $provinceIds, Collection $entryKpis): array
+    {
+        $scoredIds = $entryKpis->where('is_scored', true)->pluck('id')->flip();
+
+        $rows = DB::table('provincial_director_kpis as pk')
+            ->whereNotNull('pk.province_id')
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('pk.province_id', $provinceIds))
+            ->whereIn('pk.kpi_id', $entryKpis->pluck('id'))
+            ->select('pk.province_id', 'pk.year', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[$r->year][$r->province_id] ??= ['accomplished' => 0, 'targets' => 0];
+
+            if (RankingService::parseNumber($r->accomplished) !== null) {
+                $out[$r->year][$r->province_id]['accomplished']++;
+            }
+            $target = RankingService::parseNumber($r->target);
+            if (isset($scoredIds[$r->kpi_id]) && $target !== null && $target > 0) {
+                $out[$r->year][$r->province_id]['targets']++;
+            }
+        }
+        return $out;
     }
 
     public function map_index()
@@ -64,9 +153,10 @@ class DashboardController extends Controller
     // (e.g. all provinces within a Regional Admin's region).
     private static function build_ranking_payload(?array $provinceIds = null): array
     {
-        $svc = new RankingService();
+        $svc   = new RankingService();
+        $years = app(RankingRelease::class)->releasedYears();
 
-        $rankings = $svc->rankAllYears($provinceIds);
+        $rankings = $svc->rankAllYears($provinceIds, $years);
         foreach ($rankings as &$tiers) {
             foreach ($tiers as &$records) {
                 foreach ($records as &$record) {
@@ -77,147 +167,60 @@ class DashboardController extends Controller
         unset($tiers, $records, $record);
 
         return [
-            'available_years'  => $svc->availableYears(),
+            'available_years'  => $years,
             'kpi_categories'   => KPICategory::catalog(),
             'rankings_by_year' => $rankings,
             'regions'          => Region::orderBy('name')->get(['id', 'name', 'island_under']),
         ];
     }
 
-    private function sub_admin_dashboard()
+    // The provincial admin enters the province's figures and manages its
+    // accounts, so their dashboard is a to-do list: what's due, how complete
+    // it is, what needs fixing — plus a compact view of where they stand.
+    private function provincial_admin_dashboard()
     {
-        $payload = self::build_ranking_payload();
+        $province = auth()->user()->province ?? abort(403, 'Your account is not assigned to a province.');
+        $svc      = app(ProvinceOverviewService::class);
+        $director = User::whereRole('provincial_director')->whereProvince($province->id)->with('profile')->first();
 
-        $latestYear      = $payload['available_years'][0] ?? null;
-        $activeProvinces = $latestYear
-            ? DB::table('provincial_director_kpis as pk')
-                ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
-                ->join('user_province as up', 'up.user_id', '=', 'u.id')
-                ->where('pk.year', $latestYear)
-                ->distinct()->count('up.province_id')
-            : 0;
+        $reporting = $svc->reporting($province->id);
 
-        return inertia('Admin/Dashboard/Main', [
-            'total_provinces'            => Province::count(),
-            'total_users'                => User::count(),
-            'total_directors'            => User::whereRole('provincial_director')->count(),
-            'total_employees'            => User::whereRole('employee')->count(),
-            'active_reporting_provinces' => $activeProvinces,
-            ...$payload,
+        return inertia('ProvincialAdmin/Dashboard/Main', [
+            'province'       => ['name' => $province->name, 'category' => $province->category],
+            'reporting'      => $reporting,
+            'attention'      => $svc->attention($reporting, $director !== null),
+            'records'        => $svc->records($province->id, $director?->id),
+            'recent_entries' => $svc->recentEntries($province->id),
+            'staff'          => $svc->staff($province->id, $director),
+            'standing'       => $svc->performance($province->id)['standing'],
+            'release'        => app(RankingRelease::class)->status($reporting['year']),
         ]);
     }
 
-    private function provincial_admin_dashboard()
-    {
-        $payload = self::build_province_payload(auth()->user()->province_id);
-
-        return inertia('ProvincialAdmin/Dashboard/Main', $payload);
-    }
-
-    // Shared province-level dashboard payload used by provincial_admin.
-    // Returns employees, director, ranking, the category matrix, and recent
-    // logs for the given province.
-    private static function build_province_payload(int $provinceId): array
-    {
-        $employees = User::whereRole('employee')
-            ->whereProvince($provinceId)
-            ->with('profile')
-            ->get()
-            ->map(fn($e) => [
-                'id'               => $e->id,
-                'dost_employee_id' => $e->dost_employee_id,
-                'name'             => trim(implode(' ', array_filter([
-                    $e->profile?->first_name,
-                    $e->profile?->middle_name ? $e->profile->middle_name[0] . '.' : null,
-                    $e->profile?->last_name,
-                ]))),
-                'position'        => $e->profile?->position ?? '—',
-                'profile_picture' => $e->profile?->profile_picture,
-            ]);
-
-        $director = User::whereRole('provincial_director')
-            ->whereProvince($provinceId)
-            ->with('profile')
-            ->first();
-
-        $svc             = new RankingService();
-        $availableYears  = $svc->availableYears();
-        $latestYear      = $availableYears[0] ?? null;
-        $provinceRanking = null;
-
-        if ($latestYear) {
-            $yearData = $svc->rankByYear($latestYear);
-            foreach ($yearData as $rows) {
-                foreach ($rows as $row) {
-                    if (isset($row['province_id']) && $row['province_id'] === $provinceId) {
-                        $provinceRanking = $row;
-                        break 2;
-                    }
-                }
-            }
-        }
-
-        $recentLogs = ActivityLog::with('user.profile')
-            ->whereHas('user', fn($q) => $q->whereProvince($provinceId))
-            ->latest('created_at')
-            ->take(10)
-            ->get()
-            ->map(fn($log) => [
-                'id'          => $log->id,
-                'name'        => trim(implode(' ', array_filter([
-                    $log->user?->profile?->first_name,
-                    $log->user?->profile?->last_name,
-                ]))),
-                'role'        => $log->user?->role,
-                'type'        => $log->type,
-                'description' => $log->description,
-                'created_at'  => $log->created_at,
-            ]);
-
-        return [
-            'total_employees'  => $employees->count(),
-            'employees'        => $employees,
-            // The per-category score cards read their label and weight from
-            // here, so a rename or re-weight reaches this dashboard too.
-            'kpi_categories'   => KPICategory::catalog(),
-            'director'         => $director ? [
-                'id'               => $director->id,
-                'dost_employee_id' => $director->dost_employee_id,
-                'name'             => trim(implode(' ', array_filter([
-                    $director->profile?->prefix,
-                    $director->profile?->first_name,
-                    $director->profile?->middle_name,
-                    $director->profile?->last_name,
-                    $director->profile?->suffix,
-                ]))),
-                'profile_picture'  => $director->profile?->profile_picture,
-            ] : null,
-            'province_ranking' => $provinceRanking,
-            'latest_year'      => $latestYear,
-            'recent_logs'      => $recentLogs,
-        ];
-    }
-
+    // The provincial director approves the figures and answers for the
+    // province's standing: where it ranks, what's waiting for them, and where
+    // the points are being lost.
     private function director_dashboard()
     {
-        $user     = auth()->user();
-        $province = $user->province;
+        $province  = auth()->user()->province ?? abort(403, 'Your account is not assigned to a province.');
+        $svc       = app(ProvinceOverviewService::class);
+        $reporting = $svc->reporting($province->id);
 
-        $provinceIds = null;
-        $myRegion    = null;
-        if ($province?->region_id) {
-            $region      = Region::with('provinces')->find($province->region_id);
-            $myRegion    = $region?->name;
-            $provinceIds = $region?->provinces->pluck('id')->toArray();
-        }
-
-        $payload = self::build_province_payload($user->province_id);
-        unset($payload['recent_logs']);
-
-        return inertia('ProvincialDirector/Dasbboard/Main', [
-            ...$payload,
-            'my_region'   => $myRegion,
-            ...self::build_ranking_payload($provinceIds),
+        return inertia('ProvincialDirector/Dashboard/Main', [
+            'province'   => ['name' => $province->name, 'category' => $province->category],
+            'categories' => collect(KPICategory::catalog())->map(fn($c) => [
+                'code' => $c['code'], 'name' => $c['name'], 'weight' => $c['weight'],
+            ])->values(),
+            ...$svc->performance($province->id),
+            'release'    => app(RankingRelease::class)->status($reporting['year']),
+            'awaiting_approval' => [
+                'year'     => $reporting['year'],
+                'quarters' => collect($reporting['quarters'])
+                    ->filter(fn($q) => $q['has_data'] && !$q['approved_by'])
+                    ->map(fn($q) => ['quarter' => $q['quarter'], 'entered' => $q['entered']])
+                    ->values(),
+                'expected' => $reporting['expected']['accomplished'],
+            ],
         ]);
     }
 
@@ -237,34 +240,6 @@ class DashboardController extends Controller
         return inertia('Employee/Dashboard/Main', [
             'my_province' => $province?->name,
             'my_region'   => $myRegion,
-            ...self::build_ranking_payload($provinceIds),
-        ]);
-    }
-
-    private function regional_director_dashboard()
-    {
-        $user        = auth()->user();
-        $region      = Region::with('provinces')->findOrFail($user->region_id);
-        $provinceIds = $region->provinces->pluck('id')->toArray();
-
-        $latestYear      = (new RankingService())->availableYears()[0] ?? null;
-        $activeProvinces = $latestYear
-            ? DB::table('provincial_director_kpis as pk')
-                ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
-                ->join('user_province as up', 'up.user_id', '=', 'u.id')
-                ->where('pk.year', $latestYear)
-                ->whereIn('up.province_id', $provinceIds)
-                ->distinct()->count('up.province_id')
-            : 0;
-
-        return inertia('RegionalDirector/Dashboard/Main', [
-            'region_name'                => $region->name,
-            'region_id'                  => $region->id,
-            'total_provinces'            => count($provinceIds),
-            'total_users'                => User::whereProvinceIn($provinceIds)->count(),
-            'total_directors'            => User::whereRole('provincial_director')->whereProvinceIn($provinceIds)->count(),
-            'total_employees'            => User::whereRole('employee')->whereProvinceIn($provinceIds)->count(),
-            'active_reporting_provinces' => $activeProvinces,
             ...self::build_ranking_payload($provinceIds),
         ]);
     }

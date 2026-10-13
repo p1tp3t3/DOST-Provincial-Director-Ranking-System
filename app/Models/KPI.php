@@ -13,7 +13,7 @@ class KPI extends Model
     public $timestamps = false;
     protected $fillable = [
         'category_id', 'code', 'name', 'weight',
-        'is_scored', 'inverse_scoring', 'derivation_type', 'sort_order',
+        'is_scored', 'inverse_scoring', 'derivation_type', 'rollup_rule', 'sort_order',
     ];
     protected $casts = [
         'weight'          => 'float',

@@ -49,6 +49,7 @@ class KPICategory extends Model
                     'is_scored'       => (bool) $k->is_scored,
                     'inverse_scoring' => (bool) $k->inverse_scoring,
                     'derivation_type' => $k->derivation_type,
+                    'rollup_rule'     => $k->rollup_rule ?? 'sum',
                 ], $kpiExtra ? $kpiExtra($k) : []))->values()->toArray(),
             ])->values()->toArray();
     }

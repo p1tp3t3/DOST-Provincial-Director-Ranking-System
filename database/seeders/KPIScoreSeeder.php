@@ -110,6 +110,7 @@ class KPIScoreSeeder extends Seeder
             }
 
             $batch[] = [
+                'province_id'            => $provinceId,
                 'provincial_director_id' => $directorId,
                 'kpi_id'                 => $kpiId,
                 'year'                   => (int) $row['year'],

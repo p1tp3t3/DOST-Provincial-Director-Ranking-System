@@ -140,10 +140,10 @@
                 $cls   = $rate >= 70 ? 'badge-success' : ($rate >= 40 ? 'badge-warning' : 'badge-error');
                 $color = $rate >= 70 ? '#2e7d32'       : ($rate >= 40 ? '#f57f17'       : '#c62828');
                 $bk    = $d['bucket'];
-                $bkCls = match($bk) { 'Top' => 'badge-success', 'Average' => 'badge-warning', 'Under' => 'badge-error', default => 'badge-grey' };
+                $bkCls = match($bk) { 'Top' => 'badge-success', 'Average' => 'badge-warning', 'Low' => 'badge-error', default => 'badge-grey' };
             @endphp
             <tr>
-                <td style="text-align:center; font-weight:bold;">{{ $d['tier_rank'] ?? '—' }}</td>
+                <td style="text-align:center; font-weight:bold;">{{ $d['tier_rank'] ? '#' . $d['tier_rank'] . ' of ' . $d['tier_size'] : '—' }}</td>
                 <td><strong>{{ $d['name'] ?: '—' }}</strong></td>
                 <td>{{ $d['province'] }}</td>
                 <td>{{ ucfirst($d['tier']) }}</td>

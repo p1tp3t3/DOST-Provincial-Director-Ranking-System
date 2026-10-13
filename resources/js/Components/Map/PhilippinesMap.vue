@@ -327,6 +327,14 @@ const props = defineProps({
     // region in its island. Falls back to `scores` so existing callers that
     // don't supply this prop continue to work.
     rankingPool:      { type: Array,  default: null },
+    // Show the "#K of N" chip on island / region panels. Turned off where the
+    // map only has one region's provinces (a regional director's dashboard),
+    // since areas are never ranked there.
+    rankAreas:        { type: Boolean, default: true },
+    // Region (dashboard name, e.g. 'Region I') the map treats as home: Reset
+    // returns there instead of the whole country. Set on a regional director's
+    // dashboard, whose map only covers their region.
+    homeRegion:       { type: String, default: null },
     // The live KPI matrix (KPICategory::catalog()). Drives the order and the
     // display names of the side panel's per-category breakdown, so a category
     // renamed, re-weighted or added on the KPI Catalog page shows up here too.
@@ -714,7 +722,7 @@ const buildIslandPanel = (islandValue) => {
         regionCount,
         avgScore:      avg,
         avgColor:      scoreColor(avg),
-        rank:          rankIdx >= 0 ? rankIdx + 1 : null,
+        rank:          props.rankAreas && rankIdx >= 0 ? rankIdx + 1 : null,
         totalIslands:  ranking.length,
         tierCounts: {
             top: islandScores.filter(s => s.bucket === 'Top').length,
@@ -818,7 +826,7 @@ const buildRegionPanel = (regionCode) => {
 
     const ranking     = computeRegionRanking();
     const rankIdx     = ranking.findIndex(r => r.code === regionCode);
-    const rank        = rankIdx >= 0 ? rankIdx + 1 : null;
+    const rank        = props.rankAreas && rankIdx >= 0 ? rankIdx + 1 : null;
     const totalRegions = ranking.length;
 
     return {
@@ -970,6 +978,11 @@ const HOME = { center: [12.2, 122.5], zoom: 5 };
 const smartFlyTo = (targetBounds, { maxZoom = 9, padding = [50, 50] } = {}) => {
     if (!map) return;
     map.stop();
+    // Opening on a scope that was already selected: jump straight there.
+    if (instantFly) {
+        map.fitBounds(targetBounds, { padding, maxZoom, animate: false });
+        return;
+    }
     const alreadyVisible = map.getBounds().contains(targetBounds);
     const atOverview     = map.getZoom() <= HOME.zoom + 0.5;
 
@@ -1130,26 +1143,46 @@ const REGION_NAME_TO_CODE = Object.fromEntries(
     Object.entries(REGION_LABELS).map(([code, label]) => [label.split(' - ')[0], Number(code)])
 );
 
+const toIsland   = (v) => (v && v !== 'all') ? v.toLowerCase() : '';
+const toRegion   = (v) => (v && v !== 'all') ? String(REGION_NAME_TO_CODE[v] ?? '') : '';
+const toProvince = (v) => (v && v !== 'all') ? v : '';
+
 watch(() => props.island, (v) => {
-    const mapped = (v && v !== 'all') ? v.toLowerCase() : '';
+    const mapped = toIsland(v);
     if (selIsland.value === mapped) return;
     selIsland.value = mapped;
     if (ready.value) onIslandChange();
 });
 
 watch(() => props.region, (v) => {
-    const mapped = (v && v !== 'all') ? String(REGION_NAME_TO_CODE[v] ?? '') : '';
+    const mapped = toRegion(v);
     if (selRegion.value === mapped) return;
     selRegion.value = mapped;
     if (ready.value) onRegionChange();
 });
 
 watch(() => props.province, (v) => {
-    const mapped = (v && v !== 'all') ? v : '';
+    const mapped = toProvince(v);
     if (selProvince.value === mapped) return;
     selProvince.value = mapped;
     if (ready.value) onProvinceChange();
 });
+
+// The watchers above only fire on later changes, so once the map has loaded,
+// open it on whatever scope the dashboard already has selected — a regional
+// director's region, or a filter picked before switching to the Map view.
+let instantFly = false;
+const applyInitialScope = () => {
+    selIsland.value   = toIsland(props.island);
+    selRegion.value   = toRegion(props.region);
+    selProvince.value = toProvince(props.province);
+
+    instantFly = true;
+    if (selProvince.value)    onProvinceChange();
+    else if (selRegion.value) onRegionChange();
+    else if (selIsland.value) onIslandChange();
+    instantFly = false;
+};
 
 const selectRegionFromList = (code) => {
     const island = REGION_TO_ISLAND[code];
@@ -1188,6 +1221,14 @@ const selectProvinceFromList = (name) => {
 };
 
 const resetView = () => {
+    // A map anchored to one region resets to that region, not the country.
+    const home = toRegion(props.homeRegion);
+    if (home) {
+        selProvince.value = selCstc.value = '';
+        selRegion.value = home;
+        onRegionChange();
+        return;
+    }
     selIsland.value = selRegion.value = selProvince.value = selCstc.value = '';
     panel.value = null;
     pendingFly  = false;
@@ -1419,6 +1460,7 @@ onMounted(async () => {
     cstcLayer.addTo(map);
 
     ready.value = true;
+    applyInitialScope();
 });
 
 const rebuildPanel = () => {

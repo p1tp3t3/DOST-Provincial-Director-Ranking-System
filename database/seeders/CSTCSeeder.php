@@ -88,6 +88,7 @@ class CSTCSeeder extends Seeder
             if ($kpiId === null) continue;
 
             $batch[] = [
+                'province_id'            => $provinces[$row['province']]->id,
                 'provincial_director_id' => $directorId,
                 'kpi_id'                 => $kpiId,
                 'year'                   => (int) $row['year'],

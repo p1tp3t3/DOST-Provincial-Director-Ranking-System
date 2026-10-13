@@ -1,5 +1,29 @@
 <template>
     <Head title="KPI Data" />
+    <div class="d-flex flex-column gap-3">
+
+    <!-- Reporting deadlines: provinces enter each quarter until its deadline;
+         after it the quarter is locked (the Q4 deadline also locks targets). -->
+    <v-card border elevation="0" rounded="lg">
+        <div class="d-flex align-center gap-2 px-4 pt-3 pb-2 flex-wrap">
+            <v-icon size="18" color="indigo">mdi-calendar-clock</v-icon>
+            <span class="text-body-1 font-weight-bold">Reporting Deadlines</span>
+            <span class="text-caption text-medium-emphasis">Last day provinces can enter each quarter. After it, changes need an approved correction request; the Q4 deadline also locks the year's targets.</span>
+        </div>
+        <v-divider />
+        <div class="d-flex align-end gap-3 px-4 py-3 flex-wrap">
+            <v-select v-model="deadlineYear" :items="deadline_years" label="Year" density="compact" variant="outlined" hide-details style="max-width:110px;" />
+            <v-text-field
+                v-for="q in [1, 2, 3, 4]" :key="q"
+                v-model="deadlineForm[q]"
+                :label="`Q${q} deadline`"
+                type="date" density="compact" variant="outlined" hide-details clearable
+                style="max-width:180px;"
+            />
+            <v-btn color="indigo" size="small" prepend-icon="mdi-content-save" :loading="savingDeadlines" :disabled="!deadlinesChanged" @click="saveDeadlines">Save deadlines</v-btn>
+        </div>
+    </v-card>
+
     <v-card border elevation="0" rounded="lg">
 
         <!-- Header -->
@@ -100,15 +124,15 @@
             </template>
 
             <template #item.actions="{ item }">
+                <!-- Figures belong to the province, so they can be opened even
+                     while the director post is vacant. -->
                 <v-btn
-                    v-if="item.director_id"
                     size="x-small"
                     variant="tonal"
                     color="indigo"
                     prepend-icon="mdi-pencil"
                     @click="editProvince(item)"
-                >Edit</v-btn>
-                <span v-else class="text-caption text-disabled">No director</span>
+                >Open</v-btn>
             </template>
 
             <template #no-data>
@@ -117,16 +141,41 @@
         </v-data-table>
 
     </v-card>
+    </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     provinces:       { type: Array,  default: () => [] },
     available_years: { type: Array,  default: () => [] },
+    deadline_years:  { type: Array,  default: () => [] },
+    // { <year>: { <quarter>: 'YYYY-MM-DD' } }
+    deadlines:       { type: Object, default: () => ({}) },
 });
+
+// ── Reporting deadlines ───────────────────────────────────────────────────
+const deadlineYear    = ref(new Date().getFullYear());
+const deadlineForm    = ref({});
+const savingDeadlines = ref(false);
+
+const savedDeadlines = (year) => Object.fromEntries([1, 2, 3, 4].map(q => [q, props.deadlines?.[year]?.[q] ?? null]));
+watch([deadlineYear, () => props.deadlines], () => { deadlineForm.value = savedDeadlines(deadlineYear.value); }, { immediate: true });
+
+const deadlinesChanged = computed(() =>
+    [1, 2, 3, 4].some(q => (deadlineForm.value[q] || null) !== savedDeadlines(deadlineYear.value)[q])
+);
+
+const saveDeadlines = () => {
+    const deadlines = Object.fromEntries([1, 2, 3, 4].map(q => [q, deadlineForm.value[q] || null]));
+    router.put(`/kpi-deadlines/${deadlineYear.value}`, { deadlines }, {
+        preserveScroll: true,
+        onStart:  () => { savingDeadlines.value = true; },
+        onFinish: () => { savingDeadlines.value = false; },
+    });
+};
 
 const search       = ref('');
 const selectedTier = ref('all');

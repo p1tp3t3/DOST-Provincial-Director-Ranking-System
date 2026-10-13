@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Province;
 use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
+use App\Services\RankingRelease;
 use App\Services\RankingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -135,7 +136,7 @@ class ProvincialSubAdminReportController extends Controller
         // director's submitted KPI rows; ranking-matrix fields (tier/bucket) are merged
         // on top for any section that needs them.
         $toNum        = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
-        $kpis         = ProvincialDirectorKPI::where('provincial_director_id', $director->id)->get();
+        $kpis         = ProvincialDirectorKPI::where('province_id', $provinceId)->get();
         $target       = $kpis->sum(fn($k) => $toNum($k->target));
         $accomplished = $kpis->sum(fn($k) => $toNum($k->accomplished));
         $base = [
@@ -147,7 +148,8 @@ class ProvincialSubAdminReportController extends Controller
         ];
 
         $svc   = new RankingService();
-        $years = $svc->availableYears();
+        // Rankings only for released years (see RankingRelease).
+        $years = app(RankingRelease::class)->releasedYears();
         if (empty($years)) return $base;
         $latestYear = $years[0];
 

@@ -3,25 +3,29 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use App\Models\KPI;
 use App\Models\Linkage;
-use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
+use App\Services\KpiEntryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 
 // Evidence-based KPI module backing the `func_linkages_established` KPI.
-// Adding/removing rows here is the only way to change the accomplishment count —
-// the count is mirrored back into provincial_director_kpis.accomplished so
-// existing scoring continues to work without changes.
+// Adding/removing rows here is the only way to change the accomplishment count.
+// Records belong to the province; each quarter's count comes from the records'
+// signing dates and is rolled up into the annual figure (KpiEntryService), so
+// a record dated in a locked quarter can't be changed.
 class LinkageController extends Controller
 {
+    private const KPI_CODE = 'func_linkages_established';
+
+    public function __construct(private KpiEntryService $entries) {}
+
     public function index(int $directorId, int $year)
     {
         $director = $this->authorizeDirector($directorId);
 
-        $linkages = Linkage::where('provincial_director_id', $director->id)
+        $linkages = Linkage::where('province_id', $director->province_id)
             ->where('year', $year)
             ->orderByDesc('date_signed')
             ->orderByDesc('id')
@@ -41,14 +45,12 @@ class LinkageController extends Controller
             ? trim(($profile->first_name ?? '') . ' ' . ($profile->middle_name ?? '') . ' ' . ($profile->last_name ?? ''))
             : '—';
 
-        $returnUrl = $this->returnUrlFor($director->id, $year);
-
         return inertia('Modules/Linkages/Index', [
             'director'   => ['id' => $director->id, 'name' => $directorName ?: '—'],
             'year'       => $year,
             'linkages'   => $linkages,
             'count'      => $linkages->count(),
-            'return_url' => $returnUrl,
+            'return_url' => $this->returnUrlFor($director, $year),
         ]);
     }
 
@@ -56,19 +58,16 @@ class LinkageController extends Controller
     {
         $director = $this->authorizeDirector($directorId);
         $data     = $this->validated($request);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $data['date_signed']);
 
         Linkage::create([
+            ...$data,
+            'province_id'            => $director->province_id,
             'provincial_director_id' => $director->id,
             'year'                   => $year,
-            'partner_organization'   => $data['partner_organization'],
-            'title'                  => $data['title'],
-            'type'                   => $data['type'],
-            'date_signed'            => $data['date_signed'],
-            'signatories'            => $data['signatories'] ?? null,
-            'remarks'                => $data['remarks'] ?? null,
         ]);
 
-        $this->syncAccomplishedCount($director->id, $year);
+        $this->entries->syncRecordKpi(self::KPI_CODE, $director->province_id, $year, Auth::id());
 
         return back()->with('success', 'Linkage added.');
     }
@@ -76,12 +75,18 @@ class LinkageController extends Controller
     public function update(Request $request, int $directorId, int $year, int $linkageId)
     {
         $director = $this->authorizeDirector($directorId);
-        $linkage  = Linkage::where('provincial_director_id', $director->id)
+        $linkage  = Linkage::where('province_id', $director->province_id)
             ->where('year', $year)
             ->findOrFail($linkageId);
 
         $data = $this->validated($request);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $linkage->date_signed);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $data['date_signed']);
+
         $linkage->update($data);
+
+        // A new signing date can move the record to another quarter.
+        $this->entries->syncRecordKpi(self::KPI_CODE, $director->province_id, $year, Auth::id());
 
         return back()->with('success', 'Linkage updated.');
     }
@@ -89,13 +94,14 @@ class LinkageController extends Controller
     public function destroy(int $directorId, int $year, int $linkageId)
     {
         $director = $this->authorizeDirector($directorId);
-
-        Linkage::where('provincial_director_id', $director->id)
+        $linkage  = Linkage::where('province_id', $director->province_id)
             ->where('year', $year)
-            ->where('id', $linkageId)
-            ->delete();
+            ->findOrFail($linkageId);
 
-        $this->syncAccomplishedCount($director->id, $year);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $linkage->date_signed);
+        $linkage->delete();
+
+        $this->entries->syncRecordKpi(self::KPI_CODE, $director->province_id, $year, Auth::id());
 
         return back()->with('success', 'Linkage removed.');
     }
@@ -129,53 +135,14 @@ class LinkageController extends Controller
         return $director;
     }
 
-    // Mirror the live record count into provincial_director_kpis.accomplished
-    // so the scoring pipeline (RankingService etc.) does not need to change.
-    private function syncAccomplishedCount(int $directorId, int $year): void
+    private function returnUrlFor(User $director, int $year): string
     {
-        $kpi = KPI::where('code', 'func_linkages_established')->first();
-        if (!$kpi) return;
-
-        $count = Linkage::where('provincial_director_id', $directorId)
-            ->where('year', $year)
-            ->count();
-
-        $existing = ProvincialDirectorKPI::where('provincial_director_id', $directorId)
-            ->where('kpi_id', $kpi->id)
-            ->where('year', $year)
-            ->first();
-
-        if ($count === 0) {
-            if ($existing && ($existing->target === null || $existing->target === '')) {
-                $existing->delete();
-            } elseif ($existing) {
-                $existing->update(['accomplished' => null]);
-            }
-            return;
-        }
-
-        ProvincialDirectorKPI::updateOrCreate(
-            [
-                'provincial_director_id' => $directorId,
-                'kpi_id'                 => $kpi->id,
-                'year'                   => $year,
-            ],
-            ['accomplished' => (string) $count]
-        );
-    }
-
-    private function returnUrlFor(int $directorId, int $year): string
-    {
-        $user = Auth::user();
-        if ($user->role === 'provincial_admin') {
+        if (Auth::user()->role === 'provincial_admin') {
             return "/provincial-kpi/{$year}";
         }
         // super admin returns to the province-keyed edit screen
-        $director = User::find($directorId);
-        if ($director && $director->province_id) {
-            $encryptedProvince = \Illuminate\Support\Facades\Crypt::encrypt($director->province_id);
-            return "/kpi-data/{$encryptedProvince}/{$year}";
-        }
-        return '/kpi-data';
+        return $director->province_id
+            ? '/kpi-data/' . Crypt::encrypt($director->province_id) . "/{$year}"
+            : '/kpi-data';
     }
 }

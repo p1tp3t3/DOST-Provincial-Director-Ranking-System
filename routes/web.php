@@ -9,6 +9,8 @@ use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPICatalogController;
 use App\Http\Controllers\Modules\KpiCatalogSnapshotController;
 use App\Http\Controllers\Modules\KPIDataController;
+use App\Http\Controllers\Modules\KpiDeadlineController;
+use App\Http\Controllers\Modules\KpiEntryController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\User\EmployeeController;
@@ -111,13 +113,27 @@ Route::middleware(['auth', 'activation'])->group(function () {
 
     });
 
+    // ── KPI entry: provincial admin enters, provincial director approves ──
+    // Quarterly accomplishments + annual targets for their own province. Locks,
+    // roll-ups and approvals: see KpiEntryService.
+    Route::middleware('role:provincial_admin,provincial_director')->group(function () {
+        Route::get('/provincial-kpi/{year?}', [KpiEntryController::class, 'own'])->whereNumber('year');
+    });
+    Route::middleware('role:provincial_admin')->group(function () {
+        Route::put('/provincial-kpi/{year}', [KpiEntryController::class, 'saveOwn'])->whereNumber('year');
+    });
+    Route::middleware('role:provincial_director')->group(function () {
+        Route::post('/provincial-kpi/{year}/quarters/{quarter}/approve', [KpiEntryController::class, 'approve'])
+            ->whereNumber(['year', 'quarter']);
+    });
+
     // ── KPI Data Editor + Catalog: Super Admin + Sub Admin only ────
-    // Provincial-level roles have no KPI edit access — central admins only.
     Route::middleware('role:super_admin,sub_admin')->group(function () {
-        // Per-province target/accomplished data entry
-        Route::get('/kpi-data',                   [KPIDataController::class, 'index']);
-        Route::get('/kpi-data/{id}/{year?}',      [KPIDataController::class, 'edit']);
-        Route::put('/kpi-data/{director}/{year}', [KPIDataController::class, 'update']);
+        // Any province's figures, on the same quarterly entry screen
+        Route::get('/kpi-data',              [KPIDataController::class, 'index']);
+        Route::get('/kpi-data/{id}/{year?}', [KpiEntryController::class, 'province'])->whereNumber('year');
+        Route::put('/kpi-data/{id}/{year}',  [KpiEntryController::class, 'saveProvince'])->whereNumber('year');
+        Route::put('/kpi-deadlines/{year}',  [KpiDeadlineController::class, 'update'])->whereNumber('year');
 
         // KPI catalog — managed as one shared matrix, not per province
         Route::get('/kpi-catalog',                    [KPICatalogController::class, 'index']);

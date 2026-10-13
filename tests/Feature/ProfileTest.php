@@ -2,84 +2,55 @@
 
 use App\Models\User;
 
-test('profile page is displayed', function () {
-    $user = User::factory()->create();
+// Editing your own profile: admins edit their names, directors and staff only
+// their education; nobody can delete their own account.
 
-    $response = $this
-        ->actingAs($user)
-        ->get('/profile');
-
-    $response->assertOk();
+beforeEach(function () {
+    $this->province = makeProvince();
 });
 
-test('profile information can be updated', function () {
-    $user = User::factory()->create();
+it('shows the profile editor to every role', function ($role) {
+    $user = match ($role) {
+        'super_admin', 'sub_admin' => makeUser($role),
+        'regional_director'        => makeUser($role, null, $this->province->region),
+        default                    => makeUser($role, $this->province),
+    };
+    $this->actingAs($user)->get('/profile')->assertOk()
+        ->assertInertia(fn($page) => $page->component('Other/Profile/Edit')->where('role', $role));
+})->with(['super_admin', 'sub_admin', 'regional_director', 'provincial_admin', 'provincial_director', 'employee']);
 
-    $response = $this
-        ->actingAs($user)
-        ->patch('/profile', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+it('lets an admin update their name', function () {
+    $admin = makeUser('provincial_admin', $this->province);
 
-    $response
+    $this->actingAs($admin)->from('/profile')
+        ->patch('/profile', ['prefix' => 'Engr.', 'first_name' => 'Maria', 'last_name' => 'Santos'])
         ->assertSessionHasNoErrors()
         ->assertRedirect('/profile');
 
-    $user->refresh();
-
-    $this->assertSame('Test User', $user->name);
-    $this->assertSame('test@example.com', $user->email);
-    $this->assertNull($user->email_verified_at);
+    $profile = $admin->fresh()->profile;
+    expect([$profile->prefix, $profile->first_name, $profile->last_name])->toBe(['Engr.', 'Maria', 'Santos']);
 });
 
-test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->patch('/profile', [
-            'name' => 'Test User',
-            'email' => $user->email,
-        ]);
-
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect('/profile');
-
-    $this->assertNotNull($user->refresh()->email_verified_at);
+it('requires an admin\'s first and last name', function () {
+    $admin = makeUser('super_admin');
+    $this->actingAs($admin)->patch('/profile', ['first_name' => ''])->assertSessionHasErrors(['first_name', 'last_name']);
 });
 
-test('user can delete their account', function () {
-    $user = User::factory()->create();
+it('lets directors and staff update only their education', function ($role) {
+    $user   = makeUser($role, $this->province);
+    $before = $user->profile->first_name;
 
-    $response = $this
-        ->actingAs($user)
-        ->delete('/profile', [
-            'password' => 'password',
-        ]);
+    $this->actingAs($user)->patch('/profile', ['education' => ['BS Chemistry', 'MS Physics'], 'first_name' => 'Changed'])
+        ->assertSessionHasNoErrors();
 
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect('/');
+    $profile = $user->fresh()->profile;
+    expect($profile->education_attainment['data'])->toBe(['BS Chemistry', 'MS Physics'])
+        ->and($profile->first_name)->toBe($before);
+})->with(['provincial_director', 'employee']);
 
-    $this->assertGuest();
-    $this->assertNull($user->fresh());
-});
+it('does not let anyone delete their own account', function () {
+    $user = makeUser('employee', $this->province);
+    $this->actingAs($user)->delete('/profile', ['password' => 'password']);
 
-test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->from('/profile')
-        ->delete('/profile', [
-            'password' => 'wrong-password',
-        ]);
-
-    $response
-        ->assertSessionHasErrors('password')
-        ->assertRedirect('/profile');
-
-    $this->assertNotNull($user->fresh());
+    expect(User::find($user->id))->not->toBeNull();
 });

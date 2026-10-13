@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class FacebookPost extends Model
 {
     protected $fillable = [
+        'province_id',
         'provincial_director_id',
         'year',
         'title',
