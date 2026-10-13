@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware\User;
 
+use App\Models\Province;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -57,6 +58,17 @@ class ProfileViewMiddleware
             }
 
             abort(403, 'You can only view the provincial director of your province.');
+        }
+
+        // Regional director → anyone in a province within their region
+        if ($authUser->role === 'regional_director') {
+            $regionProvinceIds = Province::where('region_id', $authUser->region_id)->pluck('id');
+
+            if ($targetUser->provinces->pluck('id')->intersect($regionProvinceIds)->isNotEmpty()) {
+                return $next($request);
+            }
+
+            abort(403, 'You can only view profiles within your assigned region.');
         }
 
         abort(403);

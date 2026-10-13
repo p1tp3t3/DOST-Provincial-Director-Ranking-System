@@ -3,33 +3,17 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use App\Models\KPI;
-use App\Models\KPICategory;
-use App\Models\Province;
-use App\Models\ProvincialDirectorKPI;
-use App\Models\User;
+use App\Models\KpiReportingDeadline;
 use App\Services\RankingService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
-// Super Admin + Sub Admin editor for each province's KPI accomplishment data
-// (target/accomplished per director per year). The KPI catalog itself — name,
-// category, weight, add/delete — is managed as one shared thing, not per
-// province: see KPICatalogController at /kpi-catalog. Lives at /kpi-data and
-// is intentionally separate from the public-facing Province Directories page
-// (read-only). Provincial-level roles have no edit access here at all;
-// central admins are the only ones who can manage the matrix.
+// Super Admin + Sub Admin list of every province's KPI data, plus the quarterly
+// reporting deadlines. Opening a province goes to the same quarterly entry
+// screen the provincial admin uses (KpiEntryController). The KPI catalog itself
+// — name, category, weight, roll-up rule — is managed at /kpi-catalog.
 class KPIDataController extends Controller
 {
-    // KPI codes whose accomplishment is derived from a dedicated record module.
-    // For these, the matrix form must NOT write the accomplishment field —
-    // the module (e.g. LinkageController) is the sole source of truth.
-    private const MODULAR_KPI_CODES = [
-        'func_linkages_established' => '/linkages',
-        'supp_facebook_posts'       => '/facebook-posts',
-    ];
-
     public function index()
     {
         $directorNameSql = "CONCAT_WS(' ',
@@ -57,13 +41,14 @@ class KPIDataController extends Controller
             )
             ->orderBy('p.name')->get();
 
-        $yearsByDirector = DB::table('provincial_director_kpis')
-            ->select('provincial_director_id', DB::raw('GROUP_CONCAT(DISTINCT year ORDER BY year DESC) as years'))
-            ->groupBy('provincial_director_id')->pluck('years', 'provincial_director_id');
+        $yearsByProvince = DB::table('provincial_director_kpis')
+            ->whereNotNull('province_id')
+            ->select('province_id', DB::raw('GROUP_CONCAT(DISTINCT year ORDER BY year DESC) as years'))
+            ->groupBy('province_id')->pluck('years', 'province_id');
 
-        $list = $provinces->map(function ($p) use ($yearsByDirector) {
-            $years = $p->director_id && isset($yearsByDirector[$p->director_id])
-                ? array_values(array_filter(explode(',', $yearsByDirector[$p->director_id])))
+        $list = $provinces->map(function ($p) use ($yearsByProvince) {
+            $years = isset($yearsByProvince[$p->id])
+                ? array_values(array_filter(explode(',', $yearsByProvince[$p->id])))
                 : [];
 
             return [
@@ -71,150 +56,28 @@ class KPIDataController extends Controller
                 'name'        => $p->name,
                 'category'    => $p->category,
                 'director_id' => $p->director_id,
-                'director'    => $p->director_id ? trim($p->director_name) ?: '—' : null,
+                'director'    => $p->director_id ? (trim($p->director_name) ?: '—') : null,
                 'years'       => $years,
                 'years_count' => count($years),
             ];
         })->values();
 
-        $svc = new RankingService();
+        $availableYears = (new RankingService())->availableYears();
+
+        // Deadlines can be set for any year with data, this year, and next.
+        $deadlineYears = collect($availableYears)->map(fn($y) => (int) $y)
+            ->push((int) now()->year, (int) now()->year + 1)
+            ->unique()->sortDesc()->values();
+
+        $deadlines = KpiReportingDeadline::all()
+            ->groupBy('year')
+            ->map(fn($rows) => $rows->mapWithKeys(fn($d) => [$d->quarter => $d->deadline->toDateString()]));
 
         return inertia('Admin/KpiData/Main', [
-            'provinces'        => $list,
-            'available_years'  => $svc->availableYears(),
+            'provinces'       => $list,
+            'available_years' => $availableYears,
+            'deadline_years'  => $deadlineYears,
+            'deadlines'       => $deadlines,
         ]);
-    }
-
-    public function edit(string $id, ?int $year = null)
-    {
-        $provinceId = Crypt::decrypt($id);
-        $province   = Province::findOrFail($provinceId);
-
-        $director = User::whereProvince($provinceId)
-                        ->whereRole('provincial_director')
-                        ->with('profile')
-                        ->first();
-
-        if (!$director) {
-            return back()->withErrors(['no_director' => 'Province has no provincial director assigned.']);
-        }
-
-        $svc            = new RankingService();
-        $availableYears = $svc->availableYears();
-        $year           = $year ?: ($availableYears[0] ?? now()->year);
-
-        $directorYears = DB::table('provincial_director_kpis')
-            ->where('provincial_director_id', $director->id)
-            ->distinct()->orderByDesc('year')->pluck('year')->values()->toArray();
-
-        // Existing values keyed by kpi_id so the form can pre-populate
-        $values = ProvincialDirectorKPI::where('provincial_director_id', $director->id)
-            ->where('year', $year)
-            ->get()
-            ->keyBy('kpi_id')
-            ->map(fn($r) => ['target' => $r->target, 'accomplished' => $r->accomplished])
-            ->toArray();
-
-        $categories = KPICategory::catalog(fn($k) => [
-            'target'       => $values[$k->id]['target']       ?? '',
-            'accomplished' => $values[$k->id]['accomplished'] ?? '',
-        ]);
-
-        $profile = $director->profile;
-        $directorName = $profile
-            ? trim(($profile->first_name ?? '') . ' ' . ($profile->middle_name ?? '') . ' ' . ($profile->last_name ?? ''))
-            : '—';
-
-        return inertia('Admin/KpiData/Edit', [
-            'province'           => [
-                'id'       => Crypt::encrypt($province->id),
-                'name'     => $province->name,
-                'category' => $province->category,
-            ],
-            'director'           => [
-                'id'   => $director->id,
-                'name' => $directorName ?: '—',
-            ],
-            'year'               => (int) $year,
-            'available_years'    => $availableYears,
-            'director_years'     => $directorYears,
-            'kpi_categories'     => $categories,
-            'modular_kpi_codes'  => self::MODULAR_KPI_CODES,
-        ]);
-    }
-
-    public function update(Request $request, int $directorId, int $year)
-    {
-        $request->validate([
-            'values'                 => ['required', 'array'],
-            'values.*.kpi_id'        => ['required', 'integer', 'exists:kpis,id'],
-            'values.*.target'        => ['nullable', 'string', 'max:255'],
-            'values.*.accomplished'  => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $director = User::where('id', $directorId)
-            ->whereRole('provincial_director')->firstOrFail();
-
-        $modularKpiIds = KPI::whereIn('code', array_keys(self::MODULAR_KPI_CODES))->pluck('id')->all();
-
-        DB::transaction(function () use ($request, $director, $year, $modularKpiIds) {
-            foreach ($request->input('values') as $row) {
-                $target       = $this->normalizeInput($row['target']       ?? null);
-                $accomplished = $this->normalizeInput($row['accomplished'] ?? null);
-                $isModular    = in_array((int) $row['kpi_id'], $modularKpiIds, true);
-
-                // For modular KPIs, accomplishment is owned by the module — never
-                // touch it from this form. Only target is editable here.
-                if ($isModular) {
-                    if ($target === null) {
-                        // Leave row alone if it exists (module may have set accomplished);
-                        // only clear the target.
-                        ProvincialDirectorKPI::where('provincial_director_id', $director->id)
-                            ->where('kpi_id', $row['kpi_id'])
-                            ->where('year', $year)
-                            ->update(['target' => null]);
-                        continue;
-                    }
-                    ProvincialDirectorKPI::updateOrCreate(
-                        [
-                            'provincial_director_id' => $director->id,
-                            'kpi_id'                 => $row['kpi_id'],
-                            'year'                   => $year,
-                        ],
-                        ['target' => $target]
-                    );
-                    continue;
-                }
-
-                // Empty target AND accomplished → delete the row to keep the table tidy
-                if ($target === null && $accomplished === null) {
-                    ProvincialDirectorKPI::where('provincial_director_id', $director->id)
-                        ->where('kpi_id', $row['kpi_id'])
-                        ->where('year', $year)->delete();
-                    continue;
-                }
-
-                ProvincialDirectorKPI::updateOrCreate(
-                    [
-                        'provincial_director_id' => $director->id,
-                        'kpi_id'                 => $row['kpi_id'],
-                        'year'                   => $year,
-                    ],
-                    [
-                        'target'       => $target,
-                        'accomplished' => $accomplished,
-                    ]
-                );
-            }
-        });
-
-        return back()->with('success', "Saved KPI data for {$year}.");
-    }
-
-    private function normalizeInput(?string $v): ?string
-    {
-        if ($v === null) return null;
-        $v = trim($v);
-        return $v === '' ? null : $v;
     }
 }

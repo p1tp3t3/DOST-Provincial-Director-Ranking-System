@@ -7,6 +7,17 @@
              and the bar itself when scrolled. -->
         <div class="dashboard-sticky-shell">
         <div class="dashboard-sticky-filters">
+            <div class="d-flex align-center px-3 dashboard-tabs-row">
+                <v-tabs v-model="tab" density="compact" color="indigo">
+                    <v-tab value="rankings"    prepend-icon="mdi-podium">Rankings</v-tab>
+                    <v-tab value="submissions" prepend-icon="mdi-clipboard-check-outline">Submissions</v-tab>
+                    <v-tab value="heatmap"     prepend-icon="mdi-grid">KPI Heatmap</v-tab>
+                </v-tabs>
+                <v-chip v-if="scope" size="small" color="indigo" variant="tonal" prepend-icon="mdi-map-marker-radius-outline" class="ml-auto font-weight-medium">
+                    {{ scope.region }}
+                </v-chip>
+            </div>
+            <v-divider />
             <div class="d-flex align-center gap-2 px-3 py-2 flex-wrap">
                 <v-select
                     v-model="selectedTier"
@@ -23,8 +34,11 @@
 
                 <v-divider vertical class="filter-divider" />
 
-                <!-- Geography group: Island → Region → Province cascade together -->
+                <!-- Geography group: Island → Region → Province cascade together.
+                     A regional director's view is fixed to their region, so only
+                     the Province picker (their provinces) is offered. -->
                 <v-select
+                    v-if="!scope"
                     v-model="selectedIsland"
                     :items="islandSelectItems"
                     item-title="label"
@@ -37,6 +51,7 @@
                     @update:model-value="setIsland($event)"
                 />
                 <v-select
+                    v-if="!scope"
                     v-model="selectedRegion"
                     :items="regionOptions"
                     item-title="label"
@@ -121,15 +136,17 @@
                 />
                 <v-select
                     v-model="selectedYear"
-                    :items="available_years"
+                    :items="yearItems"
+                    item-title="label"
+                    item-value="value"
                     label="Year"
                     density="compact"
                     variant="outlined"
                     hide-details
-                    class="filter-select filter-select--narrow"
+                    class="filter-select"
                 />
 
-                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
+                <v-btn-toggle v-if="tab === 'rankings' && !isPendingYear" v-model="viewMode" mandatory density="compact" variant="outlined" divided class="ml-auto">
                     <v-btn value="podium" size="small" title="Podium view"><v-icon size="15">mdi-podium-gold</v-icon></v-btn>
                     <v-btn value="table"  size="small" title="Table view"><v-icon size="15">mdi-table-large</v-icon></v-btn>
                     <v-btn value="trend"  size="small" title="Trend view"><v-icon size="15">mdi-chart-line</v-icon></v-btn>
@@ -139,6 +156,7 @@
         </div>
         </div>
 
+        <template v-if="tab === 'rankings' && !isPendingYear">
         <!-- Performance Distribution - one bell-curve card replaces the
              three Top/Average/Low cards. The histogram bars give per-bin
              detail (tooltip lists the provinces in each 5% band) and the
@@ -457,7 +475,7 @@
                     <v-data-table
                         v-if="viewMode === 'table'"
                         :headers="tableHeaders"
-                        :items="rankedScores"
+                        :items="tableRows"
                         :row-props="tableRowProps"
                         density="compact"
                         fixed-header
@@ -466,12 +484,16 @@
                         :items-per-page="-1"
                         class="leaderboard-table"
                     >
+                        <!-- Official rank within the province's tier nationally. -->
                         <template #item.rank="{ item }">
                             <span v-if="!isRanked(item)" class="text-caption text-disabled">-</span>
-                            <span v-else-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
-                            <span v-else-if="item.rank === 2" class="rank-medal rank-silver">2nd</span>
-                            <span v-else-if="item.rank === 3" class="rank-medal rank-bronze">3rd</span>
-                            <span v-else class="text-caption text-medium-emphasis">#{{ item.rank }}</span>
+                            <div v-else class="rank-cell">
+                                <span v-if="item.rank === 1" class="rank-medal rank-gold">1st</span>
+                                <span v-else-if="item.rank === 2" class="rank-medal rank-silver">2nd</span>
+                                <span v-else-if="item.rank === 3" class="rank-medal rank-bronze">3rd</span>
+                                <span v-else class="text-caption text-medium-emphasis">#{{ item.rank }}</span>
+                                <span class="rank-of">of {{ item.tier_size }}</span>
+                            </div>
                         </template>
 
                         <template #item.bucket="{ item }">
@@ -530,6 +552,21 @@
                             <span v-else class="text-caption text-disabled">-</span>
                         </template>
 
+                        <!-- Year-over-year: score change and places moved in the tier. -->
+                        <template #item.change="{ item }">
+                            <div v-if="item.change" class="change-cell">
+                                <span class="font-weight-medium" :class="item.change.delta >= 0 ? 'text-success' : 'text-error'">
+                                    {{ item.change.delta >= 0 ? '▲' : '▼' }} {{ Math.abs(item.change.delta).toFixed(2) }}
+                                </span>
+                                <span class="text-caption text-medium-emphasis">
+                                    <template v-if="item.change.rankDelta > 0">up {{ item.change.rankDelta }}</template>
+                                    <template v-else-if="item.change.rankDelta < 0">down {{ -item.change.rankDelta }}</template>
+                                    <template v-else>same rank</template>
+                                </span>
+                            </div>
+                            <span v-else class="text-caption text-disabled">-</span>
+                        </template>
+
                         <template #no-data>
                             <div class="text-center py-8 text-medium-emphasis text-body-2">No provinces found</div>
                         </template>
@@ -562,6 +599,8 @@
                             :island="selectedIsland"
                             :region="selectedRegion"
                             :province="selectedProvince"
+                            :rank-areas="!scope"
+                            :home-region="scope?.region ?? null"
                             height="600px"
                         />
                     </div>
@@ -571,8 +610,15 @@
                         <div v-if="top3[0]" class="podium-banner mb-4">
                             <v-icon size="16" color="amber-darken-2">mdi-trophy</v-icon>
                             <span class="text-body-2 ml-2">
-                                <a :href="`/province-directories/${top3[0].province_url_id}`" class="province-link font-weight-bold">{{ top3[0].province }}</a> leads {{ selectedYear }}<template v-if="selectedTier !== 'all'"> in {{ tierLabel }}</template><template v-if="selectedCategory !== 'overall'"> on {{ selectedCategory }}</template> with
+                                <!-- "Leads" only when the province really is #1 in its tier;
+                                     a filtered view (or a regional director's) states its
+                                     official rank instead. -->
+                                <a :href="`/province-directories/${top3[0].province_url_id}`" class="province-link font-weight-bold">{{ top3[0].province }}</a>
+                                <template v-if="leadsTier"> leads {{ selectedYear }} in {{ tierLabel }}</template>
+                                <template v-else> is the top-scoring {{ selectedTier !== 'all' ? tierLabel + ' ' : '' }}province{{ areaSuffix }} in {{ selectedYear }}</template>
+                                <template v-if="selectedCategory !== 'overall'"> on {{ selectedCategory }}</template> with
                                 <span class="font-weight-bold" :style="{ color: bucketColor(top3[0].bucket) }">{{ getScore(top3[0]).toFixed(2) }}%</span>
+                                <template v-if="!leadsTier"> · #{{ top3[0].rank }} of {{ top3[0].tier_size }} {{ tierName(top3[0].category) }} nationally</template>
                             </span>
                         </div>
 
@@ -583,34 +629,34 @@
                                         <div class="podium-info">
                                             <v-icon color="amber-darken-1" size="26" class="mb-1">mdi-trophy</v-icon>
                                             <div class="podium-province"><a :href="`/province-directories/${top3[0].province_url_id}`" class="province-link">{{ top3[0].province }}</a></div>
-                                            <div v-if="top3[0].region" class="podium-region">{{ top3[0].region }}</div>
+                                            <div class="podium-region">{{ podiumSubtitle(top3[0]) }}</div>
                                             <div class="podium-score" :style="{ color: bucketColor(top3[0].bucket) }">{{ getScore(top3[0]).toFixed(2) }}%</div>
                                         </div>
                                         <div class="podium-block podium-gold">
                                             <v-icon color="white" size="26">mdi-crown</v-icon>
-                                            <span class="podium-rank-num">1st</span>
+                                            <span class="podium-rank-num">{{ rankLabel(top3[0]) }}</span>
                                         </div>
                                     </div>
                                     <div v-if="top3[1]" class="podium-item" :class="rowHighlightClass(top3[1].province)" :data-province="top3[1].province">
                                         <div class="podium-info">
                                             <div class="podium-province"><a :href="`/province-directories/${top3[1].province_url_id}`" class="province-link">{{ top3[1].province }}</a></div>
-                                            <div v-if="top3[1].region" class="podium-region">{{ top3[1].region }}</div>
+                                            <div class="podium-region">{{ podiumSubtitle(top3[1]) }}</div>
                                             <div class="podium-score" :style="{ color: bucketColor(top3[1].bucket) }">{{ getScore(top3[1]).toFixed(2) }}%</div>
                                         </div>
                                         <div class="podium-block podium-silver">
                                             <v-icon color="white" size="22">mdi-medal</v-icon>
-                                            <span class="podium-rank-num">2nd</span>
+                                            <span class="podium-rank-num">{{ rankLabel(top3[1]) }}</span>
                                         </div>
                                     </div>
                                     <div v-if="top3[2]" class="podium-item" :class="rowHighlightClass(top3[2].province)" :data-province="top3[2].province">
                                         <div class="podium-info">
                                             <div class="podium-province"><a :href="`/province-directories/${top3[2].province_url_id}`" class="province-link">{{ top3[2].province }}</a></div>
-                                            <div v-if="top3[2].region" class="podium-region">{{ top3[2].region }}</div>
+                                            <div class="podium-region">{{ podiumSubtitle(top3[2]) }}</div>
                                             <div class="podium-score" :style="{ color: bucketColor(top3[2].bucket) }">{{ getScore(top3[2]).toFixed(2) }}%</div>
                                         </div>
                                         <div class="podium-block podium-bronze">
                                             <v-icon color="white" size="22">mdi-medal-outline</v-icon>
-                                            <span class="podium-rank-num">3rd</span>
+                                            <span class="podium-rank-num">{{ rankLabel(top3[2]) }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -643,7 +689,7 @@
                                         </div>
                                         <div v-if="item.region" class="text-caption text-disabled text-truncate" style="line-height:1.2;">{{ item.region }}</div>
                                     </div>
-                                    <v-chip v-if="item.bucket && selectedTier !== 'all'" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium flex-shrink-0">
+                                    <v-chip v-if="item.bucket" :color="bucketColor(item.bucket)" size="x-small" variant="tonal" class="font-weight-medium flex-shrink-0">
                                         {{ bucketDisplay(item.bucket) }}
                                     </v-chip>
                                     <v-chip :color="tierColor(item.category)" size="x-small" variant="tonal" class="font-weight-medium text-uppercase flex-shrink-0">
@@ -673,6 +719,32 @@
                 </v-card>
             </v-col>
         </v-row>
+        </template>
+
+        <!-- A year still being reported shows no rankings or ratings, only progress -->
+        <ReleaseNotice v-else-if="tab !== 'submissions' && isPendingYear" :status="releaseStatus" />
+
+        <!-- Submissions: data-entry progress per province for the selected year -->
+        <v-card v-else-if="tab === 'submissions'" border elevation="0" rounded="lg">
+            <div class="px-4 pt-3 pb-2 d-flex align-center gap-2">
+                <v-icon size="15" color="indigo">mdi-clipboard-check-outline</v-icon>
+                <span class="text-body-2 font-weight-bold">KPI Submissions</span>
+                <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">{{ selectedYear }} · {{ tierLabel }}</v-chip>
+            </div>
+            <v-divider />
+            <SubmissionTracker :rows="tierRows" :expected="submission_expected" :show-approvals="showApprovals" />
+        </v-card>
+
+        <!-- KPI Heatmap: every scored KPI per province for the selected year -->
+        <v-card v-else border elevation="0" rounded="lg">
+            <div class="px-4 pt-3 pb-2 d-flex align-center gap-2">
+                <v-icon size="15" color="indigo">mdi-grid</v-icon>
+                <span class="text-body-2 font-weight-bold">KPI Heatmap</span>
+                <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">{{ selectedYear }} · {{ tierLabel }}</v-chip>
+            </div>
+            <v-divider />
+            <KpiHeatmap :rows="rankedScores" :categories="kpi_categories" />
+        </v-card>
 
     </div>
 </template>
@@ -682,27 +754,46 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
+import SubmissionTracker from '@/Components/Dashboard/SubmissionTracker.vue';
+import KpiHeatmap from '@/Components/Dashboard/KpiHeatmap.vue';
+import ReleaseNotice from '@/Components/Dashboard/ReleaseNotice.vue';
 import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
 import { useKpiCategories, subtotalPct } from '@/Data/kpiCategories';
 import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
+
+// Shared by Super Admin, Sub Admin and Regional Director. Every row carries the
+// official rank its province earned in its tier nationally (rank / tier_size,
+// and category_ranks per category), so a filtered or regional view never
+// re-ranks the provinces it happens to show.
 const props = defineProps({
-    total_users:                { type: Number, default: 0 },
-    active_reporting_provinces: { type: Number, default: 0 },
-    total_directors:            { type: Number, default: 0 },
-    total_employees:            { type: Number, default: 0 },
-    total_provinces:            { type: Number, default: 0 },
-    rankings_by_year:           { type: Object, default: () => ({}) },
-    kpi_categories:             { type: Array,  default: () => [] },
-    available_years:            { type: Array,  default: () => [] },
-    regions:                    { type: Array,  default: () => [] },
+    // null for the national view; { region } when limited to one region's
+    // provinces (a regional director's dashboard).
+    scope:               { type: Object, default: null },
+    rankings_by_year:    { type: Object, default: () => ({}) },
+    kpi_categories:      { type: Array,  default: () => [] },
+    // Years whose rankings are released (see RankingRelease) …
+    available_years:     { type: Array,  default: () => [] },
+    // … and years still being reported: their rows carry submission progress only.
+    pending_years:       { type: Array,  default: () => [] },
+    pending_by_year:     { type: Object, default: () => ({}) },
+    // { <year>: { released, reason, submitted, total, deadline } }
+    release:             { type: Object, default: () => ({}) },
+    submission_expected: { type: Object, default: () => ({ accomplished: 0, targets: 0 }) },
 });
 
+const scopedIsland = props.scope
+    ? REGIONS.find(r => r.value === props.scope.region)?.island ?? 'all'
+    : 'all';
 
-const selectedYear     = ref(props.available_years[0] ?? new Date().getFullYear());
-const selectedTier     = ref('micro');
+const tab              = ref('rankings'); // 'rankings' | 'submissions' | 'heatmap'
+// Open on the latest released year; with none yet, the year being reported.
+const selectedYear     = ref(props.available_years[0] ?? props.pending_years[0] ?? new Date().getFullYear());
+// A region holds only a few provinces spread across tiers, so a regional
+// director starts on all of them; the national view starts on Micro.
+const selectedTier     = ref(props.scope ? 'all' : 'micro');
 const selectedCategory = ref('overall'); // 'overall' | any code from kpi_categories
-const selectedIsland   = ref('all');
-const selectedRegion   = ref('all');
+const selectedIsland   = ref(scopedIsland);
+const selectedRegion   = ref(props.scope?.region ?? 'all');
 const selectedProvince = ref('all');
 const searchTerm       = ref('');
 const viewMode         = ref('podium');
@@ -806,76 +897,43 @@ const tierLabel = computed(() =>
         : (tiers.find(t => t.value === selectedTier.value)?.label ?? '')
 );
 
-// Rank-percentile bucketing matches RankingService::rankAndBucket on the backend.
-// Mirrored client-side so the Category filter can re-bucket within the active
-// tier when the user picks CORE / STRATEGIC / SUPPORT instead of Overall.
-// If config/ranking.php values change, update these to match.
-const BUCKET_TOP_PCT   = 0.20;
-const BUCKET_UNDER_PCT = 0.10;
-const MIN_GROUP_FOR_BUCKETS = 5;
-
 const getScore = (row) =>
     selectedCategory.value === 'overall'
         ? row.total_pct
         : (row.subtotals_pct?.[selectedCategory.value] ?? 0);
 
-// Buckets only the ranked rows (status === 'ranked'); unranked rows keep their
-// null rank/bucket and get appended at the end alphabetically.
+// Only ranked rows (status === 'ranked') carry a rank and bucket; the rest are
+// appended at the end alphabetically.
 const isRanked = (r) => (r.status ?? 'ranked') === 'ranked';
 
-const assignBuckets = (sortedRows) => {
-    const ranked   = sortedRows.filter(isRanked);
-    const unranked = sortedRows.filter(r => !isRanked(r))
-        .slice().sort((a, b) => a.province.localeCompare(b.province))
-        .map(r => ({ ...r, rank: null, bucket: null }));
-
-    const n = ranked.length;
-    if (n < MIN_GROUP_FOR_BUCKETS) {
-        return [...ranked.map((r, i) => ({ ...r, rank: i + 1, bucket: null })), ...unranked];
-    }
-    const topN = Math.max(1, Math.round(n * BUCKET_TOP_PCT));
-    let   undN = Math.max(1, Math.round(n * BUCKET_UNDER_PCT));
-    if (topN + undN >= n) undN = Math.max(1, n - topN - 1);
-    const avgEnd = n - undN;
-    const bucketed = ranked.map((r, i) => ({
-        ...r,
-        rank:   i + 1,
-        bucket: i < topN ? 'Top' : i < avgEnd ? 'Average' : 'Low',
-    }));
-    return [...bucketed, ...unranked];
+// Official rank + bucket for the active Category filter, straight from the
+// backend (RankingService::rankAndBucket): the overall standing, or the
+// province's standing on that one category within its tier nationally.
+const standing = (row) => {
+    if (selectedCategory.value === 'overall') return { rank: row.rank, bucket: row.bucket };
+    return row.category_ranks?.[selectedCategory.value] ?? { rank: null, bucket: null };
 };
+const withStanding = (row) => ({ ...row, ...standing(row) });
 
-// Pull this year's per-tier rankings from the controller payload, flatten into
-// one array with rank already assigned per tier. When "All" is selected we
-// resort globally by total_pct so the table is comparable across tiers - but
-// the per-tier rank field is still useful so we surface it as `tier_rank`.
-const allTierRows = computed(() => {
-    const yearData = props.rankings_by_year[selectedYear.value] ?? {};
-    const out = [];
-    for (const [tier, rows] of Object.entries(yearData)) {
-        for (const r of rows) {
-            out.push({ ...r, tier_rank: r.rank });
-        }
-    }
-    return out;
-});
+const rowsForYear = (year) => Object.values(props.rankings_by_year[year] ?? props.pending_by_year[year] ?? {}).flat();
+
+// ── Ranking release ───────────────────────────────────────────────────────
+const isPendingYear = computed(() => props.pending_years.map(Number).includes(Number(selectedYear.value)));
+const releaseStatus = computed(() => props.release[selectedYear.value] ?? { year: selectedYear.value, submitted: 0, total: 0, deadline: null });
+const yearItems = computed(() => [
+    ...props.pending_years.map(y => ({ value: y, label: `${y} (pending)` })),
+    ...props.available_years.map(y => ({ value: y, label: String(y) })),
+].sort((a, b) => b.value - a.value));
+
+// This year's rows across every tier, each with its standing for the active
+// Category filter applied.
+const allTierRows = computed(() => rowsForYear(selectedYear.value).map(withStanding));
 
 // ── Map view data ─────────────────────────────────────────────────────────
-// Mirrors Map/Main.vue logic: per-tier rebucketing by selected category and
-// a score field used by PhilippinesMap for coloring provinces.
-const mapAllTierRows = computed(() => {
-    const yearData = props.rankings_by_year[selectedYear.value] ?? {};
-    const out = [];
-    for (const tierRows of Object.values(yearData)) {
-        const ranked = selectedCategory.value === 'overall'
-            ? tierRows
-            : assignBuckets(tierRows.slice().sort((a, b) => getScore(b) - getScore(a)));
-        for (const r of ranked) {
-            out.push({ ...r, tier_rank: r.rank, score: getScore(r) });
-        }
-    }
-    return out;
-});
+// Rows plus the `score` field PhilippinesMap colours provinces by.
+const mapAllTierRows = computed(() =>
+    allTierRows.value.map(r => ({ ...r, score: getScore(r) }))
+);
 
 const mapFilteredScores = computed(() => {
     let rows = mapAllTierRows.value;
@@ -930,37 +988,50 @@ const baseRows = computed(() => {
     return rows;
 });
 
+// Rows never get re-ranked here — every rank shown is the official one. One
+// tier: ordered by that rank. All tiers: ordered by score, each row keeping
+// its own tier rank. Unranked provinces follow, alphabetically.
 const rankedScores = computed(() => {
-    const isOverall = selectedCategory.value === 'overall';
+    const rows = selectedTier.value === 'all'
+        ? baseRows.value
+        : baseRows.value.filter(r => r.category === selectedTier.value);
 
-    if (selectedTier.value === 'all') {
-        // Global view: ranked rows sorted by active score, unranked appended at the
-        // bottom alphabetically. Performer column is hidden in All Tiers mode.
-        const all      = baseRows.value;
-        const ranked   = all.filter(isRanked)
-            .slice().sort((a, b) => getScore(b) - getScore(a))
-            .map((r, i) => ({ ...r, rank: i + 1 }));
-        const unranked = all.filter(r => !isRanked(r))
-            .slice().sort((a, b) => a.province.localeCompare(b.province))
-            .map(r => ({ ...r, rank: null, bucket: null }));
-        return [...ranked, ...unranked];
-    }
-
-    const tierRows = baseRows.value.filter(r => r.category === selectedTier.value);
-
-    // Overall view: backend already excluded unranked from bucketing. Trust its
-    // ordering - unranked rows are appended at the end with null rank/bucket.
-    if (isOverall) return tierRows;
-
-    // Category view: re-sort + re-bucket only the ranked rows within the tier.
-    const sorted = tierRows.slice().sort((a, b) => {
-        // Unranked sinks to the bottom regardless of category sort
-        if (!isRanked(a) && isRanked(b)) return 1;
-        if (isRanked(a) && !isRanked(b)) return -1;
-        return getScore(b) - getScore(a);
-    });
-    return assignBuckets(sorted);
+    const ranked = rows.filter(isRanked).sort((a, b) =>
+        selectedTier.value === 'all'
+            ? getScore(b) - getScore(a) || a.rank - b.rank
+            : a.rank - b.rank);
+    const unranked = rows.filter(r => !isRanked(r))
+        .sort((a, b) => a.province.localeCompare(b.province));
+    return [...ranked, ...unranked];
 });
+
+// ── Year-over-year ────────────────────────────────────────────────────────
+const previousYear = computed(() =>
+    props.available_years.map(Number).filter(y => y < Number(selectedYear.value)).sort((a, b) => b - a)[0] ?? null
+);
+const previousRows = computed(() =>
+    previousYear.value === null
+        ? {}
+        : Object.fromEntries(rowsForYear(previousYear.value).map(r => [r.province_id, withStanding(r)]))
+);
+// Score change and places moved in the tier since the previous year, on the
+// active Category filter. Null when either year has no rank to compare.
+const changeFor = (row) => {
+    const prev = previousRows.value[row.province_id];
+    if (!prev || !isRanked(prev) || !isRanked(row)) return null;
+    return { delta: getScore(row) - getScore(prev), rankDelta: prev.rank - row.rank };
+};
+const tableRows = computed(() => rankedScores.value.map(r => ({ ...r, change: changeFor(r) })));
+
+// The selected tier's provinces in name order — for the Submissions tab, which
+// works the same for released and pending years.
+const tierRows = computed(() =>
+    baseRows.value
+        .filter(r => selectedTier.value === 'all' || r.category === selectedTier.value)
+        .slice().sort((a, b) => a.province.localeCompare(b.province))
+);
+// Director approvals decide submission, so show them for years reported quarterly.
+const showApprovals = computed(() => isPendingYear.value || tierRows.value.some(r => r.approved_quarters > 0));
 
 const tierCounts = computed(() => {
     const counts = { all: baseRows.value.length };
@@ -970,9 +1041,10 @@ const tierCounts = computed(() => {
 
 // Items for the dropdown filters in the sticky bar. Counts/weights are appended
 // to the label so users still see the same context as the old segmented buttons.
-const tierSelectItems = computed(() =>
-    tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` }))
-);
+const tierSelectItems = computed(() => [
+    { value: 'all', label: `All tiers (${tierCounts.value.all ?? 0})` },
+    ...tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` })),
+]);
 
 const islandSelectItems = computed(() => [
     { value: 'all', label: 'All Islands' },
@@ -1000,21 +1072,32 @@ const unrankedProvinces = computed(() => rankedScores.value.filter(r => !isRanke
 const top3     = computed(() => rankedOnly.value.slice(0, 3));
 const restList = computed(() => [...rankedOnly.value.slice(3), ...unrankedProvinces.value]);
 
-// Performer (Top / Average / Low) is bucketed per-tier so it's only meaningful
-// when a single tier is selected. In the "All Tiers" view we hide the column
-// entirely - mixing buckets across tiers would put a SMALL "Top" below a
-// LARGE "Average" on the absolute % axis, which reads as inconsistent.
-const tableHeaders = computed(() => {
-    const cols = [
-        { title: 'Rank',     key: 'rank',     width: '70px',  sortable: false },
-        { title: 'Performer', key: 'bucket',  width: '110px', sortable: true  },
-        { title: 'Province', key: 'province', sortable: true  },
-        { title: 'Director', key: 'director', sortable: false },
-        { title: 'Tier',     key: 'category', width: '90px',  align: 'center', sortable: true  },
-        ...categoryHeaders.value,
-        { title: 'Total',    key: 'total_pct', width: '110px', align: 'center', sortable: true  },
-    ];
-    return selectedTier.value === 'all' ? cols.filter(c => c.key !== 'bucket') : cols;
+// Rank and Performer are each province's official standing within its own
+// tier, so both stay meaningful in the All tiers view too.
+const tableHeaders = computed(() => [
+    { title: 'Rank',      key: 'rank',      width: '90px',  sortable: false },
+    { title: 'Performer', key: 'bucket',    width: '110px', sortable: true  },
+    { title: 'Province',  key: 'province',  sortable: true  },
+    { title: 'Director',  key: 'director',  sortable: false },
+    { title: 'Tier',      key: 'category',  width: '90px',  align: 'center', sortable: true  },
+    ...categoryHeaders.value,
+    { title: 'Total',     key: 'total_pct', width: '110px', align: 'center', sortable: true  },
+    { title: previousYear.value ? `vs ${previousYear.value}` : 'Change', key: 'change', width: '120px', align: 'center', sortable: false },
+]);
+
+// ── Podium labels ─────────────────────────────────────────────────────────
+// Podium blocks show each province's official rank, not its place on screen.
+const rankLabel = (r) => ({ 1: '1st', 2: '2nd', 3: '3rd' }[r.rank] ?? `#${r.rank}`);
+const tierName  = (t) => tiers.find(x => x.value === t)?.label ?? t;
+const podiumSubtitle = (r) =>
+    [r.region, selectedTier.value === 'all' ? tierName(r.category) : null].filter(Boolean).join(' · ');
+// "Leads" is only true when the top province is #1 in the selected tier.
+const leadsTier  = computed(() => selectedTier.value !== 'all' && top3.value[0]?.rank === 1);
+const areaSuffix = computed(() => {
+    if (props.scope) return ` in ${props.scope.region}`;
+    if (selectedRegion.value !== 'all') return ` in ${selectedRegion.value}`;
+    if (selectedIsland.value !== 'all') return ` in ${selectedIsland.value}`;
+    return '';
 });
 
 // Gold / silver / bronze - matching the podium so the whole dashboard's
@@ -1059,7 +1142,7 @@ const distributionData = computed(() => {
         .map(r => ({ name: r.province, score: getScore(r) }))
         .sort((a, b) => b.score - a.score);
 
-    // Below the minimum group size assignBuckets leaves buckets null; show one
+    // A tier below the minimum group size has no buckets (null); show one
     // neutral full-width band so a tiny filter selection still reads sensibly.
     if (!(counts.Top + counts.Average + counts.Low)) {
         return {
@@ -1652,6 +1735,10 @@ watch(searchTarget, async (province) => {
 .rank-gold   { background: #fef9c3; color: #854d0e; }
 .rank-silver { background: #f1f5f9; color: #475569; }
 .rank-bronze { background: #ffedd5; color: #9a3412; }
+.rank-cell   { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.rank-of     { font-size: 12px; color: #94a3b8; }
+.change-cell { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.2; white-space: nowrap; }
+.dashboard-tabs-row { min-height: 44px; }
 
 .score-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
 .score-fill  { height: 100%; border-radius: 4px; transition: width 0.6s ease; }

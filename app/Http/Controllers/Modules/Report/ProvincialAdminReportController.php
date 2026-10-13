@@ -136,7 +136,7 @@ class ProvincialAdminReportController extends Controller
 
         $toNum = fn($v) => (float) preg_replace('/[^0-9.]/', '', $v ?? '0');
 
-        $kpis         = ProvincialDirectorKPI::where('provincial_director_id', $director->id)->get();
+        $kpis         = ProvincialDirectorKPI::where('province_id', $provinceId)->get();
         $target       = $kpis->sum(fn($k) => $toNum($k->target));
         $accomplished = $kpis->sum(fn($k) => $toNum($k->accomplished));
         $rate         = $target > 0 ? round($accomplished / $target * 100, 1) : 0;

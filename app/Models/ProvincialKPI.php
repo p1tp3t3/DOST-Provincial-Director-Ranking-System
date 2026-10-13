@@ -21,13 +21,10 @@ class ProvincialKPI extends Model
     }
 
     // The matching ProvincialDirectorKPI (same kpi_id + year) reported by the
-    // province's current director, if any.
+    // province, if any.
     public function getDirectorKpiAttribute(): ?ProvincialDirectorKPI
     {
-        $directorId = $this->province?->provincialDirector?->id;
-        if (!$directorId) return null;
-
-        return ProvincialDirectorKPI::where('provincial_director_id', $directorId)
+        return ProvincialDirectorKPI::where('province_id', $this->province_id)
             ->where('kpi_id', $this->kpi_id)
             ->where('year', $this->year)
             ->first();

@@ -27,15 +27,22 @@ pusher.connection.bind('error', (err) => {
     console.log('[Echo test] connection error:', err);
 });
 
-window.Echo.private('kpi-catalog')
-    .subscribed(() => console.log('[Echo test] kpi-catalog authenticated'))
-    .error((err) => console.log('[Echo test] kpi-catalog auth failed:', err))
-    // Wildcard: logs every event that actually arrives on this channel,
-    // whatever its real name is — useful if the expected event name never
-    // matches (e.g. after a broadcastAs() change that hasn't deployed yet).
-    .listenToAll((eventName, data) => {
-        console.log('[Echo test] channel event received:', eventName, data);
-    })
-    .listen('TestPing', (e) => {
-        console.log('[Echo test] TestPing received:', e);
-    });
+// kpi-catalog is a private channel, so only subscribe when the page loaded
+// with a signed-in user — on the login and landing pages the auth request
+// would just come back 403.
+const initialPage = JSON.parse(document.getElementById('app')?.dataset.page ?? '{}');
+
+if (initialPage.props?.auth?.user) {
+    window.Echo.private('kpi-catalog')
+        .subscribed(() => console.log('[Echo test] kpi-catalog authenticated'))
+        .error((err) => console.log('[Echo test] kpi-catalog auth failed:', err))
+        // Wildcard: logs every event that actually arrives on this channel,
+        // whatever its real name is — useful if the expected event name never
+        // matches (e.g. after a broadcastAs() change that hasn't deployed yet).
+        .listenToAll((eventName, data) => {
+            console.log('[Echo test] channel event received:', eventName, data);
+        })
+        .listen('TestPing', (e) => {
+            console.log('[Echo test] TestPing received:', e);
+        });
+}

@@ -6,6 +6,7 @@ use App\Events\KpiCatalogUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\KPI;
 use App\Models\KPICategory;
+use App\Services\KpiEntryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -87,6 +88,7 @@ class KPICatalogController extends Controller
             'changes.*.name'         => ['required', 'string', 'max:500'],
             'changes.*.category_id'  => ['required', 'integer', 'exists:kpi_categories,id'],
             'changes.*.weight'       => ['required', 'numeric', 'min:0', 'max:100'],
+            'changes.*.rollup_rule'  => ['nullable', 'in:sum,latest,average'],
         ]);
 
         $editedIds = collect($data['changes'])->pluck('id');
@@ -105,14 +107,18 @@ class KPICatalogController extends Controller
         }
 
         $touchedCategoryIds = [];
+        $ruleChangedIds     = [];
 
-        $updatedIds = DB::transaction(function () use ($data, &$touchedCategoryIds) {
+        $updatedIds = DB::transaction(function () use ($data, &$touchedCategoryIds, &$ruleChangedIds) {
             $ids = [];
             foreach ($data['changes'] as $change) {
                 $kpi = KPI::find($change['id']);
                 if (!$kpi) continue;
 
                 $touchedCategoryIds[] = $kpi->category_id; // old category, in case it moved
+
+                $rule = $change['rollup_rule'] ?? $kpi->rollup_rule;
+                if ($rule !== $kpi->rollup_rule) $ruleChangedIds[] = $kpi->id;
 
                 $kpi->update([
                     'name'        => trim($change['name']),
@@ -121,6 +127,7 @@ class KPICatalogController extends Controller
                     // Dynamic: a KPI counts toward the ranking only while it carries
                     // weight. Zeroing the weight is how an admin turns scoring off.
                     'is_scored'   => $change['weight'] > 0,
+                    'rollup_rule' => $rule,
                 ]);
                 $touchedCategoryIds[] = $kpi->category_id; // new category
                 $ids[] = $kpi->id;
@@ -129,6 +136,12 @@ class KPICatalogController extends Controller
         });
 
         $this->recalculateCategoryWeights($touchedCategoryIds);
+
+        // A new roll-up rule changes the annual figure of every province that
+        // reports this KPI quarterly.
+        foreach ($ruleChangedIds as $kpiId) {
+            app(KpiEntryService::class)->rollUpEverywhere($kpiId, $request->user()->id);
+        }
 
         $this->safeBroadcast(new KpiCatalogUpdated('bulk_updated', $updatedIds[0] ?? 0, count($updatedIds) . ' KPIs updated', null));
 

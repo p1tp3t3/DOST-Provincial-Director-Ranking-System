@@ -151,10 +151,10 @@ class UserController extends Controller
             // user, so all references must be cleared before the account can be
             // removed. Deleting a director simply vacates their province — the
             // provinces table is never touched; the user just stops occupying one.
+            // The province's KPI figures and evidence records are kept: they
+            // belong to the province, and their director link is nulled by the
+            // database on delete.
             ActivityLog::where('user_id', $user->id)->delete();
-            DB::table('provincial_director_kpis')->where('provincial_director_id', $user->id)->delete();
-            DB::table('linkages')->where('provincial_director_id', $user->id)->delete();
-            DB::table('facebook_posts')->where('provincial_director_id', $user->id)->delete();
             DB::table('notifications')->where('sender_id', $user->id)->orWhere('receiver_id', $user->id)->delete();
             DB::table('sessions')->where('user_id', $user->id)->delete();
 

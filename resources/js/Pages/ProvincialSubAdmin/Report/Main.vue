@@ -348,7 +348,10 @@ const exportPDF = async () => {
     exporting.value  = true;
     exportError.value = '';
     try {
-        const res  = await fetch('/provincial-sub-admin-report/export', { credentials: 'same-origin' });
+        // This page serves both /provincial-sub-admin-report (provincial admin)
+        // and /provincial-director-report (director); export from whichever
+        // one is open, since each role may only call its own.
+        const res  = await fetch(`${window.location.pathname.replace(/\/$/, '')}/export`, { credentials: 'same-origin' });
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);

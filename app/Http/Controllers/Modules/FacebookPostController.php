@@ -4,22 +4,26 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Models\FacebookPost;
-use App\Models\KPI;
-use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
+use App\Services\KpiEntryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 
 // Evidence-based KPI module backing the `supp_facebook_posts` KPI. Same pattern
-// as LinkageController: the live record count is mirrored into
-// provincial_director_kpis.accomplished so RankingService keeps working.
+// as LinkageController: records belong to the province, each quarter's count
+// comes from the posting dates and is rolled up into the annual figure.
 class FacebookPostController extends Controller
 {
+    private const KPI_CODE = 'supp_facebook_posts';
+
+    public function __construct(private KpiEntryService $entries) {}
+
     public function index(int $directorId, int $year)
     {
         $director = $this->authorizeDirector($directorId);
 
-        $posts = FacebookPost::where('provincial_director_id', $director->id)
+        $posts = FacebookPost::where('province_id', $director->province_id)
             ->where('year', $year)
             ->orderByDesc('date_posted')
             ->orderByDesc('id')
@@ -38,14 +42,12 @@ class FacebookPostController extends Controller
             ? trim(($profile->first_name ?? '') . ' ' . ($profile->middle_name ?? '') . ' ' . ($profile->last_name ?? ''))
             : '—';
 
-        $returnUrl = $this->returnUrlFor($director->id, $year);
-
         return inertia('Modules/FacebookPosts/Index', [
             'director'   => ['id' => $director->id, 'name' => $directorName ?: '—'],
             'year'       => $year,
             'posts'      => $posts,
             'count'      => $posts->count(),
-            'return_url' => $returnUrl,
+            'return_url' => $this->returnUrlFor($director, $year),
         ]);
     }
 
@@ -53,13 +55,16 @@ class FacebookPostController extends Controller
     {
         $director = $this->authorizeDirector($directorId);
         $data     = $this->validated($request);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $data['date_posted']);
 
-        FacebookPost::create(array_merge($data, [
+        FacebookPost::create([
+            ...$data,
+            'province_id'            => $director->province_id,
             'provincial_director_id' => $director->id,
             'year'                   => $year,
-        ]));
+        ]);
 
-        $this->syncAccomplishedCount($director->id, $year);
+        $this->entries->syncRecordKpi(self::KPI_CODE, $director->province_id, $year, Auth::id());
 
         return back()->with('success', 'Facebook post added.');
     }
@@ -67,11 +72,18 @@ class FacebookPostController extends Controller
     public function update(Request $request, int $directorId, int $year, int $postId)
     {
         $director = $this->authorizeDirector($directorId);
-        $post     = FacebookPost::where('provincial_director_id', $director->id)
+        $post     = FacebookPost::where('province_id', $director->province_id)
             ->where('year', $year)
             ->findOrFail($postId);
 
-        $post->update($this->validated($request));
+        $data = $this->validated($request);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $post->date_posted);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $data['date_posted']);
+
+        $post->update($data);
+
+        // A new posting date can move the record to another quarter.
+        $this->entries->syncRecordKpi(self::KPI_CODE, $director->province_id, $year, Auth::id());
 
         return back()->with('success', 'Facebook post updated.');
     }
@@ -79,13 +91,14 @@ class FacebookPostController extends Controller
     public function destroy(int $directorId, int $year, int $postId)
     {
         $director = $this->authorizeDirector($directorId);
-
-        FacebookPost::where('provincial_director_id', $director->id)
+        $post     = FacebookPost::where('province_id', $director->province_id)
             ->where('year', $year)
-            ->where('id', $postId)
-            ->delete();
+            ->findOrFail($postId);
 
-        $this->syncAccomplishedCount($director->id, $year);
+        $this->entries->assertRecordQuarterOpen($director->province_id, $year, $post->date_posted);
+        $post->delete();
+
+        $this->entries->syncRecordKpi(self::KPI_CODE, $director->province_id, $year, Auth::id());
 
         return back()->with('success', 'Facebook post removed.');
     }
@@ -116,50 +129,13 @@ class FacebookPostController extends Controller
         return $director;
     }
 
-    private function syncAccomplishedCount(int $directorId, int $year): void
+    private function returnUrlFor(User $director, int $year): string
     {
-        $kpi = KPI::where('code', 'supp_facebook_posts')->first();
-        if (!$kpi) return;
-
-        $count = FacebookPost::where('provincial_director_id', $directorId)
-            ->where('year', $year)
-            ->count();
-
-        $existing = ProvincialDirectorKPI::where('provincial_director_id', $directorId)
-            ->where('kpi_id', $kpi->id)
-            ->where('year', $year)
-            ->first();
-
-        if ($count === 0) {
-            if ($existing && ($existing->target === null || $existing->target === '')) {
-                $existing->delete();
-            } elseif ($existing) {
-                $existing->update(['accomplished' => null]);
-            }
-            return;
-        }
-
-        ProvincialDirectorKPI::updateOrCreate(
-            [
-                'provincial_director_id' => $directorId,
-                'kpi_id'                 => $kpi->id,
-                'year'                   => $year,
-            ],
-            ['accomplished' => (string) $count]
-        );
-    }
-
-    private function returnUrlFor(int $directorId, int $year): string
-    {
-        $user = Auth::user();
-        if ($user->role === 'provincial_admin') {
+        if (Auth::user()->role === 'provincial_admin') {
             return "/provincial-kpi/{$year}";
         }
-        $director = User::find($directorId);
-        if ($director && $director->province_id) {
-            $encryptedProvince = \Illuminate\Support\Facades\Crypt::encrypt($director->province_id);
-            return "/kpi-data/{$encryptedProvince}/{$year}";
-        }
-        return '/kpi-data';
+        return $director->province_id
+            ? '/kpi-data/' . Crypt::encrypt($director->province_id) . "/{$year}"
+            : '/kpi-data';
     }
 }

@@ -47,7 +47,7 @@ class FacebookPostSeeder extends Seeder
         $rows = DB::table('provincial_director_kpis')
             ->where('kpi_id', $kpi->id)
             ->whereNotNull('accomplished')
-            ->get(['provincial_director_id', 'year', 'accomplished']);
+            ->get(['province_id', 'provincial_director_id', 'year', 'accomplished']);
 
         $batch        = [];
         $totalRecords = 0;
@@ -73,6 +73,7 @@ class FacebookPostSeeder extends Seeder
                 $dateSigned = sprintf('%04d-%02d-%02d', $year, $month, $day);
 
                 $batch[] = [
+                    'province_id'            => $row->province_id,
                     'provincial_director_id' => $row->provincial_director_id,
                     'year'                   => $year,
                     'title'                  => $title,
@@ -93,7 +94,7 @@ class FacebookPostSeeder extends Seeder
 
             // Realign the KPI accomplished value to the (possibly clamped) count
             DB::table('provincial_director_kpis')
-                ->where('provincial_director_id', $row->provincial_director_id)
+                ->where('province_id', $row->province_id)
                 ->where('kpi_id', $kpi->id)
                 ->where('year', $row->year)
                 ->update(['accomplished' => (string) $count]);

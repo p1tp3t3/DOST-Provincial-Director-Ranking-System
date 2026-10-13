@@ -83,6 +83,7 @@
                         <th class="kpi-th">KPI</th>
                         <th class="kpi-th" style="width:150px;">Category</th>
                         <th class="kpi-th" style="width:110px; text-align:center;">Weight %</th>
+                        <th class="kpi-th" style="width:150px;">Quarters roll up as</th>
                         <th class="kpi-th" style="width:40px;"></th>
                     </tr>
                 </thead>
@@ -133,6 +134,22 @@
                                 :class="{ 'kpi-input--dirty': isKpiChanged(kpi) }"
                             />
                         </td>
+                        <!-- How Q1–Q4 accomplishments combine into the annual figure that is ranked. -->
+                        <td>
+                            <span v-if="kpi.derivation_type" class="text-caption text-medium-emphasis">Calculated</span>
+                            <v-select
+                                v-else
+                                v-model="kpi.rollup_rule"
+                                :items="ROLLUP_RULES"
+                                item-title="label"
+                                item-value="value"
+                                variant="solo-filled"
+                                density="compact"
+                                hide-details
+                                class="kpi-input"
+                                :class="{ 'kpi-input--dirty': isKpiChanged(kpi) }"
+                            />
+                        </td>
                         <td class="text-center">
                             <v-tooltip text="Remove (soft delete)" location="top">
                                 <template #activator="{ props: tip }">
@@ -144,7 +161,7 @@
                         </td>
                     </tr>
                     <tr v-if="!cat.kpis.length">
-                        <td colspan="5" class="text-center text-caption text-medium-emphasis py-4">No KPIs in this category yet.</td>
+                        <td colspan="6" class="text-center text-caption text-medium-emphasis py-4">No KPIs in this category yet.</td>
                     </tr>
                 </tbody>
             </v-table>
@@ -233,6 +250,15 @@
                                     <v-chip size="small" color="error" variant="tonal" class="diff-chip-old">{{ c.oldWeight }}%</v-chip>
                                     <v-icon size="16" color="medium-emphasis">mdi-arrow-right</v-icon>
                                     <v-chip size="small" color="success" variant="flat">{{ c.newWeight }}%</v-chip>
+                                </div>
+                                <div v-if="c.ruleChanged" class="d-flex align-center gap-3">
+                                    <v-avatar size="28" rounded="md" color="grey-lighten-4">
+                                        <v-icon size="15" color="medium-emphasis">mdi-sigma</v-icon>
+                                    </v-avatar>
+                                    <span class="text-caption text-medium-emphasis" style="width:70px;">Roll-up</span>
+                                    <v-chip size="small" color="error" variant="tonal" class="diff-chip-old">{{ ruleLabel(c.oldRule) }}</v-chip>
+                                    <v-icon size="16" color="medium-emphasis">mdi-arrow-right</v-icon>
+                                    <v-chip size="small" color="success" variant="flat">{{ ruleLabel(c.newRule) }}</v-chip>
                                 </div>
                             </div>
                             </v-card>
@@ -720,8 +746,17 @@ const isKpiChanged = (kpi) => {
     if (!orig) return false;
     return orig.category_id !== kpi.category_id
         || Number(orig.weightPercent) !== Number(kpi.weightPercent)
-        || orig.name.trim() !== kpi.name.trim();
+        || orig.name.trim() !== kpi.name.trim()
+        || (orig.rollup_rule ?? 'sum') !== (kpi.rollup_rule ?? 'sum');
 };
+
+// How a KPI's Q1–Q4 accomplishments combine into the annual figure.
+const ROLLUP_RULES = [
+    { value: 'sum',     label: 'Sum of quarters' },
+    { value: 'latest',  label: 'Latest quarter' },
+    { value: 'average', label: 'Average' },
+];
+const ruleLabel = (v) => ROLLUP_RULES.find(r => r.value === (v ?? 'sum'))?.label ?? v;
 
 const changedKpis = computed(() => allKpisFlat.value
     .filter(isKpiChanged)
@@ -730,6 +765,7 @@ const changedKpis = computed(() => allKpisFlat.value
         const nameChanged = orig.name.trim() !== kpi.name.trim();
         const categoryChanged = orig.category_id !== kpi.category_id;
         const weightChanged = Number(orig.weightPercent) !== Number(kpi.weightPercent);
+        const ruleChanged = (orig.rollup_rule ?? 'sum') !== (kpi.rollup_rule ?? 'sum');
         return {
             id: kpi.id,
             nameChanged,
@@ -741,7 +777,10 @@ const changedKpis = computed(() => allKpisFlat.value
             weightChanged,
             oldWeight: orig.weightPercent,
             newWeight: kpi.weightPercent,
-            changeCount: [nameChanged, categoryChanged, weightChanged].filter(Boolean).length,
+            ruleChanged,
+            oldRule: orig.rollup_rule,
+            newRule: kpi.rollup_rule,
+            changeCount: [nameChanged, categoryChanged, weightChanged, ruleChanged].filter(Boolean).length,
         };
     }));
 
@@ -764,6 +803,7 @@ const submitUpdate = () => {
             name: kpi.name.trim(),
             category_id: kpi.category_id,
             weight: Number(kpi.weightPercent),
+            rollup_rule: kpi.rollup_rule ?? 'sum',
         };
     });
 

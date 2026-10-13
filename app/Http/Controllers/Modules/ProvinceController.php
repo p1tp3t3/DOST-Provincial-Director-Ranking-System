@@ -72,28 +72,23 @@ class ProvinceController extends Controller
                         ->where('id', $decryptedId)
                         ->get();
 
-        $directorId = $data->first()?->provincialDirector?->id;
-
-        // Available years this director has KPI data for
-        $availableYears = $directorId
-            ? DB::table('provincial_director_kpis')
-                ->where('provincial_director_id', $directorId)
-                ->orderByDesc('year')
-                ->distinct()
-                ->pluck('year')
-                ->values()
-                ->toArray()
-            : [];
+        // KPI data belongs to the province, so its history shows even while the
+        // director post is vacant.
+        $availableYears = DB::table('provincial_director_kpis')
+            ->where('province_id', $decryptedId)
+            ->orderByDesc('year')
+            ->distinct()
+            ->pluck('year')
+            ->values()
+            ->toArray();
 
         // Score lookup: kpi_id → year → {target, accomplished}
         $scoreMap = [];
-        if ($directorId) {
-            foreach (DB::table('provincial_director_kpis')->where('provincial_director_id', $directorId)->get() as $s) {
-                $scoreMap[$s->kpi_id][(string) $s->year] = [
-                    'target'       => $s->target,
-                    'accomplished' => $s->accomplished,
-                ];
-            }
+        foreach (DB::table('provincial_director_kpis')->where('province_id', $decryptedId)->get() as $s) {
+            $scoreMap[$s->kpi_id][(string) $s->year] = [
+                'target'       => $s->target,
+                'accomplished' => $s->accomplished,
+            ];
         }
 
         // Group KPIs under their matrix category for display. Categories, their

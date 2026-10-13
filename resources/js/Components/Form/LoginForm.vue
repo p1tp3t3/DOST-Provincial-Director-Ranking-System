@@ -9,6 +9,8 @@ const form = useForm({
     remember:   false,
 });
 
+const required = (v) => !!v || 'Password is required';
+
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),

@@ -63,11 +63,33 @@ class RankingService
     //   ]
     // $provinceIds optionally restricts the result to a subset of provinces
     // (e.g. all provinces within a given region for the Regional Admin views).
-    public function rankAllYears(?array $provinceIds = null): array
+    // $years defaults to every year with data; pass RankingRelease::releasedYears()
+    // to rank only the years whose rankings may be shown.
+    public function rankAllYears(?array $provinceIds = null, ?array $years = null): array
     {
         $out = [];
-        foreach ($this->availableYears() as $year) {
+        foreach ($years ?? $this->availableYears() as $year) {
             $out[$year] = $this->rankByYear($year, $provinceIds);
+        }
+        return $out;
+    }
+
+    // Official PRISM standing for a subset of provinces (e.g. one region). Each
+    // province keeps the rank and bucket it earned against every province in its
+    // tier nationally — unlike rankByYear($year, $provinceIds), which re-ranks the
+    // subset among itself. Only rows for $provinceIds are returned; each row's
+    // tier_size is still the national count of ranked provinces in its tier.
+    public function officialRankingsFor(int $year, array $provinceIds): array
+    {
+        $wanted = array_flip(array_map('intval', $provinceIds));
+
+        $out = [];
+        foreach ($this->rankByYear($year) as $tier => $rows) {
+            foreach ($rows as $r) {
+                if (isset($wanted[(int) $r['province_id']])) {
+                    $out[$tier][] = $r;
+                }
+            }
         }
         return $out;
     }
@@ -127,12 +149,12 @@ class RankingService
                 DB::raw("$directorNameSql as director")
             )->get()->keyBy('province_id');
 
+        // Values belong to the province, whoever was director when they were entered.
         $rows = DB::table('provincial_director_kpis as pk')
-            ->join('users as u', 'u.id', '=', 'pk.provincial_director_id')
-            ->join('user_province as up', 'up.user_id', '=', 'u.id')
             ->where('pk.year', $year)
-            ->when($provinceIds !== null, fn($q) => $q->whereIn('up.province_id', $provinceIds))
-            ->select('up.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
+            ->whereNotNull('pk.province_id')
+            ->when($provinceIds !== null, fn($q) => $q->whereIn('pk.province_id', $provinceIds))
+            ->select('pk.province_id', 'pk.kpi_id', 'pk.target', 'pk.accomplished')
             ->get();
 
         // valuesByProvince[province_id][kpi_id] = ['target' => ..., 'accomplished' => ...]
@@ -223,7 +245,7 @@ class RankingService
         $hasData     = !empty($values);
         $status      = !$hasDirector ? 'no_director' : (!$hasData ? 'no_data' : 'ranked');
 
-        $totalBand = $this->lookupStandardBand($total * 100);
+        $totalBand = $this->lookupStandardBand(self::percent($total * 100));
 
         return [
             'province_id'      => $provinceId,
@@ -262,7 +284,7 @@ class RankingService
             if ($ongoing === null || $ongoing <= 0 || $delinquent === null) {
                 return ['score' => 0.0, 'actual_pct' => null, 'adjective_label' => 'No data'];
             }
-            $pct  = $delinquent / $ongoing * 100;
+            $pct  = self::percent($delinquent / $ongoing * 100);
             $band = $this->lookupInverseBand($pct);
             return ['score' => $band['score'], 'actual_pct' => round($pct, 2), 'adjective_label' => $band['label']];
         }
@@ -284,11 +306,19 @@ class RankingService
         if ($target === null || $target <= 0 || $acc === null) {
             return ['score' => 0.0, 'actual_pct' => null, 'adjective_label' => 'No data'];
         }
-        $pct  = $acc / $target * 100;
+        $pct  = self::percent($acc / $target * 100);
         $band = $kpi['inverse_scoring']
             ? $this->lookupInverseBand($pct)
             : $this->lookupStandardBand($pct);
         return ['score' => $band['score'], 'actual_pct' => round($pct, 2), 'adjective_label' => $band['label']];
+    }
+
+    // Strips floating-point noise before a band lookup: 11.1 / 10 * 100 comes out
+    // as 110.99999999999999, which would miss the 111% Outstanding band while
+    // being shown as 111.00%. Six decimals keeps every real difference.
+    private static function percent(float $value): float
+    {
+        return round($value, 6);
     }
 
     private function lookupStandardBand(float $pct): array
@@ -331,46 +361,57 @@ class RankingService
             return strcmp($a['province'], $b['province']);
         });
 
-        $n      = count($ranked);
-        $minN   = (int) config('ranking.min_group_size_for_buckets', 5);
-        $topPct = (float) config('ranking.buckets.top_pct',   0.20);
-        $undPct = (float) config('ranking.buckets.under_pct', 0.10);
-
-        $useBuckets = $n >= $minN;
-        $topCount   = 0;
-        $underCount = 0;
-        if ($useBuckets) {
-            $topCount   = max(1, (int) round($n * $topPct));
-            $underCount = max(1, (int) round($n * $undPct));
-            if ($topCount + $underCount >= $n) {
-                $underCount = max(1, $n - $topCount - 1);
-            }
-        }
-        $avgEnd = $n - $underCount;
-
+        $n = count($ranked);
         foreach ($ranked as $i => &$row) {
-            $row['rank'] = $i + 1;
-            if (!$useBuckets) {
-                $row['bucket'] = null;
-            } elseif ($i < $topCount) {
-                $row['bucket'] = 'Top';
-            } elseif ($i < $avgEnd) {
-                $row['bucket'] = 'Average';
-            } else {
-                $row['bucket'] = 'Low';
-            }
+            $row['rank']      = $i + 1;
+            $row['bucket']    = $this->bucketFor($i, $n);
+            $row['tier_size'] = $n;
         }
         unset($row);
+
+        // Official standing on each category alone (same tier, same bucket
+        // rule), so a dashboard filtered to one category shows the province's
+        // national place on it instead of re-ranking whatever rows it displays.
+        // Ties fall back to the overall order above.
+        foreach ($this->categoryCodes as $code) {
+            $order = array_keys($ranked);
+            usort($order, fn($a, $b) =>
+                ($ranked[$b]['subtotals'][$code] ?? 0) <=> ($ranked[$a]['subtotals'][$code] ?? 0) ?: $a <=> $b);
+            foreach ($order as $i => $idx) {
+                $ranked[$idx]['category_ranks'][$code] = ['rank' => $i + 1, 'bucket' => $this->bucketFor($i, $n)];
+            }
+        }
 
         // Unranked provinces sort alphabetically and carry no rank or bucket
         usort($unranked, fn($a, $b) => strcmp($a['province'], $b['province']));
         foreach ($unranked as &$row) {
-            $row['rank']   = null;
-            $row['bucket'] = null;
+            $row['rank']           = null;
+            $row['bucket']         = null;
+            $row['tier_size']      = $n;
+            $row['category_ranks'] = (object) [];
         }
         unset($row);
 
         return array_merge($ranked, $unranked);
+    }
+
+    // Top / Average / Low for 0-based position $i among $n ranked provinces:
+    // Top = round(N * top_pct, min 1), Low = round(N * under_pct, min 1), Average
+    // the rest. Null when the tier is smaller than min_group_size_for_buckets.
+    private function bucketFor(int $i, int $n): ?string
+    {
+        if ($n < (int) config('ranking.min_group_size_for_buckets', 5)) {
+            return null;
+        }
+        $topCount   = max(1, (int) round($n * (float) config('ranking.buckets.top_pct', 0.20)));
+        $underCount = max(1, (int) round($n * (float) config('ranking.buckets.under_pct', 0.10)));
+        if ($topCount + $underCount >= $n) {
+            $underCount = max(1, $n - $topCount - 1);
+        }
+
+        if ($i < $topCount)       return 'Top';
+        if ($i < $n - $underCount) return 'Average';
+        return 'Low';
     }
 
     // Parses a raw string from the legacy data into a number, or null if unparseable.

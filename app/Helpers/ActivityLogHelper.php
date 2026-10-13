@@ -78,6 +78,16 @@ class ActivityLogHelper
         );
     }
 
+    public static function updateKpiFigures(string $provinceName, int $year): void
+    {
+        self::log('update', self::actorName() . " updated {$provinceName}'s {$year} KPI figures.");
+    }
+
+    public static function setReportingDeadlines(int $year): void
+    {
+        self::log('update', self::actorName() . " set the {$year} reporting deadlines.");
+    }
+
     // ── Account Generation ────────────────────────────────────────
 
     public static function generateAccounts(int $count, string $provinceName): void
