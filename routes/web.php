@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\Auth\RoleSwitchController;
 use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
@@ -63,6 +65,15 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // A user holding 2+ roles picks which one is active here; see RoleSwitchController.
     Route::get('/choose-role',   [RoleSwitchController::class, 'edit'])->name('role.choose');
     Route::patch('/switch-role', [RoleSwitchController::class, 'update'])->name('role.switch');
+
+    // Header bell: notifications sent with NotificationHelper::notify()
+    Route::get('/notifications',               [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all',     [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read',    [NotificationController::class, 'markRead']);
+
+    // Browser push subscription (KPI reminders)
+    Route::post('/push-subscriptions',   [PushSubscriptionController::class, 'store']);
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy']);
 
     Route::middleware('profile-view')->group(function () {
 

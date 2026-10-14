@@ -34,6 +34,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user()?->load(['provinces', 'region', 'profile', 'roles', 'activeRole']),
             ],
+            // Public key the browser needs to subscribe to push notifications.
+            'vapidPublicKey' => config('webpush.vapid.public_key'),
         ];
     }
 }

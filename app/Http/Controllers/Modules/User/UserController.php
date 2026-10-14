@@ -155,7 +155,7 @@ class UserController extends Controller
             // belong to the province, and their director link is nulled by the
             // database on delete.
             ActivityLog::where('user_id', $user->id)->delete();
-            DB::table('notifications')->where('sender_id', $user->id)->orWhere('receiver_id', $user->id)->delete();
+            $user->notifications()->delete();
             DB::table('sessions')->where('user_id', $user->id)->delete();
 
             $user->delete();

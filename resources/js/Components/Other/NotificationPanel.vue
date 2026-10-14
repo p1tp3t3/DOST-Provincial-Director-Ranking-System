@@ -1,4 +1,29 @@
 <template>
+    <!-- Ask once on load; the browser's own permission prompt needs a click to open -->
+    <v-dialog v-model="askPush" max-width="420" persistent>
+        <v-card rounded="lg" class="pa-2">
+            <v-card-title class="d-flex align-center gap-2 text-subtitle-1 font-weight-bold">
+                <v-icon color="primary">mdi-bell-ring-outline</v-icon>
+                Turn on notifications?
+            </v-card-title>
+            <v-card-text class="text-body-2 text-medium-emphasis">
+                <template v-if="getsReminders">
+                    Get browser notifications 3 days and 1 day before a KPI submission deadline,
+                    plus a weekly reminder about missing accomplishments.
+                </template>
+                <template v-else>
+                    Get PRISM updates and reminders as browser notifications.
+                </template>
+                <div v-if="push.error.value" class="text-error mt-2">{{ push.error.value }}</div>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer />
+                <v-btn variant="text" @click="dismissPush">Not now</v-btn>
+                <v-btn color="primary" variant="flat" :loading="push.busy.value" @click="acceptPush">Turn on</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <v-menu
         v-model="open"
         :close-on-content-click="false"
@@ -33,6 +58,40 @@
                 >Mark all as read</v-btn>
             </div>
 
+            <!-- Browser push notifications -->
+            <div v-if="loggedIn" class="push-row d-flex align-center gap-3 mx-3 mb-2 px-3 py-2">
+                <v-icon size="20" :color="push.subscribed.value ? 'success' : 'grey'">
+                    {{ push.subscribed.value ? 'mdi-bell-ring-outline' : 'mdi-bell-plus-outline' }}
+                </v-icon>
+                <div class="flex-grow-1 min-w-0 text-caption">
+                    <template v-if="!push.available.value">
+                        Browser notifications need a secure (HTTPS) connection.
+                    </template>
+                    <template v-else-if="push.permission.value === 'denied'">
+                        Notifications are blocked — allow them in your browser's site settings.
+                    </template>
+                    <template v-else-if="push.subscribed.value">
+                        Browser notifications are on.
+                    </template>
+                    <template v-else>
+                        Get PRISM reminders as browser notifications.
+                    </template>
+                    <div v-if="push.error.value" class="text-error">{{ push.error.value }}</div>
+                </div>
+                <template v-if="push.available.value && push.permission.value !== 'denied'">
+                    <v-btn
+                        v-if="push.subscribed.value"
+                        size="x-small" variant="text" color="grey-darken-1"
+                        :loading="push.busy.value" @click="push.disable"
+                    >Turn off</v-btn>
+                    <v-btn
+                        v-else
+                        size="x-small" variant="flat" color="primary"
+                        :loading="push.busy.value" @click="push.enable"
+                    >Turn on</v-btn>
+                </template>
+            </div>
+
             <!-- Tabs -->
             <v-tabs v-model="tab" density="compact" color="primary" class="px-2">
                 <v-tab value="all" class="text-caption">All</v-tab>
@@ -57,8 +116,8 @@
                     >
                         <!-- Icon avatar -->
                         <div class="flex-shrink-0 notif-avatar-wrap">
-                            <v-avatar :color="typeColor(notif.type) + '-lighten-5'" size="42" rounded="lg">
-                                <v-icon :color="typeColor(notif.type)" size="20">{{ typeIcon(notif.type) }}</v-icon>
+                            <v-avatar :color="typeColor(notif.category) + '-lighten-5'" size="42" rounded="lg">
+                                <v-icon :color="typeColor(notif.category)" size="20">{{ typeIcon(notif.category) }}</v-icon>
                             </v-avatar>
                             <div
                                 v-if="!notif.read"
@@ -69,9 +128,10 @@
 
                         <!-- Content -->
                         <div class="flex-grow-1 min-w-0">
-                            <div class="text-body-2 notif-message">{{ notif.message }}</div>
+                            <div class="text-body-2 font-weight-medium">{{ notif.title }}</div>
+                            <div class="text-body-2 notif-message text-medium-emphasis">{{ notif.body }}</div>
                             <div class="text-caption mt-1" style="font-size: 0.775rem;" :class="notif.read ? 'text-medium-emphasis' : 'text-primary font-weight-medium'">
-                                {{ notif.time }}
+                                {{ notif.sender || 'System' }} · {{ timeAgo(notif.created_at) }}
                             </div>
                         </div>
 
@@ -104,25 +164,92 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
+import { useEcho } from '@laravel/echo-vue';
+import axios from 'axios';
+import { usePushNotifications } from '@/Composables/usePushNotifications';
+
+const page = usePage();
+const push = usePushNotifications();
+
+// Roles the KPI reminder jobs notify (any locked role the user holds) — they
+// get the reminder-specific wording in the prompt.
+const REMINDER_ROLES = ['regional_director', 'provincial_admin', 'provincial_director'];
+const loggedIn      = computed(() => !!page.props.auth?.user);
+const getsReminders = computed(() =>
+    (page.props.auth?.user?.roles ?? []).some(r => (r.pivot?.locked ?? r.locked) && REMINDER_ROLES.includes(r.name))
+);
+
+// On load inside the system, ask for notification permission — unless it's
+// already on, the browser blocks it, or "Not now" was picked in the last 7 days.
+// Chrome/Edge show their own prompt straight away; Firefox/Safari only allow it
+// after a click, so they get the in-app dialog whose button opens the prompt.
+const ASK_KEY     = 'prism-push-ask-dismissed-at';
+const ASK_COOLOFF = 7 * 24 * 60 * 60 * 1000;
+const askPush     = ref(false);
+
+const recentlyDismissed = () => {
+    try {
+        return Date.now() - Number(localStorage.getItem(ASK_KEY) || 0) < ASK_COOLOFF;
+    } catch {
+        return false;
+    }
+};
+
+const dismissPush = () => {
+    try { localStorage.setItem(ASK_KEY, String(Date.now())); } catch { /* storage blocked */ }
+    askPush.value = false;
+};
+
+const acceptPush = async () => {
+    await push.enable();
+    // Close unless enabling failed; a "Block" answer also closes it.
+    if (!push.error.value) askPush.value = false;
+};
+
+onMounted(async () => {
+    if (!loggedIn.value) return;
+    await push.refresh();
+    const shouldAsk = push.available.value
+        && push.permission.value === 'default'
+        && !push.subscribed.value
+        && !recentlyDismissed();
+    if (!shouldAsk) return;
+
+    await push.enable(); // opens the browser prompt where allowed without a click
+    if (push.permission.value === 'default') askPush.value = true; // ignored or closed
+});
 
 const open = ref(false);
 const tab  = ref('all');
 
-const notifications = ref([
-    { id: 1,  type: 'kpi',      message: 'Your KPI record for Q2 2026 has been updated by the Provincial Admin.',          time: 'Just now',      read: false },
-    { id: 2,  type: 'account',  message: 'A new employee account was generated for Davao del Sur (32 accounts created).',  time: '5 minutes ago', read: false },
-    { id: 3,  type: 'report',   message: 'Activity logs report for May 2026 was exported successfully.',                   time: '1 hour ago',    read: false },
-    { id: 4,  type: 'system',   message: 'System maintenance is scheduled on June 5, 2026 at 12:00 AM.',                   time: '3 hours ago',   read: false },
-    { id: 5,  type: 'account',  message: 'Your password was changed successfully.',                                        time: 'Yesterday',     read: true  },
-    { id: 6,  type: 'kpi',      message: 'KPI outcomes for Bukidnon province have been submitted for review.',             time: 'Yesterday',     read: true  },
-    { id: 7,  type: 'report',   message: 'Ranking report for Region XI has been published.',                               time: '2 days ago',    read: true  },
-    { id: 8,  type: 'system',   message: 'Database backup completed successfully (14.2 MB).',                              time: '3 days ago',    read: true  },
-    { id: 9,  type: 'account',  message: 'New provincial admin account was created for Surigao del Norte.',                time: '4 days ago',    read: true  },
-    { id: 10, type: 'kpi',      message: 'Q1 2026 KPI scores have been finalized and are now available for review.',       time: '1 week ago',    read: true  },
-]);
+// Notifications sent with NotificationHelper::notify(): loaded from
+// /notifications, and new ones arrive live over Reverb on the user's private
+// channel (event "system-notification").
+const notifications = ref([]);
+const unreadCount   = ref(0);
 
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length);
+const load = async () => {
+    try {
+        const { data } = await axios.get('/notifications');
+        notifications.value = data.notifications;
+        unreadCount.value   = data.unread;
+    } catch {
+        // Bell stays as it was; the next page load retries.
+    }
+};
+
+const userId = page.props.auth?.user?.id;
+if (userId) {
+    useEcho(`App.Models.User.${userId}`, '.system-notification', (notif) => {
+        if (notifications.value.some(n => n.id === notif.id)) return;
+        notifications.value = [notif, ...notifications.value].slice(0, 30);
+        if (!notif.read) unreadCount.value++;
+    });
+}
+
+onMounted(() => { if (userId) load(); });
 
 const displayed = computed(() =>
     tab.value === 'unread'
@@ -130,15 +257,33 @@ const displayed = computed(() =>
         : notifications.value
 );
 
-const markAllRead = () => {
+const markAllRead = async () => {
     notifications.value = notifications.value.map(n => ({ ...n, read: true }));
+    unreadCount.value   = 0;
+    try { await axios.post('/notifications/read-all'); } catch { load(); }
 };
 
-const handleClick = (notif) => {
+const handleClick = async (notif) => {
     if (!notif.read) {
-        const idx = notifications.value.findIndex(n => n.id === notif.id);
-        if (idx !== -1) notifications.value[idx].read = true;
+        notif.read = true;
+        unreadCount.value = Math.max(0, unreadCount.value - 1);
+        try { await axios.post(`/notifications/${notif.id}/read`); } catch { /* shown read locally */ }
     }
+    if (notif.url) {
+        open.value = false;
+        router.visit(notif.url);
+    }
+};
+
+const timeAgo = (iso) => {
+    if (!iso) return '';
+    const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (secs < 60)     return 'Just now';
+    if (secs < 3600)   return `${Math.floor(secs / 60)} min ago`;
+    if (secs < 86400)  return `${Math.floor(secs / 3600)} hr ago`;
+    if (secs < 172800) return 'Yesterday';
+    if (secs < 604800) return `${Math.floor(secs / 86400)} days ago`;
+    return new Date(iso).toLocaleDateString();
 };
 
 const typeColor = (type) => ({
@@ -159,6 +304,11 @@ const typeIcon = (type) => ({
 <style scoped>
 .notif-panel {
     border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.push-row {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.02);
 }
 .notif-scroll {
     max-height: 420px;
