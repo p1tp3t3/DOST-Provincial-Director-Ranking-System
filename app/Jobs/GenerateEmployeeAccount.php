@@ -45,9 +45,12 @@ class GenerateEmployeeAccount implements ShouldQueue
                 'username'         => $username,
                 'password'         => $password,   // default password = generated password
             ]);
-            $user->assignRole('employee');
-
             $user->provinces()->attach($this->provinceId);
+
+            // Every account is an employee; the super admin may add one admin
+            // role per row (assigned first so it's the role they land in —
+            // assignRole() adds employee underneath).
+            $user->assignRole($this->row['admin_role'] ?? 'employee');
 
             $profile = Profile::insertGetId([
                 'user_id'              => $user->id,

@@ -6,7 +6,7 @@
             <div class="d-flex align-center justify-space-between">
                 <div>
                     <div class="text-h6 font-weight-bold">Manual Registration</div>
-                    <div class="text-caption text-medium-emphasis">Register a new employee or provincial director</div>
+                    <div class="text-caption text-medium-emphasis">Register a new employee, optionally with an admin role</div>
                 </div>
             </div>
 
@@ -24,34 +24,32 @@
                                         <v-icon color="indigo" size="18">mdi-shield-account-outline</v-icon>
                                     </v-avatar>
                                     <div>
-                                        <div class="text-subtitle-2 font-weight-bold">Role</div>
-                                        <div class="text-caption text-medium-emphasis">Select the account type to register</div>
+                                        <div class="text-subtitle-2 font-weight-bold">Admin Role <span class="text-medium-emphasis font-weight-regular">(optional)</span></div>
+                                        <div class="text-caption text-medium-emphasis">Every account is an employee — add one admin role on top if needed</div>
                                     </div>
                                 </div>
                                 <v-divider></v-divider>
                                 <div class="pa-5">
-                                    <div class="d-flex gap-3">
-                                        <v-card
-                                            v-for="r in roleOptions"
-                                            :key="r.value"
-                                            :variant="form.role === r.value ? 'tonal' : 'outlined'"
-                                            :color="form.role === r.value ? 'indigo' : undefined"
-                                            class="role-card flex-grow-1 pa-4"
-                                            rounded="lg"
-                                            @click="form.role = r.value"
-                                        >
-                                            <div class="d-flex align-center gap-3">
-                                                <v-icon
-                                                    :color="form.role === r.value ? 'indigo' : 'medium-emphasis'"
-                                                    size="22"
-                                                >{{ r.icon }}</v-icon>
-                                                <div>
-                                                    <div class="text-body-2 font-weight-bold">{{ r.label }}</div>
-                                                    <div class="text-caption text-medium-emphasis">{{ r.hint }}</div>
-                                                </div>
-                                            </div>
-                                        </v-card>
-                                    </div>
+                                    <v-select
+                                        v-model="form.admin_role"
+                                        :items="adminRoleItems"
+                                        item-title="label"
+                                        item-value="value"
+                                        label="Admin Role"
+                                        placeholder="None — employee only"
+                                        persistent-placeholder
+                                        variant="outlined"
+                                        density="compact"
+                                        clearable
+                                        :prepend-inner-icon="selectedRole.icon"
+                                        :error-messages="fieldError('admin_role')"
+                                        hide-details="auto"
+                                    >
+                                        <!-- Vuetify 4: `item` is the option object itself (no .raw) -->
+                                        <template #item="{ props: itemProps, item }">
+                                            <v-list-item v-bind="itemProps" :prepend-icon="item.icon" :subtitle="item.hint" />
+                                        </template>
+                                    </v-select>
                                 </div>
                             </v-card>
 
@@ -97,7 +95,7 @@
                                                 variant="outlined"
                                                 density="compact"
                                                 hide-details="auto"
-                                                :rules="[r.required]"
+                                                hint="Optional"
                                             />
                                         </v-col>
                                         <v-col cols="12" sm="2">
@@ -167,8 +165,8 @@
                                 </div>
                             </v-card>
 
-                            <!-- Employee-only fields -->
-                            <v-card v-if="form.role === 'employee'" class="elevation-1 border-0 rounded-md">
+                            <!-- Employment details: every account is an employee -->
+                            <v-card class="elevation-1 border-0 rounded-md">
                                 <div class="pa-5 pb-3 d-flex align-center gap-3">
                                     <v-avatar color="teal-lighten-5" rounded="lg" size="36">
                                         <v-icon color="teal" size="18">mdi-briefcase-outline</v-icon>
@@ -283,6 +281,13 @@
                                 </div>
                             </v-card>
 
+                            <v-alert v-if="serverError" type="error" variant="tonal" density="compact" closable @click:close="serverError = ''">
+                                {{ serverError }}
+                            </v-alert>
+                            <v-alert v-if="successMsg" type="success" variant="tonal" density="compact" closable @click:close="successMsg = ''">
+                                {{ successMsg }}
+                            </v-alert>
+
                             <!-- Actions -->
                             <div class="d-flex justify-end gap-2">
                                 <v-btn variant="text" color="medium-emphasis" size="small" @click="resetForm">Clear</v-btn>
@@ -312,14 +317,14 @@
                                 <div class="pa-4 d-flex flex-column gap-3">
                                     <div class="d-flex align-center gap-3">
                                         <v-avatar
-                                            :color="form.role === 'provincial_director' ? 'blue-lighten-5' : 'teal-lighten-5'"
+                                            :color="form.admin_role ? 'blue-lighten-5' : 'teal-lighten-5'"
                                             rounded="lg"
                                             size="44"
                                         >
                                             <v-icon
-                                                :color="form.role === 'provincial_director' ? 'blue' : 'teal'"
+                                                :color="form.admin_role ? 'blue' : 'teal'"
                                                 size="22"
-                                            >{{ form.role === 'provincial_director' ? 'mdi-account-tie-outline' : 'mdi-account-outline' }}</v-icon>
+                                            >{{ selectedRole.icon }}</v-icon>
                                         </v-avatar>
                                         <div>
                                             <div class="text-body-2 font-weight-bold">
@@ -371,7 +376,8 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
+import axios from 'axios';
 
 const props = defineProps({
     provinces: { type: Array, default: () => [] },
@@ -381,10 +387,14 @@ const formRef    = ref(null);
 const submitting = ref(false);
 const showPassword = ref(false);
 const showConfirm  = ref(false);
+const serverError  = ref('');
+const successMsg   = ref('');
+const fieldErrors  = ref({});
+const fieldError   = (key) => fieldErrors.value[key]?.[0] ?? '';
 
 const defaultForm = () => ({
     registration_type:    'manual',
-    role:                 'employee',
+    admin_role:           null, // optional admin role on top of employee
     province:             null,
     length_of_service:    '',
     prefix:               '',
@@ -412,10 +422,18 @@ const r = {
 };
 
 // ── Options ───────────────────────────────────────────────────
+// Every account is an employee; these are the optional admin roles on top.
 const roleOptions = [
-    { value: 'employee',            label: 'Employee',           hint: 'Provincial office staff',  icon: 'mdi-account-outline'     },
-    { value: 'provincial_director', label: 'Provincial Director', hint: 'Director of the province', icon: 'mdi-account-tie-outline'  },
+    { value: null,                  label: 'None',                hint: 'Employee only',               icon: 'mdi-account-outline'      },
+    { value: 'provincial_director', label: 'Provincial Director', hint: 'Director of the province',    icon: 'mdi-account-tie-outline'  },
+    { value: 'provincial_admin',    label: 'Provincial Admin',    hint: "Manages the province's data", icon: 'mdi-account-cog-outline'  },
+    { value: 'regional_director',   label: 'Regional Director',   hint: "Of the province's region",    icon: 'mdi-account-star-outline' },
+    { value: 'sub_admin',           label: 'Sub Admin',           hint: 'Central office staff',        icon: 'mdi-account-key-outline'  },
+    { value: 'super_admin',         label: 'Super Admin',         hint: 'Full system access',          icon: 'mdi-shield-crown-outline' },
 ];
+const selectedRole = computed(() => roleOptions.find(o => o.value === form.value.admin_role) ?? roleOptions[0]);
+// Dropdown items: the admin roles ("None" is the cleared/empty state).
+const adminRoleItems = roleOptions.filter(o => o.value !== null);
 
 const prefixOptions = ['Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Engr.', 'Atty.'];
 
@@ -437,22 +455,19 @@ const selectedProvinceName = computed(() =>
 
 const previewItems = computed(() => {
     const items = [
-        { label: 'Role',             value: form.value.role === 'employee' ? 'Employee' : 'Provincial Director' },
+        { label: 'Roles',            value: form.value.admin_role ? `Employee + ${selectedRole.value.label}` : 'Employee' },
         { label: 'Province',         value: selectedProvinceName.value },
         { label: 'Length of Service',value: form.value.length_of_service ? `${form.value.length_of_service} yr(s)` : null },
         { label: 'DOST ID',          value: form.value.dost_employee_id },
         { label: 'Email',            value: form.value.email },
+        { label: 'Position',         value: form.value.position },
+        { label: 'Status',           value: form.value.status },
     ];
-    if (form.value.role === 'employee') {
-        items.push({ label: 'Position', value: form.value.position });
-        items.push({ label: 'Status',   value: form.value.status   });
-    }
     return items;
 });
 
 const checklist = computed(() => {
     const base = [
-        { label: 'Role selected',      done: !!form.value.role },
         { label: 'Province selected',  done: !!form.value.province },
         { label: 'First name filled',  done: !!form.value.first_name },
         { label: 'Last name filled',   done: !!form.value.last_name },
@@ -461,11 +476,9 @@ const checklist = computed(() => {
         { label: 'Email filled',       done: !!form.value.email },
         { label: 'Password set',       done: form.value.password.length >= 8 },
         { label: 'Passwords match',    done: !!form.value.password && form.value.password === form.value.password_confirmation },
+        { label: 'Position filled',    done: !!form.value.position },
+        { label: 'Status selected',    done: !!form.value.status },
     ];
-    if (form.value.role === 'employee') {
-        base.push({ label: 'Position filled', done: !!form.value.position });
-        base.push({ label: 'Status selected', done: !!form.value.status   });
-    }
     return base;
 });
 
@@ -474,12 +487,28 @@ const submit = async () => {
     const { valid } = await formRef.value.validate();
     if (!valid) return;
 
-    submitting.value = true;
-    router.post('/users/store', form.value, {
-        onSuccess: () => resetForm(),
-        onError:   (errors) => console.error(errors),
-        onFinish:  () => { submitting.value = false; },
-    });
+    submitting.value  = true;
+    serverError.value = '';
+    successMsg.value  = '';
+    fieldErrors.value = {};
+    try {
+        const { data } = await axios.post('/users/store', form.value);
+        resetForm();
+        successMsg.value = data.message ?? 'New user registered successfully.';
+    } catch (e) {
+        const errors = e.response?.data?.errors ?? {};
+        fieldErrors.value = errors;
+        // Show the most specific problem: a field error, else the reason the
+        // save failed (code_error, e.g. "This region already has an active
+        // regional director"), else the general message.
+        const first = Object.entries(errors).find(([k]) => !['message', 'code_error'].includes(k))?.[1]?.[0];
+        serverError.value = first
+            ?? errors.code_error?.[0]
+            ?? e.response?.data?.message
+            ?? 'Registration failed. Please try again.';
+    } finally {
+        submitting.value = false;
+    }
 };
 
 const resetForm = () => {
@@ -491,8 +520,4 @@ const resetForm = () => {
 </script>
 
 <style scoped>
-.role-card {
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-}
 </style>

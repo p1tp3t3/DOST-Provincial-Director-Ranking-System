@@ -181,6 +181,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/users/create',                                    [UserController::class, 'manual_registration_index']);
         Route::post('/users/store',                                    [UserController::class, 'store']);
         Route::get('/users/auto-generator',                            [UserController::class, 'auto_registration_index']);
+        Route::get('/users/auto-generator/template.xlsx',              [UserController::class, 'generator_template']);
         Route::post('/provincial-admin/auto-generator/generate',       [UserController::class, 'upload_user_csv_file']);
         Route::get('/auto-generator/batch/{batchId}',                  [UserController::class, 'batch_status']);
         Route::post('/provincial-admin/csv/verify',                    [UserController::class, 'verify_csv']);

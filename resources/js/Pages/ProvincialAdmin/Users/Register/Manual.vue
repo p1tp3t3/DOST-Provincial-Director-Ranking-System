@@ -97,7 +97,7 @@
                                                 variant="outlined"
                                                 density="compact"
                                                 hide-details="auto"
-                                                :rules="[r.required]"
+                                                hint="Optional"
                                             />
                                         </v-col>
                                         <v-col cols="12" sm="2">
