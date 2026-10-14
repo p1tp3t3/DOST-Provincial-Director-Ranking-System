@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Modules\User;
 
 use App\Helpers\ActivityLogHelper;
+use App\Helpers\XlsxHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\AdminRegistrationRequest;
 use App\Http\Requests\User\UserRegistrationRequest;
@@ -155,7 +156,7 @@ class UserController extends Controller
             // belong to the province, and their director link is nulled by the
             // database on delete.
             ActivityLog::where('user_id', $user->id)->delete();
-            DB::table('notifications')->where('sender_id', $user->id)->orWhere('receiver_id', $user->id)->delete();
+            $user->notifications()->delete();
             DB::table('sessions')->where('user_id', $user->id)->delete();
 
             $user->delete();
@@ -210,16 +211,22 @@ class UserController extends Controller
 
     public function auto_registration_index()
     {
-        $role = self::get_role();
-        return inertia("$role/Users/Register/AutoGenerator");
+        // One generator for both: the provincial admin generates into their own
+        // province; the super admin selects which province the list belongs to.
+        return inertia('ProvincialAdmin/Users/Register/AutoGenerator', [
+            'provinces' => Auth::user()->role === 'provincial_admin'
+                ? []
+                : Province::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     // ── Manual registration ────────────────────────────────────────
 
     public function store(UserRegistrationRequest $request)
     {
-        $data = $request->validated();
-        $actor = Auth::user();
+        $data      = $request->validated();
+        $actor     = Auth::user();
+        $adminRole = $request->adminRole(); // optional admin role on top of employee
 
         DB::beginTransaction();
         try {
@@ -233,15 +240,21 @@ class UserController extends Controller
                 'email'            => $data['email'],
                 'username'         => $data['username'],
                 'password'         => $data['password'],
+                // A regional director's region is the region of their province.
+                'region_id'        => $adminRole === 'regional_director' ? $province->region_id : null,
             ]);
-            $user->assignRole($data['role']);
 
+            // Province first, so assignRole()'s one-director-per-province check sees it.
             $user->provinces()->attach($province->id);
+
+            // Every user is an employee. An admin role is assigned first so it's
+            // the role they land in; assignRole() adds employee underneath it.
+            $user->assignRole($adminRole ?? 'employee');
 
             $profileId = Profile::insertGetId([
                 'user_id'              => $user->id,
                 'first_name'           => $data['first_name'],
-                'middle_name'          => $data['middle_name'],
+                'middle_name'          => $data['middle_name'] ?? null,
                 'last_name'            => $data['last_name'],
                 'prefix'               => $data['prefix'],
                 'suffix'               => $data['suffix'] ?? null,
@@ -251,7 +264,7 @@ class UserController extends Controller
                 'education_attainment' => json_encode([]),
             ]);
 
-            if ($data['role'] === 'employee') {
+            if (!empty($data['position'])) {
                 EmployeeProfile::insert([
                     'profile_id'          => $profileId,
                     'position'            => $data['position'],
@@ -261,9 +274,8 @@ class UserController extends Controller
                     'work_specification'  => json_encode([]),
                 ]);
             }
-            // Every user is an employee — admin-tier registrations get a
-            // default employee record too (the form only asks position/status
-            // for plain employees).
+            // Every user is an employee — when no position/status was asked
+            // (provincial admin registering a director), add a default record.
             $user->ensureEmployeeProfile();
 
             DB::commit();
@@ -298,13 +310,17 @@ class UserController extends Controller
     public function verify_csv(Request $request)
     {
         $request->validate([
-            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+            'csv_file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:5120'],
         ]);
 
-        $rows = $this->parse_csv($request->file('csv_file'));
+        try {
+            $rows = $this->parse_upload($request->file('csv_file'));
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         if (empty($rows)) {
-            return response()->json(['message' => 'The CSV file is empty or could not be parsed.'], 422);
+            return response()->json(['message' => 'The file is empty or could not be parsed.'], 422);
         }
 
         // Run verification synchronously — fast enough (just DB lookups, no heavy I/O)
@@ -399,12 +415,19 @@ class UserController extends Controller
             'rows.*.suffix'            => ['nullable', 'string'],
             'rows.*.position'          => ['nullable', 'string'],
             'rows.*.length_of_service' => ['nullable', 'string'],
+            // Optional admin role per row, chosen by the super admin in review.
+            'rows.*.admin_role'        => ['nullable', 'in:' . implode(',', self::GENERATOR_ADMIN_ROLES)],
         ]);
 
-        $actor        = Auth::user();
-        $actor->loadMissing('provinces');
-        $provinceId   = $actor->province_id;
-        $provinceName = $actor->province?->name ?? 'Province';
+        if (Auth::user()->role !== 'super_admin' && collect($request->rows)->contains(fn($r) => !empty($r['admin_role']))) {
+            throw ValidationException::withMessages(['rows' => 'Only the super admin can assign admin roles.']);
+        }
+
+        // The province this list belongs to: the provincial admin's own, or the
+        // one the super admin selected on the generator page.
+        $province     = $this->generation_province($request);
+        $provinceId   = $province->id;
+        $provinceName = $province->name;
 
         $jobs = array_map(fn($row) => new GenerateEmployeeAccount([
             'prefix'            => $row['prefix']            ?? '',
@@ -416,6 +439,7 @@ class UserController extends Controller
             'dost_employee_id'  => $row['dost_id'],
             'position'          => $row['position']          ?? '',
             'length_of_service' => $row['length_of_service'] ?? '0',
+            'admin_role'        => ($row['admin_role'] ?? null) ?: null,
         ], $provinceId), $request->rows);
 
         $batch = Bus::batch($jobs)
@@ -433,6 +457,21 @@ class UserController extends Controller
         ]);
     }
 
+    // The province generated accounts belong to: a provincial admin's own
+    // province (never a client-sent value), or the province the super admin
+    // picked on the generator page.
+    private function generation_province(Request $request): Province
+    {
+        $actor = Auth::user();
+        if ($actor->role === 'provincial_admin') {
+            $actor->loadMissing('provinces');
+            return Province::findOrFail($actor->province_id);
+        }
+
+        $request->validate(['province_id' => ['required', 'exists:provinces,id']]);
+        return Province::findOrFail($request->integer('province_id'));
+    }
+
     // ── CSV bulk account generation (legacy direct) ────────────────
 
     public function upload_user_csv_file(Request $request)
@@ -441,10 +480,9 @@ class UserController extends Controller
             'csv_file' => 'required|file|mimes:csv,txt|max:2048',
         ]);
 
-        $actor        = Auth::user();
-        $actor->loadMissing('provinces');
-        $provinceId   = $actor->province_id;
-        $provinceName = $actor->province?->name ?? 'Province';
+        $province     = $this->generation_province($request);
+        $provinceId   = $province->id;
+        $provinceName = $province->name;
 
         $rows = $this->parse_csv($request->file('csv_file'));
 
@@ -525,6 +563,65 @@ class UserController extends Controller
         return UserResource::collection($data);
     }
 
+    // Admin roles the super admin can give generated accounts (on top of employee).
+    private const GENERATOR_ADMIN_ROLES = ['super_admin', 'sub_admin', 'provincial_admin'];
+
+    // Columns of the account generator's template, in order.
+    private const GENERATOR_COLUMNS = [
+        'dost_id_number', 'prefix', 'first_name', 'middle_name', 'last_name',
+        'suffix', 'email', 'position', 'length_of_service',
+    ];
+
+    // Excel template for the account generator: the columns above plus 10
+    // sample employees to replace with real data.
+    public function generator_template()
+    {
+        $rows = [
+            ['DOST-YYYY-EMP-001', 'Mr.',   'Juan',   'Santos', 'Dela Cruz',  '',    'juan.delacruz@dost.gov.ph',   'Science Research Analyst',           '3'],
+            ['DOST-YYYY-EMP-002', 'Ms.',   'Maria',  'Reyes',  'Villanueva', '',    'maria.villanueva@dost.gov.ph', 'Administrative Officer II',          '1'],
+            ['DOST-YYYY-EMP-003', 'Engr.', 'Jose',   'Garcia', 'Mendoza',    'Jr.', 'jose.mendoza@dost.gov.ph',     'Engineer II',                        '6'],
+            ['DOST-YYYY-EMP-004', 'Ms.',   'Ana',    'Lopez',  'Bautista',   '',    'ana.bautista@dost.gov.ph',     'Project Technical Assistant',        '2'],
+            ['DOST-YYYY-EMP-005', 'Mr.',   'Carlo',  '',       'Ramos',      '',    'carlo.ramos@dost.gov.ph',      'Science Research Specialist I',      '4'],
+            ['DOST-YYYY-EMP-006', 'Dr.',   'Elena',  'Torres', 'Aquino',     '',    'elena.aquino@dost.gov.ph',     'Senior Science Research Specialist', '10'],
+            ['DOST-YYYY-EMP-007', 'Mr.',   'Paolo',  'Cruz',   'Navarro',    'III', 'paolo.navarro@dost.gov.ph',    'Information Systems Analyst I',      '2'],
+            ['DOST-YYYY-EMP-008', 'Mrs.',  'Grace',  'Flores', 'Castillo',   '',    'grace.castillo@dost.gov.ph',   'Accountant II',                      '7'],
+            ['DOST-YYYY-EMP-009', 'Mr.',   'Miguel', 'Lim',    'Fernandez',  '',    'miguel.fernandez@dost.gov.ph', 'Administrative Aide IV',             '5'],
+            ['DOST-YYYY-EMP-010', 'Ms.',   'Liza',   'Gomez',  'Tan',        '',    'liza.tan@dost.gov.ph',         'Science Aide',                       '1'],
+        ];
+
+        $path = XlsxHelper::write(self::GENERATOR_COLUMNS, $rows, 'Employees');
+
+        return response()->download($path, 'employee-accounts-template.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
+    }
+
+    // Rows from an uploaded .csv or .xlsx, keyed by normalized header.
+    private function parse_upload(UploadedFile $file): array
+    {
+        $ext = strtolower($file->getClientOriginalExtension());
+        if ($ext !== 'xlsx') return $this->parse_csv($file);
+
+        $lines = XlsxHelper::read($file->getRealPath());
+        if (!$lines) return [];
+
+        $headers = array_map(fn($h) => $this->normalize_header($h), array_shift($lines));
+        $rows = [];
+        foreach ($lines as $line) {
+            $line = array_pad(array_slice($line, 0, count($headers)), count($headers), '');
+            $row  = array_combine($headers, $line);
+            if (!empty(array_filter($row, fn($v) => trim((string) $v) !== ''))) $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    // "First Name " / "\u{FEFF}dost_id_number" → "first_name" / "dost_id_number".
+    private function normalize_header(string $h): string
+    {
+        $h = preg_replace('/^\xEF\xBB\xBF/', '', $h);
+        return strtolower(str_replace(' ', '_', trim($h)));
+    }
+
     private function parse_csv(UploadedFile $file): array
     {
         $rows    = [];
@@ -533,10 +630,9 @@ class UserController extends Controller
 
         while (($line = fgetcsv($handle)) !== false) {
             if (!$headers) {
-                $headers = array_map(
-                    fn($h) => strtolower(trim(str_replace(' ', '_', $h))),
-                    $line
-                );
+                // normalize_header() also strips the byte-order mark Excel's
+                // "CSV UTF-8" adds, so the first header (dost_id_number) matches.
+                $headers = array_map(fn($h) => $this->normalize_header((string) $h), $line);
                 continue;
             }
             if (count($line) !== count($headers)) continue;

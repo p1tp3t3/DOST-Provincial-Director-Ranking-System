@@ -96,7 +96,7 @@ const goToProfile = () => {
     if (authUser.value?.id) router.visit(`/profile/${authUser.value.id}`);
 };
 
-const lockedRoles = computed(() => (authUser.value?.roles ?? []).filter(r => r.locked));
+const lockedRoles = computed(() => (authUser.value?.roles ?? []).filter(r => r.pivot?.locked ?? r.locked));
 
 const switchRole = (role) => {
     if (role.name === authUser.value?.role) return;

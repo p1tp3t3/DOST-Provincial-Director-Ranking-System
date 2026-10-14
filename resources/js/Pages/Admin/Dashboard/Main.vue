@@ -103,7 +103,7 @@
                         <v-list-item v-bind="itemProps" density="compact">
                             <template #prepend="{ isSelected }">
                                 <v-checkbox-btn density="compact" :model-value="isSelected" />
-                                <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item.raw] }"></span>
+                                <span class="legend-dot ml-1" :style="{ background: provinceColorMap[item] }"></span>
                             </template>
                         </v-list-item>
                     </template>

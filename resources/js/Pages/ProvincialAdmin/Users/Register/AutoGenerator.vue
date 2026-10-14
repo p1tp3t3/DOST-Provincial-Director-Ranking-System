@@ -6,7 +6,7 @@
             <div class="d-flex align-center justify-space-between flex-wrap gap-2">
                 <div>
                     <div class="text-h6 font-weight-bold">Auto Account Generator</div>
-                    <div class="text-caption text-medium-emphasis">Upload CSV → verify → review → commit</div>
+                    <div class="text-caption text-medium-emphasis">Upload Excel or CSV → verify → review → commit</div>
                 </div>
                 <v-btn
                     v-if="step !== 'upload'"
@@ -118,16 +118,36 @@
                                             <v-icon :color="guidelinesRead ? 'indigo' : 'grey'" size="18">mdi-file-delimited-outline</v-icon>
                                         </v-avatar>
                                         <div>
-                                            <div class="text-subtitle-2 font-weight-bold">Step 2 - Upload CSV</div>
+                                            <div class="text-subtitle-2 font-weight-bold">Step 2 - Upload File</div>
                                             <div class="text-caption text-medium-emphasis">Upload your employee list for verification</div>
                                         </div>
                                     </div>
                                     <v-btn size="x-small" variant="tonal" color="indigo" prepend-icon="mdi-download-outline" :disabled="!guidelinesRead" @click="downloadTemplate">
-                                        Download Template
+                                        Download Excel Template
                                     </v-btn>
                                 </div>
                                 <v-divider></v-divider>
                                 <div class="pa-5">
+                                    <!-- Super admin: the province this list of users belongs to (type to search) -->
+                                    <v-autocomplete
+                                        v-if="needsProvince"
+                                        v-model="provinceId"
+                                        :items="provinces"
+                                        item-title="name"
+                                        item-value="id"
+                                        label="Province *"
+                                        placeholder="Type to search provinces"
+                                        persistent-placeholder
+                                        clearable
+                                        auto-select-first
+                                        no-data-text="No province matches"
+                                        variant="outlined"
+                                        density="compact"
+                                        prepend-inner-icon="mdi-map-marker-outline"
+                                        :disabled="!guidelinesRead"
+                                        hide-details="auto"
+                                        class="mb-4"
+                                    />
                                     <div
                                         class="csv-dropzone rounded-lg pa-8 text-center"
                                         :class="{
@@ -140,11 +160,11 @@
                                         @dragleave.prevent="isDragging = false"
                                         @drop.prevent="guidelinesRead && onFileDrop($event)"
                                     >
-                                        <input ref="fileInput" type="file" accept=".csv" class="d-none" @change="onFileChange" />
+                                        <input ref="fileInput" type="file" accept=".xlsx,.csv" class="d-none" @change="onFileChange" />
                                         <template v-if="!csvFile">
                                             <v-icon size="40" :color="guidelinesRead ? 'indigo-lighten-3' : 'grey-lighten-2'" class="mb-3">mdi-file-upload-outline</v-icon>
                                             <div class="text-body-2 font-weight-medium" :class="guidelinesRead ? '' : 'text-medium-emphasis'">Click to upload or drag & drop</div>
-                                            <div class="text-caption text-medium-emphasis mt-1">CSV files only · Max 5MB</div>
+                                            <div class="text-caption text-medium-emphasis mt-1">Excel (.xlsx) or CSV · Max 5MB</div>
                                         </template>
                                         <template v-else>
                                             <div class="d-flex align-center justify-center gap-3">
@@ -174,7 +194,7 @@
                                     :disabled="!canVerify || verifying"
                                     :loading="verifying"
                                     @click="submitVerify"
-                                >Verify CSV</v-btn>
+                                >Verify File</v-btn>
                             </div>
                         </div>
                     </v-col>
@@ -198,6 +218,7 @@
                                 </div>
                             </div>
                         </v-card>
+
                     </v-col>
                 </v-row>
             </template>
@@ -426,6 +447,22 @@
                                                     hide-details
                                                 />
                                             </v-col>
+                                            <!-- Row 6 (super admin): optional admin role on top of employee -->
+                                            <v-col v-if="needsProvince" cols="12">
+                                                <v-select
+                                                    v-model="row.data.admin_role"
+                                                    :items="adminRoleOptions"
+                                                    item-title="label"
+                                                    item-value="value"
+                                                    label="Role (optional)"
+                                                    placeholder="None — employee only"
+                                                    persistent-placeholder
+                                                    variant="outlined"
+                                                    density="compact"
+                                                    clearable
+                                                    hide-details
+                                                />
+                                            </v-col>
                                         </v-row>
                                     </div>
                                 </v-card>
@@ -451,7 +488,7 @@
                                 variant="tonal"
                                 size="small"
                                 prepend-icon="mdi-database-import-outline"
-                                :disabled="includedCount === 0 || committing"
+                                :disabled="includedCount === 0 || committing || (needsProvince && !provinceId)"
                                 :loading="committing"
                                 @click="commitRows"
                             >Commit {{ includedCount }} Account(s)</v-btn>
@@ -505,9 +542,33 @@
 
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
-defineProps({ requests: { type: Array, default: () => [] } });
+const props = defineProps({
+    requests:  { type: Array, default: () => [] },
+    // Sent for the super admin only: they pick the province the generated
+    // users belong to. A provincial admin always generates into their own.
+    provinces: { type: Array, default: () => [] },
+});
+
+// Super admin: one province for the whole upload (a provincial admin always
+// generates into their own). Kept across a reload mid-review.
+const needsProvince = computed(() => props.provinces.length > 0);
+// Optional admin role per reviewed row (super admin only; "None" = employee only).
+const adminRoleOptions = [
+    { value: 'super_admin',      label: 'Super Admin' },
+    { value: 'sub_admin',        label: 'Sub Admin' },
+    { value: 'provincial_admin', label: 'Provincial Admin' },
+];
+const PROVINCE_KEY  = 'csv_verify_results_province';
+const provinceId    = ref(null);
+try {
+    const saved = Number(localStorage.getItem(PROVINCE_KEY));
+    if (saved && props.provinces.some(p => p.id === saved)) provinceId.value = saved;
+} catch { /* storage blocked */ }
+watch(provinceId, (id) => {
+    try { id ? localStorage.setItem(PROVINCE_KEY, String(id)) : localStorage.removeItem(PROVINCE_KEY); } catch { /* storage blocked */ }
+});
 
 // ── State machine ──────────────────────────────────────────────
 const step = ref('upload'); // upload | verifying | review | committing
@@ -518,7 +579,7 @@ const guidelinesRead  = ref(false);
 
 const guidelines = [
     'Ensure all employee data follows the required CSV template format. Download the template before filling in data.',
-    'Required columns: first_name, middle_name, last_name, email, dost_id_number. All other columns are optional.',
+    'Required columns: first_name, last_name, email, dost_id_number. All other columns (including middle_name) are optional.',
     'Each row represents one employee. Avoid blank rows and do not repeat the header.',
     'Duplicate emails or DOST IDs - within the CSV or already in the system - will be flagged as invalid.',
     'After verification you can review, edit, or remove rows before committing to the database.',
@@ -532,7 +593,7 @@ const sampleRows = [
 ];
 
 const howItWorks = [
-    { title: 'Upload CSV',    desc: 'Select your employee CSV file.' },
+    { title: 'Upload File',   desc: 'Select your filled-in Excel template (or a CSV).' },
     { title: 'Verify',        desc: 'The system validates each row in the background.' },
     { title: 'Review & Edit', desc: 'Fix errors, remove rows, or add new ones.' },
     { title: 'Commit',        desc: 'Save the selected rows as new employee accounts.' },
@@ -545,11 +606,11 @@ const csvFile    = ref(null);
 const verifying  = ref(false);
 const verifyTotal = ref(0);
 
-const canVerify = computed(() => guidelinesRead.value && csvFile.value);
+const canVerify = computed(() => guidelinesRead.value && csvFile.value && (!needsProvince.value || provinceId.value));
 
 const triggerFileInput = () => fileInput.value?.click();
 const onFileChange     = (e)  => { const f = e.target.files[0]; if (f) csvFile.value = f; };
-const onFileDrop       = (e)  => { isDragging.value = false; const f = e.dataTransfer.files[0]; if (f?.name.endsWith('.csv')) csvFile.value = f; };
+const onFileDrop       = (e)  => { isDragging.value = false; const f = e.dataTransfer.files[0]; if (/\.(xlsx|csv)$/i.test(f?.name ?? '')) csvFile.value = f; };
 const clearFile        = ()   => { csvFile.value = null; if (fileInput.value) fileInput.value.value = ''; };
 
 const xsrfToken = () => {
@@ -626,6 +687,7 @@ const normalizeRow = (r) => ({
         dost_id:           r.data?.dost_id           ?? '',
         position:          r.data?.position          ?? '',
         length_of_service: r.data?.length_of_service ?? '',
+        admin_role:        r.data?.admin_role        ?? null, // super admin only
     },
 });
 
@@ -706,7 +768,7 @@ const addRow = () => {
         include: true,
         status:  'new',
         errors:  {},
-        data:    { prefix: '', first_name: '', middle_name: '', last_name: '', suffix: '', email: '', dost_id: '', position: '', length_of_service: '' },
+        data:    { prefix: '', first_name: '', middle_name: '', last_name: '', suffix: '', email: '', dost_id: '', position: '', length_of_service: '', admin_role: null },
     });
 };
 
@@ -726,6 +788,10 @@ const commitRows = async () => {
         .map(r => r.data);
 
     if (!rows.length) return;
+    if (needsProvince.value && !provinceId.value) {
+        alert('Select the province these users belong to before committing.');
+        return;
+    }
 
     committing.value = true;
     step.value = 'committing';
@@ -734,7 +800,7 @@ const commitRows = async () => {
         const res = await fetch('/provincial-admin/csv/commit', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
-            body:    JSON.stringify({ rows }),
+            body:    JSON.stringify({ rows, province_id: provinceId.value }),
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
@@ -789,20 +855,15 @@ const resetAll = () => {
     if (fileInput.value) fileInput.value.value = '';
 };
 
+// Excel template (dost_id_number, prefix, first_name, middle_name, last_name,
+// suffix, email, position, length_of_service + 10 sample rows), built server-side.
 const downloadTemplate = () => {
-    const headers = 'prefix,dost_id_number,first_name,middle_name,last_name,suffix,email,position,length_of_service';
-    const sample  = 'Mr.,DOST-YYYY-EMP-001,Juan,dela,Cruz,,juan.delacruz@dost.gov.ph,Science Research Analyst,3';
-    const csv     = `${headers}\n${sample}\n`;
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'employee-accounts-template.csv';
+    const a = document.createElement('a');
+    a.href     = '/users/auto-generator/template.xlsx';
+    a.download = 'employee-accounts-template.xlsx';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 };
 
 const formatFileSize = (bytes) => {

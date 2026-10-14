@@ -11,12 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Laravel's standard database-notification table ($user->notify(...) with
+        // the 'database' channel; read via $user->notifications).
         Schema::create('notifications', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('sender_id')->constrained('users');
-            $table->foreignId('receiver_id')->constrained('users');
-            $table->json('content');
-            $table->dateTime('read_since')->nullable();
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            // Who sent it; null = the system (e.g. scheduled reminders).
+            $table->foreignId('sender_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notification');
+        Schema::dropIfExists('notifications');
     }
 };
