@@ -25,8 +25,10 @@ onUnmounted(() => {
     <div>
         <div class="min-h-screen flex">
             <Sidebar role="super_admin" />
-            <!-- Page Content -->
-            <main class="w-full">
+            <!-- Page Content: takes the width left beside the sidebar (w-full would
+                 add the sidebar's width on top and push the page past the window),
+                 and may shrink so wide tables scroll inside their own box. -->
+            <main class="flex-1 min-w-0">
                 <div class="sticky top-0 z-10">
                     <AuthHeader />
                 </div>
