@@ -9,9 +9,12 @@ use App\Models\User;
 use App\Services\KpiReminderService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
+use Illuminate\Bus\Batch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 #[Signature('app:check-kpi-edit-submission-deadline-command {--dry-run : List who would be notified without sending}')]
 #[Description('Remind regional directors, provincial admins and provincial directors 3 days and 1 day before a quarter\'s KPI submission deadline')]
@@ -41,7 +44,7 @@ class CheckKPIEditSubmissionDeadlineCommand extends Command
             }
         }
 
-        $this->info($dryRun ? "Dry run: {$sent} user(s) would be reminded." : "Queued deadline reminders for {$sent} user(s).");
+        $this->info($dryRun ? "Dry run: {$sent} user(s) would be reminded." : "Queued {$sent} deadline reminder job(s).");
         return self::SUCCESS;
     }
 
@@ -56,7 +59,7 @@ class CheckKPIEditSubmissionDeadlineCommand extends Command
 
         $byProvince = $reminders->provinceRecipients();
         $missing    = $reminders->missingByProvince($byProvince->keys(), $deadline->year, $deadline->quarter);
-        $sent       = 0;
+        $jobs       = [];
 
         // Provincial admins and directors: their own province's progress.
         foreach ($byProvince as $provinceId => $users) {
@@ -65,7 +68,7 @@ class CheckKPIEditSubmissionDeadlineCommand extends Command
                 . ($blank > 0
                     ? KpiReminderService::kpis($blank) . ' still ' . ($blank === 1 ? 'needs' : 'need') . ' a figure.'
                     : 'All KPIs have a figure — check them before the deadline.');
-            $sent += $this->send($users, $title, $body, $url, $tag, $dryRun);
+            $this->collect($jobs, $users, $title, $body, $url, $tag, $dryRun);
         }
 
         // Regional directors: how many provinces in their region are incomplete.
@@ -77,23 +80,35 @@ class CheckKPIEditSubmissionDeadlineCommand extends Command
                 . ($incomplete > 0
                     ? "{$incomplete} of {$regionProvinces->count()} provinces in your region still have missing figures."
                     : 'Every province in your region has entered its figures.');
-            $sent += $this->send(collect([$director]), $title, $body, '/dashboard', $tag, $dryRun);
+            $this->collect($jobs, collect([$director]), $title, $body, '/dashboard', $tag, $dryRun);
         }
 
-        return $sent;
+        if ($dryRun) return count($jobs);
+
+        // One job per user, sent together as one batch.
+        if ($jobs) {
+            $batchName = "KPI deadline reminders — {$period} ({$days} " . ($days === 1 ? 'day' : 'days') . ' before)';
+            Bus::batch($jobs)
+                ->name($batchName)
+                ->allowFailures()
+                ->finally(function (Batch $batch) use ($batchName) {
+                    Log::info("{$batchName}: " . ($batch->totalJobs - $batch->failedJobs) . "/{$batch->totalJobs} sent.");
+                })
+                ->dispatch();
+        }
+
+        return count($jobs);
     }
 
-    // Queue the reminder for these users; the push itself runs on the queue worker.
-    private function send(Collection $users, string $title, string $body, string $url, string $tag, bool $dryRun): int
+    // Add one reminder job per user to the batch (or list them on a dry run).
+    private function collect(array &$jobs, Collection $users, string $title, string $body, string $url, string $tag, bool $dryRun): void
     {
-        if ($dryRun) {
-            foreach ($users as $user) {
-                /** @var User $user */
+        foreach ($users as $user) {
+            /** @var User $user */
+            if ($dryRun) {
                 $this->line(sprintf('  %-28s %-20s %s', $user->username, $user->lockedRoles()->pluck('name')->diff(['employee'])->implode(','), $body));
             }
-        } else {
-            SendKpiDeadlineReminder::dispatch($users->pluck('id')->all(), $title, $body, $url, $tag);
+            $jobs[] = new SendKpiDeadlineReminder($user->id, $title, $body, $url, $tag);
         }
-        return $users->count();
     }
 }

@@ -7,8 +7,11 @@ use App\Jobs\SendMissingAccomplishmentsReminder;
 use App\Services\KpiReminderService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
+use Illuminate\Bus\Batch;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 #[Signature('app:notify-missing-accomplishments {--dry-run : List who would be notified without sending}')]
 #[Description('Weekly reminder to provincial admins and provincial directors about quarterly accomplishments that are still blank')]
@@ -36,7 +39,7 @@ class NotifyMissingAccomplishmentsCommand extends Command
             $missing["{$year}-{$quarter}"] = $reminders->missingByProvince($provinces, $year, $quarter);
         }
 
-        $sent = 0;
+        $jobs = [];
         foreach ($byProvince as $provinceId => $users) {
             $gaps = [];
             $year = null;
@@ -51,24 +54,33 @@ class NotifyMissingAccomplishmentsCommand extends Command
 
             $body = 'Still blank — ' . implode('; ', $gaps) . '. Enter them before the deadline.';
 
-            if ($dryRun) {
-                foreach ($users as $user) {
-                    $this->line(sprintf('  %-28s %s', $user->username, $body));
-                }
-            } else {
-                // The push itself runs on the queue worker.
-                SendMissingAccomplishmentsReminder::dispatch(
-                    $users->pluck('id')->all(),
+            // One job per user.
+            foreach ($users as $user) {
+                if ($dryRun) $this->line(sprintf('  %-28s %s', $user->username, $body));
+                $jobs[] = new SendMissingAccomplishmentsReminder(
+                    $user->id,
                     'Missing KPI accomplishments',
                     $body,
                     "/provincial-kpi/{$year}",
                     'kpi-missing-accomplishments',
                 );
             }
-            $sent += $users->count();
         }
 
-        $this->info($dryRun ? "Dry run: {$sent} user(s) would be reminded." : "Queued missing-accomplishment reminders for {$sent} user(s).");
+        // All of this week's reminders go out together as one batch.
+        if (!$dryRun && $jobs) {
+            $batchName = 'Missing accomplishments reminders — week ' . $now->format('o-\WW');
+            Bus::batch($jobs)
+                ->name($batchName)
+                ->allowFailures()
+                ->finally(function (Batch $batch) use ($batchName) {
+                    Log::info("{$batchName}: " . ($batch->totalJobs - $batch->failedJobs) . "/{$batch->totalJobs} sent.");
+                })
+                ->dispatch();
+        }
+
+        $count = count($jobs);
+        $this->info($dryRun ? "Dry run: {$count} user(s) would be reminded." : "Queued {$count} missing-accomplishment reminder job(s).");
         return self::SUCCESS;
     }
 
