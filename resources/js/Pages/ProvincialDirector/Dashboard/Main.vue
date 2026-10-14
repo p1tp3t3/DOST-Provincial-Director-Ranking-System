@@ -220,12 +220,18 @@ const trendSeries = computed(() => [{ name: 'Score', data: props.trend.map(t => 
 const trendOptions = computed(() => ({
     chart: { toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: false } },
     stroke: { curve: 'straight', width: 3 },
-    markers: { size: 5 },
+    markers: { size: 5, strokeColors: '#ffffff', strokeWidth: 2, hover: { sizeOffset: 2 } },
     colors: ['#4f46e5'],
-    dataLabels: { enabled: true, formatter: (v) => `${v.toFixed(1)}%`, offsetY: -6, style: { fontSize: '11px' }, background: { enabled: false }, },
-    xaxis: { categories: props.trend.map(t => t.year), labels: { style: { fontSize: '12px' } } },
-    yaxis: { min: 0, max: 100, tickAmount: 4, labels: { formatter: (v) => `${v}%` } },
-    grid: { borderColor: '#f1f5f9' },
+    // Each score sits on a small white tag with dark text above its point, so
+    // it stays readable over the line and the gridlines.
+    dataLabels: {
+        enabled: true, formatter: (v) => `${v.toFixed(1)}%`, offsetY: -10,
+        style: { fontSize: '12px', fontWeight: 600, colors: ['#ffffff'] },
+        background: { enabled: true, foreColor: '#0f172a', borderColor: '#cbd5e1', borderWidth: 1, borderRadius: 4, padding: 4, opacity: 1, dropShadow: { enabled: false } },
+    },
+    xaxis: { categories: props.trend.map(t => t.year), labels: { style: { fontSize: '12px', colors: '#475569' } }, axisBorder: { color: '#cbd5e1' }, axisTicks: { show: false } },
+    yaxis: { min: 0, max: 100, tickAmount: 4, labels: { formatter: (v) => `${v}%`, style: { colors: '#64748b' } } },
+    grid: { borderColor: '#eef1f5', padding: { top: 8 } },
     tooltip: { y: { formatter: (v, { dataPointIndex: i }) => `${v.toFixed(2)}% · #${props.trend[i].rank} of ${props.trend[i].tier_size}` } },
 }));
 </script>

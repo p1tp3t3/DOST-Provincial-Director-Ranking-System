@@ -252,14 +252,9 @@
                             {{ props.my_region ?? 'Region' }} · {{ selectedYear }}
                         </div>
                     </div>
-                    <VueApexCharts
-                        v-if="top10Data.names.length"
-                        type="bar"
-                        height="340"
-                        :options="top10Options"
-                        :series="top10Series"
-                        :key="`top10-${selectedYear}-${selectedTier}`"
-                    />
+                    <div v-if="top10Data.length" class="px-2 pt-2" style="height:340px;">
+                        <ScoreBars :items="top10Data" :max="100" :name-width="130" />
+                    </div>
                     <div v-else class="d-flex align-center justify-center" style="height:340px;">
                         <div class="text-center text-medium-emphasis">
                             <v-icon size="40" color="blue-grey" class="mb-2">mdi-chart-bar</v-icon>
@@ -304,6 +299,7 @@
 import { ref, computed } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
+import ScoreBars from '@/Components/Dashboard/ScoreBars.vue';
 import { useKpiCategories, subtotalPct } from '@/Data/kpiCategories';
 import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
 
@@ -419,55 +415,16 @@ const rowProps = ({ item }) => ({
 
 // ── Charts ────────────────────────────────────────────────────────────────────
 
-const top10Data = computed(() => {
-    const ranked = rankedScores.value.filter(r => r.status === 'ranked').slice(0, 10);
-    return {
-        names:    ranked.map(r => r.province),
-        scores:   ranked.map(r => r.total_pct),
-        directors:ranked.map(r => r.director || '—'),
-        buckets:  ranked.map(r => r.bucket),
-    };
-});
-
-const tooltipHtml = (data, i) => {
-    const score = (data.scores[i] ?? 0).toFixed(2);
-    const dir   = data.directors[i] ?? '—';
-    const name  = data.names[i]     ?? '';
-    const bk    = data.buckets[i]   ?? '';
-    const color = bucketHex(bk);
-    return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:180px;">
-                <div style="font-weight:700;margin-bottom:4px;">${name}</div>
-                <div style="color:#64748b;margin-bottom:6px;">Director: ${dir}</div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
-                    <strong style="color:${color};">${score}% weighted score</strong>
-                </div>
-            </div>`;
-};
-
-const top10Options = computed(() => {
-    const data  = top10Data.value;
-    const maxX  = Math.max(10, Math.ceil((Math.max(...data.scores, 0) * 1.15) / 5) * 5);
-    return {
-        chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
-                 animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
-        plotOptions: { bar: { horizontal: true, barHeight: '68%', borderRadius: 3, distributed: true } },
-        colors: data.buckets.map(bucketHex),
-        legend: { show: false },
-        grid: { borderColor: '#f1f5f9',
-                xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
-                padding: { left: 0, right: 12, top: -8, bottom: 0 } },
-        dataLabels: { enabled: true, formatter: v => `${v.toFixed(1)}%`,
-                      style: { fontSize: '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: 0, max: maxX,
-                 labels: { formatter: v => `${v}%`, style: { fontSize: '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
-                 axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { fontSize: '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: 115 } },
-        tooltip: { theme: 'light', custom: ({ dataPointIndex }) => tooltipHtml(top10Data.value, dataPointIndex) },
-    };
-});
-
-const top10Series = computed(() => [{ name: 'Weighted Score', data: top10Data.value.scores }]);
+// Top 10 as score bars on the full 0-100% scale, value printed past each bar.
+const top10Data = computed(() =>
+    rankedScores.value.filter(r => r.status === 'ranked').slice(0, 10).map(r => ({
+        key:      r.province,
+        name:     r.province,
+        value:    r.total_pct,
+        color:    bucketHex(r.bucket),
+        director: r.director || '—',
+    })),
+);
 
 // Donut: bucket distribution of ranked provinces
 const pieSeries = computed(() => {
