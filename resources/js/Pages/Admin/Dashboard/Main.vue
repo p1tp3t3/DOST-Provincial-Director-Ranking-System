@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <Head title="Dashboard" />
     <div class="d-flex flex-column gap-3 dashboard-root">
 
@@ -11,7 +11,7 @@
                 <v-tabs v-model="tab" density="compact" color="indigo">
                     <v-tab value="rankings"    prepend-icon="mdi-podium">Rankings</v-tab>
                     <v-tab value="submissions" prepend-icon="mdi-clipboard-check-outline">Submissions</v-tab>
-                    <v-tab value="heatmap"     prepend-icon="mdi-grid">KPI Heatmap</v-tab>
+                    <v-tab value="health"      prepend-icon="mdi-heart-pulse">KPI Health</v-tab>
                 </v-tabs>
                 <v-chip v-if="scope" size="small" color="indigo" variant="tonal" prepend-icon="mdi-map-marker-radius-outline" class="ml-auto font-weight-medium">
                     {{ scope.region }}
@@ -206,7 +206,7 @@
                             <v-chip size="x-small" variant="tonal" color="blue-grey">{{ distributionData.stats.n }} provinces</v-chip>
                         </div>
                     </div>
-                    <div class="bell-card-body">
+                    <div ref="distBodyRef" class="bell-card-body" :style="{ height: `${distBodyHeight}px` }">
                         <!-- Bars view: Top / Average / Low performer charts (per-tier buckets) -->
                         <div v-if="distributionData && chartView === 'bars'" class="perf-row">
                             <div class="perf-col">
@@ -215,17 +215,10 @@
                                         <v-icon size="15" color="success">mdi-star-circle-outline</v-icon>
                                         <span class="text-body-2 font-weight-bold">Best Performers</span>
                                     </div>
-                                    <div class="text-caption text-medium-emphasis">Top 20% of each tier · {{ top10Data.names.length }} {{ top10Data.names.length === 1 ? 'province' : 'provinces' }}</div>
+                                    <div class="text-caption text-medium-emphasis">Top 20% of each tier · {{ top10Data.length }} {{ top10Data.length === 1 ? 'province' : 'provinces' }}</div>
                                 </div>
                                 <div class="perf-col-body">
-                                    <VueApexCharts
-                                        v-if="top10Data.names.length"
-                                        type="bar"
-                                        height="500"
-                                        :options="top10Options"
-                                        :series="top10Series"
-                                        :key="`top10-${selectedYear}-${selectedTier}-${selectedCategory}`"
-                                    />
+                                    <ScoreBars v-if="top10Data.length" :items="top10Data" :max="scoreScale" :value-label="scoreLabel" :row-height="PERF_ROW_H" />
                                     <div v-else class="perf-empty">
                                         <v-icon size="40" color="blue-grey">mdi-podium-gold</v-icon>
                                         <div class="text-body-2 font-weight-medium">No Best Performers</div>
@@ -239,18 +232,10 @@
                                         <v-icon size="15" color="warning">mdi-trending-neutral</v-icon>
                                         <span class="text-body-2 font-weight-bold">Better Performers</span>
                                     </div>
-                                    <div class="text-caption text-medium-emphasis">Middle 70% of each tier · {{ avgData.names.length }} {{ avgData.names.length === 1 ? 'province' : 'provinces' }}</div>
+                                    <div class="text-caption text-medium-emphasis">Middle 70% of each tier · {{ avgData.length }} {{ avgData.length === 1 ? 'province' : 'provinces' }}</div>
                                 </div>
                                 <div class="perf-col-body">
-                                    <div v-if="avgData.names.length" class="avg-chart-scroll">
-                                        <VueApexCharts
-                                            type="bar"
-                                            :height="avgChartHeight"
-                                            :options="avgOptions"
-                                            :series="avgSeries"
-                                            :key="`avg-${selectedYear}-${selectedTier}-${selectedCategory}`"
-                                        />
-                                    </div>
+                                    <ScoreBars v-if="avgData.length" :items="avgData" :max="scoreScale" :value-label="scoreLabel" :row-height="PERF_ROW_H" />
                                     <div v-else class="perf-empty">
                                         <v-icon size="40" color="blue-grey">mdi-trending-neutral</v-icon>
                                         <div class="text-body-2 font-weight-medium">No Better Performers</div>
@@ -264,17 +249,10 @@
                                         <v-icon size="15" color="error">mdi-alert-circle-outline</v-icon>
                                         <span class="text-body-2 font-weight-bold">Good Performers</span>
                                     </div>
-                                    <div class="text-caption text-medium-emphasis">Bottom 10% of each tier · {{ underData.names.length }} {{ underData.names.length === 1 ? 'province' : 'provinces' }}</div>
+                                    <div class="text-caption text-medium-emphasis">Bottom 10% of each tier · {{ underData.length }} {{ underData.length === 1 ? 'province' : 'provinces' }}</div>
                                 </div>
                                 <div class="perf-col-body">
-                                    <VueApexCharts
-                                        v-if="underData.names.length"
-                                        type="bar"
-                                        height="500"
-                                        :options="underOptions"
-                                        :series="underSeries"
-                                        :key="`under-${selectedYear}-${selectedTier}-${selectedCategory}`"
-                                    />
+                                    <ScoreBars v-if="underData.length" :items="underData" :max="scoreScale" :value-label="scoreLabel" :row-height="PERF_ROW_H" />
                                     <div v-else class="perf-empty">
                                         <v-icon size="40" color="success">mdi-check-decagram-outline</v-icon>
                                         <div class="text-body-2 font-weight-medium">No Good Performers</div>
@@ -735,15 +713,15 @@
             <SubmissionTracker :rows="tierRows" :expected="submission_expected" :show-approvals="showApprovals" />
         </v-card>
 
-        <!-- KPI Heatmap: every scored KPI per province for the selected year -->
+        <!-- KPI Health: how each scored KPI went across the selected provinces -->
         <v-card v-else border elevation="0" rounded="lg">
             <div class="px-4 pt-3 pb-2 d-flex align-center gap-2">
-                <v-icon size="15" color="indigo">mdi-grid</v-icon>
-                <span class="text-body-2 font-weight-bold">KPI Heatmap</span>
+                <v-icon size="15" color="indigo">mdi-heart-pulse</v-icon>
+                <span class="text-body-2 font-weight-bold">KPI Health</span>
                 <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-medium">{{ selectedYear }} · {{ tierLabel }}</v-chip>
             </div>
             <v-divider />
-            <KpiHeatmap :rows="rankedScores" :categories="kpi_categories" />
+            <KpiHealth :rows="rankedScores" :categories="kpi_categories" />
         </v-card>
 
     </div>
@@ -755,7 +733,8 @@ import { Head } from '@inertiajs/vue3';
 import VueApexCharts from 'vue3-apexcharts';
 import PhilippinesMap from '@/Components/Map/PhilippinesMap.vue';
 import SubmissionTracker from '@/Components/Dashboard/SubmissionTracker.vue';
-import KpiHeatmap from '@/Components/Dashboard/KpiHeatmap.vue';
+import KpiHealth from '@/Components/Dashboard/KpiHealth.vue';
+import ScoreBars from '@/Components/Dashboard/ScoreBars.vue';
 import ReleaseNotice from '@/Components/Dashboard/ReleaseNotice.vue';
 import { ISLANDS, REGIONS, PROVINCE_REGIONS } from '@/Data/provinceGeography';
 import { useKpiCategories, subtotalPct } from '@/Data/kpiCategories';
@@ -785,11 +764,11 @@ const scopedIsland = props.scope
     ? REGIONS.find(r => r.value === props.scope.region)?.island ?? 'all'
     : 'all';
 
-const tab              = ref('rankings'); // 'rankings' | 'submissions' | 'heatmap'
+const tab              = ref('rankings'); // 'rankings' | 'submissions' | 'health'
 // Open on the latest released year; with none yet, the year being reported.
 const selectedYear     = ref(props.available_years[0] ?? props.pending_years[0] ?? new Date().getFullYear());
-// A region holds only a few provinces spread across tiers, so a regional
-// director starts on all of them; the national view starts on Micro.
+// Rankings are per tier: the national view is always one tier, starting on
+// Micro. A regional director starts on All tiers - their whole region at once.
 const selectedTier     = ref(props.scope ? 'all' : 'micro');
 const selectedCategory = ref('overall'); // 'overall' | any code from kpi_categories
 const selectedIsland   = ref(scopedIsland);
@@ -1042,7 +1021,9 @@ const tierCounts = computed(() => {
 // Items for the dropdown filters in the sticky bar. Counts/weights are appended
 // to the label so users still see the same context as the old segmented buttons.
 const tierSelectItems = computed(() => [
-    { value: 'all', label: `All tiers (${tierCounts.value.all ?? 0})` },
+    // A regional director's region is only a handful of provinces, so they can
+    // also see all of them at once; the national view stays one tier at a time.
+    ...(props.scope ? [{ value: 'all', label: `All tiers (${tierCounts.value.all ?? 0})` }] : []),
     ...tiers.map(t => ({ value: t.value, label: `${t.label} (${tierCounts.value[t.value] ?? 0})` })),
 ]);
 
@@ -1255,106 +1236,56 @@ const onRegionClick = (key) => {
 // ── Bars view: Top / Average / Low performer charts ─────────────────────────
 // Each lists the provinces in that bucket as a horizontal bar of their weighted
 // score. Buckets are per-tier (Top 20% / Average 70% / Low 10% of each size
-// tier), matching the "of each tier" subtitles.
-const perfSlice = (bucket) => {
-    const slice = rankedOnly.value
-        .filter(s => s.bucket === bucket)
-        .slice()
-        .sort((a, b) => getScore(b) - getScore(a));
-    return {
-        names:     slice.map(s => s.province),
-        scores:    slice.map(s => getScore(s)),
-        directors: slice.map(s => s.director || '-'),
-        buckets:   slice.map(s => s.bucket),
-    };
-};
+// tier), matching the "of each tier" subtitles. All three columns draw on the
+// same full scale (scoreScale), so a bar's length compares across columns.
+const perfSlice = (bucket) => rankedOnly.value
+    .filter(s => s.bucket === bucket)
+    .slice()
+    .sort((a, b) => getScore(b) - getScore(a))
+    .map(s => ({
+        key:       s.province,
+        name:      s.province,
+        value:     getScore(s),
+        color:     bucketColor(bucket),
+        light:     bucketLight(bucket),
+        director:  s.director || '-',
+        performer: bucketDisplay(bucket),
+    }));
 const top10Data = computed(() => perfSlice('Top'));
 const avgData   = computed(() => perfSlice('Average'));
 const underData = computed(() => perfSlice('Low'));
+// Each list's rows stretch to fill the column; one longer than fits keeps
+// PERF_ROW_H rows and scrolls.
+const PERF_ROW_H = 32;
 
-const perfTooltip = (data, i) => {
-    const score = (data.scores[i] ?? 0).toFixed(2);
-    const dir   = data.directors[i] ?? '-';
-    const name  = data.names[i]     ?? '';
-    const bk    = data.buckets[i]   ?? '-';
-    const color = bucketColor(bk);
-    const label = selectedCategory.value === 'overall' ? 'weighted score' : `${selectedCategory.value} contribution`;
-    return `<div style="padding:8px 12px;font-size:12px;font-family:inherit;min-width:200px;">
-                <div style="font-weight:700;margin-bottom:4px;">${name}</div>
-                <div style="color:#64748b;margin-bottom:2px;">Director: ${dir}</div>
-                <div style="color:#64748b;margin-bottom:6px;">Performer: ${bucketDisplay(bk)}</div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
-                    <strong style="color:${color};">${score}% ${label}</strong>
-                </div>
-            </div>`;
+// The card is one height for every tier, view and filter: it runs to just
+// above the bottom of the window, leaving the Ranking Matrix's header in view
+// below it. Only a window resize changes it.
+const DIST_PEEK      = 72;    // gap + Ranking Matrix header left showing
+const DIST_MIN_H     = 400;
+const DIST_MAX_H     = 1000;
+const distBodyRef    = ref(null);
+const distBodyHeight = ref(520);
+const fitDistHeight  = () => {
+    const el = distBodyRef.value;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    distBodyHeight.value = Math.round(Math.min(DIST_MAX_H, Math.max(DIST_MIN_H, window.innerHeight - top - DIST_PEEK)));
 };
+// The card mounts again when the Rankings tab or a released year comes back.
+watch(distBodyRef, (el) => { if (el) nextTick(fitDistHeight); });
+onMounted(() => window.addEventListener('resize', fitDistHeight));
+onUnmounted(() => window.removeEventListener('resize', fitDistHeight));
 
-// Axis floor: largest 5% step below the lowest bar (with a little margin), or 0.
-// Shared by the bar options and the offset series.
-const axisFloor = (scores) =>
-    scores.length ? Math.max(0, Math.floor((Math.min(...scores) * 0.95) / 5) * 5) : 0;
-
-const makeHorizOptions = (data, big = false) => {
-    const max   = Math.max(...data.scores, 0);
-    const floor = axisFloor(data.scores);
-    // Start the axis just below the lowest bar so the spread is visible instead of
-    // squashed against 0%. ApexCharts draws bars from 0 and clips them, which would
-    // pin the value labels to the clipped edge — so we plot each bar as
-    // (value - floor) on a 0-based axis and add the floor back in the formatters,
-    // which keeps the labels centred.
-    const computedMax = Math.max(10, Math.ceil((max * 1.15) / 5) * 5) - floor;
-    return {
-        chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit',
-                 animations: { enabled: true, speed: 700, animateGradually: { enabled: true, delay: 80 } } },
-        plotOptions: { bar: { horizontal: true, barHeight: big ? '82%' : '68%', borderRadius: big ? 4 : 3, distributed: true, dataLabels: { position: 'center' } } },
-        colors: data.buckets.map(bucketColor),
-        fill: {
-            type: 'gradient',
-            gradient: {
-                type: 'horizontal',
-                shadeIntensity: 0,
-                gradientToColors: data.buckets.map(bucketLight),
-                inverseColors: false,
-                opacityFrom: 1,
-                opacityTo: 1,
-                stops: [0, 100],
-            },
-        },
-        legend: { show: false },
-        grid: { borderColor: '#f1f5f9',
-                xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } },
-                padding: { left: 0, right: 12, top: -8, bottom: 0 } },
-        dataLabels: { enabled: true, formatter: v => `${(v + floor).toFixed(1)}%`,
-                      style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', fontWeight: '600', colors: ['#fff'] } },
-        xaxis: { categories: data.names, min: 0, max: computedMax,
-                 labels: { formatter: v => `${Math.round(v + floor)}%`, style: { fontSize: big ? '12px' : '10px', fontFamily: 'inherit', colors: '#94a3b8' } },
-                 axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { fontSize: big ? '14px' : '10.5px', fontFamily: 'inherit', colors: '#475569' }, maxWidth: big ? 150 : 115 } },
-        tooltip: { theme: 'light', custom: ({ dataPointIndex }) => perfTooltip(data, dataPointIndex) },
-    };
-};
-
-// Series values are offset by the axis floor so ApexCharts draws each bar from 0
-// (keeps the % labels centred); makeHorizOptions' formatters add the floor back.
-const offsetScores = (d) => { const f = axisFloor(d.scores); return d.scores.map(v => v - f); };
-
-const top10Options = computed(() => makeHorizOptions(top10Data.value, true));
-const top10Series  = computed(() => [{ name: 'Weighted Score', data: offsetScores(top10Data.value) }]);
-const underOptions = computed(() => makeHorizOptions(underData.value, true));
-const underSeries  = computed(() => [{ name: 'Weighted Score', data: offsetScores(underData.value) }]);
-// Average uses the same "big" bar styling as Top/Low so the bars match in size.
-const avgOptions   = computed(() => makeHorizOptions(avgData.value, true));
-const avgSeries    = computed(() => [{ name: 'Weighted Score', data: offsetScores(avgData.value) }]);
-
-// Average can hold far more provinces than Top/Low. Size each bar so AVG_VISIBLE
-// (16, the Top chart's max) fit in the column at once at the same bar size as Top,
-// and let the wrapper scroll to reveal the rest. Floor at the column height so a
-// small Average bucket still fills the column exactly like Top/Low.
-const AVG_COL_HEIGHT = 500;
-const AVG_VISIBLE    = 16;
-const avgChartHeight = computed(() =>
-    Math.max(AVG_COL_HEIGHT, Math.ceil(avgData.value.names.length * (AVG_COL_HEIGHT / AVG_VISIBLE))),
+// The most a province can score on the active filter: 100% overall, or the
+// category's weight (a category is worth its weight in points of the total).
+const scoreScale = computed(() => {
+    if (selectedCategory.value === 'overall') return 100;
+    const weight = kpiCategories.value.find(c => c.code === selectedCategory.value)?.weight ?? 1;
+    return Math.round(weight * 1000) / 10 || 100;
+});
+const scoreLabel = computed(() =>
+    selectedCategory.value === 'overall' ? 'weighted score' : `${selectedCategory.value} contribution`,
 );
 
 
@@ -1446,21 +1377,50 @@ const trendSeries = computed(() => {
         }));
 });
 
+// Hover card for one year: every plotted province, highest score first, in dark
+// text beside its line colour - readable whatever the colour.
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const trendTooltip = ({ series, dataPointIndex, w }) => {
+    const year = trendData.value.years[dataPointIndex];
+    const rows = series
+        .map((data, i) => ({ name: w.globals.seriesNames[i], color: w.globals.colors[i], value: data[dataPointIndex] }))
+        .filter(r => r.value !== null && r.value !== undefined)
+        .sort((a, b) => b.value - a.value)
+        .map(r => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0;">
+                       <span style="width:10px;height:10px;border-radius:50%;background:${r.color};flex-shrink:0;"></span>
+                       <span style="flex:1;color:#334155;">${escapeHtml(r.name)}</span>
+                       <strong style="color:#0f172a;font-variant-numeric:tabular-nums;">${r.value.toFixed(2)}%</strong>
+                   </div>`)
+        .join('');
+    return `<div style="padding:8px 12px;font-size:12px;min-width:220px;">
+                <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">${year}</div>
+                ${rows || '<div style="color:#64748b;">No scores this year</div>'}
+            </div>`;
+};
+
 const trendOptions = computed(() => ({
     chart: { type: 'line', toolbar: { show: true }, fontFamily: 'inherit',
              animations: { enabled: true, speed: 500 } },
-    stroke: { curve: 'smooth', width: 2.5 },
-    markers: { size: 4 },
+    // Scores are read from the hover card, not printed on every point: with
+    // many provinces the labels piled up and white text on light lines was
+    // unreadable.
+    dataLabels: { enabled: false },
+    stroke: { curve: 'straight', width: 2.5 },
+    markers: { size: 5, strokeColors: '#ffffff', strokeWidth: 2, hover: { sizeOffset: 2 } },
     xaxis: { categories: trendData.value.years,
-             title: { text: 'Year', style: { fontSize: '14px', fontFamily: 'inherit', fontWeight: '600' } },
-             labels: { style: { fontSize: '14px', fontFamily: 'inherit' } } },
-    yaxis: { min: 0, max: 100,
-             title: { text: 'Weighted Score (%)', style: { fontSize: '14px', fontFamily: 'inherit', fontWeight: '600' } },
-             labels: { formatter: v => `${v}%`, style: { fontSize: '14px', fontFamily: 'inherit' } } },
-    grid: { borderColor: '#f1f5f9' },
+             title: { text: 'Year', style: { fontSize: '14px', fontFamily: 'inherit', fontWeight: '600', color: '#475569' } },
+             labels: { style: { fontSize: '14px', fontFamily: 'inherit', colors: '#475569' } },
+             axisBorder: { color: '#cbd5e1' }, axisTicks: { show: false },
+             crosshairs: { stroke: { color: '#94a3b8', width: 1, dashArray: 3 } },
+             tooltip: { enabled: false } },
+    yaxis: { min: 0, max: scoreScale.value, tickAmount: 4,
+             title: { text: 'Weighted Score (%)', style: { fontSize: '14px', fontFamily: 'inherit', fontWeight: '600', color: '#475569' } },
+             labels: { formatter: v => `${Math.round(v * 10) / 10}%`, style: { fontSize: '13px', fontFamily: 'inherit', colors: '#64748b' } } },
+    grid: { borderColor: '#eef1f5', strokeDashArray: 0 },
     legend: { position: 'bottom', fontSize: '14px', fontFamily: 'inherit', showForSingleSeries: true,
+              labels: { colors: '#334155' },
               markers: { size: 8 }, itemMargin: { horizontal: 10, vertical: 6 } },
-    tooltip: { y: { formatter: v => v == null ? '-' : `${v.toFixed(2)}%` } },
+    tooltip: { shared: true, intersect: false, custom: trendTooltip },
 }));
 
 // Match the right-side rest list's max height to the podium stage so the two
@@ -1971,10 +1931,9 @@ watch(searchTarget, async (province) => {
     animation: search-pulse 0.55s ease-in-out 3;
 }
 
-/* Performance Distribution card - fixed chart slot keeps page layout stable
-   regardless of how many provinces are ranked in the active filter. */
+/* Performance Distribution card - height set from the window (fitDistHeight),
+   the same for every tier and for both views. */
 .bell-card-body {
-    height: 560px;
     overflow: hidden;
     position: relative;
     padding: 4px 4px 0;
@@ -2051,9 +2010,12 @@ watch(searchTarget, async (province) => {
     min-height: 0;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 .perf-empty {
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 220px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2061,14 +2023,6 @@ watch(searchTarget, async (province) => {
     gap: 8px;
     text-align: center;
 }
-.avg-chart-scroll {
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-.avg-chart-scroll::-webkit-scrollbar       { width: 8px; }
-.avg-chart-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.avg-chart-scroll::-webkit-scrollbar-track { background: transparent; }
 
 /* Compact bar/bell toggle */
 .bell-view-toggle { height: 28px; }
