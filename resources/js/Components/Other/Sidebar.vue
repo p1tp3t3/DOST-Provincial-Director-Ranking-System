@@ -66,6 +66,7 @@ const tabs = computed(() => {
                     children: [
                         { name: 'User List',         href: '/users',          icon: RiTeamFill    },
                         { name: 'User Registration', href: '/users/create',   icon: RiUserAddLine },
+                        { name: 'Auto User Generator', href: '/users/auto-generator', icon: RiFile2Fill },
                         { name: 'Admin List',         href: '/admins',          icon: RiAdminFill    },
                     ]
                 },

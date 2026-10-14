@@ -12,13 +12,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 #[Fillable(['dost_employee_id', 'username', 'email', 'password', 'activate', 'region_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasPushSubscriptions;
 
     // 'role' is appended (not a real column) so it still shows up in
     // toArray()/JSON for the frontend — see getRoleAttribute() below.

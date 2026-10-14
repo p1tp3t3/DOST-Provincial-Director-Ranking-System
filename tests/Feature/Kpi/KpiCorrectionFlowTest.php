@@ -3,7 +3,6 @@
 use App\Models\ActivityLog;
 use App\Models\KpiCorrectionRequest as Correction;
 use App\Models\KpiReportingDeadline;
-use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
 
@@ -53,10 +52,11 @@ function correctionAt(string $status, ?int $quarter = 1, ?int $year = null): Cor
     ]);
 }
 
+// The bell notifications a user received (NotificationHelper::notify), oldest first.
 function messagesFor(User $user): array
 {
-    return Notification::where('receiver_id', $user->id)->orderBy('id')->get()
-        ->map(fn($n) => $n->content['message'])->all();
+    return $user->notifications()->reorder()->oldest()->get()
+        ->map(fn($n) => $n->data['body'])->all();
 }
 
 function saveQ1(User $as, $value = 7, ?int $year = null)
@@ -332,25 +332,23 @@ describe('screens and notifications', function () {
             ->and(inertiaProps($this->actingAs($this->central)->get('/dashboard'))['correction_inbox'])->toBe(1);
     });
 
-    it('feeds the bell on every page, and marks notifications read', function () {
-        fileCorrection();
-        $feed = inertiaProps($this->actingAs($this->rd)->get('/dashboard'))['notifications'];
-        expect($feed['unread'])->toBe(1)
-            ->and($feed['items'][0])->toMatchArray(['type' => 'correction', 'url' => '/kpi-corrections', 'read' => false]);
-
-        $id = $feed['items'][0]['id'];
-        $this->actingAs($this->central)->post("/notifications/{$id}/read")->assertForbidden();
-        $this->actingAs($this->rd)->post("/notifications/{$id}/read")->assertRedirect();
-        expect(inertiaProps($this->actingAs($this->rd)->get('/dashboard'))['notifications']['unread'])->toBe(0);
-    });
-
-    it('marks all notifications read at once', function () {
-        fileCorrection();
-        Correction::sole()->update(['status' => Correction::DECLINED]);
+    it('puts each step in the bell, as a correction from the person who took it', function () {
         fileCorrection();
 
-        expect(Notification::where('receiver_id', $this->rd->id)->whereNull('read_since')->count())->toBe(2);
-        $this->actingAs($this->rd)->post('/notifications/read-all')->assertRedirect();
-        expect(Notification::where('receiver_id', $this->rd->id)->whereNull('read_since')->count())->toBe(0);
+        $bell = $this->actingAs($this->rd)->getJson('/notifications')->assertOk()->json();
+        expect($bell['unread'])->toBe(1)
+            ->and($bell['notifications'][0])->toMatchArray([
+                'title'    => "Pangasinan · Q1 {$this->year} correction",
+                'category' => 'correction',
+                'url'      => '/kpi-corrections',
+                'read'     => false,
+            ])
+            ->and($bell['notifications'][0]['sender'])->not->toBe('System');
+
+        // Only the receiver can mark it read.
+        $id = $bell['notifications'][0]['id'];
+        $this->actingAs($this->central)->post("/notifications/{$id}/read")->assertNotFound();
+        $this->actingAs($this->rd)->post("/notifications/{$id}/read")->assertNoContent();
+        expect($this->rd->unreadNotifications()->count())->toBe(0);
     });
 });

@@ -262,13 +262,22 @@ class KpiCorrectionService
         return User::whereRoleIn($roles)->whereProvince($province->id)->get();
     }
 
+    // Bell + browser push (NotificationHelper::notify), each person once and
+    // never the one taking the step. One tag per request, so a newer browser
+    // notification about it replaces the older one.
     private function notify(User $sender, iterable $receivers, Correction $correction, string $message, string $url): void
     {
-        NotificationHelper::dbMany($sender, $receivers, [
-            'type'          => 'correction',
-            'message'       => $message,
-            'url'           => $url,
-            'correction_id' => $correction->id,
-        ]);
+        $users = collect($receivers)->unique('id')->reject(fn(User $u) => $u->id === $sender->id)->values();
+        if ($users->isEmpty()) return;
+
+        NotificationHelper::notify(
+            $users,
+            "{$correction->province?->name} · {$correction->periodLabel()} correction",
+            $message,
+            $url,
+            'correction',
+            "correction-{$correction->id}",
+            $sender,
+        );
     }
 }

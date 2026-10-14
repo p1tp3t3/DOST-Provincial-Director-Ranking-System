@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\Auth\RoleSwitchController;
 use App\Http\Controllers\Auth\SuperAdminLoginController;
 use App\Http\Controllers\DashboardController;
@@ -14,7 +16,6 @@ use App\Http\Controllers\Modules\KpiDeadlineController;
 use App\Http\Controllers\Modules\KpiEntryController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
-use App\Http\Controllers\Modules\NotificationController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
 use App\Http\Controllers\Modules\RegionController;
@@ -66,9 +67,14 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::get('/choose-role',   [RoleSwitchController::class, 'edit'])->name('role.choose');
     Route::patch('/switch-role', [RoleSwitchController::class, 'update'])->name('role.switch');
 
-    // The header bell (the feed itself is shared with every page).
-    Route::post('/notifications/read-all',            [NotificationController::class, 'markAllRead']);
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->whereNumber('notification');
+    // Header bell: notifications sent with NotificationHelper::notify()
+    Route::get('/notifications',               [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all',     [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read',    [NotificationController::class, 'markRead']);
+
+    // Browser push subscription (KPI reminders)
+    Route::post('/push-subscriptions',   [PushSubscriptionController::class, 'store']);
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy']);
 
     Route::middleware('profile-view')->group(function () {
 
@@ -195,6 +201,7 @@ Route::middleware(['auth', 'activation'])->group(function () {
         Route::get('/users/create',                                    [UserController::class, 'manual_registration_index']);
         Route::post('/users/store',                                    [UserController::class, 'store']);
         Route::get('/users/auto-generator',                            [UserController::class, 'auto_registration_index']);
+        Route::get('/users/auto-generator/template.xlsx',              [UserController::class, 'generator_template']);
         Route::post('/provincial-admin/auto-generator/generate',       [UserController::class, 'upload_user_csv_file']);
         Route::get('/auto-generator/batch/{batchId}',                  [UserController::class, 'batch_status']);
         Route::post('/provincial-admin/csv/verify',                    [UserController::class, 'verify_csv']);
