@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KPICategory;
+use App\Models\KpiCorrectionRequest;
 use App\Models\KpiQuarterApproval;
 use App\Models\Region;
 use App\Models\User;
@@ -100,6 +101,7 @@ class DashboardController extends Controller
             'available_years'     => $released,
             'pending_years'       => $pending,
             'release'             => collect([...$released, ...$pending])->mapWithKeys(fn($y) => [$y => $release->status($y)]),
+            'revisions'           => self::revisions($released, $provinceIds),
             'kpi_categories'      => KPICategory::catalog(),
             'rankings_by_year'    => collect($released)->mapWithKeys(fn($y) => [$y => $build($y, true)]),
             'pending_by_year'     => collect($pending)->mapWithKeys(fn($y) => [$y => $build($y, false)]),
@@ -108,6 +110,29 @@ class DashboardController extends Controller
                 'targets'      => $entryKpis->where('is_scored', true)->count(),
             ],
         ];
+    }
+
+    // Released years whose figures were changed afterwards through an approved
+    // correction: { <year>: { at, provinces: [{ province_id, province, periods, at }] } }.
+    // `at` is the latest revision nationally — any province's correction can
+    // move ranks in its tier — while `provinces` lists only the ones in scope.
+    private static function revisions(array $years, ?array $provinceIds): array
+    {
+        return KpiCorrectionRequest::with('province')
+            ->whereNotNull('revised_at')->whereIn('year', $years)
+            ->get()->groupBy('year')
+            ->map(fn(Collection $rows) => [
+                'at'        => $rows->sortByDesc('revised_at')->first()->revised_at->toIso8601String(),
+                'provinces' => $rows
+                    ->filter(fn($c) => $provinceIds === null || in_array((int) $c->province_id, array_map('intval', $provinceIds), true))
+                    ->groupBy('province_id')
+                    ->map(fn(Collection $cs) => [
+                        'province_id' => (int) $cs->first()->province_id,
+                        'province'    => $cs->first()->province?->name,
+                        'periods'     => $cs->sortBy('quarter')->map->periodLabel()->unique()->values()->all(),
+                        'at'          => $cs->sortByDesc('revised_at')->first()->revised_at->toIso8601String(),
+                    ])->values()->all(),
+            ])->all();
     }
 
     // Per year and province: how many entry KPIs have an accomplishment, and how

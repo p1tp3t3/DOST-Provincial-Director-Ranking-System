@@ -105,24 +105,16 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 
 const open = ref(false);
 const tab  = ref('all');
 
-const notifications = ref([
-    { id: 1,  type: 'kpi',      message: 'Your KPI record for Q2 2026 has been updated by the Provincial Admin.',          time: 'Just now',      read: false },
-    { id: 2,  type: 'account',  message: 'A new employee account was generated for Davao del Sur (32 accounts created).',  time: '5 minutes ago', read: false },
-    { id: 3,  type: 'report',   message: 'Activity logs report for May 2026 was exported successfully.',                   time: '1 hour ago',    read: false },
-    { id: 4,  type: 'system',   message: 'System maintenance is scheduled on June 5, 2026 at 12:00 AM.',                   time: '3 hours ago',   read: false },
-    { id: 5,  type: 'account',  message: 'Your password was changed successfully.',                                        time: 'Yesterday',     read: true  },
-    { id: 6,  type: 'kpi',      message: 'KPI outcomes for Bukidnon province have been submitted for review.',             time: 'Yesterday',     read: true  },
-    { id: 7,  type: 'report',   message: 'Ranking report for Region XI has been published.',                               time: '2 days ago',    read: true  },
-    { id: 8,  type: 'system',   message: 'Database backup completed successfully (14.2 MB).',                              time: '3 days ago',    read: true  },
-    { id: 9,  type: 'account',  message: 'New provincial admin account was created for Surigao del Norte.',                time: '4 days ago',    read: true  },
-    { id: 10, type: 'kpi',      message: 'Q1 2026 KPI scores have been finalized and are now available for review.',       time: '1 week ago',    read: true  },
-]);
-
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length);
+// Shared with every page (HandleInertiaRequests): { unread, items: [{ id,
+// type, message, url, read, time }] }, so it refreshes on each visit.
+const page = usePage();
+const notifications = computed(() => page.props.notifications?.items ?? []);
+const unreadCount   = computed(() => page.props.notifications?.unread ?? 0);
 
 const displayed = computed(() =>
     tab.value === 'unread'
@@ -131,28 +123,37 @@ const displayed = computed(() =>
 );
 
 const markAllRead = () => {
-    notifications.value = notifications.value.map(n => ({ ...n, read: true }));
+    router.post('/notifications/read-all', {}, { preserveScroll: true, preserveState: true });
 };
 
+// Mark it read, then go where it points.
 const handleClick = (notif) => {
-    if (!notif.read) {
-        const idx = notifications.value.findIndex(n => n.id === notif.id);
-        if (idx !== -1) notifications.value[idx].read = true;
-    }
+    const go = () => {
+        open.value = false;
+        if (notif.url) router.visit(notif.url);
+    };
+    if (notif.read) return go();
+    router.post(`/notifications/${notif.id}/read`, {}, {
+        preserveScroll: true,
+        preserveState: true,
+        onFinish: go,
+    });
 };
 
 const typeColor = (type) => ({
-    kpi:     'indigo',
-    account: 'teal',
-    report:  'purple',
-    system:  'orange',
+    correction: 'deep-orange',
+    kpi:        'indigo',
+    account:    'teal',
+    report:     'purple',
+    system:     'orange',
 }[type] ?? 'grey');
 
 const typeIcon = (type) => ({
-    kpi:     'mdi-clipboard-check-outline',
-    account: 'mdi-account-outline',
-    report:  'mdi-file-chart-outline',
-    system:  'mdi-cog-outline',
+    correction: 'mdi-file-document-edit-outline',
+    kpi:        'mdi-clipboard-check-outline',
+    account:    'mdi-account-outline',
+    report:     'mdi-file-chart-outline',
+    system:     'mdi-cog-outline',
 }[type] ?? 'mdi-bell-outline');
 </script>
 

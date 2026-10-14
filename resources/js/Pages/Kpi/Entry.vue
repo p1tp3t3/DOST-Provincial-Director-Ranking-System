@@ -68,16 +68,58 @@
                             @click="approve(p.quarter)"
                         >Approve Q{{ p.quarter }}</v-btn>
                     </div>
+                    <!-- Locked: ask for a correction, or show where the request is -->
+                    <div v-if="!p.open" class="mt-2">
+                        <div v-if="activeRequest(p.quarter)" class="request-state" @click="scrollToRequests">
+                            <v-icon size="14">mdi-file-document-edit-outline</v-icon>
+                            Correction requested · {{ activeRequest(p.quarter).status_label.toLowerCase() }}
+                        </div>
+                        <v-btn
+                            v-else-if="can_request"
+                            size="x-small" color="indigo" variant="tonal" prepend-icon="mdi-lock-open-plus-outline"
+                            @click="openRequest(p.quarter)"
+                        >Request correction</v-btn>
+                    </div>
                 </div>
                 <div class="period-card period-card--targets">
                     <div class="d-flex align-center justify-space-between">
                         <span class="period-name">Targets</span>
-                        <v-chip size="x-small" :color="targets_open ? 'success' : 'blue-grey'" variant="tonal" class="font-weight-medium">
-                            <v-icon start size="12">{{ targets_open ? 'mdi-lock-open-variant-outline' : 'mdi-lock-outline' }}</v-icon>{{ targets_open ? 'Open' : 'Locked' }}
+                        <v-chip size="x-small" :color="targetsState.color" variant="tonal" class="font-weight-medium">
+                            <v-icon start size="12">{{ targetsState.icon }}</v-icon>{{ targetsState.label }}
                         </v-chip>
                     </div>
-                    <div class="text-caption text-medium-emphasis mt-1">Annual targets close with the Q4 deadline.</div>
+                    <div class="text-caption text-medium-emphasis mt-1">{{ targetsState.detail }}</div>
+                    <div v-if="!targets_open" class="mt-2">
+                        <div v-if="activeRequest(null)" class="request-state" @click="scrollToRequests">
+                            <v-icon size="14">mdi-file-document-edit-outline</v-icon>
+                            Correction requested · {{ activeRequest(null).status_label.toLowerCase() }}
+                        </div>
+                        <v-btn
+                            v-else-if="can_request"
+                            size="x-small" color="indigo" variant="tonal" prepend-icon="mdi-lock-open-plus-outline"
+                            @click="openRequest(null)"
+                        >Request correction</v-btn>
+                    </div>
                 </div>
+            </div>
+        </v-card>
+
+        <!-- Correction requests for this year -->
+        <v-card v-if="corrections.length" ref="requestsCard" border elevation="0" rounded="lg">
+            <div class="d-flex align-center gap-2 px-4 py-3">
+                <v-icon size="18" color="indigo">mdi-file-document-edit-outline</v-icon>
+                <span class="text-subtitle-2 font-weight-bold">Correction requests · {{ year }}</span>
+                <span class="text-caption text-medium-emphasis ml-auto">Province → Regional Director → Central Office</span>
+            </div>
+            <v-divider />
+            <div class="pa-4 d-flex flex-column gap-3">
+                <CorrectionRequestCard v-for="r in corrections" :key="r.id" :request="r">
+                    <template v-if="can_request && r.status === 'returned'" #actions>
+                        <v-btn size="small" color="indigo" variant="flat" prepend-icon="mdi-send" @click="openResubmit(r)">
+                            Update reason &amp; resubmit
+                        </v-btn>
+                    </template>
+                </CorrectionRequestCard>
             </div>
         </v-card>
 
@@ -188,14 +230,53 @@
             <v-btn color="indigo" size="small" :loading="saving" :disabled="!changedCount" prepend-icon="mdi-content-save" @click="save">Save Changes</v-btn>
         </div>
 
+        <!-- Ask to reopen a locked period, or resubmit a returned request -->
+        <v-dialog v-model="request.open" max-width="540" persistent>
+            <v-card rounded="lg">
+                <v-card-title class="d-flex align-center gap-2 pt-4 px-5">
+                    <v-icon color="indigo">mdi-lock-open-plus-outline</v-icon>
+                    {{ request.correction ? 'Update and resubmit' : 'Request a correction' }} · {{ request.label }}
+                </v-card-title>
+                <v-card-text class="px-5">
+                    <div class="text-body-2 text-medium-emphasis mb-4">
+                        Your regional director reviews this first and forwards it to the central office, which decides
+                        whether to reopen {{ request.label }} and until when. Only that period reopens.
+                    </div>
+                    <v-alert v-if="request.correction?.regional?.note" type="warning" variant="tonal" density="compact" class="mb-4">
+                        <strong>Returned by {{ request.correction.regional.by }}:</strong> {{ request.correction.regional.note }}
+                    </v-alert>
+                    <v-textarea
+                        v-model="request.reason"
+                        label="What needs to change, and why?"
+                        placeholder="e.g. Q2 proposals were under-reported: 3 approved proposals were left out because their documents arrived after the deadline."
+                        variant="outlined"
+                        rows="4"
+                        auto-grow
+                        counter="2000"
+                        :error-messages="request.errors.reason || request.errors.period || request.errors.status"
+                    />
+                </v-card-text>
+                <v-card-actions class="px-5 pb-4">
+                    <v-spacer />
+                    <v-btn variant="text" :disabled="request.sending" @click="request.open = false">Cancel</v-btn>
+                    <v-btn variant="flat" color="indigo" :loading="request.sending" :disabled="request.reason.trim().length < 10" @click="sendRequest">
+                        {{ request.correction ? 'Resubmit' : 'Send to regional director' }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-snackbar v-model="toast.show" color="success" timeout="3500" location="bottom right">{{ toast.text }}</v-snackbar>
+
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, reactive } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { categoryVisual } from '@/Data/kpiCategories';
 import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
+import CorrectionRequestCard from '@/Components/Kpi/CorrectionRequestCard.vue';
 
 const props = defineProps({
     province:       { type: Object,  required: true },
@@ -207,9 +288,13 @@ const props = defineProps({
     // [{ quarter, deadline, open, reopened_until, approval: { by, at, note } | null }]
     periods:        { type: Array,   default: () => [] },
     targets_open:   { type: Boolean, default: true },
+    targets_reopened_until: { type: String, default: null },
     can_edit:       { type: Boolean, default: false },
     can_approve:    { type: Boolean, default: false },
     is_central:     { type: Boolean, default: false },
+    // This year's correction requests (KpiCorrectionService::present), newest first.
+    corrections:    { type: Array,   default: () => [] },
+    can_request:    { type: Boolean, default: false },
 });
 
 const QUARTERS = [1, 2, 3, 4];
@@ -281,7 +366,55 @@ const periodState = (p) => {
     return { label: 'Open', color: 'success', icon: 'mdi-lock-open-variant-outline', detail: 'No deadline set yet' };
 };
 
+const targetsState = computed(() => {
+    if (props.targets_reopened_until) return { label: 'Reopened', color: 'warning', icon: 'mdi-lock-open-alert-outline', detail: `Correction approved · open until ${formatDate(props.targets_reopened_until)}` };
+    if (!props.targets_open)          return { label: 'Locked',   color: 'blue-grey', icon: 'mdi-lock-outline', detail: 'Closed with the Q4 deadline.' };
+    return { label: 'Open', color: 'success', icon: 'mdi-lock-open-variant-outline', detail: 'Annual targets close with the Q4 deadline.' };
+});
+
 const quarterHasData = (q) => allKpis.value.some(k => k.quarters?.[q] !== null && k.quarters?.[q] !== undefined);
+
+// ── Correction requests ──────────────────────────────────────────────────
+// A locked period can only change through a request: province → regional
+// director → central office. quarter null = the year's targets.
+const IN_PROGRESS = ['pending_regional', 'pending_central', 'returned'];
+const activeRequest = (quarter) => props.corrections.find(c => c.quarter === quarter && IN_PROGRESS.includes(c.status)) ?? null;
+
+const requestsCard = ref(null);
+const scrollToRequests = () => requestsCard.value?.$el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+const request = reactive({ open: false, quarter: null, label: '', correction: null, reason: '', errors: {}, sending: false });
+const toast   = reactive({ show: false, text: '' });
+
+const periodLabel = (quarter) => (quarter ? `Q${quarter} ${props.year}` : `${props.year} targets`);
+
+const openRequest = (quarter) => {
+    Object.assign(request, { open: true, quarter, label: periodLabel(quarter), correction: null, reason: '', errors: {}, sending: false });
+};
+const openResubmit = (correction) => {
+    Object.assign(request, { open: true, quarter: correction.quarter, label: correction.period, correction, reason: correction.reason, errors: {}, sending: false });
+};
+
+const sendRequest = () => {
+    const resubmitting = !!request.correction;
+    const options = {
+        preserveScroll: true,
+        onStart:   () => { request.sending = true; },
+        onFinish:  () => { request.sending = false; },
+        onError:   (errors) => { request.errors = errors; },
+        onSuccess: () => {
+            request.open = false;
+            Object.assign(toast, { show: true, text: resubmitting
+                ? `Resubmitted the request for ${request.label}.`
+                : `Request for ${request.label} sent to your regional director.` });
+        },
+    };
+    if (resubmitting) {
+        router.patch(`/kpi-corrections/${request.correction.id}/resubmit`, { reason: request.reason.trim() }, options);
+    } else {
+        router.post('/kpi-corrections', { year: props.year, quarter: request.quarter, reason: request.reason.trim() }, options);
+    }
+};
 
 // ── Actions ──────────────────────────────────────────────────────────────
 const saving    = ref(false);
@@ -345,6 +478,8 @@ useKpiCatalogSync(['kpi_categories'], { canReload: () => !changedCount.value });
 .period-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
 .period-card--targets { background: #fafaff; }
 .period-name { font-weight: 700; font-size: 15px; color: #0f172a; }
+.request-state { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #b45309; cursor: pointer; }
+.request-state:hover { text-decoration: underline; }
 
 .table-scroll { overflow-x: auto; }
 .kpi-th { font-size: 0.65rem !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(var(--v-theme-on-surface), 0.5) !important; background: rgba(var(--v-theme-surface-variant), 0.4) !important; padding: 8px 10px !important; white-space: nowrap; }

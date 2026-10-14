@@ -157,6 +157,19 @@
         </div>
 
         <template v-if="tab === 'rankings' && !isPendingYear">
+        <!-- Revised: figures changed through an approved correction after this
+             year's rankings were released -->
+        <v-alert v-if="revision" type="warning" variant="tonal" density="compact" icon="mdi-history" class="revised-alert">
+            <strong>Revised {{ formatRevised(revision.at) }}.</strong>{{ ' ' }}
+            <template v-if="revision.provinces.length">
+                {{ selectedYear }} rankings were updated after release because figures were corrected through an approved request:
+                {{ revision.provinces.map(p => `${p.province} (${p.periods.join(', ')})`).join('; ') }}.
+            </template>
+            <template v-else>
+                A province's figures were corrected after the {{ selectedYear }} rankings were released, which can change ranks in its tier.
+            </template>
+        </v-alert>
+
         <!-- Performance Distribution - one bell-curve card replaces the
              three Top/Average/Low cards. The histogram bars give per-bin
              detail (tooltip lists the provinces in each 5% band) and the
@@ -493,6 +506,8 @@
                                :class="{ 'text-disabled': !isRanked(item) }">
                                 {{ item.province }}
                             </a>
+                            <v-chip v-if="revisedFor(item)" size="x-small" color="deep-orange" variant="tonal" class="ml-1 font-weight-medium"
+                                    :title="`Corrected ${revisedFor(item).periods.join(', ')} · ${formatRevised(revisedFor(item).at)}`">Revised</v-chip>
                             <div v-if="item.region" class="text-caption text-disabled" style="line-height:1.2;margin-top:1px;">{{ item.region }}</div>
                         </template>
 
@@ -664,6 +679,8 @@
                                     <div class="flex-1" style="min-width:0;">
                                         <div class="text-body-2 font-weight-medium text-truncate">
                                             <a :href="`/province-directories/${item.province_url_id}`" class="province-link">{{ item.province }}</a>
+                                            <v-chip v-if="revisedFor(item)" size="x-small" color="deep-orange" variant="tonal" class="ml-1 font-weight-medium"
+                                                    :title="`Corrected ${revisedFor(item).periods.join(', ')} · ${formatRevised(revisedFor(item).at)}`">Revised</v-chip>
                                         </div>
                                         <div v-if="item.region" class="text-caption text-disabled text-truncate" style="line-height:1.2;">{{ item.region }}</div>
                                     </div>
@@ -755,6 +772,10 @@ const props = defineProps({
     // … and years still being reported: their rows carry submission progress only.
     pending_years:       { type: Array,  default: () => [] },
     pending_by_year:     { type: Object, default: () => ({}) },
+    // Released years revised by an approved correction:
+    // { <year>: { at, provinces: [{ province_id, province, periods, at }] } }
+    // (an empty PHP array arrives as []).
+    revisions:           { type: [Object, Array], default: () => ({}) },
     // { <year>: { released, reason, submitted, total, deadline } }
     release:             { type: Object, default: () => ({}) },
     submission_expected: { type: Object, default: () => ({ accomplished: 0, targets: 0 }) },
@@ -898,6 +919,12 @@ const rowsForYear = (year) => Object.values(props.rankings_by_year[year] ?? prop
 
 // ── Ranking release ───────────────────────────────────────────────────────
 const isPendingYear = computed(() => props.pending_years.map(Number).includes(Number(selectedYear.value)));
+
+// ── Revised rankings ──────────────────────────────────────────────────────
+const revision = computed(() => props.revisions?.[selectedYear.value] ?? null);
+const revisedByProvince = computed(() => new Map((revision.value?.provinces ?? []).map(p => [Number(p.province_id), p])));
+const revisedFor = (row) => revisedByProvince.value.get(Number(row.province_id)) ?? null;
+const formatRevised = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const releaseStatus = computed(() => props.release[selectedYear.value] ?? { year: selectedYear.value, submitted: 0, total: 0, deadline: null });
 const yearItems = computed(() => [
     ...props.pending_years.map(y => ({ value: y, label: `${y} (pending)` })),
@@ -1274,6 +1301,8 @@ const fitDistHeight  = () => {
 };
 // The card mounts again when the Rankings tab or a released year comes back.
 watch(distBodyRef, (el) => { if (el) nextTick(fitDistHeight); });
+// The Revised notice above it comes and goes with the year.
+watch(() => !!revision.value, () => nextTick(fitDistHeight));
 onMounted(() => window.addEventListener('resize', fitDistHeight));
 onUnmounted(() => window.removeEventListener('resize', fitDistHeight));
 
@@ -1930,6 +1959,8 @@ watch(searchTarget, async (province) => {
 .leaderboard-table :deep(tr.search-highlight) {
     animation: search-pulse 0.55s ease-in-out 3;
 }
+
+.revised-alert { font-size: 13px; }
 
 /* Performance Distribution card - height set from the window (fitDistHeight),
    the same for every tier and for both views. */

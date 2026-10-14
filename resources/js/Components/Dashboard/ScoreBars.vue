@@ -11,7 +11,7 @@ const props = defineProps({
     items:      { type: Array,  default: () => [] },
     max:        { type: Number, default: 100 },
     valueLabel: { type: String, default: 'weighted score' },
-    nameWidth:  { type: Number, default: 150 },
+    nameWidth:  { type: Number, default: 165 },
     // The smallest row. The list fills its parent's height: a short list
     // stretches its rows and bars to fill it, a long one keeps this height and
     // scrolls.
@@ -45,6 +45,7 @@ const sizing = computed(() => ({
     '--row-h':      `${rowH.value}px`,
     '--bar-h':      `${Math.min(MAX_BAR, Math.round(rowH.value * 0.56))}px`,   // 18px at 32, 54px at 96
     '--value-size': rowH.value > 48 ? '13px' : '12px',
+    '--name-size':  rowH.value > 48 ? '14px' : '13.5px',
 }));
 
 const scale = computed(() => (props.max > 0 ? props.max : 100));
@@ -132,10 +133,13 @@ const tickLabel = (v) => `${Number.isInteger(v) ? v : Number(v.toFixed(1))}%`;
     border-radius: 6px; cursor: default;
 }
 .sb-row:hover { background: rgba(99, 102, 241, 0.06); }
-.sb-row:hover .sb-name { color: #0f172a; }
+.sb-row:hover .sb-name { color: #4338ca; }
 
+/* Province names in near-black semibold so they read first, ahead of the
+   axis and gridlines. */
 .sb-name {
-    font-size: 13px; color: #475569; text-align: right;
+    font-size: var(--name-size, 13.5px); font-weight: 600; color: #1e293b; text-align: right;
+    letter-spacing: 0.005em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 

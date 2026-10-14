@@ -9,10 +9,12 @@ use App\Http\Controllers\Modules\FacebookPostController;
 use App\Http\Controllers\Modules\KPICatalogController;
 use App\Http\Controllers\Modules\KpiCatalogSnapshotController;
 use App\Http\Controllers\Modules\KPIDataController;
+use App\Http\Controllers\Modules\KpiCorrectionController;
 use App\Http\Controllers\Modules\KpiDeadlineController;
 use App\Http\Controllers\Modules\KpiEntryController;
 use App\Http\Controllers\Modules\LinkageController;
 use App\Http\Controllers\Modules\MaintenanceController;
+use App\Http\Controllers\Modules\NotificationController;
 use App\Http\Controllers\Modules\User\EmployeeController;
 use App\Http\Controllers\Modules\ProvinceController;
 use App\Http\Controllers\Modules\RegionController;
@@ -63,6 +65,10 @@ Route::middleware(['auth', 'activation'])->group(function () {
     // A user holding 2+ roles picks which one is active here; see RoleSwitchController.
     Route::get('/choose-role',   [RoleSwitchController::class, 'edit'])->name('role.choose');
     Route::patch('/switch-role', [RoleSwitchController::class, 'update'])->name('role.switch');
+
+    // The header bell (the feed itself is shared with every page).
+    Route::post('/notifications/read-all',            [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->whereNumber('notification');
 
     Route::middleware('profile-view')->group(function () {
 
@@ -125,6 +131,25 @@ Route::middleware(['auth', 'activation'])->group(function () {
     Route::middleware('role:provincial_director')->group(function () {
         Route::post('/provincial-kpi/{year}/quarters/{quarter}/approve', [KpiEntryController::class, 'approve'])
             ->whereNumber(['year', 'quarter']);
+    });
+
+    // ── KPI correction requests (a locked quarter or a year's targets) ──
+    // Provincial admin requests → regional director forwards or returns →
+    // super admin approves (until a date) or declines. See KpiCorrectionService.
+    Route::middleware('role:provincial_admin')->group(function () {
+        Route::post('/kpi-corrections',                         [KpiCorrectionController::class, 'store']);
+        Route::patch('/kpi-corrections/{correction}/resubmit',  [KpiCorrectionController::class, 'resubmit']);
+    });
+    Route::middleware('role:regional_director,super_admin')->group(function () {
+        Route::get('/kpi-corrections', [KpiCorrectionController::class, 'index']);
+    });
+    Route::middleware('role:regional_director')->group(function () {
+        Route::post('/kpi-corrections/{correction}/forward', [KpiCorrectionController::class, 'forward']);
+        Route::post('/kpi-corrections/{correction}/return',  [KpiCorrectionController::class, 'returnToProvince']);
+    });
+    Route::middleware('role:super_admin')->group(function () {
+        Route::post('/kpi-corrections/{correction}/approve', [KpiCorrectionController::class, 'approve']);
+        Route::post('/kpi-corrections/{correction}/decline', [KpiCorrectionController::class, 'decline']);
     });
 
     // ── KPI Data Editor + Catalog: Super Admin + Sub Admin only ────

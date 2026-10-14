@@ -99,22 +99,26 @@ class KpiEntryService
         $targetKpis = KPI::whereNull('derivation_type')->pluck('id')->flip();
         $directorId = $this->currentDirectorId($provinceId);
         $touched    = [];
+        $changed    = [];   // periods whose figures changed: quarter number, or 'targets'
 
-        DB::transaction(function () use ($provinceId, $year, $targets, $quarters, $by, $entryKpis, $targetKpis, $directorId, &$touched) {
+        DB::transaction(function () use ($provinceId, $year, $targets, $quarters, $by, $entryKpis, $targetKpis, $directorId, &$touched, &$changed) {
             foreach ($targets as $kpiId => $value) {
                 if (!$targetKpis->has($kpiId)) continue;
-                $this->saveTarget($provinceId, (int) $kpiId, $year, $value, $directorId, $by->id);
+                if ($this->saveTarget($provinceId, (int) $kpiId, $year, $value, $directorId, $by->id)) {
+                    $changed['targets'] = true;
+                }
                 $touched[$kpiId] = true;
             }
 
             foreach ($quarters as $quarter => $values) {
-                $changed = false;
                 foreach ($values as $kpiId => $value) {
                     if (!$entryKpis->has($kpiId)) continue;
-                    $changed = $this->saveQuarterValue($provinceId, (int) $kpiId, $year, (int) $quarter, $value, $directorId, $by->id) || $changed;
+                    if ($this->saveQuarterValue($provinceId, (int) $kpiId, $year, (int) $quarter, $value, $directorId, $by->id)) {
+                        $changed[(int) $quarter] = true;
+                    }
                     $touched[$kpiId] = true;
                 }
-                if ($changed) {
+                if (isset($changed[(int) $quarter])) {
                     KpiQuarterApproval::where('province_id', $provinceId)->where('year', $year)->where('quarter', $quarter)->delete();
                 }
             }
@@ -123,18 +127,40 @@ class KpiEntryService
                 $this->rollUp($provinceId, (int) $kpiId, $year, $directorId, $by->id);
             }
         });
+
+        foreach (array_keys($changed) as $period) {
+            $this->noteCorrectionUse($provinceId, $year, $period === 'targets' ? null : (int) $period);
+        }
     }
 
-    private function saveTarget(int $provinceId, int $kpiId, int $year, $value, ?int $directorId, int $userId): void
+    // Returns whether the stored target changed.
+    private function saveTarget(int $provinceId, int $kpiId, int $year, $value, ?int $directorId, int $userId): bool
     {
         $row = ProvincialDirectorKPI::firstOrNew(['province_id' => $provinceId, 'kpi_id' => $kpiId, 'year' => $year]);
         $new = self::toNumberString($value);
-        if ($row->exists && RankingService::parseNumber($row->target) === RankingService::parseNumber($new)) return;
+        if ($row->exists && RankingService::parseNumber($row->target) === RankingService::parseNumber($new)) return false;
+        $changed = $row->exists || $new !== null;
 
         $row->target                 = $new;
         $row->provincial_director_id = $directorId ?? $row->provincial_director_id;
         $row->updated_by             = $userId;
         $row->save();
+        return $changed;
+    }
+
+    // Figures in a period changed while an approved correction held it open:
+    // stamp the correction, and when the year's rankings were already released
+    // mark it as having revised them (the dashboards then show "Revised").
+    private function noteCorrectionUse(int $provinceId, int $year, ?int $quarter): void
+    {
+        $correction = $this->openCorrection($provinceId, $year, $quarter);
+        if (!$correction) return;
+
+        $correction->applied_at = now();
+        if (app(RankingRelease::class)->isReleased($year)) {
+            $correction->revised_at = now();
+        }
+        $correction->save();
     }
 
     // Returns whether the stored value changed. A cleared value is kept as a
@@ -170,6 +196,8 @@ class KpiEntryService
         }
         $any        = array_sum($counts) > 0;
         $directorId = $this->currentDirectorId($provinceId);
+        $before     = KpiQuarterValue::where('province_id', $provinceId)->where('kpi_id', $kpi->id)
+            ->where('year', $year)->pluck('accomplished', 'quarter');
 
         foreach ($counts as $quarter => $count) {
             KpiQuarterValue::updateOrCreate(
@@ -178,6 +206,14 @@ class KpiEntryService
             );
         }
         $this->rollUp($provinceId, $kpi->id, $year, $directorId, $userId);
+
+        foreach ($counts as $quarter => $count) {
+            $old = $before[$quarter] ?? null;
+            $new = $any ? $count : null;
+            if (($old === null ? null : (float) $old) !== ($new === null ? null : (float) $new)) {
+                $this->noteCorrectionUse($provinceId, $year, $quarter);
+            }
+        }
     }
 
     // ── Rolling up ───────────────────────────────────────────────────────────

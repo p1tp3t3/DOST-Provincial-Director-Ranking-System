@@ -15,13 +15,13 @@ import {
     RiListView,
     RiFile2Fill,
     RiBarChart2Fill,
-    RiFolder2Line,
     RiEdit2Fill,
     RiRoadMapFill,
     RiNewspaperLine,
     RiMapPin2Fill,
     RiArchiveStackFill,
     RiCheckboxCircleFill,
+    RiFileEditFill,
 } from '@remixicon/vue';
 
 const props = defineProps({
@@ -46,6 +46,9 @@ const getRoleLabel = () => {
     return label[authUser.value?.role] || '';
 };
 
+// Correction requests waiting on this user (regional director / super admin).
+const correctionInbox = computed(() => page.props.correction_inbox ?? 0);
+
 const tabs = computed(() => {
     if (!authUser.value) return [];
 
@@ -53,9 +56,9 @@ const tabs = computed(() => {
         case 'super_admin':
             return [
                 { name: 'Dashboard', href: '/dashboard', icon: RiDashboard2Fill },
-                { name: 'Regions', href: '/regions', icon: RiMapPin2Fill },
-                { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Line },
+                { name: 'Province Directories', href: '/regions', icon: RiMapPin2Fill },
                 { name: 'KPI Data Editor', href: '/kpi-data', icon: RiEdit2Fill },
+                { name: 'Correction Requests', href: '/kpi-corrections', icon: RiFileEditFill, badge: correctionInbox.value },
                 { name: 'KPI Catalog', href: '/kpi-catalog', icon: RiArchiveStackFill },
                 { name: 'Blog Posts', href: '/blogs', icon: RiNewspaperLine },
                 {
@@ -73,8 +76,7 @@ const tabs = computed(() => {
         case 'sub_admin':
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
-                { name: 'Regions',              href: '/regions',              icon: RiMapPin2Fill    },
-                { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
+                { name: 'Province Directories', href: '/regions',              icon: RiMapPin2Fill    },
                 { name: 'KPI Data Editor',      href: '/kpi-data',             icon: RiEdit2Fill      },
                 { name: 'KPI Catalog',          href: '/kpi-catalog',          icon: RiArchiveStackFill },
                 { name: 'Blog Posts',           href: '/blogs',                icon: RiNewspaperLine  },
@@ -109,6 +111,7 @@ const tabs = computed(() => {
             return [
                 { name: 'Dashboard',            href: '/dashboard',            icon: RiDashboard2Fill },
                 { name: 'Province Directories', href: '/province-directories', icon: RiFolder2Fill    },
+                { name: 'Correction Requests',  href: '/kpi-corrections',      icon: RiFileEditFill, badge: correctionInbox.value },
                 { name: 'User List',            href: '/users',                icon: RiTeamFill       },
                 { name: 'Activity Logs',        href: '/activity-logs',        icon: RiListView       },
                 { name: 'Reports',              href: '/regional-director-report', icon: RiFileChartFill  },
@@ -267,9 +270,13 @@ const onSubNavLeave = (el) => {
                             :class="['nav-item', isActive(tab.href) ? 'nav-item--active' : '', !isOpen ? 'nav-item--collapsed' : '']"
                             @click="navigateTo(tab.href)"
                         >
-                            <component :is="tab.icon" class="nav-icon" />
+                            <span class="nav-icon-wrap">
+                                <component :is="tab.icon" class="nav-icon" />
+                                <span v-if="!isOpen && tab.badge" class="nav-badge-dot"></span>
+                            </span>
                             <span v-if="isOpen" class="nav-label">{{ tab.name }}</span>
-                            <span v-if="isOpen && isActive(tab.href)" class="active-dot"></span>
+                            <span v-if="isOpen && tab.badge" class="nav-badge">{{ tab.badge > 99 ? '99+' : tab.badge }}</span>
+                            <span v-else-if="isOpen && isActive(tab.href)" class="active-dot"></span>
                         </button>
                     </template>
                 </v-tooltip>
@@ -452,5 +459,31 @@ const onSubNavLeave = (el) => {
 .subnav-leave-to {
     max-height: 0;
     opacity: 0;
+}
+
+/* Count of items waiting on the user (e.g. correction requests). */
+.nav-icon-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.nav-badge {
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.nav-badge-dot {
+    position: absolute;
+    top: -3px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 2px #0f2044;
 }
 </style>

@@ -46,16 +46,16 @@ it('loads every page in the role\'s menu', function (string $role, array $pages)
     }
 })->with([
     'super admin' => ['super_admin', [
-        '/dashboard', '/regions', '/province-directories', '/kpi-data', '/kpi-catalog', '/blogs', '/blogs/create',
+        '/dashboard', '/regions', '/kpi-data', '/kpi-corrections', '/kpi-catalog', '/blogs', '/blogs/create',
         '/users', '/users/create', '/admins', '/maintenance', '/activity-logs', '/super-admin-report',
         '/performance-map', '/settings', '/profile',
     ]],
     'sub admin' => ['sub_admin', [
-        '/dashboard', '/regions', '/province-directories', '/kpi-data', '/kpi-catalog', '/blogs', '/employees',
+        '/dashboard', '/regions', '/kpi-data', '/kpi-catalog', '/blogs', '/employees',
         '/sub-admin-report', '/performance-map', '/settings', '/profile',
     ]],
     'regional director' => ['regional_director', [
-        '/dashboard', '/province-directories', '/users', '/activity-logs', '/regional-director-report',
+        '/dashboard', '/province-directories', '/kpi-corrections', '/users', '/activity-logs', '/regional-director-report',
         '/regional-performance-map', '/provincial-directors', '/settings', '/profile',
     ]],
     'provincial admin' => ['provincial_admin', [
@@ -68,6 +68,11 @@ it('loads every page in the role\'s menu', function (string $role, array $pages)
     ]],
     'employee' => ['employee', ['/dashboard', '/provincial-directors', '/settings', '/profile']],
 ]);
+
+it('sends super and sub admins from the old province list to Province Directories', function (string $role) {
+    $this->actingAs($this->users[$role])->get('/province-directories')->assertRedirect('/regions');
+    expect(inertiaProps($this->actingAs($this->users[$role])->get('/regions')->assertOk())['regions'])->not->toBeEmpty();
+})->with(['super_admin', 'sub_admin']);
 
 it('exports each role\'s report as a PDF', function (string $role, string $url) {
     $this->actingAs($this->users[$role])->get($url)

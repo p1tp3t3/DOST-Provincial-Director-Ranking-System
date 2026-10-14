@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Modules;
 
 use App\Helpers\ActivityLogHelper;
 use App\Http\Controllers\Controller;
+use App\Models\KpiCorrectionRequest;
 use App\Models\KpiQuarterApproval;
 use App\Models\KpiQuarterValue;
 use App\Models\KPICategory;
 use App\Models\Province;
 use App\Models\ProvincialDirectorKPI;
 use App\Models\User;
+use App\Services\KpiCorrectionService;
 use App\Services\KpiEntryService;
 use App\Services\RankingService;
 use Illuminate\Http\Request;
@@ -119,7 +121,7 @@ class KpiEntryController extends Controller
                 'quarter'       => $q,
                 'deadline'      => ($deadlines[$q] ?? null)?->deadline?->toDateString(),
                 'open'          => $this->entries->isQuarterOpen($provinceId, $year, $q),
-                'reopened_until'=> $correction?->open_until?->toIso8601String(),
+                'reopened_until'=> $correction?->open_until?->toDateString(),
                 'approval'      => $approval ? [
                     'by' => self::personName($approval->approver),
                     'at' => $approval->updated_at->toIso8601String(),
@@ -130,6 +132,12 @@ class KpiEntryController extends Controller
 
         $isCentral = in_array($user->role, ['super_admin', 'sub_admin'], true);
 
+        // This year's correction requests, newest first (see KpiCorrectionService).
+        $corrections = KpiCorrectionRequest::with(['province.region', 'requester.profile', 'regionalReviewer.profile', 'centralReviewer.profile'])
+            ->where('province_id', $provinceId)->where('year', $year)
+            ->latest('id')->get()
+            ->map(fn($c) => KpiCorrectionService::present($c))->values();
+
         return inertia('Kpi/Entry', [
             'province'       => ['name' => $province->name, 'category' => $province->category],
             'director'       => $director ? ['id' => $director->id, 'name' => self::personName($director)] : null,
@@ -139,9 +147,13 @@ class KpiEntryController extends Controller
             'kpi_categories' => $categories,
             'periods'        => $periods,
             'targets_open'   => $this->entries->areTargetsOpen($provinceId, $year),
+            'targets_reopened_until' => $this->entries->openCorrection($provinceId, $year, null)?->open_until?->toDateString(),
             'can_edit'       => $isCentral || $user->role === 'provincial_admin',
             'can_approve'    => $user->role === 'provincial_director',
             'is_central'     => $isCentral,
+            'corrections'    => $corrections,
+            // Only the province's own admin asks to reopen a locked period.
+            'can_request'    => $user->role === 'provincial_admin',
         ]);
     }
 

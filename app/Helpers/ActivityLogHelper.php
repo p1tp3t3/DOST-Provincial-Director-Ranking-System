@@ -88,6 +88,15 @@ class ActivityLogHelper
         self::log('update', self::actorName() . " set the {$year} reporting deadlines.");
     }
 
+    // A step on a KPI correction request: "requested", "resubmitted",
+    // "forwarded", "returned", "approved" or "declined".
+    public static function kpiCorrection(string $step, string $provinceName, string $period, string $detail = ''): void
+    {
+        $suffix = $detail !== '' ? " - \"{$detail}\"" : '';
+        self::log($step === 'requested' ? 'create' : 'update',
+            self::actorName() . " {$step} the correction request for {$provinceName} {$period}{$suffix}.");
+    }
+
     // ── Account Generation ────────────────────────────────────────
 
     public static function generateAccounts(int $count, string $provinceName): void

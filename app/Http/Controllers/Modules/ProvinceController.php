@@ -22,6 +22,13 @@ use Illuminate\Support\Str;
 class ProvinceController extends Controller
 {
     public function index() {
+        // Super and sub admins browse provinces on the region-grouped directory
+        // (/regions, "Province Directories" in their menu); this flat list
+        // stays for regional directors.
+        if (in_array(auth()->user()->role, ['super_admin', 'sub_admin'], true)) {
+            return redirect('/regions');
+        }
+
         $query = Province::with(['directorAssignments.profile', 'users']);
 
         $regionInfo = null;
