@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MaintenanceNoticeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\Auth\RoleSwitchController;
@@ -43,7 +44,7 @@ Route::get('/map', fn() => inertia('Landing/Map', [
 Route::get('/blog/{slug}', [LandingController::class, 'blogShow'])->name('blog.show');
 
 // ── Public: maintenance notice ─────────────────────────────────
-Route::get('/maintenance-notice', fn() => inertia('Other/Maintenance/Main'))->name('maintenance-notice');
+Route::get('/maintenance-notice', MaintenanceNoticeController::class)->name('maintenance-notice');
 
 // ── Super admin console login (bypasses maintenance mode) ──────
 // {password} is a shared secret that gates the login form itself — it is

@@ -196,6 +196,7 @@ import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { categoryVisual } from '@/Data/kpiCategories';
 import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const props = defineProps({
     province:       { type: Object,  required: true },
@@ -286,9 +287,21 @@ const quarterHasData = (q) => allKpis.value.some(k => k.quarters?.[q] !== null &
 // ── Actions ──────────────────────────────────────────────────────────────
 const saving    = ref(false);
 const approving = ref(null);
+const modals    = useActionModals();
 
 // Sends only what changed, and only for periods that are open.
-const save = () => {
+const save = async () => {
+    const n = changedCount.value;
+    const ok = await modals.confirm({
+        title:       'Save KPI figures?',
+        message:     `Save ${n} ${n === 1 ? 'change' : 'changes'} to ${props.province.name}'s ${props.year} KPI figures?`
+                   + (props.can_edit ? '\nAny change to an approved quarter clears its approval.' : ''),
+        confirmText: 'Save',
+        color:       'indigo',
+        icon:        'mdi-content-save-outline',
+    });
+    if (!ok) return;
+
     const targets  = {};
     const quarters = {};
     for (const k of allKpis.value) {
@@ -303,24 +316,50 @@ const save = () => {
     }
     router.put(`${props.base_url}/${props.year}`, { targets, quarters }, {
         preserveScroll: true,
-        onStart:  () => { saving.value = true; },
-        onFinish: () => { saving.value = false; },
+        // Keep this page (and its dialogs) — fresh props reset the baseline via the watcher.
+        preserveState:  true,
+        onStart:   () => { saving.value = true; },
+        onSuccess: () => modals.success('Saved', `${props.province.name}'s ${props.year} KPI figures were saved.`),
+        onError:   (errors) => modals.error('Could not save', errors, 'Nothing was saved. Fix the following and try again:'),
+        onFinish:  () => { saving.value = false; },
     });
 };
 
-const reset = () => { values.value = JSON.parse(JSON.stringify(initial.value)); };
+const reset = async () => {
+    const ok = await modals.confirm({
+        title: 'Discard changes?', message: 'Your unsaved changes will be lost.',
+        confirmText: 'Discard', color: 'error', icon: 'mdi-undo-variant',
+    });
+    if (ok) values.value = JSON.parse(JSON.stringify(initial.value));
+};
 
-const approve = (q) => {
-    if (!confirm(`Approve Q${q} ${props.year} figures for ${props.province.name}? Any later change to this quarter clears the approval.`)) return;
+const approve = async (q) => {
+    const ok = await modals.confirm({
+        title:       `Approve Q${q} ${props.year}?`,
+        message:     `Approve Q${q} ${props.year} figures for ${props.province.name}? Any later change to this quarter clears the approval.`,
+        confirmText: 'Approve',
+        color:       'success',
+        icon:        'mdi-check-decagram-outline',
+    });
+    if (!ok) return;
     router.post(`/provincial-kpi/${props.year}/quarters/${q}/approve`, {}, {
         preserveScroll: true,
-        onStart:  () => { approving.value = q; },
-        onFinish: () => { approving.value = null; },
+        preserveState:  true,
+        onStart:   () => { approving.value = q; },
+        onSuccess: () => modals.success('Approved', `Q${q} ${props.year} figures for ${props.province.name} are approved.`),
+        onError:   (errors) => modals.error('Could not approve', errors),
+        onFinish:  () => { approving.value = null; },
     });
 };
 
-const leave = (url) => {
-    if (changedCount.value && !confirm('You have unsaved changes. Leave this page and discard them?')) return;
+const leave = async (url) => {
+    if (changedCount.value) {
+        const ok = await modals.confirm({
+            title: 'Leave without saving?', message: 'You have unsaved changes. Leave this page and discard them?',
+            confirmText: 'Leave', color: 'error', icon: 'mdi-exit-to-app',
+        });
+        if (!ok) return;
+    }
     router.visit(url);
 };
 const changeYear = (yr) => { if (yr !== props.year) leave(`${props.base_url}/${yr}`); };

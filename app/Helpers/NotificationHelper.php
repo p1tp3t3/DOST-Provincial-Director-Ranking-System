@@ -76,7 +76,9 @@ class NotificationHelper
         $message = (new WebPushMessage)
             ->title($title)
             ->body($body)
+            // PRISM logo as the notification image and (Android) status-bar badge.
             ->icon('/assets/logo.png')
+            ->badge('/assets/logo.png')
             ->tag($tag)
             ->data(['url' => $url ?? '/dashboard'])
             ->options(['TTL' => 86400]);

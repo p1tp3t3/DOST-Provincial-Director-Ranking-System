@@ -100,27 +100,7 @@
             </v-row>
         </v-form>
 
-        <!-- ── Confirm save ────────────────────────────────────── -->
-        <v-dialog v-model="confirmOpen" max-width="440">
-            <v-card rounded="lg">
-                <v-card-title class="pa-5 pb-3 text-h6 font-weight-bold">Save Province Info?</v-card-title>
-                <v-card-text class="px-5 pb-2 text-grey-darken-1">
-                    These changes will show on the public landing page for {{ province.name }}:
-                    <ul class="mt-2 pl-5">
-                        <li>Description</li>
-                        <li v-if="form.image">New cover picture</li>
-                        <li v-else-if="form.remove_image">Cover picture removed (the default picture will show)</li>
-                    </ul>
-                </v-card-text>
-                <v-card-actions class="pa-5 pt-3">
-                    <v-spacer />
-                    <v-btn variant="text" color="medium-emphasis" :disabled="form.processing" @click="confirmOpen = false">Cancel</v-btn>
-                    <v-btn color="primary" variant="flat" :loading="form.processing" @click="submit">Save Changes</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Toast -->
+        <!-- Hint toast (e.g. after cropping); save results use the shared dialogs -->
         <v-snackbar v-model="snack.show" :color="snack.color" timeout="3000" location="top right">
             {{ snack.text }}
         </v-snackbar>
@@ -197,6 +177,7 @@ import { ref, reactive, computed, nextTick, onUnmounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import 'cropperjs';
 import RichTextEditor from '@/Components/Other/RichTextEditor/RichTextEditor.vue';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const props = defineProps({
     province: { type: Object, required: true },
@@ -392,15 +373,26 @@ onUnmounted(() => {
     detachBoundaryConstraint();
 });
 
-// ── Save: confirm first, then a toast with the result ───────────────────
-const confirmOpen = ref(false);
-const snack       = reactive({ show: false, text: '', color: 'success' });
-const toast       = (text, color = 'success') => Object.assign(snack, { show: true, text, color });
+// ── Save: confirm first, then a success/error dialog ─────────────────────
+const snack  = reactive({ show: false, text: '', color: 'success' });
+const toast  = (text, color = 'success') => Object.assign(snack, { show: true, text, color });
+const modals = useActionModals();
 
-const askConfirm = () => { confirmOpen.value = true; };
+const askConfirm = async () => {
+    const changes = ['Description'];
+    if (form.image)             changes.push('New cover picture');
+    else if (form.remove_image) changes.push('Cover picture removed (the default picture will show)');
+    const ok = await modals.confirm({
+        title:       'Save Province Info?',
+        message:     `These changes will show on the public landing page for ${props.province.name}:\n` + changes.map(c => `• ${c}`).join('\n'),
+        confirmText: 'Save Changes',
+        icon:        'mdi-content-save-outline',
+    });
+    if (ok) submit();
+};
 
 const submit = () => {
-    // What this save does, for the toast (the form is reset on success).
+    // What this save does, for the result dialog (the form is reset on success).
     const uploaded = !!form.image;
     const removed  = !uploaded && form.remove_image;
 
@@ -410,18 +402,15 @@ const submit = () => {
         // toast set in onSuccess is the one on screen.
         preserveState:  true,
         onSuccess: () => {
-            confirmOpen.value = false;
             // Saved: the page now shows what the server has.
             dropPendingPick();
             form.remove_image = false;
-            toast(uploaded ? 'Cover picture uploaded and province info saved.'
-                : removed  ? 'Cover picture removed and province info saved.'
-                :            'Province info updated.');
+            modals.success('Province info saved',
+                uploaded ? 'The new cover picture was uploaded and the province info saved.'
+                : removed ? 'The cover picture was removed and the province info saved.'
+                :           'The province info was updated.');
         },
-        onError: () => {
-            confirmOpen.value = false;
-            toast('Could not save. Check the fields and try again.', 'error');
-        },
+        onError: (errors) => modals.error('Could not save', errors, 'Nothing was saved. Fix the following and try again:'),
     });
 };
 </script>

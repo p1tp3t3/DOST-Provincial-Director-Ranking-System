@@ -685,6 +685,14 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
+
+const modals = useActionModals();
+// Shared result handlers for the one-click maintenance actions.
+const resultOf = (done, failed) => ({
+    onSuccess: () => modals.success(done),
+    onError:   (errors) => modals.error(failed, errors),
+});
 
 const props = defineProps({
     backups:                  { type: Array,   default: () => [] },
@@ -744,7 +752,9 @@ const clearLogs = () => {
         onSuccess: () => {
             clearLogsDialog.value = false;
             fetchLogs();
+            modals.success('Logs cleared');
         },
+        onError:  (errors) => modals.error('Could not clear logs', errors),
         onFinish: () => { clearingLogs.value = false; },
     });
 };
@@ -753,10 +763,24 @@ const clearLogs = () => {
 const maintenanceMode  = ref(props.maintenance_mode);
 const togglingMode     = ref(false);
 
-const toggleMaintenanceMode = () => {
+const toggleMaintenanceMode = async () => {
+    const turningOn = !maintenanceMode.value;
+    const ok = await modals.confirm({
+        title:       turningOn ? 'Turn on maintenance mode?' : 'Turn off maintenance mode?',
+        message:     turningOn ? 'Users other than the super admin are locked out until it is turned off.' : 'Everyone can sign in again.',
+        confirmText: turningOn ? 'Turn on' : 'Turn off',
+        color:       turningOn ? 'warning' : 'primary',
+        icon:        'mdi-wrench-outline',
+    });
+    if (!ok) return;
+
     togglingMode.value = true;
     router.post('/maintenance/toggle-mode', {}, {
-        onSuccess: () => { maintenanceMode.value = !maintenanceMode.value; },
+        onSuccess: () => {
+            maintenanceMode.value = !maintenanceMode.value;
+            modals.success(maintenanceMode.value ? 'Maintenance mode is on' : 'Maintenance mode is off');
+        },
+        onError:   (errors) => modals.error('Could not change maintenance mode', errors),
         onFinish:  () => { togglingMode.value = false; },
     });
 };
@@ -780,7 +804,13 @@ const generateBreakglassPassword = () => {
     showBreakglassPw.value = true;
 };
 
-const saveBreakglassPassword = () => {
+const saveBreakglassPassword = async () => {
+    const ok = await modals.confirm({
+        title: 'Save break-glass password?', message: 'It replaces the current break-glass password. Copy the login link shown after saving — the password is not stored in readable form.',
+        confirmText: 'Save', color: 'warning', icon: 'mdi-key-outline',
+    });
+    if (!ok) return;
+
     savingBreakglass.value = true;
     const plaintext = breakglassForm.password;
 
@@ -791,7 +821,9 @@ const saveBreakglassPassword = () => {
             breakglassRevealUrl.value = `${window.location.origin}/admin/login/${encodeURIComponent(plaintext)}`;
             breakglassForm.reset();
             showBreakglassPw.value = false;
+            modals.success('Break-glass password saved', 'Copy the login link now — it will not be shown again.');
         },
+        onError:  (errors) => modals.error('Could not save the password', errors),
         onFinish: () => { savingBreakglass.value = false; },
     });
 };
@@ -807,9 +839,12 @@ const backingUp          = ref(false);
 const deleteBackupDialog = ref(false);
 const targetBackup       = ref(null);
 
-const createBackup = () => {
+const createBackup = async () => {
+    const ok = await modals.confirm({ title: 'Create a database backup?', message: 'This may take a moment.', confirmText: 'Start', icon: 'mdi-database-arrow-down-outline' });
+    if (!ok) return;
     backingUp.value = true;
     router.post('/maintenance/backup', {}, {
+        ...resultOf('Database backup created', 'Could not create the backup'),
         onFinish: () => { backingUp.value = false; },
     });
 };
@@ -824,7 +859,9 @@ const deleteBackup = () => {
         onSuccess: () => {
             deleteBackupDialog.value = false;
             targetBackup.value = null;
+            modals.success('Backup deleted');
         },
+        onError: (errors) => modals.error('Could not delete the backup', errors),
     });
 };
 
@@ -835,9 +872,12 @@ const exportingSystem           = ref(false);
 const deleteSystemBackupDialog  = ref(false);
 const targetSystemBackup        = ref(null);
 
-const createSystemBackup = () => {
+const createSystemBackup = async () => {
+    const ok = await modals.confirm({ title: 'Export the system?', message: 'This may take a moment.', confirmText: 'Start', icon: 'mdi-database-arrow-down-outline' });
+    if (!ok) return;
     exportingSystem.value = true;
     router.post('/maintenance/system-backup', {}, {
+        ...resultOf('System export created', 'Could not export the system'),
         onFinish: () => { exportingSystem.value = false; },
     });
 };
@@ -852,7 +892,9 @@ const deleteSystemBackup = () => {
         onSuccess: () => {
             deleteSystemBackupDialog.value = false;
             targetSystemBackup.value = null;
+            modals.success('System export deleted');
         },
+        onError: (errors) => modals.error('Could not delete the export', errors),
     });
 };
 
@@ -863,9 +905,12 @@ const backingUpStorage            = ref(false);
 const deleteStorageBackupDialog   = ref(false);
 const targetStorageBackup         = ref(null);
 
-const createStorageBackup = () => {
+const createStorageBackup = async () => {
+    const ok = await modals.confirm({ title: 'Back up uploaded files?', message: 'This may take a moment.', confirmText: 'Start', icon: 'mdi-database-arrow-down-outline' });
+    if (!ok) return;
     backingUpStorage.value = true;
     router.post('/maintenance/storage-backup', {}, {
+        ...resultOf('Storage backup created', 'Could not back up storage'),
         onFinish: () => { backingUpStorage.value = false; },
     });
 };
@@ -880,7 +925,9 @@ const deleteStorageBackup = () => {
         onSuccess: () => {
             deleteStorageBackupDialog.value = false;
             targetStorageBackup.value = null;
+            modals.success('Storage backup deleted');
         },
+        onError: (errors) => modals.error('Could not delete the storage backup', errors),
     });
 };
 
@@ -894,11 +941,21 @@ const cacheItems = [
     { key: 'view',   label: 'View Cache',         description: 'Compiled Blade/template files', icon: 'mdi-eye-outline',           color: 'primary' },
 ];
 
-const clearCache = (key) => {
+const clearCache = async (key) => {
+    const label = key === 'all' ? 'all caches' : (cacheItems.find(c => c.key === key)?.label ?? 'the cache').toLowerCase();
+    const ok = await modals.confirm({ title: `Clear ${label}?`, message: 'Pages may load a little slower until the cache rebuilds.', confirmText: 'Clear', icon: 'mdi-cached' });
+    if (!ok) return;
     clearing.value = key;
     router.post(`/maintenance/cache/clear/${key}`, {}, {
+        ...resultOf(`Cleared ${label}`, 'Could not clear the cache'),
         onFinish: () => { clearing.value = null; },
     });
+};
+
+const optimizeApp = async () => {
+    const ok = await modals.confirm({ title: 'Optimize the application?', message: 'Rebuilds the config, route and view caches.', confirmText: 'Optimize', icon: 'mdi-lightning-bolt-outline' });
+    if (!ok) return;
+    router.post('/maintenance/optimize', {}, resultOf('Application optimized', 'Could not optimize the application'));
 };
 
 // ── Reset ──────────────────────────────────────────────────────
@@ -913,8 +970,9 @@ const resetDatabase = () => {
             resetDialog.value = false;
             resetConfirmText.value = '';
             resetting.value = false;
+            modals.success('Database reset', 'The database was reset.');
         },
-        onError: () => { resetting.value = false; },
+        onError: (errors) => { resetting.value = false; modals.error('Could not reset the database', errors); },
     });
 };
 
@@ -926,7 +984,7 @@ const quickActions = [
     { label: 'Download Latest Backup', icon: 'mdi-download-outline',      color: 'primary', handler: () => {} },
     { label: 'View Error Logs',        icon: 'mdi-text-box-outline',       color: 'default', handler: () => router.visit('/activity-logs') },
     { label: 'Clear All Caches',       icon: 'mdi-cached',                 color: 'primary', handler: () => clearCache('all') },
-    { label: 'Optimize Application',   icon: 'mdi-lightning-bolt-outline', color: 'primary', handler: () => router.post('/maintenance/optimize') },
+    { label: 'Optimize Application',   icon: 'mdi-lightning-bolt-outline', color: 'primary', handler: optimizeApp },
 ];
 </script>
 

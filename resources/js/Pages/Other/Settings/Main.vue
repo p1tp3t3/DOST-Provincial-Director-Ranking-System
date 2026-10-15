@@ -225,6 +225,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
+
+const modals = useActionModals();
 
 const props = defineProps({
     account: { type: Object, default: () => ({}) },
@@ -334,17 +337,23 @@ const changePassword = async () => {
     const { valid } = await pwFormRef.value.validate();
     if (!valid) return;
 
+    const ok = await modals.confirm({
+        title: 'Change password?', message: 'You will use the new password the next time you sign in.',
+        confirmText: 'Change password', icon: 'mdi-lock-reset',
+    });
+    if (!ok) return;
+
     savingPw.value = true;
     pwErrors.value = {};
 
     router.put(route('password.update'), pwForm.value, {
         onSuccess: () => {
-            flashSuccess.value = 'Password updated successfully.';
             resetPwForm();
+            modals.success('Password updated', 'Your password was changed successfully.');
         },
         onError: (errors) => {
             pwErrors.value = errors;
-            if (errors.current_password) flashError.value = 'Current password is incorrect.';
+            modals.error('Could not change password', errors.current_password ? 'Current password is incorrect.' : errors);
         },
         onFinish: () => { savingPw.value = false; },
     });

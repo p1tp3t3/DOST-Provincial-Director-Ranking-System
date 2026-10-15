@@ -221,6 +221,9 @@
 <script setup>
 import { reactive } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
+
+const modals = useActionModals();
 
 const props = defineProps({
     director:   { type: Object, required: true },
@@ -264,19 +267,24 @@ const openEdit = (row) => {
 
 const closeDialog = () => { dialog.open = false; };
 
-const submit = () => {
+const submit = async () => {
+    const creating = dialog.mode === 'create';
+    const ok = await modals.confirm({
+        title:       creating ? 'Add Facebook post?' : 'Save changes?',
+        message:     creating ? 'Add this Facebook post to the ${props.year} records?' : 'Save the changes to this Facebook post?',
+        confirmText: creating ? 'Add' : 'Save',
+        icon:        creating ? 'mdi-plus-circle-outline' : 'mdi-content-save-outline',
+    });
+    if (!ok) return;
+
     const base = `/facebook-posts/${props.director.id}/${props.year}`;
-    if (dialog.mode === 'create') {
-        form.post(base, {
-            preserveScroll: true,
-            onSuccess: () => { dialog.open = false; },
-        });
-    } else {
-        form.put(`${base}/${dialog.editingId}`, {
-            preserveScroll: true,
-            onSuccess: () => { dialog.open = false; },
-        });
-    }
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => { dialog.open = false; modals.success(creating ? 'Facebook post added' : 'Facebook post updated'); },
+        onError:   (errors) => modals.error(creating ? 'Could not add Facebook post' : 'Could not save Facebook post', errors),
+    };
+    if (creating) form.post(base, options);
+    else          form.put(`${base}/${dialog.editingId}`, options);
 };
 
 const confirmDelete = (row) => {
@@ -288,6 +296,8 @@ const doDelete = () => {
     if (!deleteDialog.row) return;
     router.delete(`/facebook-posts/${props.director.id}/${props.year}/${deleteDialog.row.id}`, {
         preserveScroll: true,
+        onSuccess: () => modals.success('Facebook post deleted'),
+        onError:   (errors) => modals.error('Could not delete Facebook post', errors),
         onFinish: () => { deleteDialog.open = false; deleteDialog.row = null; },
     });
 };

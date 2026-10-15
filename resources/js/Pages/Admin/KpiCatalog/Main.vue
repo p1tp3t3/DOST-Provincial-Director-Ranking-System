@@ -639,6 +639,9 @@ import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { categoryVisual } from '@/Data/kpiCategories';
 import { useKpiCatalogSync } from '@/Composables/useKpiCatalogSync';
+import { useActionModals } from '@/Composables/useActionModals';
+
+const modals = useActionModals();
 
 const props = defineProps({
     kpi_categories:    { type: Array, default: () => [] },
@@ -655,11 +658,19 @@ const restoreDialogOpen = ref(false);
 const restoreTarget     = ref(null);
 const restoring         = ref(false);
 
-const saveVersion = () => {
+const saveVersion = async () => {
+    const label = newVersionLabel.value.trim();
+    const ok = await modals.confirm({
+        title: 'Save a version?', message: `Save the current KPI matrix as a version${label ? ` ("${label}")` : ''} you can restore later?`,
+        confirmText: 'Save version', icon: 'mdi-content-save-all-outline',
+    });
+    if (!ok) return;
+
     savingVersion.value = true;
-    router.post('/kpi-catalog/snapshots', { label: newVersionLabel.value.trim() }, {
+    router.post('/kpi-catalog/snapshots', { label }, {
         preserveScroll: true,
-        onSuccess: () => { newVersionLabel.value = ''; },
+        onSuccess: () => { newVersionLabel.value = ''; modals.success('Version saved', 'The current KPI matrix was saved as a version.'); },
+        onError:   (errors) => modals.error('Could not save version', errors),
         onFinish:  () => { savingVersion.value = false; },
     });
 };
@@ -680,14 +691,25 @@ const doRestore = () => {
             // Restoring is an explicit "throw away what's on screen", so resync
             // even when there are unsaved edits the watcher would otherwise keep.
             resyncForm();
+            modals.success('Version restored', 'The KPI matrix was restored from the selected version.');
         },
+        onError:  (errors) => modals.error('Could not restore version', errors),
         onFinish: () => { restoring.value = false; },
     });
 };
 
-const deleteVersion = (snap) => {
+const deleteVersion = async (snap) => {
     if (snap.is_baseline) return;
-    router.delete(`/kpi-catalog/snapshots/${snap.id}`, { preserveScroll: true });
+    const ok = await modals.confirm({
+        title: 'Delete version?', message: `Delete the saved version${snap.label ? ` "${snap.label}"` : ''}? This can't be undone.`,
+        confirmText: 'Delete', color: 'error', icon: 'mdi-delete-outline',
+    });
+    if (!ok) return;
+    router.delete(`/kpi-catalog/snapshots/${snap.id}`, {
+        preserveScroll: true,
+        onSuccess: () => modals.success('Version deleted', 'The saved version was deleted.'),
+        onError:   (errors) => modals.error('Could not delete version', errors),
+    });
 };
 
 const categoryOptions = computed(() => props.category_options);
@@ -814,7 +836,9 @@ const submitUpdate = () => {
             resyncForm(); // accept the just-submitted values as the new baseline
             justSaved.value = true;
             setTimeout(() => { justSaved.value = false; }, 2500);
+            modals.success('KPI matrix saved', `${changes.length} ${changes.length === 1 ? 'KPI was' : 'KPIs were'} updated.`);
         },
+        onError:  (errors) => modals.error('Could not save the KPI matrix', errors, 'Nothing was saved.'),
         onFinish: () => { updating.value = false; },
     });
 };
@@ -834,10 +858,18 @@ const openAddDialog = (categoryId) => {
     addDialogOpen.value = true;
 };
 
-const submitAdd = () => {
+const submitAdd = async () => {
+    const name = addForm.name.trim();
+    const ok = await modals.confirm({
+        title: 'Add KPI?', message: `Add "${name}" to ${categoryNameById.value[addForm.category_id] ?? 'this category'}? Category weights are recalculated.`,
+        confirmText: 'Add KPI', icon: 'mdi-plus-circle-outline',
+    });
+    if (!ok) return;
+
     addForm.post('/kpi-catalog/kpis', {
         preserveScroll: true,
-        onSuccess: () => { addDialogOpen.value = false; },
+        onSuccess: () => { addDialogOpen.value = false; modals.success('KPI added', `"${name}" was added.`); },
+        onError:   (errors) => modals.error('Could not add KPI', errors),
     });
 };
 
@@ -853,8 +885,11 @@ const confirmDelete = (kpi) => {
 
 const doDelete = () => {
     deleting.value = true;
+    const name = deleteTarget.value.name;
     router.delete(`/kpi-catalog/kpis/${deleteTarget.value.id}`, {
         preserveScroll: true,
+        onSuccess: () => modals.success('KPI removed', `"${name}" was removed from the matrix.`),
+        onError:   (errors) => modals.error('Could not remove KPI', errors),
         onFinish: () => {
             deleting.value = false;
             deleteDialogOpen.value = false;
@@ -975,6 +1010,14 @@ const revalidateCsvRow = (row) => {
 };
 
 const submitCsvCommit = async () => {
+    const count = csvResults.value.filter(r => r.include).length;
+    const ok = await modals.confirm({
+        title: `Import ${count} ${count === 1 ? 'KPI' : 'KPIs'}?`,
+        message: 'They are added to the KPI matrix and category weights are recalculated.',
+        confirmText: 'Import', icon: 'mdi-file-import-outline',
+    });
+    if (!ok) return;
+
     csvCommitting.value = true;
     const rows = csvResults.value
         .filter(r => r.include)
@@ -992,13 +1035,14 @@ const submitCsvCommit = async () => {
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            alert(err.message ?? 'Import failed. Please try again.');
+            modals.errorFrom('Import failed', { data: err }, 'Import failed. Please try again.');
             return;
         }
         csvDialogOpen.value = false;
         router.reload({ only: ['kpi_categories', 'category_options'], preserveScroll: true });
+        modals.success('KPIs imported', `${rows.length} ${rows.length === 1 ? 'KPI was' : 'KPIs were'} added to the matrix.`);
     } catch {
-        alert('Network error. Please try again.');
+        modals.error('Import failed', 'Network error — check your connection and try again.');
     } finally {
         csvCommitting.value = false;
     }

@@ -167,7 +167,9 @@ describe('reporting', function () {
     it('counts entered figures, targets and approvals per quarter', function () {
         enter([1 => ['core_proposals' => 3, 'core_gross_sales' => 0], 2 => ['core_proposals' => 1]],
               ['core_proposals' => 10, 'core_gross_sales' => 0, 'func_linkages_established' => 4]);
-        KpiQuarterApproval::create(['province_id' => $this->province->id, 'year' => 2026, 'quarter' => 1, 'approved_by' => $this->tier[1]->id]);
+        // approved_by is a user (the province's director), not a province id.
+        $director = \App\Models\User::whereRole('provincial_director')->whereProvince($this->province->id)->first();
+        KpiQuarterApproval::create(['province_id' => $this->province->id, 'year' => 2026, 'quarter' => 1, 'approved_by' => $director->id]);
 
         $r = $this->svc->reporting($this->province->id);
         expect($r['quarters'][0])->toMatchArray(['entered' => 2, 'has_data' => true])

@@ -111,6 +111,7 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import ModalWrapper from '../ModalWrapper.vue';
+import { useActionModals } from '@/Composables/useActionModals';
 
 defineProps({
     open: { type: Boolean, default: false },
@@ -120,6 +121,7 @@ const emit = defineEmits(['update:open']);
 
 const formRef             = ref(null);
 const submitting          = ref(false);
+const modals              = useActionModals();
 const showPassword        = ref(false);
 const showConfirmPassword = ref(false);
 
@@ -152,9 +154,17 @@ const submit = async () => {
     const { valid } = await formRef.value.validate();
     if (!valid) return;
 
+    const name = form.value.name;
+    const ok = await modals.confirm({
+        title: 'Add province?', message: `Add ${name} with its admin account?`,
+        confirmText: 'Add province', icon: 'mdi-map-marker-plus-outline',
+    });
+    if (!ok) return;
+
     submitting.value = true;
     router.post('/province-directories/add', form.value, {
-        onSuccess: () => close(),
+        onSuccess: () => { close(); modals.success('Province added', `${name} was added.`); },
+        onError:   (errors) => modals.error('Could not add province', errors),
         onFinish:  () => { submitting.value = false; },
     });
 };

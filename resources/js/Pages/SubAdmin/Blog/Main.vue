@@ -110,17 +110,15 @@
             </v-card>
         </v-dialog>
 
-        <!-- Snackbar -->
-        <v-snackbar v-model="snack.show" :color="snack.color" timeout="3000" location="top right">
-            {{ snack.text }}
-        </v-snackbar>
-
     </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
+
+const modals = useActionModals();
 
 defineProps({
     posts: { type: Array, default: () => [] },
@@ -135,11 +133,6 @@ const tagColor = (tag) => ({
     Other:        'grey',
 }[tag] ?? 'grey');
 
-const snack = reactive({ show: false, text: '', color: 'success' });
-const showSnack = (text, color = 'success') => {
-    snack.text = text; snack.color = color; snack.show = true;
-};
-
 // ── Delete ────────────────────────────────────────────────────────────────────
 const deleteDialog = ref(false);
 const deleteTarget = ref(null);
@@ -153,11 +146,11 @@ const doDelete = () => {
         onSuccess: () => {
             deleting.value = false;
             deleteDialog.value = false;
-            showSnack('Post deleted.');
+            modals.success('Post deleted');
         },
-        onError: () => {
+        onError: (errors) => {
             deleting.value = false;
-            showSnack('Failed to delete.', 'error');
+            modals.error('Could not delete the post', errors);
         },
     });
 };
