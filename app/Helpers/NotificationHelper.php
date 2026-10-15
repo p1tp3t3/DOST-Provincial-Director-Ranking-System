@@ -41,9 +41,15 @@ class NotificationHelper
         $users  = $users instanceof User ? [$users] : $users;
         $sender ??= Auth::user();
 
+        // Notifications never break the action that sends them: a part that
+        // fails is logged and skipped, and the rest still goes out.
         foreach ($users as $user) {
-            self::inSystem($user, $title, $body, $url, $category, $sender);
-            self::webPush($user, $title, $body, $url, $tag ?? $category);
+            try {
+                self::inSystem($user, $title, $body, $url, $category, $sender);
+            } catch (Throwable $e) {
+                Log::warning("In-system notification to user {$user->id} failed: " . $e->getMessage());
+            }
+            self::webPush($user, $title, $body, $url, $tag ?? $category); // already skips on failure
         }
     }
 
@@ -71,8 +77,15 @@ class NotificationHelper
 
     // Browser push through the webpush package's channel (VAPID keys from
     // config/webpush.php; expired subscriptions are removed automatically).
+    // Skipped (never an error) when push isn't set up or doesn't work — the
+    // notification still reaches the bell and Reverb.
     private static function webPush(User $user, string $title, string $body, ?string $url, string $tag): void
     {
+        // Not configured on this server (no VAPID keys): skip quietly.
+        if (!config('webpush.vapid.public_key') || !config('webpush.vapid.private_key')) {
+            return;
+        }
+
         $message = (new WebPushMessage)
             ->title($title)
             ->body($body)

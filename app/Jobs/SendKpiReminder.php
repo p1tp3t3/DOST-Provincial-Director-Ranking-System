@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 // Shared sending for the KPI reminder jobs: one job = one user's reminder — in
 // the system (bell + Reverb) and as a browser push, via NotificationHelper::notify().
@@ -33,10 +35,16 @@ abstract class SendKpiReminder implements ShouldQueue
     {
         if ($this->batch()?->cancelled()) return;
 
-        // Re-checked at send time: an account deactivated since dispatch is skipped.
-        $user = User::where('activate', true)->find($this->userId);
-        if (!$user) return;
+        // An error sending this one reminder is logged and skipped, so it
+        // never fails the job or holds up the rest of the batch.
+        try {
+            // Re-checked at send time: an account deactivated since dispatch is skipped.
+            $user = User::where('activate', true)->find($this->userId);
+            if (!$user) return;
 
-        NotificationHelper::notify($user, $this->title, $this->body, $this->url, 'kpi', $this->tag);
+            NotificationHelper::notify($user, $this->title, $this->body, $this->url, 'kpi', $this->tag);
+        } catch (Throwable $e) {
+            Log::warning("KPI reminder to user {$this->userId} skipped: " . $e->getMessage());
+        }
     }
 }
