@@ -15,7 +15,7 @@
             </div>
         </v-card>
 
-        <v-form @submit.prevent="submit">
+        <v-form @submit.prevent="askConfirm">
             <v-row dense>
 
                 <!-- Left column: description -->
@@ -72,15 +72,24 @@
                             />
 
                             <!-- Same 2:1 shape as the cover on the landing page -->
-                            <div v-if="previewUrl" class="cover-preview mt-2 rounded overflow-hidden">
-                                <img :src="previewUrl" alt="Preview" />
+                            <div class="cover-preview mt-2 rounded overflow-hidden">
+                                <img :src="displayedCover" :alt="showingDefault ? 'Default cover' : 'Cover image'" />
+                                <span v-if="showingDefault" class="cover-badge">Default picture</span>
                             </div>
-                            <div v-else-if="province.image_url && !fileCleared" class="cover-preview mt-2 rounded overflow-hidden">
-                                <img :src="province.image_url" alt="Current image" />
+
+                            <div v-if="form.remove_image" class="text-caption text-warning mt-1">
+                                Picture will be removed when you click Save Changes.
                             </div>
-                            <div v-if="previewUrl && cropSource" class="d-flex justify-end mt-1">
-                                <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-crop" @click="openCropper">
+
+                            <div class="d-flex justify-end flex-wrap gap-1 mt-1">
+                                <v-btn v-if="previewUrl && cropSource" size="x-small" variant="text" color="primary" prepend-icon="mdi-crop" @click="openCropper">
                                     Adjust crop
+                                </v-btn>
+                                <v-btn v-if="hasCover" size="x-small" variant="text" color="error" prepend-icon="mdi-trash-can-outline" @click="removePicture">
+                                    Remove picture
+                                </v-btn>
+                                <v-btn v-if="form.remove_image" size="x-small" variant="text" color="medium-emphasis" prepend-icon="mdi-undo" @click="form.remove_image = false">
+                                    Undo
                                 </v-btn>
                             </div>
                         </div>
@@ -90,6 +99,31 @@
 
             </v-row>
         </v-form>
+
+        <!-- ── Confirm save ────────────────────────────────────── -->
+        <v-dialog v-model="confirmOpen" max-width="440">
+            <v-card rounded="lg">
+                <v-card-title class="pa-5 pb-3 text-h6 font-weight-bold">Save Province Info?</v-card-title>
+                <v-card-text class="px-5 pb-2 text-grey-darken-1">
+                    These changes will show on the public landing page for {{ province.name }}:
+                    <ul class="mt-2 pl-5">
+                        <li>Description</li>
+                        <li v-if="form.image">New cover picture</li>
+                        <li v-else-if="form.remove_image">Cover picture removed (the default picture will show)</li>
+                    </ul>
+                </v-card-text>
+                <v-card-actions class="pa-5 pt-3">
+                    <v-spacer />
+                    <v-btn variant="text" color="medium-emphasis" :disabled="form.processing" @click="confirmOpen = false">Cancel</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="form.processing" @click="submit">Save Changes</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Toast -->
+        <v-snackbar v-model="snack.show" :color="snack.color" timeout="3000" location="top right">
+            {{ snack.text }}
+        </v-snackbar>
 
         <!-- ── Crop dialog ─────────────────────────────────────── -->
         <v-dialog v-model="cropperOpen" max-width="720" persistent>
@@ -159,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onUnmounted } from 'vue';
+import { ref, reactive, computed, nextTick, onUnmounted } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import 'cropperjs';
 import RichTextEditor from '@/Components/Other/RichTextEditor/RichTextEditor.vue';
@@ -170,8 +204,9 @@ const props = defineProps({
 
 const form = useForm({
     _method:     'put',
-    description: props.province.description ?? '',
-    image:       null,
+    description:  props.province.description ?? '',
+    image:        null,
+    remove_image: false, // delete the saved cover → landing page shows the default
 });
 
 // The landing page shows the cover in a wide panel (~360×175), so crop to 2:1
@@ -182,10 +217,34 @@ const COVER_HEIGHT = 600;
 
 const pickedFile  = ref(null);  // what the file input shows
 const previewUrl  = ref(null);  // the cropped image about to be saved
-const fileCleared = ref(false);
 const cropSource  = ref('');    // original image (data URL), kept for "Adjust crop"
 let   cropName    = 'cover';
 let   newPick     = false;      // cropper opened for a just-chosen file (vs "Adjust crop")
+
+// Shown when there's no cover (same default as the landing page).
+const DEFAULT_COVER = '/assets/province-cover-default.svg';
+
+// What the cover will look like after saving: a new crop, else the saved
+// cover (unless it's being removed), else the default.
+const displayedCover = computed(() =>
+    previewUrl.value
+    || (!form.remove_image && props.province.image_url)
+    || DEFAULT_COVER
+);
+const showingDefault = computed(() => displayedCover.value === DEFAULT_COVER);
+const hasCover       = computed(() => !showingDefault.value);
+
+// Drop a new (unsaved) picture and mark the saved one for removal.
+const dropPendingPick = () => {
+    revokePreview();
+    pickedFile.value = null;
+    cropSource.value = '';
+    form.image       = null;
+};
+const removePicture = () => {
+    dropPendingPick();
+    if (props.province.image_url) form.remove_image = true;
+};
 
 const revokePreview = () => {
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
@@ -195,11 +254,8 @@ const revokePreview = () => {
 const onFileChange = (files) => {
     const file = Array.isArray(files) ? files[0] : files;
     if (!(file instanceof File)) {
-        // Cleared: nothing new to upload.
-        revokePreview();
-        form.image        = null;
-        cropSource.value  = '';
-        fileCleared.value = true;
+        // File box cleared: drop the new picture, keep the saved cover.
+        dropPendingPick();
         return;
     }
 
@@ -295,12 +351,7 @@ const cancelCrop = () => {
     // Cancelling a just-chosen image drops it (and any earlier crop), so what
     // the file box shows always matches what gets saved. Cancelling
     // "Adjust crop" keeps the current crop.
-    if (newPick) {
-        revokePreview();
-        pickedFile.value = null;
-        cropSource.value = '';
-        form.image       = null;
-    }
+    if (newPick) dropPendingPick();
     newPick = false;
 };
 
@@ -326,10 +377,11 @@ const applyCrop = async () => {
 
         revokePreview();
         form.image        = new File([blob], `${cropName}-cover.jpg`, { type: 'image/jpeg' });
+        form.remove_image = false; // a new picture replaces the old one
         previewUrl.value  = URL.createObjectURL(blob);
-        fileCleared.value = false;
         newPick           = false;
         closeCropper();
+        toast('Cover picture ready — click Save Changes to upload it.', 'info');
     } finally {
         cropping.value = false;
     }
@@ -340,13 +392,35 @@ onUnmounted(() => {
     detachBoundaryConstraint();
 });
 
+// ── Save: confirm first, then a toast with the result ───────────────────
+const confirmOpen = ref(false);
+const snack       = reactive({ show: false, text: '', color: 'success' });
+const toast       = (text, color = 'success') => Object.assign(snack, { show: true, text, color });
+
+const askConfirm = () => { confirmOpen.value = true; };
+
 const submit = () => {
+    // What this save does, for the toast (the form is reset on success).
+    const uploaded = !!form.image;
+    const removed  = !uploaded && form.remove_image;
+
     form.post('/province-info', {
+        preserveScroll: true,
+        // Keep this page instance (Inertia re-creates it by default), so the
+        // toast set in onSuccess is the one on screen.
+        preserveState:  true,
         onSuccess: () => {
-            // Saved: the server now has the cropped cover.
-            pickedFile.value = null;
-            cropSource.value = '';
-            form.image       = null;
+            confirmOpen.value = false;
+            // Saved: the page now shows what the server has.
+            dropPendingPick();
+            form.remove_image = false;
+            toast(uploaded ? 'Cover picture uploaded and province info saved.'
+                : removed  ? 'Cover picture removed and province info saved.'
+                :            'Province info updated.');
+        },
+        onError: () => {
+            confirmOpen.value = false;
+            toast('Could not save. Check the fields and try again.', 'error');
         },
     });
 };
@@ -354,8 +428,20 @@ const submit = () => {
 
 <style scoped>
 .cover-preview {
+    position: relative;
     aspect-ratio: 2 / 1;
     background: #f1f5f9;
+}
+.cover-badge {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #0a3f7d;
+    background: rgba(255, 255, 255, 0.85);
 }
 .cover-preview img {
     width: 100%;

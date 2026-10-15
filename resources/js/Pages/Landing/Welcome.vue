@@ -120,10 +120,10 @@ const islandBg = {
     Mindanao: '/assets/hero/pic3.png',
 };
 
-const placeholderBg = (province) => {
-    const seed = encodeURIComponent((province?.name ?? 'province').toLowerCase().replace(/\s+/g, '-'));
-    return `https://picsum.photos/seed/${seed}/800/300`;
-};
+// Shown when a province has no cover uploaded (or it was removed) — the same
+// default the provincial admin sees on the Province Info page.
+const DEFAULT_PROVINCE_COVER = '/assets/province-cover-default.svg';
+const placeholderBg = () => DEFAULT_PROVINCE_COVER;
 
 const onProvinceSelected = (province) => {
     if (!province) {
