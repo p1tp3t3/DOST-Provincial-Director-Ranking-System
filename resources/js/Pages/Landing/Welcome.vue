@@ -1,7 +1,83 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import RegionInfoMap from '@/Components/Map/RegionInfoMap.vue';
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+
+// DOST brand blue, for Vuetify color props.
+const DOST = '#0b57a8';
+
+const navLinks = [
+    { href: '#about',    label: 'About' },
+    { href: '#system',   label: 'Platform' },
+    { href: '#features', label: 'Features' },
+    { href: '#map',      label: 'Map' },
+    { href: '#news',     label: 'News' },
+];
+
+// ── Scroll spy: highlight the nav item of the section being viewed ─────────
+const HEADER_OFFSET = 80; // sticky header (64px) + a little breathing room
+const activeSection = ref('');
+let spyLockedUntil  = 0;   // pause while a clicked link smooth-scrolls past other sections
+let spyFrame        = 0;
+
+const updateActiveSection = () => {
+    spyFrame = 0;
+    if (Date.now() < spyLockedUntil) return;
+
+    // The last section whose top has reached the header is the current one.
+    let current = '';
+    for (const l of navLinks) {
+        const el = document.querySelector(l.href);
+        if (el && el.getBoundingClientRect().top - HEADER_OFFSET <= 1) current = l.href;
+    }
+    // At the very bottom the last section may never reach the header.
+    const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    if (atBottom) current = navLinks[navLinks.length - 1].href;
+
+    activeSection.value = current;
+};
+const onScroll = () => { if (!spyFrame) spyFrame = requestAnimationFrame(updateActiveSection); };
+
+// Sliding underline: follows the active link's label (button minus padding).
+const navBtns   = {};
+const setNavBtn = (href, c) => { if (c) navBtns[href] = c.$el ?? c; else delete navBtns[href]; };
+const indicator = reactive({ left: 0, width: 0, visible: false });
+const indicatorStyle = computed(() => ({
+    transform: `translateX(${indicator.left}px)`,
+    width:     `${indicator.width}px`,
+    opacity:   indicator.visible ? 1 : 0,
+}));
+const INDICATOR_INSET = 14; // keep the line under the text, not the button edges
+const positionIndicator = () => {
+    const el = navBtns[activeSection.value];
+    if (!el || !el.offsetWidth) { indicator.visible = false; return; }
+    indicator.left    = el.offsetLeft + INDICATOR_INSET;
+    indicator.width   = Math.max(el.offsetWidth - INDICATOR_INSET * 2, 12);
+    indicator.visible = true;
+};
+watch(activeSection, () => nextTick(positionIndicator));
+
+const goToSection = (href) => {
+    activeSection.value = href;
+    spyLockedUntil = Date.now() + 900; // ~ smooth-scroll duration
+    setTimeout(updateActiveSection, 950);
+    mobileOpen.value = false;
+};
+
+onMounted(() => {
+    updateActiveSection();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('resize', positionIndicator);
+    // Fonts can change the link widths after the first paint.
+    document.fonts?.ready?.then(positionIndicator);
+});
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onScroll);
+    window.removeEventListener('resize', positionIndicator);
+    if (spyFrame) cancelAnimationFrame(spyFrame);
+});
 import {
     RiTrophyLine, RiMapPin2Line, RiBuilding2Line, RiBarChart2Line,
     RiLineChartLine, RiGroupLine, RiDashboard3Line,
@@ -192,29 +268,36 @@ const sampleDirector = computed(() => {
                         </div>
                     </a>
 
-                    <nav class="hidden md:flex items-center gap-1">
-                        <a href="#about"    class="nav-link">About</a>
-                        <a href="#system"   class="nav-link">Platform</a>
-                        <a href="#features" class="nav-link">Features</a>
-                        <a href="#map"      class="nav-link">Map</a>
-                        <a href="#news"     class="nav-link">News</a>
-                        <a v-if="canLogin" href="/login" class="ml-2 btn-primary">Sign In</a>
+                    <nav class="hidden md:flex items-center gap-1 relative">
+                        <v-btn
+                            v-for="l in navLinks" :key="l.href" :href="l.href"
+                            :ref="(c) => setNavBtn(l.href, c)"
+                            variant="text" rounded="lg" class="nav-btn"
+                            :class="{ 'nav-btn--current': activeSection === l.href }"
+                            :aria-current="activeSection === l.href ? 'location' : undefined"
+                            @click="goToSection(l.href)"
+                        >{{ l.label }}</v-btn>
+                        <!-- One underline that slides to the selected section's link -->
+                        <span class="nav-indicator" :style="indicatorStyle" aria-hidden="true"></span>
+                        <v-btn v-if="canLogin" href="/login" :color="DOST" variant="flat" rounded="lg" class="ml-2 dost-shadow">Sign In</v-btn>
                     </nav>
 
-                    <button class="md:hidden p-2 text-slate-600" @click="mobileOpen = !mobileOpen" aria-label="Menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                    </button>
+                    <div class="md:hidden">
+                        <v-btn icon variant="text" size="small" color="#475569" aria-label="Menu" @click="mobileOpen = !mobileOpen">
+                            <v-icon>{{ mobileOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>
+                        </v-btn>
+                    </div>
                 </div>
 
                 <div v-if="mobileOpen" class="md:hidden pb-4 flex flex-col gap-1">
-                    <a href="#about"    class="nav-link" @click="mobileOpen=false">About</a>
-                    <a href="#system"   class="nav-link" @click="mobileOpen=false">Platform</a>
-                    <a href="#features" class="nav-link" @click="mobileOpen=false">Features</a>
-                    <a href="#map"      class="nav-link" @click="mobileOpen=false">Map</a>
-                    <a href="#news"     class="nav-link" @click="mobileOpen=false">News</a>
-                    <a v-if="canLogin" href="/login" class="btn-primary text-center mt-1" @click="mobileOpen=false">Sign In</a>
+                    <v-btn
+                        v-for="l in navLinks" :key="l.href" :href="l.href"
+                        variant="text" rounded="lg" block class="nav-btn justify-start"
+                        :class="{ 'nav-btn--current nav-btn--underlined': activeSection === l.href }"
+                        :aria-current="activeSection === l.href ? 'location' : undefined"
+                        @click="goToSection(l.href)"
+                    >{{ l.label }}</v-btn>
+                    <v-btn v-if="canLogin" href="/login" :color="DOST" variant="flat" rounded="lg" block class="mt-1" @click="mobileOpen = false">Sign In</v-btn>
                 </div>
             </div>
         </header>
@@ -257,8 +340,14 @@ const sampleDirector = computed(() => {
                                 Directors across the Philippines - driving excellence in regional S&amp;T leadership.
                             </p>
                             <div class="mt-10 flex flex-wrap gap-3">
-                                <a href="#about"  class="btn-hero-light">Learn More <RiArrowRightLine class="w-5 h-5" /></a>
-                                <a href="/map"    class="btn-hero-ghost"><RiGlobalLine class="w-5 h-5" /> Explore the Map</a>
+                                <v-btn href="#about" size="x-large" color="white" variant="flat" rounded="lg" class="hero-btn hero-btn--light">
+                                    Learn More
+                                    <template #append><RiArrowRightLine class="w-5 h-5" /></template>
+                                </v-btn>
+                                <v-btn href="/map" size="x-large" color="white" variant="outlined" rounded="lg" class="hero-btn hero-btn--ghost">
+                                    <template #prepend><RiGlobalLine class="w-5 h-5" /></template>
+                                    Explore the Map
+                                </v-btn>
                             </div>
                         </div>
                     </div>
@@ -309,13 +398,13 @@ const sampleDirector = computed(() => {
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div v-for="p in pillars" :key="p.title" class="pillar-card reveal">
-                            <div class="pillar-icon">
+                        <v-card v-for="p in pillars" :key="p.title" variant="flat" class="pillar-card reveal">
+                            <v-avatar size="44" rounded="lg" class="pillar-icon">
                                 <component :is="p.icon" class="w-6 h-6" />
-                            </div>
+                            </v-avatar>
                             <h4 class="mt-4 font-bold text-slate-900 text-base">{{ p.title }}</h4>
                             <p class="mt-1 text-sm text-slate-500 leading-relaxed">{{ p.text }}</p>
-                        </div>
+                        </v-card>
                     </div>
                 </div>
             </div>
@@ -332,21 +421,21 @@ const sampleDirector = computed(() => {
                     <p class="mvm-sub">The guiding principles of the Department of Science and Technology.</p>
                 </div>
                 <div class="mvm-grid">
-                    <article class="mvm-card reveal reveal--d1">
+                    <v-card tag="article" variant="flat" class="mvm-card reveal reveal--d1">
                         <div class="mvm-icon"><RiAuctionLine class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Mandate</h3>
                         <p class="mvm-text">Provide central direction, leadership and coordination of scientific and technological efforts and ensure that the results therefrom are geared and utilized in areas of maximum economic and social benefits for the people.</p>
-                    </article>
-                    <article class="mvm-card mvm-card--accent reveal reveal--d2">
+                    </v-card>
+                    <v-card tag="article" variant="flat" class="mvm-card mvm-card--accent reveal reveal--d2">
                         <div class="mvm-icon"><RiFocus3Line class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Mission</h3>
                         <p class="mvm-text">To direct, lead, and coordinate the country's scientific, technological, and innovative efforts geared towards maximum economic and social benefits for the people.</p>
-                    </article>
-                    <article class="mvm-card reveal reveal--d3">
+                    </v-card>
+                    <v-card tag="article" variant="flat" class="mvm-card reveal reveal--d3">
                         <div class="mvm-icon"><RiEyeLine class="w-6 h-6" /></div>
                         <h3 class="mvm-label">Vision</h3>
                         <p class="mvm-text">DOST as the leading enabler and provider of science, technology, and innovation (STI) explicit solutions towards national development.</p>
-                    </article>
+                    </v-card>
                 </div>
             </div>
         </section>
@@ -377,9 +466,9 @@ const sampleDirector = computed(() => {
                         <span class="scoring-head-sub">{{ kpiCount }} indicators · {{ categoryCount }} categories</span>
                     </div>
                     <div class="scoring-keys">
-                        <span v-for="cat in scoringCategories" :key="cat.code" class="scoring-key">
-                            <span class="scoring-dot" :style="{ background: cat.color }"></span>{{ cat.name }} <b>{{ cat.label }}</b>
-                        </span>
+                        <v-chip v-for="cat in scoringCategories" :key="cat.code" variant="outlined" class="scoring-key">
+                            <span class="scoring-dot mr-2" :style="{ background: cat.color }"></span>{{ cat.name }}&nbsp;<b>{{ cat.label }}</b>
+                        </v-chip>
                     </div>
                     <div class="scoring-stack">
                         <div
@@ -392,9 +481,10 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <div class="mt-10 flex justify-center">
-                    <a v-if="canLogin" href="/login" class="inline-flex items-center gap-2 btn-primary-lg">
-                        Access the System <RiArrowRightLine class="w-5 h-5" />
-                    </a>
+                    <v-btn v-if="canLogin" href="/login" size="x-large" :color="DOST" variant="flat" rounded="lg" class="dost-shadow lift">
+                        Access the System
+                        <template #append><RiArrowRightLine class="w-5 h-5" /></template>
+                    </v-btn>
                 </div>
             </div>
         </section>
@@ -411,13 +501,13 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <div class="mt-14 grid md:grid-cols-2 gap-x-10 gap-y-6">
-                    <div v-for="f in features" :key="f.title" class="feature-row reveal">
-                        <div class="feature-row-icon"><component :is="f.icon" class="w-7 h-7" /></div>
+                    <v-card v-for="f in features" :key="f.title" variant="flat" class="feature-row reveal">
+                        <v-avatar size="58" rounded="lg" class="feature-row-icon"><component :is="f.icon" class="w-7 h-7" /></v-avatar>
                         <div class="feature-row-body">
                             <h3 class="feature-row-title">{{ f.title }}</h3>
                             <p class="feature-row-text">{{ f.text }}</p>
                         </div>
-                    </div>
+                    </v-card>
                 </div>
             </div>
         </section>
@@ -446,9 +536,9 @@ const sampleDirector = computed(() => {
                                     <div class="prov-photo">
                                         <img :src="selectedProvince.image" :alt="selectedProvince.name" />
                                         <div class="prov-photo-gradient"></div>
-                                        <button class="prov-close" @click="selectedProvince = null">
+                                        <v-btn icon size="x-small" variant="flat" class="prov-close" aria-label="Close" @click="selectedProvince = null">
                                             <RiCloseLine class="w-4 h-4" />
-                                        </button>
+                                        </v-btn>
                                     </div>
 
                                     <!-- White content body -->
@@ -460,10 +550,10 @@ const sampleDirector = computed(() => {
                                             <span class="prov-swatch" :style="{ background: selectedProvince.color }"></span>
                                             {{ selectedProvince.region }}
                                         </div>
-                                        <div class="prov-island-chip">
-                                            <RiMapPin2Fill class="w-3 h-3" />
+                                        <v-chip size="small" variant="tonal" :color="DOST" class="prov-chip font-weight-bold text-uppercase">
+                                            <template #prepend><RiMapPin2Fill class="w-3 h-3 mr-1" /></template>
                                             {{ selectedProvince.island }}
-                                        </div>
+                                        </v-chip>
 
                                         <div class="prov-rows">
                                             <div class="prov-row">
@@ -491,29 +581,27 @@ const sampleDirector = computed(() => {
                                         <div v-if="selectedProvince.siblings.length">
                                             <div class="prov-section-label">Other provinces in this region</div>
                                             <div class="prov-pills">
-                                                <span v-for="s in selectedProvince.siblings.slice(0, 6)" :key="s" class="prov-pill">{{ s }}</span>
-                                                <span v-if="selectedProvince.siblings.length > 6" class="prov-pill prov-pill--more">+{{ selectedProvince.siblings.length - 6 }} more</span>
+                                                <v-chip v-for="s in selectedProvince.siblings.slice(0, 6)" :key="s" size="small" variant="outlined" color="#475569">{{ s }}</v-chip>
+                                                <v-chip v-if="selectedProvince.siblings.length > 6" size="small" variant="tonal" :color="DOST">+{{ selectedProvince.siblings.length - 6 }} more</v-chip>
                                             </div>
                                         </div>
 
-                                        <hr class="prov-sep" />
+                                        <v-divider class="my-3" />
 
                                         <!-- Director -->
                                         <div v-if="sampleDirector">
                                             <div class="prov-dir-label">Provincial S&amp;T Director</div>
                                             <div class="prov-dir-card">
-                                                <div class="prov-dir-avatar">
-                                                    <img src="/assets/default-profile.avif" class="w-full h-full object-cover" alt="Director" />
-                                                </div>
+                                                <v-avatar size="48" image="/assets/default-profile.avif" class="prov-dir-avatar" />
                                                 <div class="prov-dir-info">
                                                     <div class="prov-dir-name">{{ sampleDirector.name }}</div>
                                                     <div class="prov-dir-service">{{ sampleDirector.years }} yrs of service</div>
                                                 </div>
-                                                <span class="prov-dir-badge">Sample</span>
+                                                <v-chip size="x-small" variant="tonal" color="#64748b" class="font-weight-bold text-uppercase">Sample</v-chip>
                                             </div>
                                         </div>
 
-                                        <hr class="prov-sep" />
+                                        <v-divider class="my-3" />
 
                                         <!-- PRISM scoring teaser -->
                                         <div class="prov-prism">
@@ -531,7 +619,7 @@ const sampleDirector = computed(() => {
                                             <div class="prov-prism-labels">{{ kpiCount }} indicators · {{ categoryCount }} categories · evaluated annually</div>
                                         </div>
 
-                                        <hr class="prov-sep" />
+                                        <v-divider class="my-3" />
 
                                         <!-- Sign-in teaser -->
                                         <div v-if="canLogin" class="prov-signin">
@@ -543,9 +631,10 @@ const sampleDirector = computed(() => {
                                                 KPI scores, performance tier, and director info for
                                                 <strong>{{ selectedProvince.name }}</strong> are available after sign-in.
                                             </p>
-                                            <a href="/login" class="prov-signin-btn">
-                                                Sign In to View <RiArrowRightLine class="w-3.5 h-3.5" />
-                                            </a>
+                                            <v-btn href="/login" size="small" :color="DOST" variant="flat" rounded="lg">
+                                                Sign In to View
+                                                <template #append><RiArrowRightLine class="w-3.5 h-3.5" /></template>
+                                            </v-btn>
                                         </div>
 
                                     </div>
@@ -577,13 +666,11 @@ const sampleDirector = computed(() => {
                 </div>
 
                 <div v-else class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <article v-for="b in blogs" :key="b.title" class="blog-card reveal" @click="router.visit(`/blog/${b.slug}`)" style="cursor:pointer">
-                        <div class="blog-card-img">
-                            <img :src="b.image" :alt="b.title" />
-                        </div>
+                    <v-card v-for="b in blogs" :key="b.title" tag="article" variant="flat" class="blog-card reveal" @click="router.visit(`/blog/${b.slug}`)">
+                        <v-img :src="b.image" :alt="b.title" height="200" cover class="blog-card-img" />
                         <div class="blog-card-body">
                             <div class="flex items-center gap-2 mb-3">
-                                <span class="blog-tag">{{ b.tag }}</span>
+                                <v-chip size="small" variant="tonal" :color="DOST" class="font-weight-bold text-uppercase">{{ b.tag }}</v-chip>
                                 <span class="flex items-center gap-1 text-sm text-slate-400">
                                     <RiCalendarLine class="w-3.5 h-3.5" /> {{ b.date }}
                                 </span>
@@ -592,9 +679,12 @@ const sampleDirector = computed(() => {
                             <p class="mt-2 text-base text-slate-500 leading-relaxed line-clamp-3">{{ b.excerpt }}</p>
                         </div>
                         <div class="blog-card-footer">
-                            <span class="blog-read-more">Read more <RiArrowRightUpLine class="w-4 h-4" /></span>
+                            <v-btn variant="text" size="small" :color="DOST" class="px-0 blog-read-more">
+                                Read more
+                                <template #append><RiArrowRightUpLine class="w-4 h-4" /></template>
+                            </v-btn>
                         </div>
-                    </article>
+                    </v-card>
                 </div>
             </div>
         </section>
@@ -610,8 +700,11 @@ const sampleDirector = computed(() => {
                         province directories, and reports.
                     </p>
                     <div class="mt-8 flex flex-wrap justify-center gap-3">
-                        <a v-if="canLogin" href="/login" class="btn-hero-light">Sign In</a>
-                        <a href="#map" class="btn-hero-ghost"><RiGlobalLine class="w-5 h-5" /> Explore the Map</a>
+                        <v-btn v-if="canLogin" href="/login" size="x-large" color="white" variant="flat" rounded="lg" class="hero-btn hero-btn--light">Sign In</v-btn>
+                        <v-btn href="#map" size="x-large" color="white" variant="outlined" rounded="lg" class="hero-btn hero-btn--ghost">
+                            <template #prepend><RiGlobalLine class="w-5 h-5" /></template>
+                            Explore the Map
+                        </v-btn>
                     </div>
                 </div>
             </div>
@@ -660,6 +753,35 @@ const sampleDirector = computed(() => {
 </template>
 
 <style scoped>
+/* ── Vuetify components in the landing's look ───────────────────────────── */
+.landing .v-btn { text-transform: none; letter-spacing: normal; font-weight: 700; }
+.nav-btn { color: #475569 !important; font-size: 16px; }
+.nav-btn:hover { color: var(--dost) !important; }
+.nav-btn--current { color: var(--dost) !important; }
+/* Just the underline — no Vuetify hover/focus box behind the links */
+.nav-btn :deep(.v-btn__overlay) { display: none; }
+.nav-btn--underlined :deep(.v-btn__content) {
+    text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px;
+}
+.nav-indicator {
+    position: absolute; left: 0; bottom: 2px; height: 2.5px;
+    border-radius: 999px; background: var(--dost); pointer-events: none;
+    transition: transform .35s cubic-bezier(.4, 0, .2, 1), width .35s cubic-bezier(.4, 0, .2, 1), opacity .25s ease;
+}
+/* Land sections below the sticky header when a nav link is clicked */
+.landing section[id] { scroll-margin-top: 64px; }
+.dost-shadow { box-shadow: 0 4px 14px rgba(11,87,168,.30); }
+.lift { transition: transform .15s ease; }
+.lift:hover { transform: translateY(-1px); }
+.hero-btn { transition: transform .15s ease, background .15s ease; }
+.hero-btn--light { color: var(--dost-700) !important; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.hero-btn--light:hover { transform: translateY(-1px); }
+.hero-btn--ghost { border-color: rgba(255,255,255,.45) !important; }
+.blog-card { cursor: pointer; }
+.pillar-icon { background: var(--dost-tint); color: var(--dost); }
+.feature-row-icon { color: #fff; }
+.prov-chip { letter-spacing: .05em; }
+
 /* ── Province description (rich text) ─────────────────────────────────────── */
 .prov-desc-html :deep(p) { margin: 0 0 0.6em; }
 .prov-desc-html :deep(p:last-child) { margin-bottom: 0; }
@@ -687,17 +809,6 @@ const sampleDirector = computed(() => {
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 .dost-ink { color: var(--dost-navy); }
-.nav-link {
-    padding: 8px 14px; border-radius: 8px; font-size: 16px; font-weight: 600;
-    color: #475569; transition: all .15s ease; text-decoration: none !important;
-}
-.nav-link:hover { color: var(--dost); background: var(--dost-tint); }
-.btn-primary {
-    display: inline-block; padding: 10px 22px; border-radius: 10px; font-size: 16px; font-weight: 700;
-    color: #fff; background: var(--dost); box-shadow: 0 2px 8px rgba(11,87,168,.25); transition: background .15s ease;
-    text-decoration: none !important;
-}
-.btn-primary:hover { background: var(--dost-700); }
 
 /* ── Hero ────────────────────────────────────────────────────────────────── */
 .hero {
@@ -754,18 +865,6 @@ const sampleDirector = computed(() => {
     margin-top: 20px; max-width: 40rem; font-size: 1.25rem; line-height: 1.7;
     color: rgba(255,255,255,.92); text-shadow: 0 1px 8px rgba(2,12,30,.5);
 }
-.btn-hero-light {
-    display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 12px;
-    background: #fff; color: var(--dost-700); font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,.18);
-    transition: transform .15s ease, background .15s ease; text-decoration: none !important;
-}
-.btn-hero-light:hover { background: #eef5ff; transform: translateY(-1px); }
-.btn-hero-ghost {
-    display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px;
-    color: #fff; font-weight: 700; border: 1.5px solid rgba(255,255,255,.45); transition: background .15s ease;
-    text-decoration: none !important;
-}
-.btn-hero-ghost:hover { background: rgba(255,255,255,.12); }
 
 .hero-stats { position: relative; z-index: 3; border-top: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); }
 
@@ -826,13 +925,6 @@ const sampleDirector = computed(() => {
     border: 1px solid var(--dost-line); padding: 4px 10px; border-radius: 999px;
 }
 
-.btn-primary-lg {
-    display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 12px;
-    background: var(--dost); color: #fff; font-weight: 700; font-size: 17px;
-    box-shadow: 0 4px 14px rgba(11,87,168,.30); transition: background .15s ease, transform .15s ease;
-    text-decoration: none !important;
-}
-.btn-primary-lg:hover { background: var(--dost-700); transform: translateY(-1px); }
 
 /* ── Features ────────────────────────────────────────────────────────────── */
 .feature-row {
@@ -851,14 +943,8 @@ const sampleDirector = computed(() => {
 .feature-row-text  { margin-top: 7px; font-size: 1.05rem; line-height: 1.65; color: #475569; }
 
 /* ── Blog cards ──────────────────────────────────────────────────────────── */
-.blog-card-img {
-    width: 100%; height: 200px; overflow: hidden;
-}
-.blog-card-img img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform .4s ease;
-}
-.blog-card:hover .blog-card-img img { transform: scale(1.05); }
+.blog-card-img :deep(.v-img__img) { transition: transform .4s ease; }
+.blog-card:hover .blog-card-img :deep(.v-img__img) { transform: scale(1.05); }
 .blog-card {
     background: #fff; border: 1px solid #e7edf4; border-radius: 18px; overflow: hidden;
     display: flex; flex-direction: column;
@@ -866,19 +952,9 @@ const sampleDirector = computed(() => {
 }
 .blog-card:hover { box-shadow: 0 12px 30px rgba(11,87,168,.10); transform: translateY(-2px); }
 .blog-card-body { padding: 24px; flex: 1; }
-.blog-tag {
-    display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--dost); background: var(--dost-tint);
-    border: 1px solid var(--dost-line); padding: 4px 12px; border-radius: 999px;
-}
 .blog-card-footer {
     padding: 14px 24px; border-top: 1px solid #f1f5f9;
 }
-.blog-read-more {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 15px;
-    font-weight: 700; color: var(--dost); transition: gap .15s ease;
-}
-.blog-card:hover .blog-read-more { gap: 8px; }
 
 /* ── CTA ─────────────────────────────────────────────────────────────────── */
 .cta {
@@ -982,7 +1058,7 @@ const sampleDirector = computed(() => {
 .scoring-head-title { font-size: 1.12rem; font-weight: 800; color: var(--dost-navy); }
 .scoring-head-sub   { font-size: .92rem; font-weight: 600; color: #64748b; }
 .scoring-keys { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
-.scoring-key  { display: inline-flex; align-items: center; gap: 7px; font-size: .98rem; font-weight: 600; color: #334155; }
+.scoring-key  { gap: 7px; font-size: .98rem; font-weight: 600; color: #334155 !important; border-color: #e2e8f0 !important; }
 .scoring-key b { color: var(--dost-navy); font-weight: 800; margin-left: 2px; }
 .scoring-dot  { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
 .scoring-stack {
