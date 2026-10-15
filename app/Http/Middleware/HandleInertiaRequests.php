@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\KpiCorrectionService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,6 +37,8 @@ class HandleInertiaRequests extends Middleware
             ],
             // Public key the browser needs to subscribe to push notifications.
             'vapidPublicKey' => config('webpush.vapid.public_key'),
+            // Correction requests waiting on this user (sidebar badge).
+            'correction_inbox' => fn() => $request->user() ? app(KpiCorrectionService::class)->inboxCount($request->user()) : 0,
         ];
     }
 }

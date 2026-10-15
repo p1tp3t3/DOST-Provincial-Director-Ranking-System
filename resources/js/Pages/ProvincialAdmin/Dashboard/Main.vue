@@ -79,7 +79,11 @@
                     <div class="card-head">
                         <v-icon size="16" color="indigo">mdi-podium</v-icon>
                         <span>Official standing</span>
-                        <span v-if="standing" class="text-caption text-medium-emphasis ml-auto">{{ standing.year }}</span>
+                        <v-chip v-if="standing?.revised_at" size="x-small" color="deep-orange" variant="tonal" prepend-icon="mdi-history" class="ml-auto"
+                                :title="'Figures were corrected after these rankings were released'">
+                            Revised {{ new Date(standing.revised_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) }}
+                        </v-chip>
+                        <span v-if="standing" class="text-caption text-medium-emphasis" :class="{ 'ml-auto': !standing.revised_at }">{{ standing.year }}</span>
                     </div>
                     <v-divider />
                     <div v-if="standing?.status === 'ranked'" class="pa-4 d-flex align-center gap-4">

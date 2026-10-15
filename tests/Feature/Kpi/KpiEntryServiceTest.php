@@ -275,6 +275,33 @@ describe('deadlines and corrections', function () {
         correction(null);
         expect($this->svc->areTargetsOpen($this->province->id, $this->year))->toBeTrue();
     });
+
+    it('stamps an open correction when its period changes, by typing or through a record', function () {
+        deadline(1, now()->subDay()->toDateString());
+        deadline(4, now()->subDay()->toDateString());   // also releases the year's rankings
+        $q1      = correction(1);
+        $q4      = correction(4);
+        $targets = correction(null);
+
+        save(quarters: [1 => ['core_proposals' => 5]]);
+        expect($q1->fresh()->applied_at)->not->toBeNull()
+            ->and($q1->fresh()->revised_at)->not->toBeNull()
+            ->and($q4->fresh()->applied_at)->toBeNull()
+            ->and($targets->fresh()->applied_at)->toBeNull();
+
+        // Saving the same figure again changes nothing, so it isn't stamped again.
+        $q1->update(['applied_at' => null, 'revised_at' => null]);
+        save(quarters: [1 => ['core_proposals' => 5]]);
+        expect($q1->fresh()->applied_at)->toBeNull();
+
+        save(targets: ['core_proposals' => 12]);
+        expect($targets->fresh()->applied_at)->not->toBeNull();
+
+        FacebookPost::create(['province_id' => $this->province->id, 'provincial_director_id' => $this->director->id, 'year' => $this->year,
+            'title' => 'Post', 'post_type' => 'Text', 'date_posted' => "{$this->year}-11-05"]);
+        $this->svc->syncRecordKpi('supp_facebook_posts', $this->province->id, $this->year, null);
+        expect($q4->fresh()->applied_at)->not->toBeNull();
+    });
 });
 
 describe('record-backed KPIs', function () {

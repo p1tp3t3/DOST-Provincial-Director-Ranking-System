@@ -83,7 +83,41 @@
                         <th class="kpi-th">KPI</th>
                         <th class="kpi-th" style="width:150px;">Category</th>
                         <th class="kpi-th" style="width:110px; text-align:center;">Weight %</th>
-                        <th class="kpi-th" style="width:150px;">Quarters roll up as</th>
+                        <th class="kpi-th" style="width:165px;">
+                            <span class="d-inline-flex align-center" style="gap:4px;">
+                                Quarters roll up as
+                                <v-tooltip location="bottom" max-width="400" :open-delay="80" content-class="rollup-help-tooltip">
+                                    <template #activator="{ props: tip }">
+                                        <v-icon v-bind="tip" size="15" class="th-info" tabindex="0" role="button"
+                                                aria-label="What does Quarters roll up as mean?">mdi-information-outline</v-icon>
+                                    </template>
+                                    <div class="rollup-help">
+                                        <div class="rollup-help-title">How the four quarters become the annual figure</div>
+                                        <p>The annual figure is what's compared with the year's target and scored in the rankings.</p>
+                                        <p class="rollup-help-example">Example: Q1 = 3 · Q2 = 5 · Q3 blank · Q4 = 4</p>
+                                        <ul>
+                                            <li>
+                                                <b>Sum of quarters → 12.</b> For things that add up over the year:
+                                                proposals funded, trainings, sales, linkages.
+                                            </li>
+                                            <li>
+                                                <b>Latest quarter → 4.</b> For counts at a point in time, like ongoing or
+                                                delinquent SETUP projects. Adding them would count the same projects again each quarter.
+                                            </li>
+                                            <li>
+                                                <b>Average → 4.</b> For ratings and percentages, like customer satisfaction:
+                                                4.5, 4.7, 4.6 gives 4.6, not 13.8.
+                                            </li>
+                                        </ul>
+                                        <p class="rollup-help-note">
+                                            Pick the one that puts the annual figure on the same scale as its target.
+                                            Blank quarters are skipped; a 0 counts. Saving a change recalculates every
+                                            province's annual figures right away.
+                                        </p>
+                                    </div>
+                                </v-tooltip>
+                            </span>
+                        </th>
                         <th class="kpi-th" style="width:40px;"></th>
                     </tr>
                 </thead>
@@ -1083,6 +1117,18 @@ const submitCsvCommit = async () => {
 }
 .csv-row--invalid { background: #fef2f2; }
 
+/* ⓘ on "Quarters roll up as" and the explanation it opens on hover/focus. */
+.th-info { cursor: help; opacity: 0.75; text-transform: none; }
+.th-info:hover, .th-info:focus-visible { opacity: 1; color: rgb(var(--v-theme-primary)); }
+.th-info:focus-visible { outline: 2px solid rgb(var(--v-theme-primary)); outline-offset: 2px; border-radius: 50%; }
+.rollup-help { padding: 6px 4px; font-size: 13px; line-height: 1.5; }
+.rollup-help-title { font-weight: 700; font-size: 13.5px; margin-bottom: 4px; }
+.rollup-help p { margin: 0 0 6px; }
+.rollup-help-example { font-family: ui-monospace, Consolas, monospace; font-size: 12px; opacity: 0.9; }
+.rollup-help ul { margin: 0 0 8px; padding-left: 18px; list-style: disc; }
+.rollup-help li { margin-bottom: 4px; }
+.rollup-help-note { opacity: 0.8; font-size: 12px; margin: 0 !important; }
+
 .kpi-th {
     font-size: 0.65rem !important;
     font-weight: 700 !important;
@@ -1109,5 +1155,15 @@ const submitCsvCommit = async () => {
 .kpi-input :deep(.v-field__input) {
     min-height: 28px;
     padding: 4px 10px;
+}
+</style>
+
+<style>
+/* The roll-up explanation tooltip renders outside this component, so its
+   box needs a global rule: solid, so the table doesn't show through. */
+.v-tooltip > .v-overlay__content.rollup-help-tooltip {
+    background: #1e293b;
+    opacity: 1;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
 }
 </style>
