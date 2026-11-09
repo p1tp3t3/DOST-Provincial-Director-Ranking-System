@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
         $this->call(CSTCSeeder::class);
         $this->call(LinkageSeeder::class);
         $this->call(FacebookPostSeeder::class);
+        // After the figures are seeded, so the removed KPIs keep their history.
+        self::remove_kpis_outside_the_revised_catalog();
         ActivityLog::factory(100)->create();
     }
 
@@ -329,8 +331,13 @@ class DatabaseSeeder extends Seeder
         return [$first, $middle, $last];
     }
 
-    // Seeds the new PSTD Ranking Matrix structure: 3 categories (CORE/STRATEGIC/SUPPORT)
-    // with 37 scored KPIs + 2 supporting input rows used to derive the % Delinquent SETUP KPI.
+    // Seeds the PSTD Ranking Matrix: 3 categories (CORE/STRATEGIC/SUPPORT) on the
+    // catalog revised from the regional comments (data/kpi-weights-proposed.php:
+    // 30 KPIs, 60/25/15). All 39 KPIs of the official matrix (data/kpis.php) are
+    // created so their figures can be seeded; the nine the revision drops are
+    // given no weight here and removed once the figures are in (see
+    // remove_kpis_outside_the_revised_catalog). The "Original" catalog version
+    // is built from data/kpis.php, so it can always be restored.
     private function generate_kpi()
     {
         foreach (require __DIR__ . '/data/kpi-categories.php' as $row) {
@@ -343,18 +350,34 @@ class DatabaseSeeder extends Seeder
         }
 
         $categoryIds = KPICategory::pluck('id', 'code')->toArray();
+        $weights     = (require __DIR__ . '/data/kpi-weights-proposed.php')['weights'];
 
         foreach (require __DIR__ . '/data/kpis.php' as $row) {
+            $weight = (float) ($weights[$row['code']] ?? 0);
             KPI::create([
                 'category_id'     => $categoryIds[$row['category_code']],
                 'code'            => $row['code'],
                 'name'            => $row['name'],
-                'weight'          => (float) $row['weight'],
-                'is_scored'       => (int) $row['is_scored'] === 1,
+                'weight'          => $weight,
+                'is_scored'       => $weight > 0 && (int) $row['is_scored'] === 1,
                 'inverse_scoring' => (int) $row['inverse_scoring'] === 1,
                 'derivation_type' => $row['derivation_type'] !== '' ? $row['derivation_type'] : null,
                 'sort_order'      => (int) $row['sort_order'],
             ]);
         }
+
+        // A category's weight is the sum of its KPIs' weights.
+        foreach ($categoryIds as $categoryId) {
+            KPICategory::whereKey($categoryId)->update(['weight' => KPI::where('category_id', $categoryId)->sum('weight')]);
+        }
+    }
+
+    // Soft-deletes the KPIs the revised catalog doesn't have, as the catalog's
+    // own Remove does: their figures stay, and restoring the Original brings
+    // them back.
+    private static function remove_kpis_outside_the_revised_catalog(): void
+    {
+        $kept = array_keys((require __DIR__ . '/data/kpi-weights-proposed.php')['weights']);
+        KPI::whereNotIn('code', $kept)->get()->each->delete();
     }
 }

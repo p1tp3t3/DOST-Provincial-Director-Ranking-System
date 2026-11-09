@@ -60,9 +60,15 @@
 
                                                     <!-- Sample Table -->
                                                     <div>
-                                                        <div class="d-flex align-center gap-2 mb-2">
-                                                            <v-icon size="14" color="indigo">mdi-table-eye</v-icon>
-                                                            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.06em;">Sample CSV Format</span>
+                                                        <!-- The template sits with the sample it follows -->
+                                                        <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-2">
+                                                            <div class="d-flex align-center gap-2">
+                                                                <v-icon size="14" color="indigo">mdi-table-eye</v-icon>
+                                                                <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.06em;">Sample CSV Format</span>
+                                                            </div>
+                                                            <v-btn color="indigo" variant="flat" size="small" prepend-icon="mdi-microsoft-excel" @click="downloadTemplate">
+                                                                Download Excel Template
+                                                            </v-btn>
                                                         </div>
                                                         <div class="sample-table-wrap rounded-lg overflow-x-auto">
                                                             <table class="sample-table">
@@ -112,19 +118,14 @@
 
                             <!-- CSV Upload -->
                             <v-card class="elevation-1 border-0 rounded-md" :class="{ 'step-disabled': !guidelinesRead }">
-                                <div class="pa-5 pb-3 d-flex align-center justify-space-between">
-                                    <div class="d-flex align-center gap-3">
-                                        <v-avatar :color="guidelinesRead ? 'indigo-lighten-5' : 'grey-lighten-3'" rounded="lg" size="36">
-                                            <v-icon :color="guidelinesRead ? 'indigo' : 'grey'" size="18">mdi-file-delimited-outline</v-icon>
-                                        </v-avatar>
-                                        <div>
-                                            <div class="text-subtitle-2 font-weight-bold">Step 2 - Upload File</div>
-                                            <div class="text-caption text-medium-emphasis">Upload your employee list for verification</div>
-                                        </div>
+                                <div class="pa-5 pb-3 d-flex align-center gap-3">
+                                    <v-avatar :color="guidelinesRead ? 'indigo-lighten-5' : 'grey-lighten-3'" rounded="lg" size="36">
+                                        <v-icon :color="guidelinesRead ? 'indigo' : 'grey'" size="18">mdi-file-delimited-outline</v-icon>
+                                    </v-avatar>
+                                    <div>
+                                        <div class="text-subtitle-2 font-weight-bold">Step 2 - Upload File</div>
+                                        <div class="text-caption text-medium-emphasis">Upload your filled-in Excel template (or a CSV) for verification</div>
                                     </div>
-                                    <v-btn size="x-small" variant="tonal" color="indigo" prepend-icon="mdi-download-outline" :disabled="!guidelinesRead" @click="downloadTemplate">
-                                        Download Excel Template
-                                    </v-btn>
                                 </div>
                                 <v-divider></v-divider>
                                 <div class="pa-5">
