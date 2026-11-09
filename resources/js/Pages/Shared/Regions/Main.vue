@@ -1,20 +1,31 @@
 <template>
-    <Head title="Regions" />
+    <Head title="Province Directories" />
+    <AddProvinceModal v-if="canAddProvince" v-model:open="addOpen" />
     <div class="grid gap-4 w-full">
 
         <!-- Header -->
         <v-card class="border-0 elevation-1 bg-white rounded-md">
             <div class="d-flex align-center justify-space-between py-3 px-5 flex-wrap gap-2">
                 <div>
-                    <div class="text-subtitle-1 font-weight-bold text-grey-darken-3">Regions</div>
+                    <div class="text-subtitle-1 font-weight-bold text-grey-darken-3">Province Directories</div>
                     <div class="text-caption text-grey">
                         {{ scoped ? 'Provinces in your region' : 'All regions and their provinces' }}
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="d-flex align-center gap-2 flex-wrap">
+                    <v-btn
+                        v-if="canAddProvince"
+                        color="primary"
+                        variant="flat"
+                        size="small"
+                        prepend-icon="mdi-plus"
+                        @click="addOpen = true"
+                    >
+                        Add Province
+                    </v-btn>
                     <v-chip color="indigo" variant="tonal" label size="small">
                         <v-icon start size="14">mdi-earth</v-icon>
-                        {{ filteredRegions.length }} region{{ filteredRegions.length !== 1 ? 's' : '' }}
+                        {{ shownRegions.length }} region{{ shownRegions.length !== 1 ? 's' : '' }}
                     </v-chip>
                     <v-chip color="teal" variant="tonal" label size="small">
                         <v-icon start size="14">mdi-map-marker-outline</v-icon>
@@ -43,6 +54,18 @@
             </div>
 
             <v-spacer v-if="!scoped" />
+
+            <!-- Search by province or provincial director -->
+            <v-text-field
+                v-model="search"
+                placeholder="Search province or director..."
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+                prepend-inner-icon="mdi-magnify"
+                style="min-width:220px; max-width:280px;"
+            />
 
             <!-- Region dropdown -->
             <v-select
@@ -77,7 +100,7 @@
         <v-card class="elevation-1 rounded-md overflow-hidden">
             <v-table>
                 <tbody>
-                    <template v-for="region in filteredRegions.filter(r => visibleProvinces(r).length > 0)" :key="region.id">
+                    <template v-for="region in shownRegions" :key="region.id">
 
                         <!-- Region header row -->
                         <tr class="region-row">
@@ -174,10 +197,13 @@
                     </template>
 
                     <!-- Overall empty state -->
-                    <tr v-if="filteredRegions.filter(r => visibleProvinces(r).length > 0).length === 0">
+                    <tr v-if="shownRegions.length === 0">
                         <td colspan="5" class="text-center py-10">
                             <v-icon size="36" color="grey-lighten-2" class="mb-2 d-block mx-auto">mdi-earth-off</v-icon>
-                            <span class="text-body-2 text-medium-emphasis">No regions found.</span>
+                            <span class="text-body-2 text-medium-emphasis">
+                                <template v-if="search?.trim()">No provinces found matching "<strong>{{ search.trim() }}</strong>".</template>
+                                <template v-else>No regions found.</template>
+                            </span>
                         </td>
                     </tr>
                 </tbody>
@@ -190,12 +216,19 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import AddProvinceModal from '@/Components/Modals/Add/AddProvinceModal.vue';
+import { getAuth } from '@/helper-functions';
 
 const props = defineProps({
     regions: { type: Array,   default: () => [] },
     scoped:  { type: Boolean, default: false },
 });
 
+// Only the super admin adds provinces (as on the old province list).
+const canAddProvince = getAuth()?.role === 'super_admin';
+const addOpen        = ref(false);
+
+const search         = ref('');
 const islandFilter   = ref('all');
 const categoryFilter = ref(null);
 const regionFilter   = ref(null);
@@ -241,8 +274,18 @@ const visibleProvinces = (region) => {
     if (categoryFilter.value) {
         list = list.filter(p => p.category === categoryFilter.value);
     }
+    const q = search.value?.toLowerCase().trim();
+    if (q) {
+        list = list.filter(p =>
+            p.name?.toLowerCase().includes(q) ||
+            p.provincial_director?.toLowerCase().includes(q)
+        );
+    }
     return list;
 };
+
+// Regions left with at least one province after the category/search filters.
+const shownRegions = computed(() => filteredRegions.value.filter(r => visibleProvinces(r).length > 0));
 
 const totalProvinces = computed(() =>
     filteredRegions.value.reduce((sum, r) => sum + visibleProvinces(r).length, 0)

@@ -11,6 +11,8 @@
                     <div class="d-flex align-center gap-2 mt-1">
                         <span class="text-body-2 text-medium-emphasis text-capitalize">{{ standing.tier }} tier</span>
                         <v-chip v-if="standing.bucket" size="small" :color="BUCKETS[standing.bucket]" variant="flat" class="text-white font-weight-medium">{{ standing.bucket }} group</v-chip>
+                        <v-chip v-if="standing.revised_at" size="small" color="deep-orange" variant="tonal" prepend-icon="mdi-history"
+                                :title="'Figures were corrected after these rankings were released'">Revised {{ formatShort(standing.revised_at) }}</v-chip>
                     </div>
                 </div>
 
@@ -189,6 +191,7 @@ const RATINGS = {
 
 const fmt = (v) => (v === null || v === undefined ? '—' : Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const pct = (n, d) => (d ? Math.max(0, Math.min(100, (n / d) * 100)) : 0);
+const formatShort = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 const gapText = (points) => (points > 0 ? `+${fmt(points)} pts` : 'level — tie-break');
 const placesText = (places) => (places > 0 ? `up ${places}` : places < 0 ? `down ${-places}` : 'same rank');
 const categoryName = (code) => props.categories.find(c => c.code === code)?.name ?? code;

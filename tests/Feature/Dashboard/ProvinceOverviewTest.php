@@ -216,8 +216,9 @@ describe('reporting', function () {
             ->and($entries[0]['quarter'])->toBe(2)
             ->and($entries[0]['accomplished'])->toBe(7.0)
             ->and($entries[0]['by'])->not->toBe('System')
-            // A timezone-qualified timestamp, so browsers in UTC+8 don't read it 8 hours off.
-            ->and($entries[0]['at'])->toBe('2026-05-21T10:00:00+00:00');
+            // A timezone-qualified timestamp (the app runs on Asia/Manila), so a
+            // browser reads the same moment wherever it is.
+            ->and($entries[0]['at'])->toBe('2026-05-21T10:00:00+08:00');
     });
 
     it('counts this year\'s evidence records and accounts', function () {

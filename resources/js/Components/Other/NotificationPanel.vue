@@ -287,17 +287,19 @@ const timeAgo = (iso) => {
 };
 
 const typeColor = (type) => ({
-    kpi:     'indigo',
-    account: 'teal',
-    report:  'purple',
-    system:  'orange',
+    kpi:        'indigo',
+    correction: 'deep-orange',
+    account:    'teal',
+    report:     'purple',
+    system:     'orange',
 }[type] ?? 'grey');
 
 const typeIcon = (type) => ({
-    kpi:     'mdi-clipboard-check-outline',
-    account: 'mdi-account-outline',
-    report:  'mdi-file-chart-outline',
-    system:  'mdi-cog-outline',
+    kpi:        'mdi-clipboard-check-outline',
+    correction: 'mdi-file-document-edit-outline',
+    account:    'mdi-account-outline',
+    report:     'mdi-file-chart-outline',
+    system:     'mdi-cog-outline',
 }[type] ?? 'mdi-bell-outline');
 </script>
 

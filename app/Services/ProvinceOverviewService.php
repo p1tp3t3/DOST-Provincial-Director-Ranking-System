@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Models\FacebookPost;
 use App\Models\KPI;
+use App\Models\KpiCorrectionRequest;
 use App\Models\KpiQuarterApproval;
 use App\Models\KpiQuarterValue;
 use App\Models\Linkage;
 use App\Models\ProvincialDirectorKPI;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 // What a provincial office needs at a glance, for the provincial admin and
@@ -60,6 +62,7 @@ class ProvinceOverviewService
                 'change'            => self::change($mine, $previous),
                 'gap_to_next_rank'  => $isRanked ? self::gapToNextRank($ranked, $mine) : null,
                 'gap_to_next_group' => $isRanked ? self::gapToNextGroup($ranked, $mine) : null,
+                'revised_at'        => $this->revisedAt($latest),
             ] : null,
             'improvement' => $isRanked ? $this->improvement($mine, $provinceId, $latest) : [],
             'versus_tier' => $isRanked ? self::versusTier($ranked, $mine) : null,
@@ -73,6 +76,14 @@ class ProvinceOverviewService
                     'tier_size' => $pair[1]['tier_size'],
                 ])->values()->all(),
         ];
+    }
+
+    // When a correction last changed a released year's figures — any
+    // province's correction can move ranks in the tier. Null if never.
+    private function revisedAt(int $year): ?string
+    {
+        $at = KpiCorrectionRequest::where('year', $year)->max('revised_at');
+        return $at ? Carbon::parse($at)->toIso8601String() : null;
     }
 
     private static function tierAndRow(array $ranking, int $provinceId): array

@@ -253,7 +253,7 @@
                         </div>
                     </div>
                     <div v-if="top10Data.length" class="px-2 pt-2" style="height:340px;">
-                        <ScoreBars :items="top10Data" :max="100" :name-width="130" />
+                        <ScoreBars :items="top10Data" :max="100" :name-width="150" />
                     </div>
                     <div v-else class="d-flex align-center justify-center" style="height:340px;">
                         <div class="text-center text-medium-emphasis">
