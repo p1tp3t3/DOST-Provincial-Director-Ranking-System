@@ -225,6 +225,9 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
+
+const modals = useActionModals();
 
 const props = defineProps({
     director:   { type: Object, required: true },
@@ -272,19 +275,24 @@ const closeDialog = () => {
     dialog.open = false;
 };
 
-const submit = () => {
+const submit = async () => {
+    const creating = dialog.mode === 'create';
+    const ok = await modals.confirm({
+        title:       creating ? 'Add linkage?' : 'Save changes?',
+        message:     creating ? 'Add this linkage to the ${props.year} records?' : 'Save the changes to this linkage?',
+        confirmText: creating ? 'Add' : 'Save',
+        icon:        creating ? 'mdi-plus-circle-outline' : 'mdi-content-save-outline',
+    });
+    if (!ok) return;
+
     const base = `/linkages/${props.director.id}/${props.year}`;
-    if (dialog.mode === 'create') {
-        form.post(base, {
-            preserveScroll: true,
-            onSuccess: () => { dialog.open = false; },
-        });
-    } else {
-        form.put(`${base}/${dialog.editingId}`, {
-            preserveScroll: true,
-            onSuccess: () => { dialog.open = false; },
-        });
-    }
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => { dialog.open = false; modals.success(creating ? 'Linkage added' : 'Linkage updated'); },
+        onError:   (errors) => modals.error(creating ? 'Could not add linkage' : 'Could not save linkage', errors),
+    };
+    if (creating) form.post(base, options);
+    else          form.put(`${base}/${dialog.editingId}`, options);
 };
 
 const confirmDelete = (row) => {
@@ -296,6 +304,8 @@ const doDelete = () => {
     if (!deleteDialog.row) return;
     router.delete(`/linkages/${props.director.id}/${props.year}/${deleteDialog.row.id}`, {
         preserveScroll: true,
+        onSuccess: () => modals.success('Linkage deleted'),
+        onError:   (errors) => modals.error('Could not delete linkage', errors),
         onFinish: () => { deleteDialog.open = false; deleteDialog.row = null; },
     });
 };

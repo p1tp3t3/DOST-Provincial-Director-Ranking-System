@@ -542,6 +542,7 @@
 
 <script setup>
 import { Head } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
 import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
@@ -631,7 +632,7 @@ const submitVerify = async () => {
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            alert(err.message ?? 'Verification failed. Please try again.');
+            modals.errorFrom('Verification failed', { data: err }, 'Verification failed. Please try again.');
             verifying.value = false;
             return;
         }
@@ -639,7 +640,7 @@ const submitVerify = async () => {
         // Results returned immediately - no polling needed
         loadReview(json.results);
     } catch {
-        alert('Network error. Please try again.');
+        modals.error('Verification failed', 'Network error — check your connection and try again.');
         verifying.value = false;
     }
 };
@@ -659,7 +660,7 @@ const pollVerify = (key) => {
             }
         } catch {
             clearInterval(pollTimer);
-            alert('Error checking verification status.');
+            modals.error('Verification failed', 'Error checking verification status.');
             step.value = 'upload';
         }
     }, 1500);
@@ -779,6 +780,7 @@ const removeRow = (row) => {
 
 // ── Commit ─────────────────────────────────────────────────────
 const committing = ref(false);
+const modals     = useActionModals();
 const batch      = ref(null);
 let   batchPoll  = null;
 
@@ -789,9 +791,23 @@ const commitRows = async () => {
 
     if (!rows.length) return;
     if (needsProvince.value && !provinceId.value) {
-        alert('Select the province these users belong to before committing.');
+        modals.error('Select a province', 'Select the province these users belong to before committing.');
         return;
     }
+
+    const provinceName = needsProvince.value
+        ? (props.provinces.find(p => p.id === provinceId.value)?.name ?? 'the selected province')
+        : 'your province';
+    const withRole = rows.filter(r => r.admin_role).length;
+    const ok = await modals.confirm({
+        title:       `Create ${rows.length} ${rows.length === 1 ? 'account' : 'accounts'}?`,
+        message:     `${rows.length} employee ${rows.length === 1 ? 'account' : 'accounts'} will be created in ${provinceName}`
+                   + (withRole ? `, ${withRole} with an admin role` : '')
+                   + '.\nEach person is emailed their login details.',
+        confirmText: 'Create accounts',
+        icon:        'mdi-account-multiple-plus-outline',
+    });
+    if (!ok) return;
 
     committing.value = true;
     step.value = 'committing';
@@ -804,7 +820,7 @@ const commitRows = async () => {
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            alert(err.message ?? 'Commit failed. Please try again.');
+            modals.errorFrom('Could not create accounts', { data: err }, 'Commit failed. Please try again.');
             step.value = 'review';
             committing.value = false;
             return;
@@ -813,7 +829,7 @@ const commitRows = async () => {
         batch.value = { id: json.batch_id, total: json.total_jobs, processed: 0, failed: 0, progress: 0, finished: false, finished_at: null };
         pollBatch(json.batch_id);
     } catch {
-        alert('Network error during commit.');
+        modals.error('Could not create accounts', 'Network error during commit — check your connection and try again.');
         step.value = 'review';
         committing.value = false;
     }
@@ -834,7 +850,21 @@ const pollBatch = (batchId) => {
                 finished:    data.finished,
                 finished_at: data.finished_at,
             };
-            if (data.finished) { clearInterval(batchPoll); committing.value = false; localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_KEY + '_version'); }
+            if (data.finished) {
+                clearInterval(batchPoll);
+                committing.value = false;
+                localStorage.removeItem(LS_KEY);
+                localStorage.removeItem(LS_KEY + '_version');
+                const created = data.total_jobs - data.failed_jobs;
+                if (data.failed_jobs > 0) {
+                    modals.error('Some accounts were not created',
+                        `${data.failed_jobs} of ${data.total_jobs} failed (see the failed jobs log).`,
+                        `${created} ${created === 1 ? 'account was' : 'accounts were'} created.`);
+                } else {
+                    modals.success('Accounts created',
+                        `${created} ${created === 1 ? 'account was' : 'accounts were'} created. Each person has been emailed their login details.`);
+                }
+            }
         } catch { clearInterval(batchPoll); }
     }, 1500);
 };

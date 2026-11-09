@@ -147,6 +147,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const props = defineProps({
     provinces:       { type: Array,  default: () => [] },
@@ -168,12 +169,29 @@ const deadlinesChanged = computed(() =>
     [1, 2, 3, 4].some(q => (deadlineForm.value[q] || null) !== savedDeadlines(deadlineYear.value)[q])
 );
 
-const saveDeadlines = () => {
+const modals = useActionModals();
+
+const saveDeadlines = async () => {
+    const year = deadlineYear.value;
+    const ok = await modals.confirm({
+        title:       `Save the ${year} reporting deadlines?`,
+        message:     'Provinces can enter a quarter\'s accomplishments until its deadline. '
+                   + 'After it passes, changes need an approved correction request. The Q4 deadline also closes the year\'s targets.',
+        confirmText: 'Save deadlines',
+        color:       'indigo',
+        icon:        'mdi-calendar-check-outline',
+    });
+    if (!ok) return;
+
     const deadlines = Object.fromEntries([1, 2, 3, 4].map(q => [q, deadlineForm.value[q] || null]));
-    router.put(`/kpi-deadlines/${deadlineYear.value}`, { deadlines }, {
+    router.put(`/kpi-deadlines/${year}`, { deadlines }, {
         preserveScroll: true,
-        onStart:  () => { savingDeadlines.value = true; },
-        onFinish: () => { savingDeadlines.value = false; },
+        // Keep this page (and its dialogs); the deadlines watcher picks up fresh props.
+        preserveState:  true,
+        onStart:   () => { savingDeadlines.value = true; },
+        onSuccess: () => modals.success('Deadlines saved', `The ${year} reporting deadlines were saved.`),
+        onError:   (errors) => modals.error('Could not save deadlines', errors),
+        onFinish:  () => { savingDeadlines.value = false; },
     });
 };
 

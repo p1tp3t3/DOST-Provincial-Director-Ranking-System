@@ -9,7 +9,9 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link rel="icon" href="/assets/logo.png" type="image/x-icon">
+        <link rel="icon" href="/assets/logo.png" type="image/png">
+        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="apple-touch-icon" href="/assets/logo.png">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600|inter:400,500,600|ibm-plex-mono:400,500&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->

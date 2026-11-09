@@ -1,4 +1,5 @@
 import { configureEcho, echo } from '@laravel/echo-vue';
+import { router } from '@inertiajs/vue3';
 
 
 configureEcho({
@@ -47,3 +48,30 @@ if (initialPage.props?.auth?.user) {
             console.log('[Echo test] TestPing received:', e);
         });
 }
+
+// ── Maintenance mode, live ─────────────────────────────────────────────────
+// When the super admin toggles maintenance mode (MaintenanceModeChanged on the
+// public "system" channel), open pages react without a manual refresh:
+//   on  → everyone except super admins reloads; CheckMaintenanceMode then sends
+//         them to the notice with the page they were on, encrypted, as ?return=.
+//   off → anyone on the notice goes back to that page (the server decrypts it
+//         into the page's return_to prop). Users signed out by maintenance pass
+//         through the login first and land back there after it.
+// Public channel: signed-out visitors on the landing/login pages are affected too.
+const MAINTENANCE_NOTICE = '/maintenance-notice';
+let currentPage = initialPage;
+router.on('navigate', (event) => { currentPage = event.detail.page; });
+
+window.Echo.channel('system').listen('.maintenance.changed', ({ enabled }) => {
+    const path     = window.location.pathname;
+    const onNotice = path === MAINTENANCE_NOTICE;
+
+    if (enabled) {
+        const isSuperAdmin = currentPage?.props?.auth?.user?.role === 'super_admin';
+        // The break-glass console stays usable during maintenance.
+        if (onNotice || isSuperAdmin || path.startsWith('/admin/login')) return;
+        window.location.reload();
+    } else if (onNotice) {
+        window.location.assign(currentPage?.props?.return_to || '/login');
+    }
+});

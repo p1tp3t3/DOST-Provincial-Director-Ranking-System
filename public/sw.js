@@ -1,6 +1,8 @@
 // Service worker for browser push notifications (KPI reporting reminders).
 // Registered by resources/js/Composables/usePushNotifications.js.
 
+const LOGO = '/assets/logo.png';
+
 self.addEventListener('push', (event) => {
     if (!event.data) return;
 
@@ -12,6 +14,9 @@ self.addEventListener('push', (event) => {
     }
 
     const { title = 'PRISM', ...options } = payload;
+    // Always the PRISM logo, even if a push arrives without one.
+    options.icon  ??= LOGO;
+    options.badge ??= LOGO;
     event.waitUntil(self.registration.showNotification(title, options));
 });
 

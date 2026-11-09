@@ -281,13 +281,6 @@
                                 </div>
                             </v-card>
 
-                            <v-alert v-if="serverError" type="error" variant="tonal" density="compact" closable @click:close="serverError = ''">
-                                {{ serverError }}
-                            </v-alert>
-                            <v-alert v-if="successMsg" type="success" variant="tonal" density="compact" closable @click:close="successMsg = ''">
-                                {{ successMsg }}
-                            </v-alert>
-
                             <!-- Actions -->
                             <div class="d-flex justify-end gap-2">
                                 <v-btn variant="text" color="medium-emphasis" size="small" @click="resetForm">Clear</v-btn>
@@ -378,6 +371,7 @@
 import { ref, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const props = defineProps({
     provinces: { type: Array, default: () => [] },
@@ -387,8 +381,7 @@ const formRef    = ref(null);
 const submitting = ref(false);
 const showPassword = ref(false);
 const showConfirm  = ref(false);
-const serverError  = ref('');
-const successMsg   = ref('');
+const modals       = useActionModals();
 const fieldErrors  = ref({});
 const fieldError   = (key) => fieldErrors.value[key]?.[0] ?? '';
 
@@ -474,7 +467,7 @@ const checklist = computed(() => {
         { label: 'DOST ID filled',     done: !!form.value.dost_employee_id },
         { label: 'Username filled',    done: !!form.value.username },
         { label: 'Email filled',       done: !!form.value.email },
-        { label: 'Password set',       done: form.value.password.length >= 8 },
+        { label: 'Password set',       done: (form.value.password ?? '').length >= 8 },
         { label: 'Passwords match',    done: !!form.value.password && form.value.password === form.value.password_confirmation },
         { label: 'Position filled',    done: !!form.value.position },
         { label: 'Status selected',    done: !!form.value.status },
@@ -487,25 +480,26 @@ const submit = async () => {
     const { valid } = await formRef.value.validate();
     if (!valid) return;
 
+    const roles = form.value.admin_role ? `Employee + ${selectedRole.value.label}` : 'Employee';
+    const ok = await modals.confirm({
+        title:       'Register this account?',
+        message:     `${fullName.value}\nUsername: ${form.value.username}\nProvince: ${selectedProvinceName.value ?? '-'}\nRoles: ${roles}`,
+        confirmText: 'Register',
+        icon:        'mdi-account-plus-outline',
+    });
+    if (!ok) return;
+
     submitting.value  = true;
-    serverError.value = '';
-    successMsg.value  = '';
     fieldErrors.value = {};
     try {
         const { data } = await axios.post('/users/store', form.value);
+        const name = fullName.value;
         resetForm();
-        successMsg.value = data.message ?? 'New user registered successfully.';
+        modals.success('Account registered', data.message ?? `${name} was registered successfully.`);
     } catch (e) {
-        const errors = e.response?.data?.errors ?? {};
-        fieldErrors.value = errors;
-        // Show the most specific problem: a field error, else the reason the
-        // save failed (code_error, e.g. "This region already has an active
-        // regional director"), else the general message.
-        const first = Object.entries(errors).find(([k]) => !['message', 'code_error'].includes(k))?.[1]?.[0];
-        serverError.value = first
-            ?? errors.code_error?.[0]
-            ?? e.response?.data?.message
-            ?? 'Registration failed. Please try again.';
+        // Field errors also show under their inputs (e.g. the admin role).
+        fieldErrors.value = e.response?.data?.errors ?? {};
+        modals.errorFrom('Registration failed', e);
     } finally {
         submitting.value = false;
     }
@@ -513,7 +507,9 @@ const submit = async () => {
 
 const resetForm = () => {
     form.value = defaultForm();
-    formRef.value?.reset();
+    // resetValidation, not reset(): reset() sets every field to null, which
+    // broke the checklist (password.length) and with it the success dialog.
+    formRef.value?.resetValidation();
     showPassword.value = false;
     showConfirm.value  = false;
 };

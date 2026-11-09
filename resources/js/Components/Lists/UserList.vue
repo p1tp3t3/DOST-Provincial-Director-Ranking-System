@@ -434,6 +434,7 @@
 import { ref, computed, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const defPic = 'https://scontent.fcgy1-3.fna.fbcdn.net/v/t39.30808-1/569409499_2926389544213362_5572906559510250325_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=1d2534&_nc_eui2=AeHxMS2Jaxqdlz7XjktrvQNCkuMFs6-OJrWS4wWzr44mtaR_gFGX3XynJKcVctLnDQznMva1uf7y4DJ9zvqkENur&_nc_ohc=t1KgQyv8YI4Q7kNvwFZDK9s&_nc_oc=AdovjHXEhGImiLI-b4UzqvAlKfytDYJV4eb0rG9Z9EgUyAyg_EF3UGX2mFLadgn20tFa5hK9DE54diCLrTUm3qlo&_nc_zt=24&_nc_ht=scontent.fcgy1-3.fna&_nc_gid=AYiNPwYYm5mm809vxgPhoA&_nc_ss=782a8&oh=00_Af5BeBLxqbptd619Z7yoL_PoCiaDpG1OQR9LWJj9XiJMMw&oe=6A13B822';
 
@@ -471,6 +472,11 @@ const showRegionColumn   = computed(() => ['super_admin', 'sub_admin'].includes(
 const isOwnAccount  = (id) => page.props.auth?.user?.id === id;
 const getActivate   = (user) => localState.value[user.id] ?? user.activate;
 
+const modals = useActionModals();
+// "Juan Dela Cruz" (or the username when the profile has no name).
+const who = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ') || u?.username || 'this user';
+const roleName = (name) => roleOptions.find(r => r.value === name)?.label ?? name;
+
 const editDialog  = ref(false);
 const editSaving  = ref(false);
 const editErrors  = ref({});
@@ -500,16 +506,25 @@ const openEdit = (user) => {
 };
 
 const saveEdit = async () => {
+    const name = who(editForm.value);
+    const ok = await modals.confirm({
+        title: 'Save changes?', message: `Update ${name}'s account details?`,
+        confirmText: 'Save', icon: 'mdi-content-save-outline',
+    });
+    if (!ok) return;
+
     editSaving.value = true;
     editErrors.value = {};
     try {
         await axios.put(`/users/${editForm.value._userId}`, editForm.value);
         editDialog.value = false;
         router.reload({ preserveScroll: true });
+        modals.success('User updated', `${name}'s account was updated.`);
     } catch (err) {
         if (err.response?.status === 422) {
             editErrors.value = err.response.data.errors ?? {};
         }
+        modals.errorFrom('Could not update user', err);
     } finally {
         editSaving.value = false;
     }
@@ -540,40 +555,73 @@ const resyncEditRoles = () => {
 
 const addRole = async () => {
     if (!newRole.value) return;
+    const role = roleName(newRole.value);
+    const ok = await modals.confirm({
+        title: 'Add role?', message: `Give ${who(editForm.value)} the ${role} role?`,
+        confirmText: 'Add role', icon: 'mdi-shield-plus-outline',
+    });
+    if (!ok) return;
+
     addingRole.value = true;
     roleError.value  = '';
     try {
         await axios.post(`/users/${editForm.value._userId}/roles`, { role: newRole.value });
         newRole.value = null;
         resyncEditRoles();
+        modals.success('Role added', `${who(editForm.value)} now has the ${role} role.`);
     } catch (err) {
         roleError.value = err.response?.data?.message ?? 'Could not add that role.';
+        modals.errorFrom('Could not add role', err, 'Could not add that role.');
     } finally {
         addingRole.value = false;
     }
 };
 
 const toggleRoleLock = async (role) => {
+    const suspending = role.locked;
+    const label = roleName(role.name);
+    const ok = await modals.confirm({
+        title:       suspending ? 'Suspend role?' : 'Reactivate role?',
+        message:     suspending
+            ? `Suspend ${who(editForm.value)}'s ${label} role? They keep it but can't use it until it's reactivated.`
+            : `Reactivate ${who(editForm.value)}'s ${label} role?`,
+        confirmText: suspending ? 'Suspend' : 'Reactivate',
+        color:       suspending ? 'warning' : 'primary',
+        icon:        suspending ? 'mdi-lock-outline' : 'mdi-lock-open-variant-outline',
+    });
+    if (!ok) return;
+
     roleBusyId.value = role.id;
     roleError.value  = '';
     try {
         await axios.patch(`/users/${editForm.value._userId}/roles/${role.id}`, { locked: !role.locked });
         resyncEditRoles();
+        modals.success(suspending ? 'Role suspended' : 'Role reactivated', `${label} for ${who(editForm.value)}.`);
     } catch (err) {
         roleError.value = err.response?.data?.message ?? 'Could not update that role.';
+        modals.errorFrom('Could not update role', err, 'Could not update that role.');
     } finally {
         roleBusyId.value = null;
     }
 };
 
 const removeRole = async (role) => {
+    const label = roleName(role.name);
+    const ok = await modals.confirm({
+        title: 'Remove role?', message: `Remove the ${label} role from ${who(editForm.value)}?`,
+        confirmText: 'Remove', color: 'error', icon: 'mdi-shield-remove-outline',
+    });
+    if (!ok) return;
+
     roleBusyId.value = role.id;
     roleError.value  = '';
     try {
         await axios.delete(`/users/${editForm.value._userId}/roles/${role.id}`);
         resyncEditRoles();
+        modals.success('Role removed', `${who(editForm.value)} no longer has the ${label} role.`);
     } catch (err) {
         roleError.value = err.response?.data?.message ?? 'Could not remove that role.';
+        modals.errorFrom('Could not remove role', err, 'Could not remove that role.');
     } finally {
         roleBusyId.value = null;
     }
@@ -581,11 +629,20 @@ const removeRole = async (role) => {
 
 const listError = ref('');
 
-const toggleActivation = (user) => {
+const toggleActivation = async (user) => {
     if (toggling.value || isOwnAccount(user.id)) return;
 
     const prev = getActivate(user);
     const next = !prev;
+
+    const ok = await modals.confirm({
+        title:       next ? 'Activate account?' : 'Deactivate account?',
+        message:     next ? `Let ${who(user)} sign in again?` : `${who(user)} won't be able to sign in until the account is activated again.`,
+        confirmText: next ? 'Activate' : 'Deactivate',
+        color:       next ? 'success' : 'error',
+        icon:        next ? 'mdi-account-check-outline' : 'mdi-account-cancel-outline',
+    });
+    if (!ok) return;
 
     // Optimistic update - flip immediately, no page reload
     localState.value = { ...localState.value, [user.id]: next };
@@ -594,10 +651,13 @@ const toggleActivation = (user) => {
     router.patch(`/users/${user.id}/toggle-activation`, {}, {
         preserveScroll: true,
         preserveState:  true,
+        onSuccess: () => modals.success(next ? 'Account activated' : 'Account deactivated',
+            `${who(user)} ${next ? 'can sign in again' : 'can no longer sign in'}.`),
         onError: (errors) => {
             // Revert on failure
             localState.value = { ...localState.value, [user.id]: prev };
             listError.value = errors.role ?? 'Could not change activation status.';
+            modals.error('Could not change activation', errors, 'The account was not changed.');
         },
         onFinish: () => { toggling.value = null; },
     });
@@ -657,8 +717,11 @@ const confirmDelete = (user) => {
 const deleteUser = () => {
     if (!targetUser.value) return;
     deleting.value = true;
+    const name = who(targetUser.value);
     router.delete(`/users/${targetUser.value.id}`, {
         preserveScroll: true,
+        onSuccess: () => modals.success('User deleted', `${name}'s account was deleted.`),
+        onError:   (errors) => modals.error('Could not delete user', errors),
         onFinish: () => {
             deleting.value  = false;
             deleteDialog.value = false;

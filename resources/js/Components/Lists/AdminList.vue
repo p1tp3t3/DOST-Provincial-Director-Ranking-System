@@ -154,6 +154,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const props = defineProps({
     list:          { type: Object, required: true },
@@ -243,11 +244,17 @@ const confirmDelete = (admin) => {
     deleteDialog.value = true;
 };
 
+const modals = useActionModals();
+
 const deleteAdmin = () => {
     if (!targetAdmin.value) return;
     deleting.value = true;
-    router.delete(`/admins/${targetAdmin.value.id}`, {
+    const name = [targetAdmin.value.first_name, targetAdmin.value.last_name].filter(Boolean).join(' ') || targetAdmin.value.username;
+    // Admins are user accounts — same delete endpoint as the User List.
+    router.delete(`/users/${targetAdmin.value.id}`, {
         preserveScroll: true,
+        onSuccess: () => modals.success('Admin deleted', `${name}'s account was deleted.`),
+        onError:   (errors) => modals.error('Could not delete admin', errors),
         onFinish: () => {
             deleting.value     = false;
             deleteDialog.value = false;

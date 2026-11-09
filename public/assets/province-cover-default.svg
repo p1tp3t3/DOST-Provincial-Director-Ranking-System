@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" preserveAspectRatio="xMidYMid slice">
+  <!-- Default province cover (2:1), shown when a province has no uploaded cover. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1565c0"/>
+      <stop offset="0.55" stop-color="#0b57a8"/>
+      <stop offset="1" stop-color="#0a3f7d"/>
+    </linearGradient>
+    <linearGradient id="hillBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="hillFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.10"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="600" fill="url(#sky)"/>
+
+  <!-- soft light -->
+  <circle cx="930" cy="150" r="230" fill="#ffffff" opacity="0.06"/>
+  <circle cx="930" cy="150" r="70" fill="#ffffff" opacity="0.22"/>
+
+  <!-- dotted grid, a nod to the map -->
+  <g fill="#ffffff" opacity="0.10">
+    <circle cx="80" cy="70" r="3"/><circle cx="140" cy="70" r="3"/><circle cx="200" cy="70" r="3"/><circle cx="260" cy="70" r="3"/>
+    <circle cx="80" cy="130" r="3"/><circle cx="140" cy="130" r="3"/><circle cx="200" cy="130" r="3"/><circle cx="260" cy="130" r="3"/>
+    <circle cx="80" cy="190" r="3"/><circle cx="140" cy="190" r="3"/><circle cx="200" cy="190" r="3"/><circle cx="260" cy="190" r="3"/>
+  </g>
+
+  <!-- hills -->
+  <path d="M0 430 C 160 330, 300 360, 430 400 S 700 300, 860 360 S 1100 330, 1200 380 L 1200 600 L 0 600 Z" fill="url(#hillBack)"/>
+  <path d="M0 500 C 180 420, 340 450, 520 480 S 820 400, 1000 450 S 1150 470, 1200 455 L 1200 600 L 0 600 Z" fill="url(#hillFront)"/>
+  <path d="M0 560 C 220 520, 420 540, 640 555 S 1000 520, 1200 540 L 1200 600 L 0 600 Z" fill="#ffffff" opacity="0.12"/>
+</svg>

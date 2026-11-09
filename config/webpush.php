@@ -35,7 +35,12 @@ return [
     /**
      * The Guzzle client options used by Minishlink\WebPush.
      */
-    'client_options' => [],
+    // Push is a nice-to-have: give up fast on a slow or unreachable push
+    // service (the library's default wait is 30s per request) and skip it.
+    'client_options' => [
+        'connect_timeout' => 5,
+        'timeout'         => 10,
+    ],
 
     /**
      * The automatic padding in bytes used by Minishlink\WebPush.

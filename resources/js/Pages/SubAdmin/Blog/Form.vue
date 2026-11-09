@@ -152,6 +152,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
 import RichTextEditor from '@/Components/Other/RichTextEditor/RichTextEditor.vue';
 
 const props = defineProps({
@@ -196,8 +197,23 @@ onUnmounted(() => {
 });
 
 // ── Submit ────────────────────────────────────────────────────────────────────
-const submit = () => {
-    const url = props.post ? `/blogs/${props.post.id}` : '/blogs';
-    form.post(url);
+const modals = useActionModals();
+
+const submit = async () => {
+    const editing   = !!props.post;
+    const published = !!form.is_published;
+    const ok = await modals.confirm({
+        title:       editing ? 'Save changes to this post?' : (published ? 'Publish this post?' : 'Save this post as a draft?'),
+        message:     published ? 'Published posts appear in News & Updates on the public landing page.' : 'Drafts are not shown on the landing page.',
+        confirmText: editing ? 'Save' : (published ? 'Publish' : 'Save draft'),
+        icon:        published ? 'mdi-publish' : 'mdi-content-save-outline',
+    });
+    if (!ok) return;
+
+    const url = editing ? `/blogs/${props.post.id}` : '/blogs';
+    form.post(url, {
+        onSuccess: () => modals.success(editing ? 'Post updated' : (published ? 'Post published' : 'Draft saved')),
+        onError:   (errors) => modals.error('Could not save the post', errors),
+    });
 };
 </script>

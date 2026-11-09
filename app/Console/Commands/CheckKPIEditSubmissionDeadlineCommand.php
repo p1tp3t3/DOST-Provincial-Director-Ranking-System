@@ -15,6 +15,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 #[Signature('app:check-kpi-edit-submission-deadline-command {--dry-run : List who would be notified without sending}')]
 #[Description('Remind regional directors, provincial admins and provincial directors 3 days and 1 day before a quarter\'s KPI submission deadline')]
@@ -88,13 +89,20 @@ class CheckKPIEditSubmissionDeadlineCommand extends Command
         // One job per user, sent together as one batch.
         if ($jobs) {
             $batchName = "KPI deadline reminders — {$period} ({$days} " . ($days === 1 ? 'day' : 'days') . ' before)';
-            Bus::batch($jobs)
-                ->name($batchName)
-                ->allowFailures()
-                ->finally(function (Batch $batch) use ($batchName) {
-                    Log::info("{$batchName}: " . ($batch->totalJobs - $batch->failedJobs) . "/{$batch->totalJobs} sent.");
-                })
-                ->dispatch();
+            // Sending is a nice-to-have: if queueing the batch fails, log it and
+            // carry on (the scheduler tries again on its next run).
+            try {
+                Bus::batch($jobs)
+                    ->name($batchName)
+                    ->allowFailures()
+                    ->finally(function (Batch $batch) use ($batchName) {
+                        Log::info("{$batchName}: " . ($batch->totalJobs - $batch->failedJobs) . "/{$batch->totalJobs} sent.");
+                    })
+                    ->dispatch();
+            } catch (Throwable $e) {
+                Log::warning('Could not queue KPI reminders: ' . $e->getMessage());
+                $this->warn('Could not queue reminders: ' . $e->getMessage());
+            }
         }
 
         return count($jobs);

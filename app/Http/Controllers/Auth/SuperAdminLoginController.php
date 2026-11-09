@@ -6,6 +6,7 @@ use App\Helpers\ActivityLogHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -75,19 +76,21 @@ class SuperAdminLoginController extends Controller
     }
 
     /**
-     * Both the gate password and maintenance mode must hold, or this 404s —
-     * indistinguishable from a route that doesn't exist.
+     * A wrong gate password 404s — indistinguishable from a route that doesn't
+     * exist. The right one outside maintenance mode isn't needed (the regular
+     * login works then), so it sends the visitor to /login instead of a
+     * confusing "not found".
      */
     private function authorizeGate(string $password): void
     {
-        if (!Cache::get('app_maintenance_mode', false)) {
-            abort(404);
-        }
-
         $hash = config('breakglass.password_hash');
 
         if (!$hash || !Hash::check($password, $hash)) {
             abort(404);
+        }
+
+        if (!Cache::get('app_maintenance_mode', false)) {
+            throw new HttpResponseException(redirect()->route('login'));
         }
     }
 }

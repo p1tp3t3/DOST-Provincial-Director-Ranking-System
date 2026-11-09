@@ -12,6 +12,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 #[Signature('app:notify-missing-accomplishments {--dry-run : List who would be notified without sending}')]
 #[Description('Weekly reminder to provincial admins and provincial directors about quarterly accomplishments that are still blank')]
@@ -70,13 +71,20 @@ class NotifyMissingAccomplishmentsCommand extends Command
         // All of this week's reminders go out together as one batch.
         if (!$dryRun && $jobs) {
             $batchName = 'Missing accomplishments reminders — week ' . $now->format('o-\WW');
-            Bus::batch($jobs)
-                ->name($batchName)
-                ->allowFailures()
-                ->finally(function (Batch $batch) use ($batchName) {
-                    Log::info("{$batchName}: " . ($batch->totalJobs - $batch->failedJobs) . "/{$batch->totalJobs} sent.");
-                })
-                ->dispatch();
+            // Sending is a nice-to-have: if queueing the batch fails, log it and
+            // carry on (the scheduler tries again on its next run).
+            try {
+                Bus::batch($jobs)
+                    ->name($batchName)
+                    ->allowFailures()
+                    ->finally(function (Batch $batch) use ($batchName) {
+                        Log::info("{$batchName}: " . ($batch->totalJobs - $batch->failedJobs) . "/{$batch->totalJobs} sent.");
+                    })
+                    ->dispatch();
+            } catch (Throwable $e) {
+                Log::warning('Could not queue KPI reminders: ' . $e->getMessage());
+                $this->warn('Could not queue reminders: ' . $e->getMessage());
+            }
         }
 
         $count = count($jobs);

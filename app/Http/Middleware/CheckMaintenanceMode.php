@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckMaintenanceMode
@@ -42,6 +43,12 @@ class CheckMaintenanceMode
             $request->session()->regenerateToken();
         }
 
-        return redirect('/maintenance-notice');
+        // Remember the page they were after, so the notice can send them back
+        // there once maintenance ends (see resources/js/echo.js). Encrypted, so
+        // the URL doesn't expose it and it can't be tampered with; the notice
+        // route decrypts it.
+        $return = $request->isMethod('GET') ? $request->getRequestUri() : null;
+
+        return redirect('/maintenance-notice' . ($return ? '?return=' . urlencode(Crypt::encryptString($return)) : ''));
     }
 }
