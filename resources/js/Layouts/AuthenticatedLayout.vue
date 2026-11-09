@@ -2,6 +2,8 @@
 import { onMounted, onUnmounted } from 'vue';
 import Sidebar from '@/Components/Other/Sidebar.vue';
 import AuthHeader from '@/Components/Other/AuthHeader.vue';
+import ActionModals from '@/Components/Modals/ActionModals.vue';
+import { registerActionModals } from '@/Composables/useActionModals';
 import { receiveBroadcast, getAuth } from '@/helper-functions.js';
 
 const user = getAuth();
@@ -37,5 +39,8 @@ onUnmounted(() => {
                 </div>
             </main>
         </div>
+
+        <!-- App-wide confirmation + success/error dialogs (useActionModals) -->
+        <ActionModals :ref="registerActionModals" />
     </div>
 </template>

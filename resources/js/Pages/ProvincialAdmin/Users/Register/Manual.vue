@@ -328,10 +328,13 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
+import axios from 'axios';
+import { useActionModals } from '@/Composables/useActionModals';
 
 const formRef   = ref(null);
 const submitting = ref(false);
+const modals     = useActionModals();
 const showPassword = ref(false);
 const showConfirm  = ref(false);
 
@@ -403,7 +406,7 @@ const checklist = computed(() => {
         { label: 'DOST ID filled',     done: !!form.value.dost_employee_id },
         { label: 'Username filled',    done: !!form.value.username },
         { label: 'Email filled',       done: !!form.value.email },
-        { label: 'Password set',       done: form.value.password.length >= 8 },
+        { label: 'Password set',       done: (form.value.password ?? '').length >= 8 },
         { label: 'Passwords match',    done: !!form.value.password && form.value.password === form.value.password_confirmation },
     ];
     if (form.value.role === 'employee') {
@@ -418,17 +421,33 @@ const submit = async () => {
     const { valid } = await formRef.value.validate();
     if (!valid) return;
 
-    submitting.value = true;
-    router.post('/users/store', form.value, {
-        onSuccess: () => resetForm(),
-        onError:   (errors) => console.error(errors),
-        onFinish:  () => { submitting.value = false; },
+    const ok = await modals.confirm({
+        title:       'Register this account?',
+        message:     `${fullName.value}\nUsername: ${form.value.username}\nRole: ${form.value.role === 'provincial_director' ? 'Provincial Director' : 'Employee'}`,
+        confirmText: 'Register',
+        icon:        'mdi-account-plus-outline',
     });
+    if (!ok) return;
+
+    // /users/store answers with JSON, so post it with axios (not an Inertia visit).
+    submitting.value = true;
+    try {
+        const { data } = await axios.post('/users/store', form.value);
+        const name = fullName.value;
+        resetForm();
+        modals.success('Account registered', data.message ?? `${name} was registered successfully.`);
+    } catch (e) {
+        modals.errorFrom('Registration failed', e);
+    } finally {
+        submitting.value = false;
+    }
 };
 
 const resetForm = () => {
     form.value = defaultForm();
-    formRef.value?.reset();
+    // resetValidation, not reset(): reset() sets every field to null, which
+    // broke the checklist (password.length) and with it the success dialog.
+    formRef.value?.resetValidation();
     showPassword.value = false;
     showConfirm.value  = false;
 };

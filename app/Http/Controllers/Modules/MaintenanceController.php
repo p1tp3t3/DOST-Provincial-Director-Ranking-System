@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Modules;
 
+use App\Events\MaintenanceModeChanged;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MaintenanceController extends Controller
 {
@@ -36,6 +39,14 @@ class MaintenanceController extends Controller
         } else {
             Cache::put('app_maintenance_mode', true, now()->addYear());
             $msg = 'Maintenance mode enabled. Only super admins can access the system.';
+        }
+
+        // Tell every open page right away (see resources/js/echo.js). If Reverb
+        // is down the toggle still applies — pages just pick it up on their next request.
+        try {
+            broadcast(new MaintenanceModeChanged(!$current));
+        } catch (Throwable $e) {
+            Log::warning('Maintenance mode broadcast failed (mode was still changed): ' . $e->getMessage());
         }
 
         return back()->with('success', $msg);

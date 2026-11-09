@@ -162,7 +162,8 @@ class ProvinceController extends Controller
 
         $data = $request->validate([
             'description' => ['nullable', 'string', 'max:20000'],
-            'image'       => ['nullable', 'image', 'max:4096'],
+            'image'        => ['nullable', 'image', 'max:4096'],
+            'remove_image' => ['nullable', 'boolean'],
         ]);
 
         // Formatted text from the editor (no links/embeds) — rendered with v-html on the landing page.
@@ -170,13 +171,17 @@ class ProvinceController extends Controller
             ? null
             : RichTextSanitizer::clean($data['description'], RichTextSanitizer::TEXT_ONLY);
 
-        if ($request->hasFile('image')) {
+        // A new cover replaces the old one; "remove" clears it so the landing
+        // page falls back to the default cover.
+        if ($request->hasFile('image') || $request->boolean('remove_image')) {
             if ($province->image_url && Str::startsWith($province->image_url, '/storage/')) {
                 Storage::disk('public')->delete(Str::after($province->image_url, '/storage/'));
             }
-            $data['image_url'] = '/storage/' . $request->file('image')->store('province-images', 'public');
+            $data['image_url'] = $request->hasFile('image')
+                ? '/storage/' . $request->file('image')->store('province-images', 'public')
+                : null;
         }
-        unset($data['image']);
+        unset($data['image'], $data['remove_image']);
 
         $province->update($data);
 

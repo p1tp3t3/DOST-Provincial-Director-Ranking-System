@@ -318,6 +318,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
 import { Head, usePage, router } from '@inertiajs/vue3';
+import { useActionModals } from '@/Composables/useActionModals';
 import 'cropperjs';
 
 const props = defineProps({
@@ -344,6 +345,7 @@ const formRef    = ref(null);
 const fileInput  = ref(null);
 const saving     = ref(false);
 const flashSuccess = ref('');
+const modals       = useActionModals();
 
 // Watch for Inertia flash
 watch(() => page.props.flash, (flash) => {
@@ -382,9 +384,17 @@ const resetForm = () => {
 const submit = async () => {
     const { valid } = await formRef.value.validate();
     if (!valid) return;
+    const ok = await modals.confirm({
+        title: 'Save profile?', message: 'Update your profile details?',
+        confirmText: 'Save', icon: 'mdi-account-edit-outline',
+    });
+    if (!ok) return;
+
     saving.value = true;
     router.patch(route('profile.update'), form.value, {
-        onFinish: () => { saving.value = false; },
+        onSuccess: () => modals.success('Profile updated', 'Your profile details were saved.'),
+        onError:   (errors) => modals.error('Could not update profile', errors),
+        onFinish:  () => { saving.value = false; },
     });
 };
 
@@ -507,7 +517,9 @@ const applyCrop = async () => {
             const fd = new FormData();
             fd.append('picture', blob, 'profile.jpg');
             router.post(route('profile.picture.update'), fd, {
-                onFinish: () => { uploading.value = false; },
+                onSuccess: () => modals.success('Photo updated', 'Your profile photo was uploaded.'),
+                onError:   (errors) => modals.error('Could not upload photo', errors),
+                onFinish:  () => { uploading.value = false; },
             });
         }, 'image/jpeg', 0.92);
     } catch {
