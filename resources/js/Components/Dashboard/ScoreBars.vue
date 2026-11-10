@@ -114,7 +114,7 @@ const tickLabel = (v) => `${Number.isInteger(v) ? v : Number(v.toFixed(1))}%`;
     flex: 1 1 auto; min-height: 0;
     display: flex; flex-direction: column;
     overflow-y: auto; overflow-x: hidden;
-    scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
+    scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--bd-cbd5e1) transparent;
 }
 .sb-plot { position: relative; flex: 1 0 auto; padding: 2px 0 6px; }
 
@@ -123,8 +123,8 @@ const tickLabel = (v) => `${Number.isInteger(v) ? v : Number(v.toFixed(1))}%`;
     left: calc(var(--name-w) + var(--gap)); right: var(--label-pad);
     pointer-events: none;
 }
-.sb-gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: #eef1f5; transform: translateX(-0.5px); }
-.sb-gridline--base { background: #cbd5e1; }
+.sb-gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--bg-eef1f5); transform: translateX(-0.5px); }
+.sb-gridline--base { background: var(--bg-cbd5e1); }
 
 .sb-row {
     position: relative;
@@ -133,12 +133,12 @@ const tickLabel = (v) => `${Number.isInteger(v) ? v : Number(v.toFixed(1))}%`;
     border-radius: 6px; cursor: default;
 }
 .sb-row:hover { background: rgba(99, 102, 241, 0.06); }
-.sb-row:hover .sb-name { color: #4338ca; }
+.sb-row:hover .sb-name { color: var(--tx-4338ca); }
 
 /* Province names in near-black semibold so they read first, ahead of the
    axis and gridlines. */
 .sb-name {
-    font-size: var(--name-size, 13.5px); font-weight: 600; color: #1e293b; text-align: right;
+    font-size: var(--name-size, 13.5px); font-weight: 600; color: var(--tx-1e293b); text-align: right;
     letter-spacing: 0.005em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -151,7 +151,7 @@ const tickLabel = (v) => `${Number.isInteger(v) ? v : Number(v.toFixed(1))}%`;
 }
 .sb-value {
     position: absolute; top: 50%; transform: translate(6px, -50%);
-    font-size: var(--value-size, 12px); font-weight: 600; color: #1e293b; white-space: nowrap;
+    font-size: var(--value-size, 12px); font-weight: 600; color: var(--tx-1e293b); white-space: nowrap;
     font-variant-numeric: tabular-nums;
     transition: left .6s cubic-bezier(.2, .7, .3, 1);
 }
@@ -161,12 +161,12 @@ const tickLabel = (v) => `${Number.isInteger(v) ? v : Number(v.toFixed(1))}%`;
     display: grid; grid-template-columns: var(--name-w) minmax(0, 1fr); column-gap: var(--gap);
     padding-right: var(--label-pad);
     overflow: hidden; scrollbar-gutter: stable; scrollbar-width: thin;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--bd-f1f5f9);
 }
 .sb-axis-track { position: relative; height: 22px; }
 .sb-tick {
     position: absolute; top: 4px; transform: translateX(-50%);
-    font-size: 11px; color: #94a3b8; white-space: nowrap; font-variant-numeric: tabular-nums;
+    font-size: 11px; color: var(--tx-94a3b8); white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 
 .sb-tip { font-size: 12px; line-height: 1.5; min-width: 180px; }

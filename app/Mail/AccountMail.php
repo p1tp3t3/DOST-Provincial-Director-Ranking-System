@@ -43,10 +43,9 @@ class AccountMail extends Mailable
             view: 'emails.account-email',
             with: [
                 'name' => $this->user->profile->first_name,
-                'username' => $this->user->username,
                 'email' => $this->user->email,
-                'dost_id' => $this->user->dost_employee_id,
-                'password' => $this->password, // default password is the DOST ID
+                'employee_no' => $this->user->dost_employee_id,
+                'password' => $this->password, // the generated starting password
             ],
         );
     }

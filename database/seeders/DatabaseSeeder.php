@@ -152,7 +152,7 @@ class DatabaseSeeder extends Seeder
 
         $superAdmin = User::factory()->create([
             'email'    => 'vinzmuloc@gmail.com',
-            'username' => 'vinzmuloc',
+            'dost_employee_id' => 'vinzmuloc',
         ]);
         $superAdmin->assignRole('super_admin');
         Profile::create([
@@ -167,7 +167,7 @@ class DatabaseSeeder extends Seeder
 
         // Fixed, permanent login — stays identical on every reseed, not Faker-random.
         $subAdmin = User::factory()->create([
-            'username' => 'subadmin',
+            'dost_employee_id' => 'subadmin',
             'email'    => 'subadmin@dost.test',
         ]);
         $subAdmin->assignRole('sub_admin');
@@ -184,12 +184,11 @@ class DatabaseSeeder extends Seeder
         // One Regional Director per region. No real roster yet, so each is simply
         // named after the region it oversees (e.g. "NCR", "Region I"). Region-scoped
         // like the regional admin — no province or KPIs of their own.
-        // Login: regdir_<region-slug> / password  (e.g. regdir_region_i).
+        // Login: rd-<region id> (employee no.) or regdir_<region-slug>@dost.test / password.
         foreach ($regions as $region) {
             $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $region->name)); // "region_i", "ncr"
             $regionalDirector = User::factory()->create([
                 'region_id'        => $region->id,
-                'username'         => 'regdir_' . $slug,
                 'email'            => 'regdir_' . $slug . '@dost.test',
                 'dost_employee_id' => 'rd-' . $region->id,
             ]);
@@ -214,7 +213,6 @@ class DatabaseSeeder extends Seeder
             // Create Provincial Director
             // Fixed login (provdir_<province>@dost.test) — stays identical on every reseed.
             $director = User::factory()->create([
-                'username'         => 'provdir_' . $provSlug,
                 'email'            => 'provdir_' . $provSlug . '@dost.test',
                 'dost_employee_id' => self::generate_emp_id(),
             ]);
@@ -252,7 +250,7 @@ class DatabaseSeeder extends Seeder
             // Create Provincial Admin + Provincial Sub Admin (no real data available)
             // Fixed, permanent login — stays identical on every reseed, not Faker-random.
             $provincialAdmin = User::factory()->create([
-                'username' => 'provadmin_' . $provSlug,
+                'dost_employee_id' => 'provadmin_' . $provSlug,
                 'email'    => 'provadmin_' . $provSlug . '@dost.test',
             ]);
             $provincialAdmin->assignRole('provincial_admin');

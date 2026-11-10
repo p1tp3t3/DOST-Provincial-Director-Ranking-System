@@ -173,7 +173,7 @@ const statusColor = (s) => ({ permanent: 'success', cos: 'warning', jo: 'orange'
 const statTiles = computed(() => {
     const p = profile.value;
     const tiles = [
-        { label: 'Employee ID',      value: p.id_number,                           icon: 'mdi-badge-account-outline',   color: 'indigo'  },
+        { label: 'Employee No.',     value: p.id_number,                           icon: 'mdi-badge-account-outline',   color: 'indigo'  },
         { label: 'Length of Service',value: formatService(p.length_of_service),    icon: 'mdi-calendar-clock-outline',  color: 'teal'    },
     ];
     if (p.position)
@@ -190,7 +190,7 @@ const statTiles = computed(() => {
 const personalRows = computed(() => {
     const p = profile.value;
     const rows = [
-        { label: 'Employee ID', value: p.id_number },
+        { label: 'Employee No.', value: p.id_number },
         { label: 'Role',        value: roleLabel.value },
         { label: 'Province',    value: p.province },
         { label: 'Length of Service', value: formatService(p.length_of_service) },

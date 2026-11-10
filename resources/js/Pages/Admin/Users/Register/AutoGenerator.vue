@@ -268,7 +268,7 @@
                             <v-col cols="12" sm="6">
                                 <v-text-field
                                     v-model="form.director_dost_id"
-                                    label="DOST Employee ID"
+                                    label="Employee No."
                                     variant="outlined"
                                     density="compact"
                                     hide-details="auto"
@@ -541,10 +541,10 @@ const statusIcon  = (s) => ({ pending: 'mdi-clock-outline', approved: 'mdi-check
     letter-spacing: 0.05em;
     font-size: 0.6rem;
     font-weight: 600;
-    color: rgba(0,0,0,0.45);
+    color: rgba(var(--ink-rgb), 0.45);
 }
 .csv-dropzone {
-    border: 2px dashed rgba(0, 0, 0, 0.12);
+    border: 2px dashed rgba(var(--ink-rgb), 0.12);
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
 }

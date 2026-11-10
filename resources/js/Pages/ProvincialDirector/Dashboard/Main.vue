@@ -240,32 +240,32 @@ const trendOptions = computed(() => ({
 </script>
 
 <style scoped>
-.eyebrow { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+.eyebrow { font-size: 12px; font-weight: 600; color: var(--tx-64748b); text-transform: uppercase; letter-spacing: 0.04em; }
 .standing-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.hero-block { padding: 20px 24px; border-right: 1px solid #f1f5f9; }
+.hero-block { padding: 20px 24px; border-right: 1px solid var(--bd-f1f5f9); }
 .hero-block:last-child { border-right: none; }
-.hero-block--gaps { background: #f8fafc; }
-.hero-rank { font-size: 44px; font-weight: 800; color: #0f172a; line-height: 1.05; margin-top: 4px; }
-.hero-rank span { font-size: 18px; font-weight: 600; color: #64748b; }
-.hero-score { font-size: 36px; font-weight: 800; color: #0f172a; line-height: 1.1; margin-top: 4px; }
-.gap-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #e2e8f0; }
+.hero-block--gaps { background: var(--bg-f8fafc); }
+.hero-rank { font-size: 44px; font-weight: 800; color: var(--tx-0f172a); line-height: 1.05; margin-top: 4px; }
+.hero-rank span { font-size: 18px; font-weight: 600; color: var(--tx-64748b); }
+.hero-score { font-size: 36px; font-weight: 800; color: var(--tx-0f172a); line-height: 1.1; margin-top: 4px; }
+.gap-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--bd-e2e8f0); }
 .gap-row:last-child { border-bottom: none; }
-.gap-row strong { color: #4f46e5; }
+.gap-row strong { color: var(--tx-4f46e5); }
 
-.card-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; font-size: 14px; font-weight: 700; color: #0f172a; }
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; color: #64748b; font-size: 14px; }
+.card-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; font-size: 14px; font-weight: 700; color: var(--tx-0f172a); }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; color: var(--tx-64748b); font-size: 14px; }
 
-.approval-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #f1f5f9; }
+.approval-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--bd-f1f5f9); }
 .approval-row:last-child { border-bottom: none; }
 
-.improve-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #f1f5f9; }
+.improve-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--bd-f1f5f9); }
 .improve-row:last-child { border-bottom: none; }
-.improve-num { width: 22px; height: 22px; border-radius: 50%; background: #eef2ff; color: #4338ca; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.improve-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-eef2ff); color: var(--tx-4338ca); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .improve-missed { text-align: right; font-weight: 700; color: #b91c1c; font-size: 15px; white-space: nowrap; }
 
-.tier-row { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; }
+.tier-row { padding: 10px 16px; border-bottom: 1px solid var(--bd-f1f5f9); }
 .tier-row:last-child { border-bottom: none; }
-.tier-track { position: relative; height: 8px; background: #f1f5f9; border-radius: 4px; }
+.tier-track { position: relative; height: 8px; background: var(--bg-f1f5f9); border-radius: 4px; }
 .tier-fill { position: absolute; inset: 0 auto 0 0; background: #6366f1; border-radius: 4px; }
 .tier-mark { position: absolute; top: -3px; width: 2px; height: 14px; border-radius: 1px; transform: translateX(-1px); }
 .tier-mark--avg  { background: #0f172a; }

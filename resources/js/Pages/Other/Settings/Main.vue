@@ -269,9 +269,8 @@ const accountRows = computed(() => {
     const a = props.account;
     const rows = [
         { label: 'Full Name',    value: a.name                                 },
-        { label: 'Username',     value: a.username                             },
+        { label: 'Employee No.', value: a.employee_id                          },
         { label: 'Email',        value: a.email                                },
-        { label: 'Employee ID',  value: a.employee_id                          },
         { label: 'Role',         value: roleLabels[a.role] ?? a.role, chip: true, chipColor: roleColor(a.role) },
     ];
     if (a.province) rows.push({ label: 'Province', value: a.province });

@@ -41,7 +41,7 @@ class ProvincialSubAdminReportController extends Controller
             'log_stats'     => $this->get_log_stats($provinceId),
             'recent_logs'   => $this->get_recent_logs($provinceId, 15),
             'generated'     => now()->format('F d, Y g:i A'),
-            'generated_by'  => Auth::user()?->username ?? 'System',
+            'generated_by'  => Auth::user()?->displayName() ?? 'System',
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('provincial-report-' . now()->format('Y-m-d') . '.pdf');

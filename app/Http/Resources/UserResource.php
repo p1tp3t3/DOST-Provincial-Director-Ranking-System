@@ -35,7 +35,6 @@ class UserResource extends JsonResource
             'activate'          => (bool) $this->activate,
             'profile_picture'   => $profile?->profile_picture,
             'name'              => trim($firstName . ' ' . $middleName . $lastName),
-            'username'          => $this->username,
             'email'             => $this->email,
             'province'          => $this->province?->name,
             'province_id'       => $this->province_id,

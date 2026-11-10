@@ -81,7 +81,7 @@ class ActivityLogController extends Controller
             'date_to'   => \Carbon\Carbon::parse($request->date_to)->format('F d, Y'),
             'type'      => $request->type ?? 'All',
             'generated' => now()->format('F d, Y g:i A'),
-            'generated_by' => auth()->user()?->username ?? 'System',
+            'generated_by' => auth()->user()?->displayName() ?? 'System',
         ];
 
         $pdf = Pdf::loadView('reports.activity-logs-report', $data)

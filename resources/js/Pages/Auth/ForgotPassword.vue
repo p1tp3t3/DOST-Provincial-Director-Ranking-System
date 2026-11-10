@@ -79,7 +79,7 @@
 
                                 <v-text-field
                                     v-model="form.identifier"
-                                    label="Email, Username, or DOST Employee ID"
+                                    label="Employee No. or Email"
                                     variant="outlined"
                                     density="comfortable"
                                     prepend-inner-icon="mdi-account-search-outline"
@@ -92,9 +92,8 @@
 
                                 <!-- Accepted inputs hint -->
                                 <div class="d-flex gap-2 flex-wrap">
+                                    <v-chip size="x-small" variant="tonal" color="primary" prepend-icon="mdi-card-account-details-outline">Employee No.</v-chip>
                                     <v-chip size="x-small" variant="tonal" color="primary" prepend-icon="mdi-email-outline">Email</v-chip>
-                                    <v-chip size="x-small" variant="tonal" color="primary" prepend-icon="mdi-account-outline">Username</v-chip>
-                                    <v-chip size="x-small" variant="tonal" color="primary" prepend-icon="mdi-card-account-details-outline">DOST ID</v-chip>
                                 </div>
 
                                 <v-btn

@@ -11,7 +11,7 @@
                     </v-avatar>
                     <div>
                         <div class="text-subtitle-1 font-weight-bold">
-                            Welcome, {{ authUser?.profile?.first_name ?? authUser?.username ?? 'Employee' }}
+                            Welcome, {{ authUser?.profile?.first_name || 'Employee' }}
                         </div>
                         <div class="text-caption text-medium-emphasis">
                             {{ [props.my_province, props.my_region].filter(Boolean).join(' · ') || 'DOST Employee' }}
@@ -482,14 +482,14 @@ const pieOptions = {
     border-radius: 20px;
 }
 .rank-gold   { background: #fef9c3; color: #854d0e; }
-.rank-silver { background: #f1f5f9; color: #475569; }
+.rank-silver { background: var(--bg-f1f5f9); color: var(--tx-475569); }
 .rank-bronze { background: #ffedd5; color: #9a3412; }
 
 .score-track {
     width: 90px;
     flex-shrink: 0;
     height: 8px;
-    background: #f1f5f9;
+    background: var(--bg-f1f5f9);
     border-radius: 4px;
     overflow: hidden;
 }

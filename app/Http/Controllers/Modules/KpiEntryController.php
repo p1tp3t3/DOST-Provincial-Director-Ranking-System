@@ -15,6 +15,7 @@ use App\Services\KpiCorrectionService;
 use App\Services\KpiEntryService;
 use App\Services\RankingService;
 use Illuminate\Http\Request;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\ValidationException;
 
@@ -56,13 +57,23 @@ class KpiEntryController extends Controller
 
     public function province(string $id, ?int $year = null)
     {
-        $provinceId = (int) Crypt::decrypt($id);
-        return $this->page($provinceId, $year, "/kpi-data/{$id}");
+        return $this->page($this->provinceIdFrom($id), $year, "/kpi-data/{$id}");
     }
 
     public function saveProvince(Request $request, string $id, int $year)
     {
-        return $this->save($request, (int) Crypt::decrypt($id), $year);
+        return $this->save($request, $this->provinceIdFrom($id), $year);
+    }
+
+    // The province in the link is encrypted; a damaged or outdated link
+    // (e.g. after the app key changed) is "not found", not a server error.
+    private function provinceIdFrom(string $id): int
+    {
+        try {
+            return (int) Crypt::decrypt($id);
+        } catch (DecryptException) {
+            abort(404);
+        }
     }
 
     // ── Shared ────────────────────────────────────────────────────────────
@@ -192,6 +203,6 @@ class KpiEntryController extends Controller
         if (!$user) return null;
         $p = $user->profile;
         $name = trim(implode(' ', array_filter([$p?->prefix, $p?->first_name, $p?->last_name, $p?->suffix])));
-        return $name ?: $user->username;
+        return $name ?: ($user->dost_employee_id ?: $user->email);
     }
 }

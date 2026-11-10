@@ -42,7 +42,7 @@ class KpiCatalogSnapshotController extends Controller
         $payload = $snapshot->payload;
 
         if (!is_array($payload) || !isset($payload['kpis'], $payload['categories'])) {
-            return back()->with('error', 'That save file is unreadable and cannot be restored.');
+            return back()->withErrors(['snapshot' => "That saved version is damaged and can't be restored."]);
         }
 
         $summary = DB::transaction(function () use ($payload) {
@@ -141,7 +141,7 @@ class KpiCatalogSnapshotController extends Controller
     public function destroy(KpiCatalogSnapshot $snapshot)
     {
         if ($snapshot->is_baseline) {
-            return back()->with('error', 'The original catalog cannot be deleted.');
+            return back()->withErrors(['snapshot' => "The original catalog can't be deleted."]);
         }
 
         $label = $snapshot->label;

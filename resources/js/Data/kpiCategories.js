@@ -12,24 +12,25 @@
 
 import { computed, toValue } from 'vue';
 
-// Visuals for the three categories the official PSTD matrix ships with. Kept
+// Visuals for the three categories the official PSTD matrix ships with. `bg` is
+// a CSS variable (light/dark tint, defined in resources/css/app.css). Kept
 // as a lookup rather than stored per row so the palette stays consistent
 // across screens, and so a category renamed in the DB keeps its colour.
 const KNOWN_VISUALS = {
-    CORE:      { color: 'indigo',      bg: '#eef2ff', hex: '#0b57a8', icon: 'mdi-rocket-launch-outline' },
-    STRATEGIC: { color: 'teal',        bg: '#e0f2f1', hex: '#2079c4', icon: 'mdi-shield-outline' },
-    SUPPORT:   { color: 'deep-purple', bg: '#ede7f6', hex: '#3f93e0', icon: 'mdi-cog-outline' },
+    CORE:      { color: 'indigo',      bg: 'var(--cat-bg-indigo)', hex: '#0b57a8', icon: 'mdi-rocket-launch-outline' },
+    STRATEGIC: { color: 'teal',        bg: 'var(--cat-bg-teal)', hex: '#2079c4', icon: 'mdi-shield-outline' },
+    SUPPORT:   { color: 'deep-purple', bg: 'var(--cat-bg-deep-purple)', hex: '#3f93e0', icon: 'mdi-cog-outline' },
 };
 
 // Cycled by position for any category an admin adds later, so a fourth or
 // fifth category still gets a distinct, stable colour instead of falling back
 // to the same grey as its neighbours.
 const FALLBACK_VISUALS = [
-    { color: 'blue',       bg: '#e3f2fd', hex: '#1e6fd9', icon: 'mdi-chart-bar' },
-    { color: 'orange',     bg: '#fff3e0', hex: '#d97706', icon: 'mdi-chart-donut' },
-    { color: 'pink',       bg: '#fce4ec', hex: '#be185d', icon: 'mdi-chart-arc' },
-    { color: 'green',      bg: '#e8f5e9', hex: '#15803d', icon: 'mdi-leaf' },
-    { color: 'blue-grey',  bg: '#eceff1', hex: '#64748b', icon: 'mdi-chart-box-outline' },
+    { color: 'blue',       bg: 'var(--cat-bg-blue)', hex: '#1e6fd9', icon: 'mdi-chart-bar' },
+    { color: 'orange',     bg: 'var(--cat-bg-orange)', hex: '#d97706', icon: 'mdi-chart-donut' },
+    { color: 'pink',       bg: 'var(--cat-bg-pink)', hex: '#be185d', icon: 'mdi-chart-arc' },
+    { color: 'green',      bg: 'var(--cat-bg-green)', hex: '#15803d', icon: 'mdi-leaf' },
+    { color: 'blue-grey',  bg: 'var(--cat-bg-blue-grey)', hex: '#64748b', icon: 'mdi-chart-box-outline' },
 ];
 
 export const categoryVisual = (code, index = 0) =>

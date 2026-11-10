@@ -239,7 +239,7 @@ const editProvince = (item) => {
 .filter-label {
     font-size: 11px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--tx-64748b);
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
@@ -248,15 +248,15 @@ const editProvince = (item) => {
     align-items: center;
     gap: 2px;
     padding: 3px;
-    background: #f1f5f9;
+    background: var(--bg-f1f5f9);
     border-radius: 9px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bd-e2e8f0);
 }
 .segmented-btn {
     appearance: none;
     border: none;
     background: transparent;
-    color: #64748b;
+    color: var(--tx-64748b);
     font-size: 12px;
     font-weight: 500;
     padding: 5px 12px;
@@ -267,10 +267,10 @@ const editProvince = (item) => {
     line-height: 1.3;
     white-space: nowrap;
 }
-.segmented-btn:hover:not(.active) { color: #0f172a; background: rgba(255, 255, 255, 0.6); }
+.segmented-btn:hover:not(.active) { color: var(--tx-0f172a); background: rgba(var(--surface-rgb), 0.6); }
 .segmented-btn.active {
-    background: #ffffff;
-    color: #0f172a;
+    background: var(--bg-ffffff);
+    color: var(--tx-0f172a);
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -283,10 +283,10 @@ const editProvince = (item) => {
     font-size: 10px;
     font-weight: 700;
     line-height: 1.5;
-    background: #e2e8f0;
-    color: #475569;
+    background: var(--bg-e2e8f0);
+    color: var(--tx-475569);
 }
-.seg-count--all    { background: #e0e7ff; color: #4338ca; }
+.seg-count--all    { background: var(--bg-e0e7ff); color: var(--tx-4338ca); }
 .seg-count--micro  { background: #cfd8dc; color: #455a64; }
 .seg-count--small  { background: #b2dfdb; color: #00695c; }
 .seg-count--medium { background: #c5cae9; color: #283593; }

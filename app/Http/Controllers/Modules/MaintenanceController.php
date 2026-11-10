@@ -133,7 +133,8 @@ class MaintenanceController extends Controller
         exec($command, $output, $code);
 
         if ($code !== 0 || !file_exists($path)) {
-            return back()->with('error', 'Backup failed. Check server mysqldump availability.');
+            Log::error("Database backup failed (mysqldump exit code {$code}).");
+            return back()->withErrors(['backup' => 'The database backup could not be created. Ask the server administrator to check that the MySQL backup tool (mysqldump) is installed.']);
         }
 
         return back()->with('success', "Backup {$filename} created successfully.");
@@ -260,18 +261,19 @@ class MaintenanceController extends Controller
         try {
             file_put_contents($tempSql, $this->dump_database_php());
         } catch (\Throwable $e) {
-            return back()->with('error', 'Export failed: ' . $e->getMessage());
+            Log::error('System export failed while copying the database: ' . $e->getMessage());
+            return back()->withErrors(['backup' => 'The system export could not be created because the database could not be copied. Please try again. If it keeps happening, contact the system administrator.']);
         }
 
         if (!file_exists($tempSql) || filesize($tempSql) === 0) {
-            return back()->with('error', 'Export failed: database dump was empty.');
+            return back()->withErrors(['backup' => 'The system export could not be created because the database copy came out empty. Please try again.']);
         }
 
         // Step 2: Build ZIP
         $zip = new \ZipArchive();
         if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             @unlink($tempSql);
-            return back()->with('error', 'Could not create ZIP archive.');
+            return back()->withErrors(['backup' => 'The backup file could not be created on the server. Check that the server has enough free disk space, then try again.']);
         }
 
         $zip->addFile($tempSql, 'database.sql');
@@ -418,13 +420,13 @@ class MaintenanceController extends Controller
         $source = storage_path('app/public');
 
         if (!is_dir($source)) {
-            return back()->with('error', 'Storage directory does not exist.');
+            return back()->withErrors(['backup' => 'There are no uploaded files to back up yet.']);
         }
 
         $zip = new \ZipArchive();
 
         if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            return back()->with('error', 'Could not create ZIP archive.');
+            return back()->withErrors(['backup' => 'The backup file could not be created on the server. Check that the server has enough free disk space, then try again.']);
         }
 
         $files = new \RecursiveIteratorIterator(

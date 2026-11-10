@@ -29,10 +29,9 @@ class GenerateEmployeeAccount implements ShouldQueue
         if ($this->batch()?->cancelled()) return;
 
         DB::transaction(function () {
-            $username = $this->makeUsername($this->row);
-            $email    = $this->row['email'] ?? ($username . '@dost.gov.ph');
             $dostId   = $this->row['dost_employee_id'] ?? ('emp-' . strtoupper(Str::random(8)));
-            $password  = $this->makePassword();
+            $email    = $this->row['email'] ?? (Str::lower($dostId) . '@dost.gov.ph');
+            $password = $this->makePassword();
 
             // Skip if email or DOST ID already exists
             if (User::where('email', $email)->orWhere('dost_employee_id', $dostId)->exists()) {
@@ -42,7 +41,6 @@ class GenerateEmployeeAccount implements ShouldQueue
             $user = User::create([
                 'dost_employee_id' => $dostId,
                 'email'            => $email,
-                'username'         => $username,
                 'password'         => $password,   // default password = generated password
             ]);
             $user->provinces()->attach($this->provinceId);
@@ -72,21 +70,6 @@ class GenerateEmployeeAccount implements ShouldQueue
 
             Mail::to($email)->queue(new AccountMail($user, $password));
         });
-    }
-
-    private function makeUsername(array $row): string
-    {
-        $base = strtolower(
-            ($row['first_name'][0] ?? 'u') .
-            ($row['last_name']    ?? 'ser')
-        );
-        $base = preg_replace('/[^a-z0-9]/', '', $base);
-
-        $username = $base;
-        if (User::where('username', $username)->exists()) {
-            $username = $base . strtolower(Str::random(3));
-        }
-        return $username;
     }
 
     private function makePassword() {

@@ -232,7 +232,7 @@ const generateReport = () => {
     letter-spacing: 0.05em;
     font-size: 0.6rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.45);
+    color: rgba(var(--ink-rgb), 0.45);
 }
 .format-card {
     cursor: pointer;

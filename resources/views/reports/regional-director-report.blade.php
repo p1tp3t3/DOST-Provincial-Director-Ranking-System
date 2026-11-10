@@ -184,7 +184,7 @@
         <thead>
             <tr>
                 <th>User</th>
-                <th>Employee ID</th>
+                <th>Employee No.</th>
                 <th>Role</th>
                 <th>Action</th>
                 <th>Description</th>

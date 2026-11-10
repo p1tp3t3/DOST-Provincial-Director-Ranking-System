@@ -10,11 +10,10 @@
     <h1>Hello {{ $name }},</h1>
     <p>Your account has been created successfully. Here are your account details:</p>
     <ul>
-        <li><strong>Username:</strong> {{ $username }}</li>
+        <li><strong>Employee No.:</strong> {{ $employee_no }}</li>
         <li><strong>Email:</strong> {{ $email }}</li>
-        <li><strong>DOST ID:</strong> {{ $dost_id }}</li>
         <li><strong>Password:</strong> {{ $password }}</li>
     </ul>
-    <p>Please log in to the PRISM and change your password as soon as possible.</p>
+    <p>Log in to PRISM with your employee no. or email, and change your password as soon as possible.</p>
 </body>
 </html>

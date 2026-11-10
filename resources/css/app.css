@@ -21,3 +21,270 @@
 .custom-styled-table .v-data-table__td {
     border-bottom: 1px solid #dfdfdf !important; 
 }
+
+/* ── Dark mode ────────────────────────────────────────────────────────────
+   The signed-in app can switch to dark (header: Theme → Light / Dark / Match
+   my device; see resources/js/Composables/useColorMode.js), which puts the
+   `theme-dark` class on <html> and switches Vuetify to its dark theme.
+
+   Component styles use the variables below for their neutral colours. Each
+   is named after its role and original light colour (--bg-ffffff,
+   --tx-0f172a, ...): the light value is that colour, so light mode looks
+   exactly as before; the dark value is its counterpart on dark surfaces. */
+:root {
+    --bd-bcd6f2: #bcd6f2;
+    --bd-c7ddf6: #c7ddf6;
+    --bd-cbd5e1: #cbd5e1;
+    --bd-ccc: #ccc;
+    --bd-dde1f0: #dde1f0;
+    --bd-e2e8f0: #e2e8f0;
+    --bd-e5e7eb: #e5e7eb;
+    --bd-e8edf3: #e8edf3;
+    --bd-f1f5f9: #f1f5f9;
+    --bd-fff: #fff;
+    --bg-cbd5e1: #cbd5e1;
+    --bg-e0e7ff: #e0e7ff;
+    --bg-e2e8f0: #e2e8f0;
+    --bg-eaf2fb: #eaf2fb;
+    --bg-eef0f8: #eef0f8;
+    --bg-eef1f5: #eef1f5;
+    --bg-eef2ff: #eef2ff;
+    --bg-f0f4ff: #f0f4ff;
+    --bg-f0f7ff: #f0f7ff;
+    --bg-f1f5f9: #f1f5f9;
+    --bg-f1f5ff: #f1f5ff;
+    --bg-f4f4f4: #f4f4f4;
+    --bg-f8fafc: #f8fafc;
+    --bg-f9fafb: #f9fafb;
+    --bg-fafafa: #fafafa;
+    --bg-fafaff: #fafaff;
+    --bg-fafbfc: #fafbfc;
+    --bg-fafbff: #fafbff;
+    --bg-fff: #fff;
+    --bg-ffffff: #ffffff;
+    --tx-000: #000;
+    --tx-0f172a: #0f172a;
+    --tx-1e293b: #1e293b;
+    --tx-1e40af: #1e40af;
+    --tx-1f2937: #1f2937;
+    --tx-333: #333;
+    --tx-334155: #334155;
+    --tx-3730a3: #3730a3;
+    --tx-374151: #374151;
+    --tx-4338ca: #4338ca;
+    --tx-475569: #475569;
+    --tx-4b5563: #4b5563;
+    --tx-4f46e5: #4f46e5;
+    --tx-555: #555;
+    --tx-64748b: #64748b;
+    --tx-94a3b8: #94a3b8;
+}
+html.theme-dark {
+    --bd-bcd6f2: #29466e;
+    --bd-c7ddf6: #29466e;
+    --bd-cbd5e1: #3a475c;
+    --bd-ccc: #3a475c;
+    --bd-dde1f0: #2b3648;
+    --bd-e2e8f0: #2b3648;
+    --bd-e5e7eb: #2b3648;
+    --bd-e8edf3: #2b3648;
+    --bd-f1f5f9: #1e293b;
+    --bd-fff: #111827;
+    --bg-cbd5e1: #3a475c;
+    --bg-e0e7ff: #242f5c;
+    --bg-e2e8f0: #263246;
+    --bg-eaf2fb: #14263f;
+    --bg-eef0f8: #1c2236;
+    --bg-eef1f5: #1b2638;
+    --bg-eef2ff: #1c2547;
+    --bg-f0f4ff: #1a2340;
+    --bg-f0f7ff: #14263f;
+    --bg-f1f5f9: #1b2638;
+    --bg-f1f5ff: #1a2340;
+    --bg-f4f4f4: #1b2638;
+    --bg-f8fafc: #162032;
+    --bg-f9fafb: #162032;
+    --bg-fafafa: #162032;
+    --bg-fafaff: #161d33;
+    --bg-fafbfc: #162032;
+    --bg-fafbff: #161d33;
+    --bg-fff: #111827;
+    --bg-ffffff: #111827;
+    --tx-000: #f1f5f9;
+    --tx-0f172a: #f1f5f9;
+    --tx-1e293b: #e2e8f0;
+    --tx-1e40af: #93c5fd;
+    --tx-1f2937: #e5e7eb;
+    --tx-333: #d1d5db;
+    --tx-334155: #cbd5e1;
+    --tx-3730a3: #c7d2fe;
+    --tx-374151: #d1d5db;
+    --tx-4338ca: #a5b4fc;
+    --tx-475569: #b4c0cf;
+    --tx-4b5563: #b4bcc8;
+    --tx-4f46e5: #a5b4fc;
+    --tx-555: #b0b8c4;
+    --tx-64748b: #94a3b8;
+    --tx-94a3b8: #7d8ba1;
+}
+
+/* "Ink" for semi-transparent text, borders and hover tints:
+   rgba(var(--ink-rgb), 0.6) is black-ish on light, near-white on dark. */
+:root { --ink-rgb: 0, 0, 0; }
+html.theme-dark { --ink-rgb: 241, 245, 249; }
+
+/* Card surface as an RGB triplet, for translucent panels and sticky bars:
+   rgba(var(--surface-rgb), 0.97). */
+:root { --surface-rgb: 255, 255, 255; }
+html.theme-dark { --surface-rgb: 17, 24, 39; }
+
+/* KPI category header tints (resources/js/Data/kpiCategories.js) */
+:root {
+    --cat-bg-indigo: #eef2ff;  --cat-bg-teal: #e0f2f1;    --cat-bg-deep-purple: #ede7f6;
+    --cat-bg-blue: #e3f2fd;    --cat-bg-orange: #fff3e0;  --cat-bg-pink: #fce4ec;
+    --cat-bg-green: #e8f5e9;   --cat-bg-blue-grey: #eceff1;
+}
+html.theme-dark {
+    --cat-bg-indigo: #1c2547;  --cat-bg-teal: #0f2e2c;    --cat-bg-deep-purple: #241d42;
+    --cat-bg-blue: #13284a;    --cat-bg-orange: #3a2a12;  --cat-bg-pink: #3a1729;
+    --cat-bg-green: #142e1d;   --cat-bg-blue-grey: #1f2a33;
+}
+
+/* Page ground and text */
+html.theme-dark body {
+    background: #0b1120;
+    color: #e2e8f0;
+}
+
+/* Fixed-colour utility classes (Vuetify and Tailwind) used on light surfaces */
+html.theme-dark .bg-white {
+    background-color: rgb(var(--v-theme-surface));
+    color: rgb(var(--v-theme-on-surface));
+}
+html.theme-dark .bg-grey-lighten-5,
+html.theme-dark .bg-grey-lighten-4,
+html.theme-dark .bg-gray-50,
+html.theme-dark .bg-gray-100,
+html.theme-dark .bg-slate-50 {
+    background-color: #162032;
+}
+html.theme-dark .text-black,
+html.theme-dark .text-grey-darken-3,
+html.theme-dark .text-slate-900,
+html.theme-dark .text-slate-800,
+html.theme-dark .text-gray-900,
+html.theme-dark .text-gray-800 {
+    color: #e2e8f0;
+}
+html.theme-dark .text-grey-darken-2,
+html.theme-dark .text-grey-darken-1,
+html.theme-dark .text-gray-700,
+html.theme-dark .text-gray-600 {
+    color: #b4c0cf;
+}
+html.theme-dark .text-slate-500,
+html.theme-dark .text-gray-500 {
+    color: #94a3b8;
+}
+html.theme-dark .text-slate-400 {
+    color: #7d8ba1;
+}
+html.theme-dark .border-gray-300 {
+    border-color: #2b3648;
+}
+html.theme-dark .custom-styled-table .v-data-table__td {
+    border-bottom-color: #2b3648 !important;
+}
+
+/* Vuetify's fixed palette, used for chips, icons and labels (color="indigo"
+   etc.): the strong tones are too dark to read on dark surfaces, so their text
+   lifts to the palette's lighter tones; the very light tints (lighten-4/5,
+   avatar and icon tiles) become dark tints of the same hue. */
+html.theme-dark :is(.text-indigo, .text-indigo-darken-1, .text-indigo-darken-2, .text-indigo-darken-3, .text-indigo-darken-4) { color: #9fa8da; }
+html.theme-dark :is(.text-blue-grey, .text-blue-grey-darken-1, .text-blue-grey-darken-2, .text-blue-grey-darken-3, .text-blue-grey-darken-4) { color: #b0bec5; }
+html.theme-dark :is(.text-deep-purple, .text-deep-purple-darken-1, .text-deep-purple-darken-2, .text-deep-purple-darken-3) { color: #b39ddb; }
+html.theme-dark :is(.text-purple, .text-purple-darken-1, .text-purple-darken-2) { color: #ce93d8; }
+html.theme-dark :is(.text-blue, .text-blue-darken-1, .text-blue-darken-2, .text-blue-darken-3, .text-blue-darken-4) { color: #64b5f6; }
+html.theme-dark :is(.text-teal, .text-teal-darken-1, .text-teal-darken-2, .text-teal-darken-3) { color: #4db6ac; }
+html.theme-dark :is(.text-green, .text-green-darken-1, .text-green-darken-2, .text-green-darken-3, .text-light-green-darken-2) { color: #81c784; }
+html.theme-dark :is(.text-orange-darken-2, .text-orange-darken-3, .text-orange-darken-4, .text-deep-orange-darken-2) { color: #ffb74d; }
+html.theme-dark :is(.text-amber-darken-2, .text-amber-darken-3, .text-amber-darken-4) { color: #ffd54f; }
+html.theme-dark :is(.text-red-darken-2, .text-red-darken-3, .text-red-darken-4) { color: #ef9a9a; }
+html.theme-dark :is(.text-grey, .text-grey-darken-4) { color: #bdbdbd; }
+
+html.theme-dark :is(.bg-indigo-lighten-5, .bg-indigo-lighten-4)           { background-color: #1f2547; color: #c5cae9; }
+html.theme-dark :is(.bg-blue-lighten-5, .bg-blue-lighten-4)               { background-color: #13284a; color: #bbdefb; }
+html.theme-dark :is(.bg-light-blue-lighten-5, .bg-cyan-lighten-5)         { background-color: #0f2c40; color: #b3e5fc; }
+html.theme-dark :is(.bg-teal-lighten-5, .bg-teal-lighten-4)               { background-color: #0d2f2c; color: #b2dfdb; }
+html.theme-dark :is(.bg-green-lighten-5, .bg-green-lighten-4, .bg-light-green-lighten-5) { background-color: #13301b; color: #c8e6c9; }
+html.theme-dark :is(.bg-amber-lighten-5, .bg-amber-lighten-4, .bg-yellow-lighten-5) { background-color: #3a2e0b; color: #ffecb3; }
+html.theme-dark :is(.bg-orange-lighten-5, .bg-orange-lighten-4, .bg-deep-orange-lighten-5) { background-color: #3a250b; color: #ffe0b2; }
+html.theme-dark :is(.bg-red-lighten-5, .bg-red-lighten-4)                 { background-color: #3a1515; color: #ffcdd2; }
+html.theme-dark :is(.bg-pink-lighten-5, .bg-pink-lighten-4)               { background-color: #3a1426; color: #f8bbd0; }
+html.theme-dark :is(.bg-purple-lighten-5, .bg-purple-lighten-4)           { background-color: #2d1838; color: #e1bee7; }
+html.theme-dark :is(.bg-deep-purple-lighten-5, .bg-deep-purple-lighten-4) { background-color: #241a42; color: #d1c4e9; }
+html.theme-dark :is(.bg-blue-grey-lighten-5, .bg-blue-grey-lighten-4, .bg-grey-lighten-3) { background-color: #1f2a33; color: #cfd8dc; }
+html.theme-dark :is(.bg-success-lighten-5, .bg-error-lighten-5, .bg-warning-lighten-5) { background-color: #1b2638; }
+
+/* Leaflet tooltips on the maps */
+html.theme-dark .leaflet-tooltip {
+    background: #111827;
+    border-color: #273244;
+    color: #e2e8f0;
+}
+html.theme-dark .leaflet-tooltip-top::before    { border-top-color: #111827; }
+html.theme-dark .leaflet-tooltip-bottom::before { border-bottom-color: #111827; }
+html.theme-dark .leaflet-tooltip-left::before   { border-left-color: #111827; }
+html.theme-dark .leaflet-tooltip-right::before  { border-right-color: #111827; }
+
+/* ApexCharts: axis labels, grid lines, legend, tooltips and toolbar menu.
+   (CSS fill/stroke override the colours charts set as SVG attributes.) */
+html.theme-dark .apexcharts-text,
+html.theme-dark .apexcharts-xaxis-label,
+html.theme-dark .apexcharts-yaxis-label,
+html.theme-dark .apexcharts-xaxis-title-text,
+html.theme-dark .apexcharts-yaxis-title-text,
+html.theme-dark .apexcharts-datalabel-label,
+html.theme-dark .apexcharts-datalabel-value {
+    fill: #94a3b8;
+}
+html.theme-dark .apexcharts-gridline,
+html.theme-dark .apexcharts-grid-borders line,
+html.theme-dark .apexcharts-xaxis line,
+html.theme-dark .apexcharts-xaxis-tick {
+    stroke: #273244;
+}
+html.theme-dark .apexcharts-legend-text {
+    color: #cbd5e1 !important;
+}
+html.theme-dark .apexcharts-tooltip.apexcharts-theme-light,
+html.theme-dark .apexcharts-xaxistooltip,
+html.theme-dark .apexcharts-menu {
+    background: #111827 !important;
+    border-color: #273244 !important;
+    color: #e2e8f0 !important;
+}
+html.theme-dark .apexcharts-tooltip.apexcharts-theme-light .apexcharts-tooltip-title {
+    background: #162032 !important;
+    border-bottom-color: #273244 !important;
+}
+html.theme-dark .apexcharts-menu-item:hover {
+    background: #1b2638 !important;
+}
+html.theme-dark .apexcharts-toolbar svg {
+    fill: #94a3b8;
+}
+
+/* Leaflet maps: darken the basemap tiles; province shading is unaffected. */
+html.theme-dark .leaflet-container {
+    background: #0b1120;
+}
+html.theme-dark .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
+}
+html.theme-dark .leaflet-bar a,
+html.theme-dark .leaflet-control-attribution {
+    background: #111827;
+    color: #cbd5e1;
+    border-color: #273244;
+}

@@ -39,7 +39,7 @@ class ActivityLogHelper
     public static function deleteUser(User $target): void
     {
         self::log('delete',
-            self::actorName() . ' deleted the account of ' . self::name($target) . ' (' . ($target->dost_employee_id ?? $target->username) . ').'
+            self::actorName() . ' deleted the account of ' . self::name($target) . ' (' . ($target->dost_employee_id ?: $target->email) . ').'
         );
     }
 
@@ -179,7 +179,7 @@ class ActivityLogHelper
             return trim("{$profile->first_name}{$middle} {$profile->last_name}");
         }
 
-        return $user->username ?? "User #{$user->id}";
+        return $user->dost_employee_id ?: ($user->email ?: "User #{$user->id}");
     }
 
     private static function roleLabel(string $role): string

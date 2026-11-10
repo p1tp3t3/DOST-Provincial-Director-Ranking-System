@@ -993,7 +993,7 @@ const quickActions = [
     flex: 1;
     font-size: 0.72rem;
     word-break: break-all;
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(var(--ink-rgb), 0.05);
     padding: 4px 8px;
     border-radius: 4px;
 }
@@ -1003,7 +1003,7 @@ const quickActions = [
     letter-spacing: 0.05em;
     font-size: 0.6rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.45);
+    color: rgba(var(--ink-rgb), 0.45);
 }
 
 .log-viewer {

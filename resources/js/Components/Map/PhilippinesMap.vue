@@ -316,6 +316,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useColorMode } from '@/Composables/useColorMode';
 
 const props = defineProps({
     scores:           { type: Array,  default: () => [] },
@@ -558,6 +559,19 @@ const regionListOpen     = ref(false);
 let map       = null;
 let geoLayer  = null;
 let cstcLayer = null;
+let landLayer = null;
+
+// Dark mode: the map's neutral fills and outlines (blank provinces, dimmed
+// out-of-scope ones, the white borders between provinces) swap to dark
+// counterparts; the performance colours stay as they are.
+const { isDark } = useColorMode();
+const DARK_FILL    = { '#ffffff': '#1e293b', '#fff': '#1e293b', '#e2e8f0': '#273244', '#cbd5e1': '#334155' };
+const DARK_OUTLINE = { '#ffffff': '#0b1120', '#fff': '#0b1120', '#e2e8f0': '#334155', '#cbd5e1': '#475569', '#475569': '#64748b' };
+const themed = (style) => (!isDark.value ? style : {
+    ...style,
+    fillColor: DARK_FILL[style.fillColor] ?? style.fillColor,
+    color:     DARK_OUTLINE[style.color] ?? style.color,
+});
 let pendingFly = false;
 
 const provinces  = [];
@@ -919,7 +933,7 @@ const styleForCstc = (feature, sm, selReg, selIsl) => {
 const refreshCstcStyle = () => {
     if (!cstcLayer) return;
     const sm = scoreMap();
-    cstcLayer.setStyle(f => styleForCstc(f, sm, selRegion.value, selIsland.value));
+    cstcLayer.setStyle(f => themed(styleForCstc(f, sm, selRegion.value, selIsland.value)));
 };
 
 const styleFor = (feature, sm, selReg, selProv, selIsl) => {
@@ -965,7 +979,7 @@ const styleFor = (feature, sm, selReg, selProv, selIsl) => {
 const refreshStyle = () => {
     if (!geoLayer) return;
     const sm = scoreMap();
-    geoLayer.setStyle(f => styleFor(f, sm, selRegion.value, selProvince.value, selIsland.value));
+    geoLayer.setStyle(f => themed(styleFor(f, sm, selRegion.value, selProvince.value, selIsland.value)));
 };
 
 // ── Fly helpers ───────────────────────────────────────────────────────────────
@@ -1337,13 +1351,13 @@ onMounted(async () => {
 
     // Land base: every province in white with a slate outline, under the styled layer,
     // so the archipelago stays readable even where provinces are dimmed (no basemap tiles).
-    L.geoJSON(geojson, {
+    landLayer = L.geoJSON(geojson, {
         interactive: false,
-        style: { fillColor: '#ffffff', fillOpacity: 1, color: '#475569', weight: 1 },
+        style: () => themed({ fillColor: '#ffffff', fillOpacity: 1, color: '#475569', weight: 1 }),
     }).addTo(map);
 
     geoLayer = L.geoJSON(geojson, {
-        style:         f => styleFor(f, sm, selRegion.value, selProvince.value),
+        style:         f => themed(styleFor(f, sm, selRegion.value, selProvince.value)),
         onEachFeature: (feature, layer) => {
             const name       = feature.properties.adm2_en;
             const regionCode = feature.properties.adm1_psgc;
@@ -1369,7 +1383,7 @@ onMounted(async () => {
                 if (inActiveFilter) e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
             });
             layer.on('mouseout', () => {
-                layer.setStyle(styleFor(layer.feature, scoreMap(), selRegion.value, selProvince.value, selIsland.value));
+                layer.setStyle(themed(styleFor(layer.feature, scoreMap(), selRegion.value, selProvince.value, selIsland.value)));
             });
 
             layer.on('click', () => {
@@ -1416,7 +1430,7 @@ onMounted(async () => {
 
     cstcLayer = L.geoJSON(cstcGeojson, {
         pane:  'cstcPane',
-        style: f => styleForCstc(f, csm, selRegion.value, selIsland.value),
+        style: f => themed(styleForCstc(f, csm, selRegion.value, selIsland.value)),
         onEachFeature: (feature, layer) => {
             const cstcName = feature.properties.cstc;
             const cityName = feature.properties.name;
@@ -1428,7 +1442,7 @@ onMounted(async () => {
                 layer.bindTooltip(
                     `<div class="map-tip">
                         <strong>${cstcName}</strong>
-                        <span style="color:#94a3b8;font-size:10px;margin-top:-1px;">${cityName}</span>
+                        <span style="color:var(--tx-94a3b8);font-size:10px;margin-top:-1px;">${cityName}</span>
                         <span style="color:${info.color};font-weight:600;">${info.label}</span>
                         <span class="map-tip-score">${entry.score}%</span>
                     </div>`,
@@ -1437,7 +1451,7 @@ onMounted(async () => {
                 e.target.setStyle({ weight: 3, fillOpacity: 0.97 });
             });
             layer.on('mouseout', () => {
-                layer.setStyle(styleForCstc(layer.feature, scoreMap(), selRegion.value, selIsland.value));
+                layer.setStyle(themed(styleForCstc(layer.feature, scoreMap(), selRegion.value, selIsland.value)));
             });
 
             layer.on('click', () => {
@@ -1478,6 +1492,12 @@ watch(() => props.selectedTier, () => {
 });
 
 watch(() => props.scores,       () => { refreshStyle(); refreshCstcStyle(); rebuildPanel(); }, { deep: true });
+// Light/dark switched: redraw the neutral fills and outlines.
+watch(isDark, () => {
+    landLayer?.setStyle(() => themed({ fillColor: '#ffffff', fillOpacity: 1, color: '#475569', weight: 1 }));
+    refreshStyle();
+    refreshCstcStyle();
+});
 watch(panel, (p) => {
     if (!p || p.type !== 'region') provinceListOpen.value = false;
     if (!p || p.type !== 'island') regionListOpen.value = false;
@@ -1503,62 +1523,62 @@ onBeforeUnmount(() => {
 .ph-map {
     height: v-bind(height); width: 100%; z-index: 0;
     border-radius: 0 0 8px 8px;
-    background: #f1f5f9; /* acts as the sea — no basemap tiles behind the provinces */
+    background: var(--bg-f1f5f9); /* acts as the sea — no basemap tiles behind the provinces */
 }
 
 /* Pseudo-fullscreen: the .ph-map-wrap is teleported to <body> and pinned over
    the viewport. Avoids the native Fullscreen API's black-screen bug under
    transformed/filtered ancestors. */
 .ph-map-wrap.is-fullscreen {
-    position: fixed; inset: 0; z-index: 3000; background: #fff;
+    position: fixed; inset: 0; z-index: 3000; background: var(--bg-fff);
 }
 .ph-map-wrap.is-fullscreen .ph-map { height: 100%; border-radius: 0; }
 
 /* ── Filter bar (Island / Region / Province) - matches the other dashboard filter rows ── */
 .map-filter-bar {
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-    padding: 10px 16px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 10px 16px; background: var(--bg-fff); border-bottom: 1px solid rgba(var(--ink-rgb), 0.06);
 }
 .mfb-group { display: flex; align-items: center; gap: 8px; }
 .mfb-label {
-    font-size: 13px; font-weight: 700; color: #475569;
+    font-size: 13px; font-weight: 700; color: var(--tx-475569);
     letter-spacing: 0.02em; text-transform: uppercase;
 }
 .mfb-seg {
     display: inline-flex; align-items: center; gap: 2px; padding: 3px;
-    background: #f1f5f9; border-radius: 9px; border: 1px solid #e2e8f0;
+    background: var(--bg-f1f5f9); border-radius: 9px; border: 1px solid var(--bd-e2e8f0);
 }
 .mfb-seg-btn {
-    appearance: none; border: none; background: transparent; color: #475569;
+    appearance: none; border: none; background: transparent; color: var(--tx-475569);
     font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 6px;
     cursor: pointer; font-family: inherit; line-height: 1.3; white-space: nowrap;
     transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
-.mfb-seg-btn:hover:not(.active) { color: #0f172a; background: rgba(255,255,255,0.6); }
-.mfb-seg-btn.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }
+.mfb-seg-btn:hover:not(.active) { color: var(--tx-0f172a); background: rgba(var(--surface-rgb), 0.6); }
+.mfb-seg-btn.active { background: var(--bg-fff); color: var(--tx-0f172a); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }
 .mfb-select {
     height: 38px; padding: 0 32px 0 12px; font-size: 14px; font-family: inherit;
-    color: #334155; cursor: pointer; min-width: 210px; appearance: none; outline: none;
-    border: 1px solid #e2e8f0; border-radius: 8px;
-    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 12px center;
+    color: var(--tx-334155); cursor: pointer; min-width: 210px; appearance: none; outline: none;
+    border: 1px solid var(--bd-e2e8f0); border-radius: 8px;
+    background: var(--bg-fff) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 12px center;
     transition: border-color 0.15s;
 }
 .mfb-select:focus { border-color: #6366f1; }
 .mfb-reset {
     margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
     height: 38px; padding: 0 16px; font-size: 14px; font-weight: 600;
-    color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;
+    color: var(--tx-475569); background: var(--bg-f1f5f9); border: 1px solid var(--bd-e2e8f0);
     border-radius: 8px; cursor: pointer; transition: background 0.15s, color 0.15s;
 }
-.mfb-reset:hover { background: #e2e8f0; color: #1e293b; }
+.mfb-reset:hover { background: var(--bg-e2e8f0); color: var(--tx-1e293b); }
 .mfb-reset svg { width: 16px; height: 16px; }
 
 /* ── Info panel ────────────────────────────── */
 .map-info-panel {
     position: absolute; bottom: 28px; right: 10px; z-index: 1000;
     width: 320px;
-    background: rgba(255,255,255,0.97);
-    border: 1px solid #e2e8f0; border-radius: 10px;
+    background: rgba(var(--surface-rgb), 0.97);
+    border: 1px solid var(--bd-e2e8f0); border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.14);
     backdrop-filter: blur(6px);
     overflow: hidden;
@@ -1567,7 +1587,7 @@ onBeforeUnmount(() => {
 .panel-header {
     display: flex; align-items: flex-start; justify-content: space-between;
     gap: 8px; padding: 13px 14px 12px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bd-f1f5f9);
 }
 .panel-header-region { border-left: 3px solid #6366f1; padding-left: 11px; }
 .panel-header-island { border-left: 3px solid #0ea5e9; padding-left: 11px; }
@@ -1579,16 +1599,16 @@ onBeforeUnmount(() => {
 }
 .panel-caption-tier { color: #6366f1; }
 .panel-caption-sep  { color: #cbd5e1; font-weight: 400; }
-.panel-caption-year { color: #94a3b8; }
+.panel-caption-year { color: var(--tx-94a3b8); }
 
-.panel-title    { font-size: 21px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.panel-subtitle { font-size: 14.5px; color: #64748b; margin-top: 3px; line-height: 1.3; }
-.panel-region-tag { font-size: 13px; color: #94a3b8; font-weight: 500; margin-top: 2px; line-height: 1.2; }
+.panel-title    { font-size: 21px; font-weight: 700; color: var(--tx-0f172a); line-height: 1.2; }
+.panel-subtitle { font-size: 14.5px; color: var(--tx-64748b); margin-top: 3px; line-height: 1.3; }
+.panel-region-tag { font-size: 13px; color: var(--tx-94a3b8); font-weight: 500; margin-top: 2px; line-height: 1.2; }
 .panel-name-link {
     text-decoration: none !important; color: inherit; display: block;
     transition: color 0.15s;
 }
-.panel-name-link:hover { color: #4f46e5 !important; text-decoration: underline !important; }
+.panel-name-link:hover { color: var(--tx-4f46e5) !important; text-decoration: underline !important; }
 
 .panel-close {
     flex-shrink: 0; width: 22px; height: 22px; padding: 3px;
@@ -1596,7 +1616,7 @@ onBeforeUnmount(() => {
     display: flex; align-items: center; justify-content: center;
     border-radius: 4px; transition: background 0.12s, color 0.12s;
 }
-.panel-close:hover { background: #f1f5f9; color: #475569; }
+.panel-close:hover { background: var(--bg-f1f5f9); color: var(--tx-475569); }
 .panel-close svg    { width: 14px; height: 14px; }
 
 .panel-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -1617,7 +1637,7 @@ onBeforeUnmount(() => {
 .panel-hero-status   { font-size: 14px; font-weight: 600; line-height: 1.3; text-align: right; }
 .panel-hero-rank     { font-weight: 700; margin-left: 4px; }
 .panel-score-bar-wrap {
-    height: 4px; background: #f1f5f9; border-radius: 3px; overflow: hidden;
+    height: 4px; background: var(--bg-f1f5f9); border-radius: 3px; overflow: hidden;
 }
 .panel-score-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; opacity: 0.85; }
 
@@ -1626,7 +1646,7 @@ onBeforeUnmount(() => {
 .panel-section-header   { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .panel-section-label {
     font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: #94a3b8;
+    letter-spacing: 0.06em; color: var(--tx-94a3b8);
 }
 
 /* Category rows - flat list, ▲/▼/· markers, score on the right */
@@ -1637,12 +1657,12 @@ onBeforeUnmount(() => {
     align-items: center;
     gap: 8px;
     padding: 5px 0;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--bd-f1f5f9);
 }
 .cat-row:first-child { border-top: none; }
 .cat-row-marker      { color: #cbd5e1; text-align: center; font-size: 13px; line-height: 1; }
-.cat-row-name        { font-size: 14.5px; color: #475569; }
-.cat-row-score       { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+.cat-row-name        { font-size: 14.5px; color: var(--tx-475569); }
+.cat-row-score       { font-size: 14.5px; font-weight: 700; color: var(--tx-0f172a); }
 .cat-row--top .cat-row-marker { color: #16a34a; }
 .cat-row--top .cat-row-score  { color: #15803d; }
 .cat-row--bottom .cat-row-marker { color: #dc2626; }
@@ -1652,12 +1672,12 @@ onBeforeUnmount(() => {
 .trend-delta { font-size: 13.5px; font-weight: 700; }
 
 /* Shared classes - also used by the Island + Region panel variants */
-.panel-divider { height: 1px; background: #f1f5f9; margin: 0 -14px; }
+.panel-divider { height: 1px; background: var(--bg-f1f5f9); margin: 0 -14px; }
 .panel-row {
     display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
 }
-.panel-label { font-size: 11px; color: #94a3b8; font-weight: 500; flex-shrink: 0; }
-.panel-value { font-size: 12px; color: #334155; font-weight: 600; text-align: right; line-height: 1.4; }
+.panel-label { font-size: 11px; color: var(--tx-94a3b8); font-weight: 500; flex-shrink: 0; }
+.panel-value { font-size: 12px; color: var(--tx-334155); font-weight: 600; text-align: right; line-height: 1.4; }
 .panel-value small { font-weight: 400; font-size: 10.5px; }
 .panel-tier-label { font-size: 12px; font-weight: 600; }
 
@@ -1673,22 +1693,22 @@ onBeforeUnmount(() => {
 .pill-count { font-size: 16px; font-weight: 800; color: var(--tc); line-height: 1; }
 .pill-label { font-size: 9px;  font-weight: 600; color: var(--tc); opacity: 0.85; margin-top: 2px; }
 
-.panel-nodata { font-size: 11px; color: #94a3b8; font-style: italic; text-align: center; padding: 8px 0; }
+.panel-nodata { font-size: 11px; color: var(--tx-94a3b8); font-style: italic; text-align: center; padding: 8px 0; }
 
 .panel-kpi-highlights { display: flex; flex-direction: column; gap: 7px; }
 .panel-kpi-row        { display: flex; align-items: flex-start; gap: 8px; }
 .panel-kpi-badge      { font-size: 9.5px; font-weight: 700; padding: 3px 7px; border-radius: 4px; flex-shrink: 0; white-space: nowrap; margin-top: 1px; }
 .panel-kpi-info       { flex: 1; min-width: 0; }
-.panel-kpi-title      { font-size: 11px; color: #475569; line-height: 1.35; word-break: break-word; }
+.panel-kpi-title      { font-size: 11px; color: var(--tx-475569); line-height: 1.35; word-break: break-word; }
 .panel-kpi-score      { font-size: 12px; font-weight: 700; line-height: 1.4; margin-top: 1px; }
 
 /* Trend sparkline (score across reporting years) */
 .panel-trend            { display: flex; flex-direction: column; gap: 4px; }
 .panel-trend-header     { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.panel-trend-label      { font-size: 11px; color: #94a3b8; font-weight: 600; }
+.panel-trend-label      { font-size: 11px; color: var(--tx-94a3b8); font-weight: 600; }
 .panel-trend-delta      { font-size: 11px; font-weight: 700; white-space: nowrap; }
 .panel-trend-delta-since {
-    font-size: 9.5px; font-weight: 500; color: #94a3b8; margin-left: 2px;
+    font-size: 9.5px; font-weight: 500; color: var(--tx-94a3b8); margin-left: 2px;
 }
 .sparkline {
     width: 100%;
@@ -1701,13 +1721,13 @@ onBeforeUnmount(() => {
     display: flex;
     justify-content: space-between;
     font-size: 11.5px;
-    color: #94a3b8;
+    color: var(--tx-94a3b8);
     font-weight: 600;
     padding: 0 4px;
     margin-top: -2px;
 }
 .panel-trend-year-active {
-    color: #4338ca;
+    color: var(--tx-4338ca);
     font-weight: 800;
 }
 
@@ -1715,23 +1735,23 @@ onBeforeUnmount(() => {
 .fs-btn {
     position: absolute; top: 10px; right: 10px; z-index: 1000;
     width: 32px; height: 32px; padding: 6px;
-    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0; border-radius: 6px;
+    background: rgba(var(--surface-rgb), 0.95); border: 1px solid var(--bd-e2e8f0); border-radius: 6px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: #475569;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: var(--tx-475569);
     backdrop-filter: blur(4px); transition: background 0.15s, color 0.15s;
 }
-.fs-btn:hover { background: #f1f5f9; color: #1e293b; }
+.fs-btn:hover { background: var(--bg-f1f5f9); color: var(--tx-1e293b); }
 .fs-btn svg   { width: 16px; height: 16px; }
 
 .reset-btn {
     position: absolute; top: 10px; right: 50px; z-index: 1000;
     width: 32px; height: 32px; padding: 6px;
-    background: rgba(255,255,255,0.95); border: 1px solid #e2e8f0; border-radius: 6px;
+    background: rgba(var(--surface-rgb), 0.95); border: 1px solid var(--bd-e2e8f0); border-radius: 6px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: #475569;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12); color: var(--tx-475569);
     backdrop-filter: blur(4px); transition: background 0.15s, color 0.15s;
 }
-.reset-btn:hover { background: #f1f5f9; color: #1e293b; }
+.reset-btn:hover { background: var(--bg-f1f5f9); color: var(--tx-1e293b); }
 .reset-btn svg   { width: 16px; height: 16px; }
 
 .ph-map-wrap.is-fullscreen .map-nav { top: 14px; left: 14px; }
@@ -1750,8 +1770,8 @@ onBeforeUnmount(() => {
 .map-province-list-panel {
     position: absolute; bottom: 28px; right: 310px; z-index: 999;
     width: 256px; height: 325px;
-    background: rgba(255,255,255,0.97);
-    border: 1px solid #e2e8f0; border-radius: 10px;
+    background: rgba(var(--surface-rgb), 0.97);
+    border: 1px solid var(--bd-e2e8f0); border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.14);
     backdrop-filter: blur(6px);
     overflow: hidden;
@@ -1761,13 +1781,13 @@ onBeforeUnmount(() => {
 .plist-header {
     display: flex; align-items: flex-start; justify-content: space-between;
     gap: 8px; padding: 12px 14px 11px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--bd-f1f5f9);
     border-left: 3px solid #6366f1; padding-left: 11px;
     flex-shrink: 0;
 }
 .plist-header-main { flex: 1; min-width: 0; }
-.plist-title    { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.plist-subtitle { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-top: 3px; }
+.plist-title    { font-size: 14px; font-weight: 700; color: var(--tx-0f172a); line-height: 1.2; }
+.plist-subtitle { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tx-94a3b8); margin-top: 3px; }
 .plist-body {
     overflow-y: auto; flex: 1; min-height: 0;
     padding: 4px 0;
@@ -1777,7 +1797,7 @@ onBeforeUnmount(() => {
     padding: 7px 14px; cursor: pointer;
     transition: background 0.12s;
 }
-.plist-item:hover { background: #f8fafc; }
+.plist-item:hover { background: var(--bg-f8fafc); }
 .plist-dot {
     width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 }
@@ -1785,8 +1805,8 @@ onBeforeUnmount(() => {
     flex: 1; min-width: 0;
     display: flex; flex-direction: column; gap: 1px;
 }
-.plist-name     { font-size: 12px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.plist-director { font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plist-name     { font-size: 12px; font-weight: 600; color: var(--tx-1e293b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plist-director { font-size: 10px; color: var(--tx-94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plist-score    { font-size: 12px; font-weight: 700; flex-shrink: 0; }
 
 /* ── Region panel: title row with expand button ── */
@@ -1795,7 +1815,7 @@ onBeforeUnmount(() => {
 }
 .panel-expand-btn {
     flex-shrink: 0; width: 20px; height: 20px; padding: 3px;
-    background: none; border: none; cursor: pointer; color: #94a3b8;
+    background: none; border: none; cursor: pointer; color: var(--tx-94a3b8);
     display: flex; align-items: center; justify-content: center;
     border-radius: 4px; transition: background 0.12s, color 0.12s;
 }
@@ -1812,7 +1832,7 @@ onBeforeUnmount(() => {
 
 <style>
 .map-tooltip {
-    background: #fff; border: none; border-radius: 6px;
+    background: var(--bg-fff); border: none; border-radius: 6px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.15); padding: 0;
 }
 .map-tooltip .leaflet-tooltip-content { padding: 0; }
@@ -1821,6 +1841,6 @@ onBeforeUnmount(() => {
     padding: 8px 12px; font-family: inherit; font-size: 12px; min-width: 140px;
 }
 .map-tip strong  { font-size: 13px; margin-bottom: 2px; }
-.map-tip-score   { color: #64748b; font-size: 11px; }
-.map-tip-nodata  { color: #94a3b8; font-style: italic; }
+.map-tip-score   { color: var(--tx-64748b); font-size: 11px; }
+.map-tip-nodata  { color: var(--tx-94a3b8); font-style: italic; }
 </style>

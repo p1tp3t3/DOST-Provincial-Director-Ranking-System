@@ -223,18 +223,18 @@ const errorList = () =>
 .rte-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.68);
+    color: rgba(var(--ink-rgb), 0.68);
     margin-bottom: 6px;
 }
 
 .rte-shell {
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba(0, 0, 0, 0.26);
+    border: 1px solid rgba(var(--ink-rgb), 0.26);
     border-radius: 8px;
     overflow: hidden;
     transition: border-color 0.15s;
-    background: #fff;
+    background: var(--bg-fff);
 }
 .rte-shell:focus-within {
     border-color: #3f51b5;
@@ -265,8 +265,8 @@ const errorList = () =>
     flex-wrap: wrap;
     gap: 2px;
     padding: 6px 8px;
-    background: #fafafa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: var(--bg-fafafa);
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.1);
 }
 
 .rte-btn {
@@ -278,11 +278,11 @@ const errorList = () =>
     border-radius: 6px;
     border: none;
     background: transparent;
-    color: rgba(0, 0, 0, 0.65);
+    color: rgba(var(--ink-rgb), 0.65);
     cursor: pointer;
     transition: background 0.12s, color 0.12s;
 }
-.rte-btn:hover { background: rgba(0, 0, 0, 0.06); }
+.rte-btn:hover { background: rgba(var(--ink-rgb), 0.06); }
 .rte-btn--active {
     background: rgba(63, 81, 181, 0.12);
     color: #3f51b5;
@@ -291,7 +291,7 @@ const errorList = () =>
 .rte-divider {
     width: 1px;
     height: 20px;
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(var(--ink-rgb), 0.12);
     margin: 0 4px;
 }
 .rte-spacer { flex: 1; }
@@ -311,13 +311,13 @@ const errorList = () =>
 .rte-hint {
     padding: 6px 16px 10px;
     font-size: 0.72rem;
-    color: rgba(0, 0, 0, 0.4);
-    border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    color: rgba(var(--ink-rgb), 0.4);
+    border-top: 1px dashed rgba(var(--ink-rgb), 0.08);
 }
 
 .rte-helper {
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.6);
+    color: rgba(var(--ink-rgb), 0.6);
     margin-top: 4px;
     padding: 0 4px;
 }
@@ -330,7 +330,7 @@ const errorList = () =>
     outline: none;
     font-size: 0.925rem;
     line-height: 1.65;
-    color: rgba(0, 0, 0, 0.82);
+    color: rgba(var(--ink-rgb), 0.82);
 }
 .rte-content .ProseMirror p { margin: 0 0 0.85em; }
 .rte-content .ProseMirror h2 { font-size: 1.3rem; font-weight: 700; margin: 1em 0 0.5em; }
@@ -341,14 +341,14 @@ const errorList = () =>
     border-left: 3px solid #c5cae9;
     margin: 0 0 0.85em;
     padding: 2px 0 2px 14px;
-    color: rgba(0, 0, 0, 0.6);
+    color: rgba(var(--ink-rgb), 0.6);
     font-style: italic;
 }
 .rte-content .ProseMirror a { color: #3f51b5; text-decoration: underline; }
 .rte-content .ProseMirror p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
-    color: rgba(0, 0, 0, 0.34);
+    color: rgba(var(--ink-rgb), 0.34);
     pointer-events: none;
     height: 0;
 }

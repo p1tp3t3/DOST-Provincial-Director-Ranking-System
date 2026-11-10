@@ -29,7 +29,7 @@ class UserFactory extends Factory
             // model, so ActivationStatusMiddleware would see null and redirect.
             'activate' => true,
             'email' => fake()->unique()->safeEmail(),
-            'username' => fake()->unique()->userName(),
+            'dost_employee_id' => fake()->unique()->numerify('EMP-######'),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];

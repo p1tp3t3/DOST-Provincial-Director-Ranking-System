@@ -24,7 +24,7 @@ class AdminRegistrationRequest extends FormRequest
     {
         return [
             'role'                 => 'required|in:super_admin,sub_admin',
-            'username'             => 'required|unique:users,username',
+            'dost_employee_id'     => 'required|string|max:50|unique:users,dost_employee_id',
             'email'                => 'required|email|unique:users,email',
             'password'             => 'required|confirmed|min:8',
             'password_confirmation' => 'required',

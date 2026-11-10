@@ -303,8 +303,8 @@
                                         stroke="#ffffff" stroke-width="1.5" stroke-dasharray="5 4"
                                         opacity="0.85" vector-effect="non-scaling-stroke"
                                     />
-                                    <path :d="bellCurve.strokePath" fill="none" stroke="#0f172a" stroke-width="2" opacity="0.45" vector-effect="non-scaling-stroke" />
-                                    <line x1="0" :y1="bellCurve.baseY" :x2="bellCurve.W" :y2="bellCurve.baseY" stroke="#e2e8f0" stroke-width="1" vector-effect="non-scaling-stroke" />
+                                    <path :d="bellCurve.strokePath" fill="none" style="stroke: var(--tx-0f172a)" stroke-width="2" opacity="0.45" vector-effect="non-scaling-stroke" />
+                                    <line x1="0" :y1="bellCurve.baseY" :x2="bellCurve.W" :y2="bellCurve.baseY" style="stroke: var(--bd-e2e8f0)" stroke-width="1" vector-effect="non-scaling-stroke" />
                                     <rect
                                         v-for="r in bellCurve.regions"
                                         :key="'hit-' + r.key"
@@ -1417,13 +1417,13 @@ const trendTooltip = ({ series, dataPointIndex, w }) => {
         .sort((a, b) => b.value - a.value)
         .map(r => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0;">
                        <span style="width:10px;height:10px;border-radius:50%;background:${r.color};flex-shrink:0;"></span>
-                       <span style="flex:1;color:#334155;">${escapeHtml(r.name)}</span>
-                       <strong style="color:#0f172a;font-variant-numeric:tabular-nums;">${r.value.toFixed(2)}%</strong>
+                       <span style="flex:1;color:var(--tx-334155);">${escapeHtml(r.name)}</span>
+                       <strong style="color:var(--tx-0f172a);font-variant-numeric:tabular-nums;">${r.value.toFixed(2)}%</strong>
                    </div>`)
         .join('');
     return `<div style="padding:8px 12px;font-size:12px;min-width:220px;">
-                <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">${year}</div>
-                ${rows || '<div style="color:#64748b;">No scores this year</div>'}
+                <div style="font-weight:700;color:var(--tx-0f172a);margin-bottom:4px;">${year}</div>
+                ${rows || '<div style="color:var(--tx-64748b);">No scores this year</div>'}
             </div>`;
 };
 
@@ -1567,7 +1567,7 @@ watch(searchTarget, async (province) => {
     font-feature-settings: 'cv11', 'ss01', 'ss03';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: #1f2937;
+    color: var(--tx-1f2937);
 }
 
 /* Cap weight across the dashboard. font-weight-bold (700) → 600,
@@ -1631,7 +1631,7 @@ watch(searchTarget, async (province) => {
     font-weight: 500 !important;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #64748b;
+    color: var(--tx-64748b);
 }
 
 /* QuantityCard title - same small-caps treatment so the KPI cards visually
@@ -1639,13 +1639,13 @@ watch(searchTarget, async (province) => {
 .dashboard-root :deep(.qc-title) {
     font-weight: 500 !important;
     letter-spacing: 0.06em;
-    color: #64748b;
+    color: var(--tx-64748b);
 }
 
 .filter-label {
     font-size: 13px;
     font-weight: 700;
-    color: #475569;
+    color: var(--tx-475569);
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
@@ -1654,15 +1654,15 @@ watch(searchTarget, async (province) => {
     align-items: center;
     gap: 2px;
     padding: 3px;
-    background: #f1f5f9;
+    background: var(--bg-f1f5f9);
     border-radius: 9px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bd-e2e8f0);
 }
 .segmented-btn {
     appearance: none;
     border: none;
     background: transparent;
-    color: #475569;
+    color: var(--tx-475569);
     font-size: 14px;
     font-weight: 600;
     padding: 7px 15px;
@@ -1673,10 +1673,10 @@ watch(searchTarget, async (province) => {
     line-height: 1.3;
     white-space: nowrap;
 }
-.segmented-btn:hover:not(.active) { color: #0f172a; background: rgba(255, 255, 255, 0.6); }
+.segmented-btn:hover:not(.active) { color: var(--tx-0f172a); background: rgba(var(--surface-rgb), 0.6); }
 .segmented-btn.active {
-    background: #ffffff;
-    color: #0f172a;
+    background: var(--bg-ffffff);
+    color: var(--tx-0f172a);
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -1689,10 +1689,10 @@ watch(searchTarget, async (province) => {
     font-size: 12.5px;
     font-weight: 700;
     line-height: 1.5;
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--bg-e2e8f0);
+    color: var(--tx-334155);
 }
-.seg-count--all    { background: #e0e7ff; color: #4338ca; }
+.seg-count--all    { background: var(--bg-e0e7ff); color: var(--tx-4338ca); }
 .seg-count--micro  { background: #cfd8dc; color: #455a64; }
 .seg-count--small  { background: #b2dfdb; color: #00695c; }
 .seg-count--medium { background: #c5cae9; color: #283593; }
@@ -1714,50 +1714,55 @@ watch(searchTarget, async (province) => {
     color: inherit;
     transition: color 0.15s;
 }
-.province-link:hover { color: #4f46e5 !important; text-decoration: underline !important; }
-.director-link:hover { color: #4f46e5 !important; text-decoration: underline !important; }
+.province-link:hover { color: var(--tx-4f46e5) !important; text-decoration: underline !important; }
+.director-link:hover { color: var(--tx-4f46e5) !important; text-decoration: underline !important; }
 .leaderboard-table :deep(thead th) { font-size: 13.5px !important; font-weight: 700 !important; }
 .leaderboard-table :deep(tbody td) { font-size: 14px !important; }
 .leaderboard-table :deep(table) { width: 100% !important; }
 
 .rank-medal { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
 .rank-gold   { background: #fef9c3; color: #854d0e; }
-.rank-silver { background: #f1f5f9; color: #475569; }
+.rank-silver { background: var(--bg-f1f5f9); color: var(--tx-475569); }
 .rank-bronze { background: #ffedd5; color: #9a3412; }
 .rank-cell   { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
-.rank-of     { font-size: 12px; color: #94a3b8; }
+.rank-of     { font-size: 12px; color: var(--tx-94a3b8); }
 .change-cell { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.2; white-space: nowrap; }
 .dashboard-tabs-row { min-height: 44px; }
 
-.score-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
+.score-track { flex: 1; height: 10px; background: var(--bg-f1f5f9); border-radius: 5px; overflow: hidden; }
 .score-fill  { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
 
 .podium-banner {
     display: flex; align-items: center;
-    background: linear-gradient(90deg, #fef9c3 0%, #fef3c7 60%, #fff 100%);
+    background: linear-gradient(90deg, #fef9c3 0%, #fef3c7 60%, var(--bg-fff) 100%);
     border-left: 3px solid #ca8a04;
     border-radius: 0 6px 6px 0;
     padding: 8px 14px;
     box-shadow: 0 1px 2px rgba(202, 138, 4, 0.08);
+}
+/* Dark mode: a deep amber wash instead of the pale yellow, so its text reads.
+   (Not :global(): Vue drops whatever follows it, so the rule would hit <html>.) */
+html.theme-dark .podium-banner {
+    background: linear-gradient(90deg, rgba(202, 138, 4, 0.24) 0%, rgba(202, 138, 4, 0.10) 60%, transparent 100%);
 }
 .podium-stage   { width: 42%; flex-shrink: 0; display: flex; flex-direction: column; align-self: flex-start; }
 .podium-items   { display: flex; align-items: flex-end; gap: 8px; }
 .podium-item    { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .podium-info    { text-align: center; padding-bottom: 10px; }
 .podium-province { font-size: 20px; font-weight: 700; line-height: 1.3; max-width: 185px; word-wrap: break-word; }
-.podium-region   { font-size: 16.5px; color: #64748b; font-weight: 600; margin-top: 3px; line-height: 1.2; }
+.podium-region   { font-size: 16.5px; color: var(--tx-64748b); font-weight: 600; margin-top: 3px; line-height: 1.2; }
 .podium-score   { font-size: 30px; font-weight: 800; line-height: 1; margin-top: 2px; }
 .podium-block   { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-radius: 8px 8px 0 0; color: white; }
 .podium-rank-num { font-size: 22px; font-weight: 800; color: white; }
 .podium-gold    { height: 210px; background: linear-gradient(160deg, #ca8a04, #fde047); }
-.podium-silver  { height: 160px; background: linear-gradient(160deg, #64748b, #cbd5e1); }
+.podium-silver  { height: 160px; background: linear-gradient(160deg, #64748b, var(--bg-cbd5e1)); }
 .podium-bronze  { height: 120px; background: linear-gradient(160deg, #78350f, #c2410c); }
 
 .podium-rest-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
-.podium-rest-rank { width: 36px; text-align: right; flex-shrink: 0; font-size: 14px; color: #64748b; font-weight: 700; }
+.podium-rest-rank { width: 36px; text-align: right; flex-shrink: 0; font-size: 14px; color: var(--tx-64748b); font-weight: 700; }
 .podium-rest-scroll { overflow-y: auto; }
 
-.podium-breakdown { display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
+.podium-breakdown { display: flex; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(var(--ink-rgb), 0.06); }
 .breakdown-col    { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 .breakdown-row    { display: flex; align-items: center; gap: 6px; cursor: default; }
 /* Label width tuned so a 9-character code ("STRATEGIC") fits at 13px without
@@ -1765,13 +1770,13 @@ watch(searchTarget, async (province) => {
    shrinks (42% width) - that's what was pushing the last row off-screen
    or causing horizontal overflow per column. Category codes are admin-editable,
    so a longer one ellipsises here rather than widening the column. */
-.breakdown-label  { font-size: 13px; font-weight: 600; color: #475569; width: 78px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.breakdown-label  { font-size: 13px; font-weight: 600; color: var(--tx-475569); width: 78px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .breakdown-score  { font-size: 14px; font-weight: 700; min-width: 50px; text-align: right; flex-shrink: 0; margin-left: auto; }
 
 .score-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .score-pct  { font-size: 18px; font-weight: 700; white-space: nowrap; }
 /* Grows with the number of categories, so it truncates instead of overflowing. */
-.score-counts { font-size: 13px; color: rgba(0, 0, 0, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score-counts { font-size: 13px; color: rgba(var(--ink-rgb), 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Highlights the column matching the active category filter so the user can
    instantly see which value drives the current sort + bucket. */
@@ -1794,8 +1799,8 @@ watch(searchTarget, async (province) => {
     border-radius: 7px;
     font-size: 12px;
     font-weight: 700;
-    background: #e0e7ff;
-    color: #3730a3;
+    background: var(--bg-e0e7ff);
+    color: var(--tx-3730a3);
     line-height: 1.5;
 }
 
@@ -1882,7 +1887,7 @@ watch(searchTarget, async (province) => {
     z-index: 4;
     padding-top: 12px;
     margin-top: -20px;
-    background: #ffffff;
+    background: var(--bg-ffffff);
 }
 
 /* The filter bar - consistent with the white cards around it (border,
@@ -1890,7 +1895,7 @@ watch(searchTarget, async (province) => {
    identity and a stronger drop shadow than the cards so it visibly "lifts"
    above the page content when sticky. */
 .dashboard-sticky-filters {
-    background: #ffffff;
+    background: var(--bg-ffffff);
     border: 1px solid rgba(15, 23, 42, 0.12);
     border-top: 2px solid #4f46e5;
     border-radius: 8px;
@@ -2017,8 +2022,8 @@ watch(searchTarget, async (province) => {
 }
 .bell-region-label.is-active { transform: translateX(-50%) scale(1.06); }
 .brl-name  { font-size: 13px; font-weight: 700; }
-.brl-pct   { font-size: 20px; font-weight: 800; color: #0f172a; }
-.brl-count { font-size: 11px; color: #64748b; }
+.brl-pct   { font-size: 20px; font-weight: 800; color: var(--tx-0f172a); }
+.brl-count { font-size: 11px; color: var(--tx-64748b); }
 
 /* Bars view: Top / Average / Low performer columns (toggle alternative to bell). */
 .perf-row {
@@ -2078,7 +2083,7 @@ watch(searchTarget, async (province) => {
 }
 .bell-side-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .bell-side-title { font-size: 13px; font-weight: 700; }
-.bell-side-meta  { font-size: 11px; color: #64748b; }
+.bell-side-meta  { font-size: 11px; color: var(--tx-64748b); }
 .bell-side-list  { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding-right: 2px; }
 .bell-side-row {
     display: flex;
@@ -2089,9 +2094,9 @@ watch(searchTarget, async (province) => {
     font-size: 12px;
 }
 .bell-side-row:hover { background: rgba(99, 102, 241, 0.07); }
-.bell-side-row .rank  { width: 20px; text-align: right; color: #94a3b8; font-size: 11px; flex-shrink: 0; }
+.bell-side-row .rank  { width: 20px; text-align: right; color: var(--tx-94a3b8); font-size: 11px; flex-shrink: 0; }
 .bell-side-row .name  { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bell-side-row .score { font-variant-numeric: tabular-nums; color: #475569; flex-shrink: 0; }
+.bell-side-row .score { font-variant-numeric: tabular-nums; color: var(--tx-475569); flex-shrink: 0; }
 .bell-side-empty {
     flex: 1 1 auto;
     display: flex;
@@ -2100,7 +2105,7 @@ watch(searchTarget, async (province) => {
     justify-content: center;
     gap: 6px;
     text-align: center;
-    color: #94a3b8;
+    color: var(--tx-94a3b8);
     font-size: 12px;
     padding: 12px;
 }

@@ -89,7 +89,7 @@
                         <thead>
                             <tr>
                                 <th class="text-caption text-medium-emphasis">Name</th>
-                                <th class="text-caption text-medium-emphasis">DOST ID</th>
+                                <th class="text-caption text-medium-emphasis">Employee No.</th>
                                 <th class="text-caption text-medium-emphasis">Position</th>
                                 <th class="text-caption text-medium-emphasis">Status</th>
                                 <th class="text-caption text-medium-emphasis text-center">Yrs of Service</th>

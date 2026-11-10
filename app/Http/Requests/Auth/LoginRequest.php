@@ -41,21 +41,12 @@ class LoginRequest extends FormRequest
         $identifier = trim($this->string('identifier'));
         $password   = $this->string('password');
 
-        $adminRoles = ['super_admin', 'sub_admin', 'provincial_admin'];
-
+        // Everyone, admins included, signs in with their email or employee no.
         /** @var User|null $user */
         $user = User::query()
             ->where('email', $identifier)
-            ->orWhere('username', $identifier)
+            ->orWhere('dost_employee_id', $identifier)
             ->first();
-
-        if (!$user) {
-            /** @var User|null $candidate */
-            $candidate = User::query()->where('dost_employee_id', $identifier)->first();
-            if ($candidate && !in_array($candidate->role, $adminRoles)) {
-                $user = $candidate;
-            }
-        }
 
         if (!$user || !Hash::check($password, $user->password)) {
             RateLimiter::hit($this->throttleKey());

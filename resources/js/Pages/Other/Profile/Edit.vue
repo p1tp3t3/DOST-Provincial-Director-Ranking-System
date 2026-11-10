@@ -323,7 +323,7 @@ import 'cropperjs';
 
 const props = defineProps({
     role:               { type: String, default: '' },
-    username:           { type: String, default: '' },
+    employee_no:        { type: String, default: '' },
     email:              { type: String, default: '' },
     province:           { type: String, default: null },
     profile_picture:    { type: String, default: null },
@@ -530,16 +530,16 @@ const applyCrop = async () => {
 // ── Display helpers ───────────────────────────────────────────
 const fullName = computed(() =>
     [props.prefix, props.first_name, props.middle_name, props.last_name, props.suffix]
-        .filter(Boolean).join(' ').trim() || props.username
+        .filter(Boolean).join(' ').trim() || props.employee_no
 );
 
 const initials = computed(() =>
-    (props.first_name?.[0] ?? '') + (props.last_name?.[0] ?? '') || props.username?.[0]?.toUpperCase() || '?'
+    (props.first_name?.[0] ?? '') + (props.last_name?.[0] ?? '') || props.employee_no?.[0]?.toUpperCase() || '?'
 );
 
 const palette = ['primary','indigo','deep-purple','teal','blue-darken-2','cyan-darken-2'];
 const avatarColor = computed(() => {
-    const seed = [...(props.username ?? '')].reduce((a, c) => a + c.charCodeAt(0), 0);
+    const seed = [...(props.employee_no ?? '')].reduce((a, c) => a + c.charCodeAt(0), 0);
     return palette[seed % palette.length];
 });
 
@@ -550,7 +550,7 @@ const roleLabels = {
 };
 
 const accountItems = computed(() => [
-    { label: 'Username', value: props.username,               icon: 'mdi-account-outline'      },
+    { label: 'Employee No.', value: props.employee_no,       icon: 'mdi-badge-account-outline' },
     { label: 'Email',    value: props.email,                  icon: 'mdi-email-outline'         },
     { label: 'Role',     value: roleLabels[props.role] ?? props.role, icon: 'mdi-shield-account-outline' },
     { label: 'Province', value: props.province,               icon: 'mdi-map-marker-outline'    },

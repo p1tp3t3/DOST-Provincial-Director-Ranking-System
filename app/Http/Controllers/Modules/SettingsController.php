@@ -14,7 +14,6 @@ class SettingsController extends Controller
 
         return inertia('Other/Settings/Main', [
             'account' => [
-                'username'   => $user->username,
                 'email'      => $user->email,
                 'role'       => $user->role,
                 'province'   => $user->province?->name,

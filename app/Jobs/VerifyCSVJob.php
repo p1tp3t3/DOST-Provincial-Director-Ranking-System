@@ -57,11 +57,11 @@ class VerifyCSVJob implements ShouldQueue
             }
 
             if ($dostId === '') {
-                $errors['dost_id'] = 'DOST ID is required.';
+                $errors['dost_id'] = 'Employee no. is required.';
             } elseif (isset($existingDostIds[$dostId])) {
-                $errors['dost_id'] = 'DOST ID already exists in the system.';
+                $errors['dost_id'] = 'Employee no. already exists in the system.';
             } elseif (isset($seenDostIds[$dostId])) {
-                $errors['dost_id'] = 'Duplicate DOST ID in this CSV.';
+                $errors['dost_id'] = 'Duplicate employee no. in this CSV.';
             } else {
                 $seenDostIds[$dostId] = true;
             }

@@ -1,5 +1,5 @@
 <template>
-  <v-toolbar color="primary" elevation="2">
+  <v-toolbar color="header" elevation="2">
 
     <!-- DOST tagline - always-visible system signature.
          Kept readable but not loud: bold brand mark + lighter descriptor. -->
@@ -11,25 +11,58 @@
 
     <v-spacer></v-spacer>
 
+    <!-- Full screen: the whole app, not just one card (Esc / F11 also exit) -->
+    <v-btn
+      v-if="canFullscreen"
+      icon
+      class="mr-1"
+      :aria-label="isFullscreen ? 'Exit full screen' : 'Full screen'"
+      :aria-pressed="isFullscreen"
+      @click="toggleFullscreen"
+    >
+      <v-icon>{{ isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
+      <v-tooltip activator="parent" location="bottom">{{ isFullscreen ? 'Exit full screen' : 'Full screen' }}</v-tooltip>
+    </v-btn>
+
+    <!-- Light / dark: one click flips it. The icon shows the mode it switches to. -->
+    <v-btn
+      icon
+      class="mr-1"
+      :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+      @click="toggleTheme"
+    >
+      <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      <v-tooltip activator="parent" location="bottom">{{ isDark ? 'Light mode' : 'Dark mode' }}</v-tooltip>
+    </v-btn>
+
     <NotificationPanel />
 
-    <v-menu min-width="240px" rounded>
+    <!-- Who's signed in: photo, name, and position · role (text hidden on narrow screens) -->
+    <v-menu min-width="260px" rounded location="bottom end" offset="6">
       <template #activator="{ props }">
-        <v-btn v-bind="props" variant="text" class="text-none px-2 h-auto py-1">
-            <div class="d-flex align-center">
-                <v-avatar color="secondary" size="small">
-                    <v-img :src="avatarSrc" alt="User"></v-img>
-                </v-avatar>
-                <v-icon size="small" class="ml-1 hidden-sm-and-down">mdi-chevron-down</v-icon>
-            </div>
+        <v-btn
+          v-bind="props"
+          variant="text"
+          height="50"
+          class="profile-chip text-none mr-2"
+          :aria-label="`Account menu: ${fullName}`"
+        >
+          <v-avatar color="secondary" size="38" class="profile-avatar">
+            <v-img :src="avatarSrc" alt="" cover></v-img>
+          </v-avatar>
+          <span class="profile-text d-none d-md-flex" :title="`${fullName}\n${headline}`">
+            <span class="profile-name">{{ fullName }}</span>
+            <span v-if="headline" class="profile-sub">{{ headline }}</span>
+          </span>
+          <v-icon size="small" class="profile-chevron">mdi-chevron-down</v-icon>
         </v-btn>
       </template>
 
       <v-list>
-        <v-list-item :title="authUser?.username || 'User'" :subtitle="roleLabel" @click="goToProfile">
+        <v-list-item :title="fullName" :subtitle="roleLabel" lines="two" @click="goToProfile">
             <template #prepend>
                 <v-avatar color="secondary" size="small">
-                    <v-img :src="avatarSrc" alt="User"></v-img>
+                    <v-img :src="avatarSrc" alt="" cover></v-img>
                 </v-avatar>
             </template>
         </v-list-item>
@@ -58,11 +91,44 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import NotificationPanel from '@/Components/Other/NotificationPanel.vue';
+import { useColorMode } from '@/Composables/useColorMode';
 
 const emit = defineEmits(['toggle-drawer']);
+
+// Full screen via the browser's Fullscreen API on the whole page. The button is
+// hidden where the API isn't available (e.g. iPhone Safari). State follows the
+// browser's fullscreenchange event, so leaving with Esc updates the icon too, and
+// a map's own full-screen view (nested inside this one) keeps it on.
+const fsElement = () => document.fullscreenElement ?? document.webkitFullscreenElement ?? null;
+const canFullscreen = typeof document !== 'undefined'
+    && !!(document.fullscreenEnabled ?? document.webkitFullscreenEnabled);
+const isFullscreen = ref(false);
+const syncFullscreen = () => { isFullscreen.value = !!fsElement(); };
+const toggleFullscreen = async () => {
+    const root = document.documentElement;
+    try {
+        if (fsElement()) await (document.exitFullscreen ?? document.webkitExitFullscreen).call(document);
+        else await (root.requestFullscreen ?? root.webkitRequestFullscreen).call(root);
+    } catch { /* blocked by the browser: nothing to undo */ }
+    syncFullscreen();
+};
+onMounted(() => {
+    syncFullscreen();
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('webkitfullscreenchange', syncFullscreen);
+});
+onUnmounted(() => {
+    document.removeEventListener('fullscreenchange', syncFullscreen);
+    document.removeEventListener('webkitfullscreenchange', syncFullscreen);
+});
+
+// Flips whatever is showing now (an older "match my device" choice included)
+// and saves the result as this browser's choice.
+const { isDark, setPreference } = useColorMode();
+const toggleTheme = () => setPreference(isDark.value ? 'light' : 'dark');
 
 const page = usePage();
 const authUser = computed(() => page.props.auth?.user ?? null);
@@ -75,6 +141,22 @@ const ROLE_LABELS = {
     provincial_director:  'Provincial Director',
     employee:             'Employee',
 };
+// "First Last" from the profile; the employee no. when no name is set yet.
+const fullName = computed(() => {
+    const p = authUser.value?.profile;
+    return [p?.first_name, p?.last_name].filter(Boolean).join(' ').trim()
+        || authUser.value?.dost_employee_id || 'User';
+});
+// Second line in the top bar: "Position · Role". Shown once when the position
+// just repeats the role (e.g. a System Administrator's default position).
+const headline = computed(() => {
+    const position = authUser.value?.profile?.employee_profile?.position?.trim() ?? '';
+    const role     = ROLE_LABELS[authUser.value?.role] ?? '';
+    if (!position) return role;
+    if (!role || position.toLowerCase() === role.toLowerCase()) return position;
+    return `${position} · ${role}`;
+});
+
 const roleLabel = computed(() => {
     const base = ROLE_LABELS[authUser.value?.role] ?? '';
     const prov = authUser.value?.province?.name;
@@ -121,6 +203,36 @@ const toggleDrawer = () => {
 .tagline-mark { font-weight: 800; letter-spacing: 0.02em; }
 .tagline-sep  { margin: 0 6px; opacity: 0.55; font-weight: 400; }
 .tagline-sub  { font-weight: 500; opacity: 0.85; }
+
+/* Signed-in user: a soft panel on the header holding photo, name and
+   position · role (the text collapses to just the photo on narrow screens). */
+.profile-chip {
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    padding: 0 8px 0 6px !important;
+    letter-spacing: normal;
+}
+.profile-chip:hover { background: rgba(255, 255, 255, 0.16); }
+.profile-avatar { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55); }
+.profile-text {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 10px;
+    max-width: 260px;
+    min-width: 0;
+    text-align: left;
+    line-height: 1.25;
+}
+.profile-name,
+.profile-sub {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.profile-name { font-size: 0.9rem; font-weight: 600; color: #fff; }
+.profile-sub  { font-size: 0.75rem; font-weight: 400; color: rgba(255, 255, 255, 0.78); }
+.profile-chevron { margin-left: 6px; opacity: 0.8; }
 
 /* On narrow screens drop the descriptor and keep just the brand mark
    so it never crowds the avatar/notification buttons. */

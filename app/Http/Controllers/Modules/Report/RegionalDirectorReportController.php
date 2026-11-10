@@ -53,7 +53,7 @@ class RegionalDirectorReportController extends Controller
             'date_from'         => $dateFrom->format('F d, Y'),
             'date_to'           => $dateTo->format('F d, Y'),
             'generated'         => now()->format('F d, Y g:i A'),
-            'generated_by'      => Auth::user()?->username ?? 'System',
+            'generated_by'      => Auth::user()?->displayName() ?? 'System',
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('regional-director-report-' . now()->format('Y-m-d') . '.pdf');

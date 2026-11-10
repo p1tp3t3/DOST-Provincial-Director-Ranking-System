@@ -34,7 +34,7 @@ class KPICatalogController extends Controller
         return inertia('Admin/KpiCatalog/Main', [
             'kpi_categories'   => $categories,
             'category_options' => KPICategory::orderBy('sort_order')->get(['id', 'code', 'name']),
-            'snapshots'        => \App\Models\KpiCatalogSnapshot::with('creator:id,username')
+            'snapshots'        => \App\Models\KpiCatalogSnapshot::with('creator.profile')
                 ->orderByDesc('is_baseline')->orderByDesc('created_at')
                 ->get()
                 ->map(fn($s) => [
@@ -43,7 +43,7 @@ class KPICatalogController extends Controller
                     'note'        => $s->note,
                     'is_baseline' => (bool) $s->is_baseline,
                     'kpi_count'   => count($s->payload['kpis'] ?? []),
-                    'created_by'  => $s->creator?->username,
+                    'created_by'  => $s->creator?->displayName(),
                     'created_at'  => $s->created_at?->toDateTimeString(),
                 ])->values()->toArray(),
         ]);

@@ -103,7 +103,7 @@ class BlogController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'title'        => ['required', 'string', 'max:255'],
             'tag'          => ['required', 'in:Announcement,Updates,Events,Other'],
             'excerpt'      => ['required', 'string', 'max:600'],
@@ -111,6 +111,10 @@ class BlogController extends Controller
             'image'        => ['nullable', 'image', 'max:4096'],
             'is_published' => ['boolean'],
         ]);
+        // Not sent means "not published" (a draft), instead of a missing value.
+        $data['is_published'] = (bool) ($data['is_published'] ?? false);
+
+        return $data;
     }
 
     private function storeImage(Request $request): ?string

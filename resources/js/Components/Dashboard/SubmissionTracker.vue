@@ -126,5 +126,5 @@ const summary = computed(() =>
 .submission-table :deep(thead th) { font-size: 13px !important; font-weight: 700 !important; white-space: nowrap; }
 .submission-table :deep(tbody td) { font-size: 14px !important; padding-top: 6px !important; padding-bottom: 6px !important; }
 .sub-link { text-decoration: none !important; color: inherit; transition: color 0.15s; }
-.sub-link:hover { color: #4f46e5 !important; text-decoration: underline !important; }
+.sub-link:hover { color: var(--tx-4f46e5) !important; text-decoration: underline !important; }
 </style>

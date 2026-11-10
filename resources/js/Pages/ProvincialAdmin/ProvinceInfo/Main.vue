@@ -419,7 +419,7 @@ const submit = () => {
 .cover-preview {
     position: relative;
     aspect-ratio: 2 / 1;
-    background: #f1f5f9;
+    background: var(--bg-f1f5f9);
 }
 .cover-badge {
     position: absolute;
@@ -430,7 +430,7 @@ const submit = () => {
     font-size: 11px;
     font-weight: 600;
     color: #0a3f7d;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.85);   /* a light badge over the photo, in either mode */
 }
 .cover-preview img {
     width: 100%;

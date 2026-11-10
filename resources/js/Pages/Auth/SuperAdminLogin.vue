@@ -58,7 +58,7 @@
 
                             <v-text-field
                                 v-model="form.identifier"
-                                label="Email or Username"
+                                label="Employee No. or Email"
                                 variant="outlined"
                                 density="comfortable"
                                 prepend-inner-icon="mdi-account-search-outline"
