@@ -305,12 +305,12 @@ const typeIcon = (type) => ({
 
 <style scoped>
 .notif-panel {
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(var(--ink-rgb), 0.08);
 }
 .push-row {
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(var(--ink-rgb), 0.08);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(var(--ink-rgb), 0.02);
 }
 .notif-scroll {
     max-height: 420px;
@@ -322,7 +322,7 @@ const typeIcon = (type) => ({
     border-radius: 0;
 }
 .notif-item:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: rgba(var(--ink-rgb), 0.04);
 }
 .notif-item--unread {
     background: rgba(var(--v-theme-primary), 0.05);
@@ -340,7 +340,7 @@ const typeIcon = (type) => ({
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 2px solid #fff;
+    border: 2px solid var(--bd-fff);
 }
 .unread-circle {
     width: 10px;

@@ -11,10 +11,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use NotificationChannels\WebPush\HasPushSubscriptions;
 
-#[Fillable(['dost_employee_id', 'username', 'email', 'password', 'activate', 'region_id'])]
+#[Fillable(['dost_employee_id', 'email', 'password', 'activate', 'region_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -41,6 +42,15 @@ class User extends Authenticatable
 
     public function profile() {
         return $this->hasOne(Profile::class, 'user_id', 'id');
+    }
+
+    // How a person is named in messages, logs and reports: "First Last" from the
+    // profile, else their employee no., else their email.
+    public function displayName(): string {
+        $this->loadMissing('profile');
+        $name = trim(($this->profile?->first_name ?? '') . ' ' . ($this->profile?->last_name ?? ''));
+
+        return $name ?: ($this->dost_employee_id ?: (string) $this->email);
     }
 
     public function region() {
@@ -169,7 +179,8 @@ class User extends Authenticatable
     // after a creation path has already written its own (richer) profile data.
     public function ensureEmployeeProfile(): void {
         $profile = $this->profile()->first() ?? $this->profile()->create([
-            'first_name'           => $this->username,
+            // No name was given: the email's local part stands in until it's set.
+            'first_name'           => Str::before((string) $this->email, '@'),
             'last_name'            => '',
             'length_of_service'    => '',
             'education_attainment' => ['data' => []],
@@ -228,8 +239,7 @@ class User extends Authenticatable
         $other = $this->conflictingDirector($roleName, $provinceId);
         if (!$other) return;
 
-        $other->loadMissing('profile');
-        $name  = trim(($other->profile?->first_name ?? '') . ' ' . ($other->profile?->last_name ?? '')) ?: $other->username;
+        $name  = $other->displayName();
         $scope = $roleName === 'provincial_director' ? 'This province' : 'This region';
         $label = $roleName === 'provincial_director' ? 'provincial director' : 'regional director';
 

@@ -56,5 +56,6 @@ return Application::configure(basePath: dirname(__DIR__))
                  ->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Saves that fail show what's wrong in plain words, never SQL/PHP text.
+        \App\Exceptions\FriendlyErrors::register($exceptions);
     })->create();

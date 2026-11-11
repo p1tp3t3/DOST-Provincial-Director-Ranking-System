@@ -45,8 +45,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'province_id'           => ['nullable', 'exists:provinces,id'],
-            'dost_employee_id'      => ['nullable', 'string', 'unique:users,dost_employee_id,' . $id],
-            'username'              => ['required', 'string', 'unique:users,username,' . $id],
+            'dost_employee_id'      => ['required', 'string', 'max:50', 'unique:users,dost_employee_id,' . $id],
             'email'                 => ['required', 'email', 'unique:users,email,' . $id],
             'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
             'password_confirmation' => ['nullable', 'string'],
@@ -60,7 +59,7 @@ class UserController extends Controller
 
         // Moving an active provincial director into another province must not
         // give that province a second active director.
-        $newProvinceId = $validated['province_id'] ? (int) $validated['province_id'] : null;
+        $newProvinceId = !empty($validated['province_id']) ? (int) $validated['province_id'] : null;
         if ($newProvinceId && $newProvinceId !== $user->province_id
             && $user->activate && $user->hasLockedRole('provincial_director')) {
             try {
@@ -74,7 +73,6 @@ class UserController extends Controller
         try {
             $userFields = [
                 'dost_employee_id' => $validated['dost_employee_id'],
-                'username'         => $validated['username'],
                 'email'            => $validated['email'],
             ];
 
@@ -84,15 +82,18 @@ class UserController extends Controller
 
             $user->update($userFields);
 
-            $user->provinces()->sync($validated['province_id'] ? [$validated['province_id']] : []);
+            $user->provinces()->sync($newProvinceId ? [$newProvinceId] : []);
 
-            $user->profile->update([
-                'prefix'            => $validated['prefix'],
+            // Optional fields left blank are saved as blank, never as a missing
+            // value; length of service can't be null in the database. An account
+            // without a profile row yet gets one instead of failing the save.
+            $user->profile()->updateOrCreate(['user_id' => $user->id], [
+                'prefix'            => $validated['prefix']            ?? null,
                 'first_name'        => $validated['first_name'],
-                'middle_name'       => $validated['middle_name'],
+                'middle_name'       => $validated['middle_name']       ?? null,
                 'last_name'         => $validated['last_name'],
-                'suffix'            => $validated['suffix'],
-                'length_of_service' => $validated['length_of_service'],
+                'suffix'            => $validated['suffix']            ?? null,
+                'length_of_service' => $validated['length_of_service'] ?? '',
             ]);
 
             DB::commit();
@@ -186,7 +187,7 @@ class UserController extends Controller
                                   $p->whereRaw("CONCAT(first_name, ' ', COALESCE(middle_name,''), ' ', last_name) LIKE ?", ["%{$search}%"])
                               )
                               ->orWhere('email', 'like', "%{$search}%")
-                              ->orWhere('username', 'like', "%{$search}%");
+                              ->orWhere('dost_employee_id', 'like', "%{$search}%");
                           });
                       })
                       ->when($role, fn($q, $role) => $q->whereRole($role))
@@ -238,7 +239,6 @@ class UserController extends Controller
             $user = User::create([
                 'dost_employee_id' => $data['dost_employee_id'],
                 'email'            => $data['email'],
-                'username'         => $data['username'],
                 'password'         => $data['password'],
                 // A regional director's region is the region of their province.
                 'region_id'        => $adminRole === 'regional_director' ? $province->region_id : null,
@@ -295,8 +295,8 @@ class UserController extends Controller
     {
         $data = $request->validated();
         $user = User::create([
+            'dost_employee_id' => $data['dost_employee_id'],
             'email'            => $data['email'],
-            'username'         => $data['username'],
             'password'         => $data['password'],
         ]);
         $user->assignRole($data['role']);
@@ -361,11 +361,11 @@ class UserController extends Controller
             }
 
             if ($dostId === '') {
-                $errors['dost_id'] = 'DOST ID is required.';
+                $errors['dost_id'] = 'Employee no. is required.';
             } elseif (isset($existingDostIds[$dostId])) {
-                $errors['dost_id'] = 'DOST ID already exists in the system.';
+                $errors['dost_id'] = 'Employee no. already exists in the system.';
             } elseif (isset($seenDostIds[$dostId])) {
-                $errors['dost_id'] = 'Duplicate DOST ID in this CSV.';
+                $errors['dost_id'] = 'Duplicate employee no. in this CSV.';
             } else {
                 $seenDostIds[$dostId] = true;
             }

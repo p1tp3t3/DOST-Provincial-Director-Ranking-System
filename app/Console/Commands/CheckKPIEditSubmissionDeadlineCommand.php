@@ -114,7 +114,7 @@ class CheckKPIEditSubmissionDeadlineCommand extends Command
         foreach ($users as $user) {
             /** @var User $user */
             if ($dryRun) {
-                $this->line(sprintf('  %-28s %-20s %s', $user->username, $user->lockedRoles()->pluck('name')->diff(['employee'])->implode(','), $body));
+                $this->line(sprintf('  %-28s %-20s %s', $user->dost_employee_id, $user->lockedRoles()->pluck('name')->diff(['employee'])->implode(','), $body));
             }
             $jobs[] = new SendKpiDeadlineReminder($user->id, $title, $body, $url, $tag);
         }

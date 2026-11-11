@@ -2,8 +2,8 @@
 
 use App\Models\User;
 
-// This app's login rules on top of the standard flow: sign in by email,
-// username or DOST employee ID; silent failures; role requirements.
+// This app's login rules on top of the standard flow: sign in by email or
+// employee no. (there are no usernames); silent failures; role requirements.
 
 beforeEach(function () {
     $this->province = makeProvince();
@@ -14,22 +14,20 @@ function attemptLogin(string $identifier, string $password = 'password')
     return test()->post('/login', ['identifier' => $identifier, 'password' => $password]);
 }
 
-it('signs in by email or username', function ($field) {
+it('signs in by email or employee no.', function ($field) {
     $user = makeUser('employee', $this->province);
     attemptLogin($user->{$field})->assertRedirect('/dashboard');
     $this->assertAuthenticatedAs($user);
-})->with(['email', 'username']);
+})->with(['email', 'dost_employee_id']);
 
-it('signs staff in by DOST employee ID', function () {
-    $user = makeUser('employee', $this->province, null, ['dost_employee_id' => 'DOST-0042']);
-    attemptLogin('DOST-0042')->assertRedirect('/dashboard');
-    $this->assertAuthenticatedAs($user);
-});
-
-it('does not sign admins in by DOST employee ID', function () {
-    makeUser('provincial_admin', $this->province, null, ['dost_employee_id' => 'DOST-0043']);
+it('signs admins in by employee no. too', function ($role) {
+    $user = makeUser($role, $this->province, null, ['dost_employee_id' => 'DOST-0043']);
     attemptLogin('DOST-0043');
-    $this->assertGuest();
+    $this->assertAuthenticatedAs($user);
+})->with(['provincial_admin', 'super_admin']);
+
+it('has no username to sign in with', function () {
+    expect(\Illuminate\Support\Facades\Schema::hasColumn('users', 'username'))->toBeFalse();
 });
 
 it('fails silently on a wrong password, with no error message', function () {

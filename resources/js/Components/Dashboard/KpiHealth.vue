@@ -19,7 +19,7 @@ const RATINGS = [
     { label: 'Average',           color: '#fcd34d', group: 'weak' },
     { label: 'Unsatisfactory',    color: '#fb923c', group: 'weak' },
     { label: 'Poor',              color: '#dc2626', group: 'weak' },
-    { label: 'No data',           color: '#cbd5e1', group: 'blank' },
+    { label: 'No data',           color: 'var(--bg-cbd5e1)', group: 'blank' },   // light grey; dark slate in dark mode
 ];
 const RATING = Object.fromEntries(RATINGS.map((r, i) => [r.label, { ...r, order: i }]));
 
@@ -155,29 +155,29 @@ const summary = (k) => [
 
 <style scoped>
 .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; }
-.legend-item { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #475569; white-space: nowrap; }
+.legend-item { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--tx-475569); white-space: nowrap; }
 .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
 
-.group-title { padding: 10px 16px 6px; font-size: 13px; font-weight: 700; color: #0f172a; background: #f8fafc; border-bottom: 1px solid #f1f5f9; }
+.group-title { padding: 10px 16px 6px; font-size: 13px; font-weight: 700; color: var(--tx-0f172a); background: var(--bg-f8fafc); border-bottom: 1px solid var(--bd-f1f5f9); }
 
-.kpi { border-bottom: 1px solid #f1f5f9; }
-.kpi--open { background: #fafbff; }
+.kpi { border-bottom: 1px solid var(--bd-f1f5f9); }
+.kpi--open { background: var(--bg-fafbff); }
 .kpi-head { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 20px minmax(220px, 2fr) minmax(160px, 3fr) 190px; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; }
-.kpi-head:hover { background: #f8fafc; }
+.kpi-head:hover { background: var(--bg-f8fafc); }
 .kpi-head:focus-visible { outline: 2px solid #6366f1; outline-offset: -2px; }
-.chev { color: #94a3b8; }
-.kpi-name { display: flex; flex-direction: column; font-size: 14px; color: #0f172a; line-height: 1.3; min-width: 0; }
-.kpi-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-.dist { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: #f1f5f9; gap: 1px; }
+.chev { color: var(--tx-94a3b8); }
+.kpi-name { display: flex; flex-direction: column; font-size: 14px; color: var(--tx-0f172a); line-height: 1.3; min-width: 0; }
+.kpi-meta { font-size: 11px; color: var(--tx-94a3b8); margin-top: 2px; }
+.dist { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--bg-f1f5f9); gap: 1px; }
 .dist-seg { flex-basis: 0; min-width: 3px; }
-.kpi-summary { display: flex; align-items: center; justify-content: flex-end; font-size: 12px; color: #475569; white-space: nowrap; }
+.kpi-summary { display: flex; align-items: center; justify-content: flex-end; font-size: 12px; color: var(--tx-475569); white-space: nowrap; }
 
 .kpi-detail { padding: 4px 16px 14px 48px; }
 .province-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
-.province-chip { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 8px; padding: 6px 10px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid; border-radius: 6px; }
-.province-name { font-size: 13px; font-weight: 600; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.province-pct { font-size: 13px; font-weight: 700; color: #0f172a; text-align: right; }
-.province-label { grid-column: 1 / -1; font-size: 11px; color: #64748b; }
+.province-chip { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 8px; padding: 6px 10px; background: var(--bg-fff); border: 1px solid var(--bd-e2e8f0); border-left: 4px solid; border-radius: 6px; }
+.province-name { font-size: 13px; font-weight: 600; color: var(--tx-0f172a); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.province-pct { font-size: 13px; font-weight: 700; color: var(--tx-0f172a); text-align: right; }
+.province-label { grid-column: 1 / -1; font-size: 11px; color: var(--tx-64748b); }
 
 @media (max-width: 900px) {
     .kpi-head { grid-template-columns: 20px 1fr; }

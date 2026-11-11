@@ -45,7 +45,7 @@
                 <tr>
                     <th class="text-caption text-medium-emphasis" width="50">#</th>
                     <th class="text-caption text-medium-emphasis">Name</th>
-                    <th class="text-caption text-medium-emphasis">Employee ID</th>
+                    <th class="text-caption text-medium-emphasis">Employee No.</th>
                     <th class="text-caption text-medium-emphasis">Email</th>
                     <th v-if="showProvinceColumn" class="text-caption text-medium-emphasis">Province</th>
                     <th v-if="showRegionColumn" class="text-caption text-medium-emphasis">Region</th>
@@ -213,11 +213,12 @@
                     <v-row dense>
                         <v-col cols="12" sm="6">
                             <v-text-field
-                                v-model="editForm.username"
-                                label="Username"
+                                v-model="editForm.dost_employee_id"
+                                label="Employee No."
+                                hint="Used to log in, along with the email"
                                 variant="outlined"
                                 density="compact"
-                                :error-messages="editErrors.username"
+                                :error-messages="editErrors.dost_employee_id"
                             />
                         </v-col>
                         <v-col cols="12" sm="6">
@@ -228,15 +229,6 @@
                                 variant="outlined"
                                 density="compact"
                                 :error-messages="editErrors.email"
-                            />
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                            <v-text-field
-                                v-model="editForm.dost_employee_id"
-                                label="DOST Employee ID"
-                                variant="outlined"
-                                density="compact"
-                                :error-messages="editErrors.dost_employee_id"
                             />
                         </v-col>
                         <v-col cols="12">
@@ -473,8 +465,8 @@ const isOwnAccount  = (id) => page.props.auth?.user?.id === id;
 const getActivate   = (user) => localState.value[user.id] ?? user.activate;
 
 const modals = useActionModals();
-// "Juan Dela Cruz" (or the username when the profile has no name).
-const who = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ') || u?.username || 'this user';
+// "Juan Dela Cruz" (or the employee no. when the profile has no name).
+const who = (u) => [u?.first_name, u?.last_name].filter(Boolean).join(' ') || u?.employee_id || 'this user';
 const roleName = (name) => roleOptions.find(r => r.value === name)?.label ?? name;
 
 const editDialog  = ref(false);
@@ -487,7 +479,6 @@ const openEdit = (user) => {
     editErrors.value  = {};
     showPassword.value = false;
     editForm.value = {
-        username:              user.username,
         email:                 user.email,
         dost_employee_id:      user.employee_id,
         province_id:           user.province_id,

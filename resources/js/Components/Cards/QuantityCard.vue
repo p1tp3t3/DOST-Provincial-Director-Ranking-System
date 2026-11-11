@@ -90,7 +90,7 @@ const arrowClass = computed(() => {
 .border-left-thick-indigo { border-left: 5px solid #3f51b5 !important; }
 .border-left-thick-success { border-left: 5px solid #4caf50 !important; }
 .border-left-thick-danger { border-left: 5px solid #f44336 !important; }
-.text-slate-800 { color: #1e293b !important; }
+.text-slate-800 { color: var(--tx-1e293b) !important; }
 .qc-title { line-height: 1.2; }
 .qc-row { width: 100%; row-gap: 4px; }
 .qc-value { line-height: 1.2; word-break: break-word; }

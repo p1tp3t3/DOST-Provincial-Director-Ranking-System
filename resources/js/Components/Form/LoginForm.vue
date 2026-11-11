@@ -55,7 +55,7 @@ const submit = async () => {
         const user = page?.props?.auth?.user;
         Object.assign(success, {
             open:         true,
-            name:         user?.profile?.first_name || user?.username || '',
+            name:         user?.profile?.first_name || '',
             target:       finalUrl.pathname + finalUrl.search,
             choosingRole: page?.component === 'Auth/ChooseRole',
         });
@@ -73,13 +73,13 @@ const submit = async () => {
         <div>
             <v-text-field
                 id="identifier"
-                label="Email, Username, or Employee ID"
+                label="Employee No. or Email"
                 v-model="form.identifier"
                 variant="outlined"
                 clearable
                 autofocus
                 autocomplete="username"
-                placeholder="Enter your email, username, or DOST ID"
+                placeholder="Enter your employee no. or email"
                 prepend-inner-icon="mdi-account-search-outline"
             />
         </div>

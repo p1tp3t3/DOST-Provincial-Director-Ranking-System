@@ -237,35 +237,35 @@ const ago = (at) => {
 </script>
 
 <style scoped>
-.eyebrow { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-.hero-title { font-size: 30px; font-weight: 800; color: #0f172a; line-height: 1.15; margin-top: 2px; }
+.eyebrow { font-size: 12px; font-weight: 600; color: var(--tx-64748b); text-transform: uppercase; letter-spacing: 0.04em; }
+.hero-title { font-size: 30px; font-weight: 800; color: var(--tx-0f172a); line-height: 1.15; margin-top: 2px; }
 .hero-sub { font-size: 14px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; }
 .progress-block { width: 300px; max-width: 100%; }
 
-.quarter-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; padding: 12px 16px; background: #f8fafc; }
-.quarter-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+.quarter-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; padding: 12px 16px; background: var(--bg-f8fafc); }
+.quarter-card { background: var(--bg-fff); border: 1px solid var(--bd-e2e8f0); border-radius: 8px; padding: 10px 12px; }
 .quarter-card--focus { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1; }
-.quarter-name { font-weight: 700; font-size: 15px; color: #0f172a; }
+.quarter-name { font-weight: 700; font-size: 15px; color: var(--tx-0f172a); }
 
-.card-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; font-size: 14px; font-weight: 700; color: #0f172a; }
-.head-link { font-size: 12px; font-weight: 600; color: #4f46e5; text-decoration: none; }
+.card-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; font-size: 14px; font-weight: 700; color: var(--tx-0f172a); }
+.head-link { font-size: 12px; font-weight: 600; color: var(--tx-4f46e5); text-decoration: none; }
 .head-link:hover { text-decoration: underline; }
 
-.attention-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: inherit; text-decoration: none; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+.attention-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: inherit; text-decoration: none; font-size: 14px; border-bottom: 1px solid var(--bd-f1f5f9); }
 .attention-row:last-child { border-bottom: none; }
-.attention-row:hover { background: #f8fafc; }
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; color: #64748b; font-size: 14px; }
+.attention-row:hover { background: var(--bg-f8fafc); }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 16px; color: var(--tx-64748b); font-size: 14px; }
 
-.standing-rank { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1; }
-.standing-rank span { font-size: 15px; font-weight: 600; color: #64748b; }
-.standing-score { font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.standing-rank { font-size: 28px; font-weight: 800; color: var(--tx-0f172a); line-height: 1; }
+.standing-rank span { font-size: 15px; font-weight: 600; color: var(--tx-64748b); }
+.standing-score { font-size: 22px; font-weight: 700; color: var(--tx-0f172a); margin-bottom: 4px; }
 
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); padding: 12px 16px; text-align: center; }
-.stat-num { font-size: 22px; font-weight: 700; color: #0f172a; }
-.stat-label { font-size: 12px; color: #64748b; }
+.stat-num { font-size: 22px; font-weight: 700; color: var(--tx-0f172a); }
+.stat-label { font-size: 12px; color: var(--tx-64748b); }
 
-.entry-row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid #f1f5f9; }
+.entry-row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--bd-f1f5f9); }
 .entry-row:last-child { border-bottom: none; }
-.entry-value { font-weight: 700; font-size: 15px; color: #0f172a; }
-.record-row { display: flex; align-items: center; padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+.entry-value { font-weight: 700; font-size: 15px; color: var(--tx-0f172a); }
+.record-row { display: flex; align-items: center; padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--bd-f1f5f9); }
 </style>

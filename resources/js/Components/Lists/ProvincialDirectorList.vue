@@ -152,7 +152,7 @@ const changePage = (page) => {
     line-height: 1.3 !important;
 }
 .view-footer {
-    border-top: 1px solid rgba(0,0,0,0.06);
+    border-top: 1px solid rgba(var(--ink-rgb), 0.06);
     opacity: 0;
     transition: opacity 0.2s;
 }

@@ -31,7 +31,7 @@
                 </div>
             </div>
             <v-divider />
-            <div class="px-4 py-2 d-flex align-center gap-3 flex-wrap" style="background:#f8fafc;">
+            <div class="px-4 py-2 d-flex align-center gap-3 flex-wrap" style="background:var(--bg-f8fafc);">
                 <span class="text-caption text-medium-emphasis">
                     Editing the shared catalog. Weight/category changes affect every province's live ranking immediately.
                 </span>
@@ -226,7 +226,7 @@
         <!-- Preview Changes Dialog -->
         <v-dialog v-model="previewOpen" fullscreen persistent :scrim="false" transition="dialog-bottom-transition">
             <v-card rounded="0" class="d-flex flex-column" style="height:100vh;">
-                <v-toolbar color="white" class="border-b flex-grow-0">
+                <v-toolbar color="surface" class="border-b flex-grow-0">
                     <v-avatar color="indigo-lighten-5" size="40" rounded="lg" class="ml-4">
                         <v-icon color="indigo" size="20">mdi-content-save-check-outline</v-icon>
                     </v-avatar>
@@ -242,7 +242,7 @@
                     </v-btn>
                 </v-toolbar>
 
-                <div class="flex-grow-1 overflow-y-auto pa-6" style="background:#f8fafc;">
+                <div class="flex-grow-1 overflow-y-auto pa-6" style="background:var(--bg-f8fafc);">
                     <div class="preview-content">
                         <v-alert type="warning" variant="tonal" density="compact" icon="mdi-alert-outline" class="mb-4">
                             <div class="text-caption">
@@ -1008,7 +1008,7 @@ const submitCsvVerify = async () => {
     try {
         const res = await fetch('/kpi-catalog/kpis/verify-csv', {
             method: 'POST',
-            headers: { 'X-XSRF-TOKEN': xsrfToken() },
+            headers: { 'X-XSRF-TOKEN': xsrfToken(), Accept: 'application/json' },
             body: data,
         });
         if (!res.ok) {
@@ -1064,7 +1064,7 @@ const submitCsvCommit = async () => {
     try {
         const res = await fetch('/kpi-catalog/kpis/commit-csv', {
             method: 'POST',
-            headers: { 'X-XSRF-TOKEN': xsrfToken(), 'Content-Type': 'application/json' },
+            headers: { 'X-XSRF-TOKEN': xsrfToken(), 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({ rows }),
         });
         if (!res.ok) {
@@ -1112,7 +1112,7 @@ const submitCsvCommit = async () => {
     gap: 12px;
 }
 .preview-card {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--bd-e2e8f0);
     border-left: 3px solid #6366f1;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -1126,8 +1126,8 @@ const submitCsvCommit = async () => {
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    background: rgba(255,255,255,0.97);
-    border: 1px solid #e2e8f0;
+    background: rgba(var(--surface-rgb), 0.97);
+    border: 1px solid var(--bd-e2e8f0);
     border-radius: 8px;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
     backdrop-filter: blur(4px);
@@ -1138,7 +1138,7 @@ const submitCsvCommit = async () => {
 .csv-sample-wrap {
     border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     border-radius: 8px;
-    background: #f8fafc;
+    background: var(--bg-f8fafc);
 }
 .csv-sample {
     width: 100%;
@@ -1146,18 +1146,18 @@ const submitCsvCommit = async () => {
     font-size: 11px;
     white-space: nowrap;
 }
-.csv-sample thead tr { background: #eef0f8; }
+.csv-sample thead tr { background: var(--bg-eef0f8); }
 .csv-sample th {
     padding: 6px 10px;
     text-align: left;
     font-weight: 700;
-    color: #3730a3;
-    border-bottom: 1px solid #dde1f0;
+    color: var(--tx-3730a3);
+    border-bottom: 1px solid var(--bd-dde1f0);
 }
 .csv-sample td {
     padding: 5px 10px;
-    color: #374151;
-    border-bottom: 1px solid #e5e7eb;
+    color: var(--tx-374151);
+    border-bottom: 1px solid var(--bd-e5e7eb);
 }
 .csv-row--invalid { background: #fef2f2; }
 
@@ -1189,10 +1189,10 @@ const submitCsvCommit = async () => {
     vertical-align: middle;
 }
 .kpi-row--input-only {
-    background: #fafbfc;
+    background: var(--bg-fafbfc);
 }
 .kpi-input :deep(.v-field) {
-    background: #fff;
+    background: var(--bg-fff);
     border-radius: 6px;
     font-size: 12px;
 }

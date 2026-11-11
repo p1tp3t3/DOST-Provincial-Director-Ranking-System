@@ -34,7 +34,7 @@ class ProfileController extends Controller
 
         return inertia('Other/Profile/Edit', [
             'role'              => $user->role,
-            'username'          => $user->username,
+            'employee_no'       => $user->dost_employee_id,
             'email'             => $user->email,
             'province'          => $user->province?->name,
             'profile_picture'   => $profile?->profile_picture,

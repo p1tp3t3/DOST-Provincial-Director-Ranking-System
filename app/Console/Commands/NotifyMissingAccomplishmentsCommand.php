@@ -57,7 +57,7 @@ class NotifyMissingAccomplishmentsCommand extends Command
 
             // One job per user.
             foreach ($users as $user) {
-                if ($dryRun) $this->line(sprintf('  %-28s %s', $user->username, $body));
+                if ($dryRun) $this->line(sprintf('  %-28s %s', $user->dost_employee_id, $body));
                 $jobs[] = new SendMissingAccomplishmentsReminder(
                     $user->id,
                     'Missing KPI accomplishments',

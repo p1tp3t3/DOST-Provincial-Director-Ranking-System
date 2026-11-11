@@ -50,7 +50,7 @@
                                     <div class="d-flex align-center justify-space-between">
                                         <div>
                                             <div class="text-caption font-weight-bold text-uppercase mb-1 text-black">KPI Score</div>
-                                            <div class="text-h4 font-weight-black" :style="{ color: province_ranking?.total_pct != null ? bucketHex(province_ranking.bucket) : '#1e293b' }">
+                                            <div class="text-h4 font-weight-black" :style="{ color: province_ranking?.total_pct != null ? bucketHex(province_ranking.bucket) : 'var(--tx-1e293b)' }">
                                                 {{ province_ranking?.total_pct != null ? `${province_ranking.total_pct.toFixed(1)}%` : '—' }}
                                             </div>
                                         </div>
@@ -407,7 +407,7 @@ const lbRowProps = ({ item }) => ({
 </script>
 
 <style scoped>
-.text-slate-800  { color: #1e293b !important; }
+.text-slate-800  { color: var(--tx-1e293b) !important; }
 .avatar-initials { font-size: 0.62rem; font-weight: 700; color: white; }
 
 .kpi-shortcut {
@@ -432,14 +432,14 @@ const lbRowProps = ({ item }) => ({
     border-radius: 20px;
 }
 .rank-gold   { background: #fef9c3; color: #854d0e; }
-.rank-silver { background: #f1f5f9; color: #475569; }
+.rank-silver { background: var(--bg-f1f5f9); color: var(--tx-475569); }
 .rank-bronze { background: #ffedd5; color: #9a3412; }
 
 .score-track {
     width: 90px;
     flex-shrink: 0;
     height: 8px;
-    background: #f1f5f9;
+    background: var(--bg-f1f5f9);
     border-radius: 4px;
     overflow: hidden;
 }

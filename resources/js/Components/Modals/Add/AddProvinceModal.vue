@@ -42,12 +42,12 @@
             <v-row dense>
                 <v-col cols="12">
                     <v-text-field
-                        v-model="form.admin_username"
-                        label="Username"
-                        placeholder="e.g. padmin_davao"
+                        v-model="form.admin_employee_id"
+                        label="Employee No."
+                        placeholder="e.g. DOST-XI-2024-001"
                         variant="outlined"
                         density="compact"
-                        :rules="[v => !!v || 'Username is required']"
+                        :rules="[v => !!v || 'Employee no. is required']"
                     />
                 </v-col>
                 <v-col cols="12">
@@ -128,7 +128,7 @@ const showConfirmPassword = ref(false);
 const defaultForm = () => ({
     name:                   '',
     category:               null,
-    admin_username:         '',
+    admin_employee_id:      '',
     admin_email:            '',
     admin_password:         '',
     confirm_admin_password: '',
@@ -176,6 +176,6 @@ const submit = async () => {
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: rgba(0, 0, 0, 0.45);
+    color: rgba(var(--ink-rgb), 0.45);
 }
 </style>

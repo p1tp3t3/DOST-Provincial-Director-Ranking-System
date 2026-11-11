@@ -34,18 +34,6 @@ const page = usePage();
 const authUser  = computed(() => page.props.auth.user);
 const currentUrl = computed(() => page.url);
 
-const getRoleLabel = () => {
-    const label = {
-        'super_admin':        'System Administrator',
-        'sub_admin':          'Sub Administrator',
-        'regional_director':  `Regional Director of ${authUser.value?.region?.name}`,
-        'provincial_admin':   `Provincial Administrator of ${authUser.value?.province?.name}`,
-        'provincial_director':`Provincial Director of ${authUser.value?.province?.name}`,
-        'employee':           `Employee at ${authUser.value?.province?.name}`,
-    };
-    return label[authUser.value?.role] || '';
-};
-
 // Correction requests waiting on this user (regional director / super admin).
 const correctionInbox = computed(() => page.props.correction_inbox ?? 0);
 
@@ -177,8 +165,12 @@ const onSubNavLeave = (el) => {
 </script>
 
 <template>
+    <!-- The slot keeps the collapsed width in the page layout; the sidebar itself
+         is fixed on top, so opening it slides over the page instead of pushing
+         the content aside. -->
+    <div class="sidebar-slot">
     <aside
-        :class="['sidebar sticky flex-shrink-0 left-0 top-0 h-screen text-white shadow-xl flex flex-column', isOpen ? 'w-64' : 'w-16']"
+        :class="['sidebar h-screen text-white flex flex-column', isOpen ? 'w-64 sidebar--open' : 'w-16']"
         @mouseenter="isOpen = true"
         @mouseleave="isOpen = false"
     >
@@ -197,19 +189,6 @@ const onSubNavLeave = (el) => {
             </div>
             <div v-else class="logo-box">
                 <img src="/assets/logo.png" alt="PRISM Logo" class="w-8 h-8">
-            </div>
-        </div>
-
-        <!-- User Section -->
-        <div
-            v-if="isOpen"
-            class="flex items-center flex-shrink-0 border-b border-white/10 gap-3"
-            style="padding: 9px 20px;"
-        >
-            <div class="flex-1">
-                <div class="leading-tight">
-                    <div class="text-xs text-blue-300">{{ getRoleLabel() }}</div>
-                </div>
             </div>
         </div>
 
@@ -286,15 +265,32 @@ const onSubNavLeave = (el) => {
         </nav>
 
     </aside>
+    </div>
 </template>
 
 <style scoped>
+/* Holds the collapsed width (w-16) in the layout so the page never moves. */
+.sidebar-slot {
+    width: 4rem;
+    flex-shrink: 0;
+}
+/* Above the sticky header and Leaflet's map controls (z 1000), below Vuetify's
+   menus/dialogs (2000+) and a map's full-screen view (3000). */
 .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1005;
     background-color: #0f2044;
     display: flex;
     flex-direction: column;
-    transition: width 0.22s cubic-bezier(.4,0,.2,1);
+    transition: width 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s ease;
     overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -4px rgba(0, 0, 0, .1);
+}
+/* Open: it floats over the page, so give it a deeper edge shadow. */
+.sidebar--open {
+    box-shadow: 8px 0 28px rgba(0, 0, 0, .28);
 }
 
 .logo-box {

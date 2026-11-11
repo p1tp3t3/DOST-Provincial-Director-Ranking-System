@@ -283,7 +283,7 @@
                     <div class="px-5 pb-3">
                         <v-text-field
                             v-model="reviewSearch"
-                            placeholder="Search by name, email, or DOST ID..."
+                            placeholder="Search by name, email, or employee no..."
                             variant="solo-filled"
                             density="compact"
                             hide-details
@@ -416,11 +416,11 @@
                                                     @input="clearError(row, 'email')"
                                                 />
                                             </v-col>
-                                            <!-- Row 4: DOST ID -->
+                                            <!-- Row 4: Employee No. -->
                                             <v-col cols="12">
                                                 <v-text-field
                                                     v-model="row.data.dost_id"
-                                                    label="DOST Employee ID"
+                                                    label="Employee No."
                                                     variant="outlined"
                                                     density="compact"
                                                     hide-details="auto"
@@ -583,7 +583,7 @@ const guidelines = [
     'Ensure all employee data follows the required CSV template format. Download the template before filling in data.',
     'Required columns: first_name, last_name, email, dost_id_number. All other columns (including middle_name) are optional.',
     'Each row represents one employee. Avoid blank rows and do not repeat the header.',
-    'Duplicate emails or DOST IDs - within the CSV or already in the system - will be flagged as invalid.',
+    'Duplicate emails or employee nos. - within the CSV or already in the system - will be flagged as invalid.',
     'After verification you can review, edit, or remove rows before committing to the database.',
     'Only rows marked as "included" will be committed. Invalid rows are excluded by default.',
 ];
@@ -628,7 +628,7 @@ const submitVerify = async () => {
     try {
         const res = await fetch('/provincial-admin/csv/verify', {
             method: 'POST',
-            headers: { 'X-XSRF-TOKEN': xsrfToken() },
+            headers: { 'X-XSRF-TOKEN': xsrfToken(), Accept: 'application/json' },
             body: data,
         });
         if (!res.ok) {
@@ -816,7 +816,7 @@ const commitRows = async () => {
     try {
         const res = await fetch('/provincial-admin/csv/commit', {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrfToken() },
+            headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrfToken(), Accept: 'application/json' },
             body:    JSON.stringify({ rows, province_id: provinceId.value }),
         });
         if (!res.ok) {
@@ -908,7 +908,7 @@ const formatFileSize = (bytes) => {
 /* ── Sample table ─────────────────────────────────────────── */
 .sample-table-wrap {
     border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-    background: #f8fafc;
+    background: var(--bg-f8fafc);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -920,30 +920,30 @@ const formatFileSize = (bytes) => {
     white-space: nowrap;
 }
 .sample-table thead tr {
-    background: #eef0f8;
+    background: var(--bg-eef0f8);
 }
 .sample-table th {
     padding: 6px 10px;
     text-align: left;
     font-weight: 700;
-    color: #3730a3;
-    border-bottom: 1px solid #dde1f0;
-    border-right: 1px solid #dde1f0;
+    color: var(--tx-3730a3);
+    border-bottom: 1px solid var(--bd-dde1f0);
+    border-right: 1px solid var(--bd-dde1f0);
 }
 .sample-table th:last-child,
 .sample-table td:last-child { border-right: none; }
 .sample-table td {
     padding: 5px 10px;
-    color: #374151;
-    border-bottom: 1px solid #e5e7eb;
-    border-right: 1px solid #e5e7eb;
+    color: var(--tx-374151);
+    border-bottom: 1px solid var(--bd-e5e7eb);
+    border-right: 1px solid var(--bd-e5e7eb);
 }
 .sample-table tbody tr:last-child td { border-bottom: none; }
-.sample-table tbody tr:hover td { background: #f1f5ff; }
+.sample-table tbody tr:hover td { background: var(--bg-f1f5ff); }
 .req { color: #b91c1c; }
 
 .csv-dropzone {
-    border: 2px dashed rgba(0,0,0,0.12);
+    border: 2px dashed rgba(var(--ink-rgb), 0.12);
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
 }
@@ -978,8 +978,8 @@ const formatFileSize = (bytes) => {
     background: rgba(var(--v-theme-error), 0.03);
 }
 .review-card--skipped {
-    border-color: rgba(0,0,0,0.08) !important;
-    background: #f9fafb;
+    border-color: rgba(var(--ink-rgb), 0.08) !important;
+    background: var(--bg-f9fafb);
     opacity: 0.6;
 }
 </style>

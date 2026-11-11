@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Validator;
  * itself — it is not a login credential. A visitor who doesn't know it gets a
  * plain 404, identical to an unknown route, so the form's existence isn't
  * revealed. Once past that gate, the actual super admin still authenticates
- * with their real account email/username + password, same as normal login.
+ * with their real account email/employee no. + password, same as normal login.
  */
 class SuperAdminLoginController extends Controller
 {
@@ -53,7 +53,7 @@ class SuperAdminLoginController extends Controller
         /** @var User|null $user */
         $user = User::query()
             ->where('email', $id)
-            ->orWhere('username', $id)
+            ->orWhere('dost_employee_id', $id)
             ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {

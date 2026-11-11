@@ -116,7 +116,7 @@
                         <tr>
                             <th>#</th>
                             <th>Name</th>
-                            <th>DOST ID</th>
+                            <th>Employee No.</th>
                             <th>Position</th>
                             <th>Status</th>
                             <th>Yrs</th>
@@ -195,7 +195,7 @@
         <thead>
             <tr>
                 <th>User</th>
-                <th>DOST ID</th>
+                <th>Employee No.</th>
                 <th>Role</th>
                 <th>Action</th>
                 <th>Description</th>

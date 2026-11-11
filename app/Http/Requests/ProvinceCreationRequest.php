@@ -23,7 +23,7 @@ class ProvinceCreationRequest extends FormRequest
         return [
             'name'                   => ['required', 'string', 'max:255', 'unique:provinces,name'],
             'category'               => ['required', 'in:micro,small,medium,large'],
-            'admin_username'         => ['required', 'string', 'max:255', 'unique:users,username'],
+            'admin_employee_id'      => ['required', 'string', 'max:50', 'unique:users,dost_employee_id'],
             'admin_email'            => ['required', 'email', 'unique:users,email'],
             'admin_password'         => ['required', 'string', 'min:8'],
             'confirm_admin_password' => ['required', 'same:admin_password'],

@@ -30,7 +30,7 @@ class UserProfileResource extends JsonResource
                 'role'                => $this->role,
                 'roles'               => $roles,
                 'province'            => $this->province?->name,
-                'name'                => $this->username ?? $this->email,
+                'name'                => $this->dost_employee_id ?: $this->email,
                 'profile_picture'     => null,
                 'length_of_service'   => null,
                 'position'            => null,

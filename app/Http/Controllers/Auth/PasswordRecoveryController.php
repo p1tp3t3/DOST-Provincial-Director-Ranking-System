@@ -28,7 +28,6 @@ class PasswordRecoveryController extends Controller
         /** @var User|null $user */
         $user = User::query()
             ->where('email', $id)
-            ->orWhere('username', $id)
             ->orWhere('dost_employee_id', $id)
             ->first();
 

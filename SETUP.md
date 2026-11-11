@@ -149,14 +149,15 @@ php artisan storage:link      # serves uploaded images (blog, provinces, profile
 The seeders create the regions, provinces, KPI catalog and scores, CSTC
 clusters, linkages and Facebook posts, plus these logins (password: `password`):
 
-| Role | Username / email |
+| Role | Employee no. / email |
 |---|---|
 | Super admin | `vinzmuloc` |
 | Sub admin | `subadmin` / `subadmin@dost.test` |
-| Regional director | `regdir_<region>` — e.g. `regdir_region_xi` |
+| Regional director | `rd-<region id>` or `regdir_<region>@dost.test` — e.g. `regdir_region_xi@dost.test` |
 | Provincial admin | `provadmin_<province>` — e.g. `provadmin_batanes` |
 | Provincial director | `provdir_<province>@dost.test` — e.g. `provdir_batanes@dost.test` |
 
+There are no usernames: everyone signs in with their employee no. or email.
 Province and region parts are lower-case with underscores
 (`Davao del Sur` → `davao_del_sur`). These logins stay the same on every reseed.
 
@@ -263,7 +264,7 @@ Leave them running while you work; stop each with `Ctrl+C`.
 3. Send yourself one:
 
    ```bash
-   php artisan tinker --execute="App\Helpers\NotificationHelper::notify(App\Models\User::where('username','provadmin_batanes')->first(), 'Test', 'Hello from PRISM', '/dashboard');"
+   php artisan tinker --execute="App\Helpers\NotificationHelper::notify(App\Models\User::where('dost_employee_id','provadmin_batanes')->first(), 'Test', 'Hello from PRISM', '/dashboard');"
    ```
 
    It appears in the bell immediately (Reverb) and as a browser notification (web push).

@@ -33,7 +33,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user()?->load(['provinces', 'region', 'profile', 'roles', 'activeRole']),
+                // profile.employeeProfile carries the position shown in the top bar.
+                'user' => $request->user()?->load(['provinces', 'region', 'profile.employeeProfile', 'roles', 'activeRole']),
             ],
             // Public key the browser needs to subscribe to push notifications.
             'vapidPublicKey' => config('webpush.vapid.public_key'),

@@ -5,8 +5,13 @@ import AuthHeader from '@/Components/Other/AuthHeader.vue';
 import ActionModals from '@/Components/Modals/ActionModals.vue';
 import { registerActionModals } from '@/Composables/useActionModals';
 import { receiveBroadcast, getAuth } from '@/helper-functions.js';
+import { setShellActive } from '@/Composables/useColorMode';
 
 const user = getAuth();
+
+// The chosen light/dark mode applies inside the app; public pages stay light.
+onMounted(() => setShellActive(true));
+onUnmounted(() => setShellActive(false));
 
 onMounted(() => {
     if (user) {

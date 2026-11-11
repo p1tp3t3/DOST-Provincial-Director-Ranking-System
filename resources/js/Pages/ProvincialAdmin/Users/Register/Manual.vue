@@ -182,7 +182,8 @@
                                         <v-col cols="12" sm="6">
                                             <v-text-field
                                                 v-model="form.dost_employee_id"
-                                                label="DOST Employee ID"
+                                                label="Employee No."
+                                                hint="Used to log in, along with the email"
                                                 variant="outlined"
                                                 density="compact"
                                                 hide-details="auto"
@@ -190,16 +191,6 @@
                                             />
                                         </v-col>
                                         <v-col cols="12" sm="6">
-                                            <v-text-field
-                                                v-model="form.username"
-                                                label="Username"
-                                                variant="outlined"
-                                                density="compact"
-                                                hide-details="auto"
-                                                :rules="[r.required]"
-                                            />
-                                        </v-col>
-                                        <v-col cols="12">
                                             <v-text-field
                                                 v-model="form.email"
                                                 label="Email Address"
@@ -283,7 +274,7 @@
                                                 {{ fullName || '- No name yet -' }}
                                             </div>
                                             <div class="text-caption text-medium-emphasis">
-                                                {{ form.username || 'username' }}
+                                                {{ form.dost_employee_id || 'employee no.' }}
                                             </div>
                                         </div>
                                     </div>
@@ -349,7 +340,6 @@ const defaultForm = () => ({
     position:             '',
     status:               '',
     dost_employee_id:     '',
-    username:             '',
     email:                '',
     password:             '',
     password_confirmation:'',
@@ -388,7 +378,7 @@ const fullName = computed(() => {
 const previewItems = computed(() => {
     const items = [
         { label: 'Role',        value: form.value.role === 'employee' ? 'Employee' : 'Provincial Director' },
-        { label: 'DOST ID',     value: form.value.dost_employee_id },
+        { label: 'Employee No.', value: form.value.dost_employee_id },
         { label: 'Email',       value: form.value.email },
     ];
     if (form.value.role === 'employee') {
@@ -403,8 +393,7 @@ const checklist = computed(() => {
         { label: 'Role selected',      done: !!form.value.role },
         { label: 'First name filled',  done: !!form.value.first_name },
         { label: 'Last name filled',   done: !!form.value.last_name },
-        { label: 'DOST ID filled',     done: !!form.value.dost_employee_id },
-        { label: 'Username filled',    done: !!form.value.username },
+        { label: 'Employee no. filled', done: !!form.value.dost_employee_id },
         { label: 'Email filled',       done: !!form.value.email },
         { label: 'Password set',       done: (form.value.password ?? '').length >= 8 },
         { label: 'Passwords match',    done: !!form.value.password && form.value.password === form.value.password_confirmation },
@@ -423,7 +412,7 @@ const submit = async () => {
 
     const ok = await modals.confirm({
         title:       'Register this account?',
-        message:     `${fullName.value}\nUsername: ${form.value.username}\nRole: ${form.value.role === 'provincial_director' ? 'Provincial Director' : 'Employee'}`,
+        message:     `${fullName.value}\nEmployee No.: ${form.value.dost_employee_id}\nRole: ${form.value.role === 'provincial_director' ? 'Provincial Director' : 'Employee'}`,
         confirmText: 'Register',
         icon:        'mdi-account-plus-outline',
     });

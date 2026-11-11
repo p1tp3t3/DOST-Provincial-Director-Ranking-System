@@ -4,7 +4,7 @@
         <div class="d-flex align-center gap-3 flex-wrap">
             <v-text-field
                 v-model="search"
-                placeholder="Search by name, email, or username..."
+                placeholder="Search by name, email, or employee no..."
                 variant="solo-filled"
                 density="compact"
                 hide-details
@@ -37,7 +37,7 @@
                 <tr>
                     <th class="text-caption text-medium-emphasis" width="50">#</th>
                     <th class="text-caption text-medium-emphasis">Name</th>
-                    <th class="text-caption text-medium-emphasis">Username</th>
+                    <th class="text-caption text-medium-emphasis">Employee No.</th>
                     <th class="text-caption text-medium-emphasis">Email</th>
                     <th class="text-caption text-medium-emphasis">Province / Region</th>
                     <th class="text-caption text-medium-emphasis text-center" width="140">Role</th>
@@ -55,7 +55,7 @@
                             <span class="text-body-2 font-weight-medium">{{ admin.name }}</span>
                         </div>
                     </td>
-                    <td class="text-body-2 text-medium-emphasis">{{ admin.username ?? '-' }}</td>
+                    <td class="text-body-2 text-medium-emphasis">{{ admin.employee_id ?? '-' }}</td>
                     <td class="text-body-2">{{ admin.email }}</td>
                     <td class="text-body-2 text-medium-emphasis">{{ admin.province ?? admin.region ?? '-' }}</td>
                     <td class="text-center">
@@ -249,7 +249,7 @@ const modals = useActionModals();
 const deleteAdmin = () => {
     if (!targetAdmin.value) return;
     deleting.value = true;
-    const name = [targetAdmin.value.first_name, targetAdmin.value.last_name].filter(Boolean).join(' ') || targetAdmin.value.username;
+    const name = [targetAdmin.value.first_name, targetAdmin.value.last_name].filter(Boolean).join(' ') || targetAdmin.value.employee_id;
     // Admins are user accounts — same delete endpoint as the User List.
     router.delete(`/users/${targetAdmin.value.id}`, {
         preserveScroll: true,

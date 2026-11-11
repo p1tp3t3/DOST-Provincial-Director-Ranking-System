@@ -20,40 +20,40 @@ class TestUsersSeeder extends Seeder
             [
                 'role'     => 'super_admin',
                 'email'    => 'superadmin@pdris.test',
-                'username' => 'superadmin',
+                'employee_no' => 'superadmin',
                 'name'     => ['Test', '', 'SuperAdmin'],
             ],
             [
                 'role'     => 'sub_admin',
                 'email'    => 'subadmin@pdris.test',
-                'username' => 'test_subadmin', // 'subadmin' is DatabaseSeeder's permanent sub admin
+                'employee_no' => 'test_subadmin', // 'subadmin' is DatabaseSeeder's permanent sub admin
                 'name'     => ['Test', '', 'SubAdmin'],
             ],
             [
                 'role'      => 'regional_director',
                 'email'     => 'regdir@pdris.test',
-                'username'  => 'regdir',
+                'employee_no'  => 'regdir',
                 'region_id' => $regionId,
                 'name'      => ['Test', '', 'RegionalDirector'],
             ],
             [
                 'role'        => 'provincial_admin',
                 'email'       => 'provadmin@pdris.test',
-                'username'    => 'provadmin',
+                'employee_no'    => 'provadmin',
                 'province_id' => $provinceId,
                 'name'        => ['Test', '', 'ProvAdmin'],
             ],
             [
                 'role'        => 'provincial_director',
                 'email'       => 'director@pdris.test',
-                'username'    => 'director',
+                'employee_no'    => 'director',
                 'province_id' => $provinceId,
                 'name'        => ['Test', '', 'Director'],
             ],
             [
                 'role'        => 'employee',
                 'email'       => 'employee@pdris.test',
-                'username'    => 'employee',
+                'employee_no'    => 'employee',
                 'province_id' => $provinceId,
                 'name'        => ['Test', '', 'Employee'],
             ],
@@ -63,7 +63,7 @@ class TestUsersSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
-                    'username'  => $data['username'],
+                    'dost_employee_id' => $data['employee_no'],
                     'password'  => Hash::make('password'),
                     'region_id' => $data['region_id'] ?? null,
                 ]

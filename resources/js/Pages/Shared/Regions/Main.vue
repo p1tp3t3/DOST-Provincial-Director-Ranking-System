@@ -348,14 +348,14 @@ const categoryColor = (cat) => ({
     transition: background 0.12s;
 }
 .province-row:hover {
-    background: #f0f4ff !important;
+    background: var(--bg-f0f4ff) !important;
 }
 .cell-label {
     font-size: 0.67rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #94a3b8;
+    color: var(--tx-94a3b8);
     margin-bottom: 2px;
 }
 </style>

@@ -328,6 +328,6 @@ class ProvinceOverviewService
         if (!$user) return null;
         $p    = $user->profile;
         $name = trim(implode(' ', array_filter([$p?->prefix, $p?->first_name, $p?->last_name, $p?->suffix])));
-        return $name ?: $user->username;
+        return $name ?: ($user->dost_employee_id ?: $user->email);
     }
 }

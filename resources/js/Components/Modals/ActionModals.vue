@@ -86,13 +86,22 @@ const answer = (yes) => {
 const success = (title, message = '') =>
     Object.assign(resultState, { open: true, ok: true, title, message, details: [] });
 
+// Last line of defence: the server already words its errors for people, but
+// if internal text (SQL, PHP, a stack trace) ever slips through, show a plain
+// sentence instead of it.
+const GENERIC = 'Something went wrong on our end, so this could not be completed. Please try again. If it keeps happening, contact the system administrator.';
+const TECHNICAL = /SQLSTATE|Integrity constraint|constraint failed|Exception\b|Stack trace|\.php\b|on null|Undefined (array key|index|variable|property|method)|Call to (a member|undefined)|syntax error|No query results for model|^Server Error$|Request failed with status code/i;
+const readable = (text, fallback = GENERIC) =>
+    typeof text === 'string' && text.trim() && !TECHNICAL.test(text) ? text : fallback;
+
 // `errors` may be Inertia's validation errors object, an array or a string.
 const error = (title, errors = null, message = '') => {
     const details = !errors ? []
         : typeof errors === 'string' ? [errors]
         : Array.isArray(errors) ? errors.flat()
         : Object.values(errors).flat();
-    Object.assign(resultState, { open: true, ok: false, title, message, details: details.filter(Boolean) });
+    const shown = [...new Set(details.filter(Boolean).map((d) => readable(String(d))))];
+    Object.assign(resultState, { open: true, ok: false, title, message, details: shown });
 };
 
 // Error dialog from a failed axios/fetch JSON response: field errors first,
@@ -103,9 +112,11 @@ const errorFrom = (title, err, fallback = 'Something went wrong. Please try agai
     const fields = Object.entries(errors)
         .filter(([k]) => !['message', 'code_error'].includes(k))
         .flatMap(([, v]) => v);
+    const status = err?.response?.status ?? 0;
     const details = fields.length ? fields
         : errors.code_error?.length ? errors.code_error
-        : [data.message ?? (err?.message && !err?.response ? 'Network error — check your connection.' : fallback)];
+        : !err?.response && err?.message ? ['Network error — check your connection and try again.']
+        : [readable(data.message, status >= 500 ? GENERIC : fallback)];
     error(title, details);
 };
 

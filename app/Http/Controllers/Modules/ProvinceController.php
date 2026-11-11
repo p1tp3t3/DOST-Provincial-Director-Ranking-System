@@ -63,7 +63,12 @@ class ProvinceController extends Controller
     }
 
     public function province_profile_index($id) {
-        $decryptedId = Crypt::decrypt($id);
+        // A damaged or outdated link is "not found", not a server error.
+        try {
+            $decryptedId = Crypt::decrypt($id);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            abort(404);
+        }
 
         if (auth()->user()->role === 'regional_director') {
             $region = Region::with('provinces')->findOrFail(auth()->user()->region_id);
@@ -124,9 +129,9 @@ class ProvinceController extends Controller
         ]);
 
         $admin = User::create([
-            'username'    => $data['admin_username'],
-            'email'       => $data['admin_email'],
-            'password'    => bcrypt($data['admin_password']),
+            'dost_employee_id' => $data['admin_employee_id'],
+            'email'            => $data['admin_email'],
+            'password'         => bcrypt($data['admin_password']),
         ]);
         $admin->assignRole('provincial_admin');
 

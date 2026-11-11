@@ -202,7 +202,7 @@
                     <div class="text-body-2 mb-2">
                         This will permanently remove the post and decrement the KPI count by 1.
                     </div>
-                    <div v-if="deleteDialog.row" class="pa-3" style="background:#f8fafc; border-radius:6px;">
+                    <div v-if="deleteDialog.row" class="pa-3" style="background:var(--bg-f8fafc); border-radius:6px;">
                         <div class="text-body-2 font-weight-medium">{{ deleteDialog.row.title }}</div>
                         <div class="text-caption text-medium-emphasis">{{ deleteDialog.row.post_type }} · {{ formatDate(deleteDialog.row.date_posted) }}</div>
                     </div>
@@ -330,7 +330,7 @@ const typeIcon = (t) => ({
 .filter-label {
     font-size: 11px;
     font-weight: 600;
-    color: #64748b;
+    color: var(--tx-64748b);
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
