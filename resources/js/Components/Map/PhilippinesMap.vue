@@ -423,7 +423,7 @@ const ISLANDS = [
 
 // CSTC clusters are first-class peers of provinces inside the ranking data, but
 // they don't have province features in the basemap (NCR has no province polygons
-// at all; ZCIC and Davao City overlap their parent province polygons). This
+// at all; Zamboanga City - Isabela City and Davao City Center overlap their parent province polygons). This
 // lookup lets region/island aggregates, the region panel, and the geo-filter
 // styling treat clusters as members of their parent region.
 const CSTC_REGION_CODE = {
@@ -431,8 +431,8 @@ const CSTC_REGION_CODE = {
     'MUNTAPARLAS': 1300000000,
     'PAMAMAZON':   1300000000,
     'PAMAMARISAN': 1300000000,
-    'ZCIC':         900000000,  // Region IX - Zamboanga Peninsula
-    'Davao City':  1100000000,  // Region XI - Davao Region
+    'Zamboanga City - Isabela City': 900000000,  // Region IX - Zamboanga Peninsula
+    'Davao City Center':  1100000000,  // Region XI - Davao Region
 };
 const cstcNamesForRegion = (regionCode) =>
     Object.entries(CSTC_REGION_CODE)
@@ -913,7 +913,7 @@ const styleForCstc = (feature, sm, selReg, selIsl) => {
     if (!hasRegFilter && hasIslandFilter && !isInSelIsland)
         return { fillColor: '#cbd5e1', weight: 0.3, color: '#e2e8f0', fillOpacity: 0.18 };
 
-    // CSTC clusters (e.g. Zamboanga City / ZCIC) overlap the province polygons in the
+    // CSTC clusters (e.g. Zamboanga City - Isabela City) overlap the province polygons in the
     // basemap - Zamboanga City's land is baked into Zamboanga del Sur. With no score in
     // the active filter we render the cluster as a neutral cut-out so it masks the
     // province's highlight beneath it rather than inheriting that province's colour.
@@ -924,7 +924,7 @@ const styleForCstc = (feature, sm, selReg, selIsl) => {
     if (selCstc.value === cstcName)
         return { fillColor: baseColor, weight: 3.5, color: '#fff', fillOpacity: 0.97 };
     // Lift in-scope clusters slightly when a region filter is active so the
-    // four NCR clusters (or ZCIC, or Davao City) read as "the highlighted set".
+    // four NCR clusters (or Zamboanga City - Isabela City, or Davao City Center) read as "the highlighted set".
     if (isInSelRegion)
         return { fillColor: baseColor, weight: 1.6, color: '#fff', fillOpacity: 0.95 };
     return { fillColor: baseColor, weight: 0.6, color: '#fff', fillOpacity: 0.85 };
@@ -1098,7 +1098,7 @@ const onRegionChange = () => {
 };
 
 // Resolve a province/cluster name to its CSTC city footprint. The former CSTCs
-// (CAMANAVA, PAMAMAZON, PAMAMARISAN, MUNTAPARLAS, ZCIC, Davao City) are now
+// (CAMANAVA, PAMAMAZON, PAMAMARISAN, MUNTAPARLAS, Zamboanga City - Isabela City, Davao City Center) are now
 // classified as Large and appear in the province list, but they're city clusters
 // rather than province polygons, so they must zoom via cstcData. Matching is
 // case-tolerant because the rankings data and the geojson `cstc` may differ.

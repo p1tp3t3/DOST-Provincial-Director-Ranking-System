@@ -227,7 +227,7 @@ const mockRankings = ref([
     { name: 'Luz Milagros C. Santos',      id: 'DOST-XI-2020-0078', province: 'Davao Occidental',  score: 91, met: 10, total: 12 },
     { name: 'Eduardo P. Reyes',            id: 'DOST-XI-2016-0005', province: 'Davao Oriental',    score: 88, met: 9,  total: 12 },
     { name: 'Fatima Grace M. Alonto',      id: 'DOST-XI-2021-0093', province: 'Davao de Oro',      score: 85, met: 9,  total: 12 },
-    { name: 'Ricardo B. Montoya',          id: 'DOST-XI-2018-0034', province: 'Davao City',        score: 79, met: 8,  total: 12 },
+    { name: 'Ricardo B. Montoya',          id: 'DOST-XI-2018-0034', province: 'Davao City Center', score: 79, met: 8,  total: 12 },
     { name: 'Annalyn S. Corpuz',           id: 'DOST-XI-2022-0107', province: 'Compostela Valley', score: 74, met: 7,  total: 12 },
     { name: 'Hernando D. Flores',          id: 'DOST-XI-2015-0002', province: 'South Cotabato',    score: 68, met: 6,  total: 12 },
 ]);

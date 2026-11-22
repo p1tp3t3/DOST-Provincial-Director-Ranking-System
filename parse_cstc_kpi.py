@@ -2,8 +2,9 @@
 Parses CSTC sheets in Matrix for Ranking System of PSTDs.xlsx and outputs
 cstc-kpi-scores.csv using the same 54-subrow scheme as parse_excel_kpi.py.
 
-Sheet names like 'CSTC-Davao City' map to province name 'Davao City'
-(strip 'CSTC-' prefix). Skips 'CSTC-Rename*' placeholders.
+Sheet names like 'CSTC-PAMAMAZON' map to province name 'PAMAMAZON'
+(strip 'CSTC-' prefix), then through SHEET_TO_PROVINCE where the DB name
+differs from the sheet tab. Skips 'CSTC-Rename*' placeholders.
 """
 import openpyxl
 import csv
@@ -16,6 +17,12 @@ from parse_excel_kpi import (
 
 EXCEL_PATH  = r'c:\Herd\DOST-Provincial-Director-Ranking-System\Matrix for Ranking System of PSTDs.xlsx'
 OUTPUT_PATH = r'c:\Herd\DOST-Provincial-Director-Ranking-System\storage\app\private\data\cstc-kpi-scores.csv'
+
+# Sheet tab (after 'CSTC-') → provinces.name, for clusters renamed in the DB.
+SHEET_TO_PROVINCE = {
+    'ZCIC':       'Zamboanga City - Isabela City',
+    'Davao City': 'Davao City Center',
+}
 
 
 def parse_sheet(ws, province_name):
@@ -67,6 +74,7 @@ def main():
         if re.match(r'(?i)^rename\d*$', province_name):
             print(f'  skip placeholder: {sheet_name}')
             continue
+        province_name = SHEET_TO_PROVINCE.get(province_name, province_name)
 
         ws      = wb[sheet_name]
         records = parse_sheet(ws, province_name)

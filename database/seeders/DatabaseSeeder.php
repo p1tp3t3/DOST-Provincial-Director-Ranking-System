@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
             'Bohol', 'Camarines Sur', 'Cebu Province', 'Ilocos Sur', 'Iloilo',
             'Isabela', 'Leyte', 'Negros Occidental', 'Pangasinan', 'Quezon',
             // Former CSTC city clusters, now classified as Large
-            'CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'ZCIC', 'Davao City',
+            'CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'Zamboanga City - Isabela City', 'Davao City Center',
         ],
     ];
 
@@ -74,8 +74,8 @@ class DatabaseSeeder extends Seeder
         ['name' => 'PAMAMAZON',   'num_plantilla_employees' => 0, 'num_municipalities' => 0, 'num_cities' => 0],
         ['name' => 'PAMAMARISAN', 'num_plantilla_employees' => 4, 'num_municipalities' => 0, 'num_cities' => 0],
         ['name' => 'MUNTAPARLAS', 'num_plantilla_employees' => 4, 'num_municipalities' => 0, 'num_cities' => 3],
-        ['name' => 'ZCIC',        'num_plantilla_employees' => 1, 'num_municipalities' => 0, 'num_cities' => 1],
-        ['name' => 'Davao City',  'num_plantilla_employees' => 3, 'num_municipalities' => 0, 'num_cities' => 1],
+        ['name' => 'Zamboanga City - Isabela City',        'num_plantilla_employees' => 1, 'num_municipalities' => 0, 'num_cities' => 1],
+        ['name' => 'Davao City Center',  'num_plantilla_employees' => 3, 'num_municipalities' => 0, 'num_cities' => 1],
     ];
 
     private static function get_category(string $name): string

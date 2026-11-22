@@ -2,7 +2,7 @@
 
 return [
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2022',
@@ -10,7 +10,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2023',
@@ -18,7 +18,7 @@ return [
         'accomplished' => '12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2024',
@@ -26,7 +26,7 @@ return [
         'accomplished' => '14',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2025',
@@ -34,7 +34,7 @@ return [
         'accomplished' => '12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2022',
@@ -42,7 +42,7 @@ return [
         'accomplished' => '109',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2023',
@@ -50,7 +50,7 @@ return [
         'accomplished' => '136',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2024',
@@ -58,7 +58,7 @@ return [
         'accomplished' => '125',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2025',
@@ -66,7 +66,7 @@ return [
         'accomplished' => '172',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2022',
@@ -74,7 +74,7 @@ return [
         'accomplished' => '1020',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2023',
@@ -82,7 +82,7 @@ return [
         'accomplished' => '956',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2024',
@@ -90,7 +90,7 @@ return [
         'accomplished' => '1195',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2025',
@@ -98,7 +98,7 @@ return [
         'accomplished' => '1550',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2022',
@@ -106,7 +106,7 @@ return [
         'accomplished' => '120',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2023',
@@ -114,7 +114,7 @@ return [
         'accomplished' => '-121',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2024',
@@ -122,7 +122,7 @@ return [
         'accomplished' => '143',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2025',
@@ -130,7 +130,7 @@ return [
         'accomplished' => '36',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2022',
@@ -138,7 +138,7 @@ return [
         'accomplished' => '266677.98',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2023',
@@ -146,7 +146,7 @@ return [
         'accomplished' => '358276',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2024',
@@ -154,7 +154,7 @@ return [
         'accomplished' => '505357.47',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2025',
@@ -162,7 +162,7 @@ return [
         'accomplished' => '546502.62',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2022',
@@ -170,7 +170,7 @@ return [
         'accomplished' => '26',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2023',
@@ -178,7 +178,7 @@ return [
         'accomplished' => '-33',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2024',
@@ -186,7 +186,7 @@ return [
         'accomplished' => '45',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2025',
@@ -194,7 +194,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '19',
         'year' => '2025',
@@ -202,7 +202,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2022',
@@ -210,7 +210,7 @@ return [
         'accomplished' => '12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2023',
@@ -218,7 +218,7 @@ return [
         'accomplished' => '12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2024',
@@ -226,7 +226,7 @@ return [
         'accomplished' => '12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2025',
@@ -234,7 +234,7 @@ return [
         'accomplished' => '10',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2022',
@@ -242,7 +242,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2023',
@@ -250,7 +250,7 @@ return [
         'accomplished' => '10',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2024',
@@ -258,7 +258,7 @@ return [
         'accomplished' => '60',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2025',
@@ -266,7 +266,7 @@ return [
         'accomplished' => '244',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2022',
@@ -274,7 +274,7 @@ return [
         'accomplished' => '900',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2023',
@@ -282,7 +282,7 @@ return [
         'accomplished' => '1053',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2024',
@@ -290,7 +290,7 @@ return [
         'accomplished' => '773',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2025',
@@ -298,7 +298,7 @@ return [
         'accomplished' => '1252',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '23',
         'year' => '2024',
@@ -306,7 +306,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '23',
         'year' => '2025',
@@ -314,7 +314,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '24',
         'year' => '2022',
@@ -322,7 +322,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '24',
         'year' => '2023',
@@ -330,7 +330,7 @@ return [
         'accomplished' => '10',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '24',
         'year' => '2024',
@@ -338,7 +338,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '4',
         'subrow_id' => '24',
         'year' => '2025',
@@ -346,7 +346,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '25',
         'year' => '2022',
@@ -354,7 +354,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '25',
         'year' => '2023',
@@ -362,7 +362,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '25',
         'year' => '2024',
@@ -370,7 +370,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '25',
         'year' => '2025',
@@ -378,7 +378,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '26',
         'year' => '2022',
@@ -386,7 +386,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '26',
         'year' => '2023',
@@ -394,7 +394,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '26',
         'year' => '2024',
@@ -402,7 +402,7 @@ return [
         'accomplished' => '7',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '5',
         'subrow_id' => '26',
         'year' => '2025',
@@ -410,7 +410,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '6',
         'subrow_id' => '27',
         'year' => '2022',
@@ -418,7 +418,7 @@ return [
         'accomplished' => '100',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '6',
         'subrow_id' => '27',
         'year' => '2023',
@@ -426,7 +426,7 @@ return [
         'accomplished' => '100',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '6',
         'subrow_id' => '27',
         'year' => '2024',
@@ -434,7 +434,7 @@ return [
         'accomplished' => '100',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '6',
         'subrow_id' => '27',
         'year' => '2025',
@@ -442,7 +442,7 @@ return [
         'accomplished' => '100',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2022',
@@ -450,7 +450,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2023',
@@ -458,7 +458,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2024',
@@ -466,7 +466,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2025',
@@ -474,7 +474,7 @@ return [
         'accomplished' => '11',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2022',
@@ -482,7 +482,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2023',
@@ -490,7 +490,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2024',
@@ -498,7 +498,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2025',
@@ -506,7 +506,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2022',
@@ -514,7 +514,7 @@ return [
         'accomplished' => '7773720',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2023',
@@ -522,7 +522,7 @@ return [
         'accomplished' => '9147563.92',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2024',
@@ -530,7 +530,7 @@ return [
         'accomplished' => '9240840',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2025',
@@ -538,7 +538,7 @@ return [
         'accomplished' => '7859171.18',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2022',
@@ -546,7 +546,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2023',
@@ -554,7 +554,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2024',
@@ -562,7 +562,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2025',
@@ -570,7 +570,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '33',
         'year' => '2025',
@@ -578,7 +578,7 @@ return [
         'accomplished' => '27',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '34',
         'year' => '2025',
@@ -586,7 +586,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '35',
         'year' => '2025',
@@ -594,7 +594,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2022',
@@ -602,7 +602,7 @@ return [
         'accomplished' => '86.38',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2023',
@@ -610,7 +610,7 @@ return [
         'accomplished' => '74.12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2024',
@@ -618,7 +618,7 @@ return [
         'accomplished' => '84.59',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2025',
@@ -626,7 +626,7 @@ return [
         'accomplished' => '94.78',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '51',
         'year' => '2022',
@@ -634,7 +634,7 @@ return [
         'accomplished' => '86.38',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '51',
         'year' => '2023',
@@ -642,7 +642,7 @@ return [
         'accomplished' => '74.12',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '51',
         'year' => '2024',
@@ -650,7 +650,7 @@ return [
         'accomplished' => '84.59',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '51',
         'year' => '2025',
@@ -658,7 +658,7 @@ return [
         'accomplished' => '94.78',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '37',
         'year' => '2022',
@@ -666,7 +666,7 @@ return [
         'accomplished' => '6030142.64',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '37',
         'year' => '2023',
@@ -674,7 +674,7 @@ return [
         'accomplished' => '5367907',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '37',
         'year' => '2024',
@@ -682,7 +682,7 @@ return [
         'accomplished' => '77522492.21',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '37',
         'year' => '2025',
@@ -690,7 +690,7 @@ return [
         'accomplished' => '81680606.37',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '52',
         'year' => '2022',
@@ -698,7 +698,7 @@ return [
         'accomplished' => '6030142.64',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '52',
         'year' => '2023',
@@ -706,7 +706,7 @@ return [
         'accomplished' => '5367907',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '52',
         'year' => '2024',
@@ -714,7 +714,7 @@ return [
         'accomplished' => '77522492.21',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '52',
         'year' => '2025',
@@ -722,7 +722,7 @@ return [
         'accomplished' => '81680606.37',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2022',
@@ -730,7 +730,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2023',
@@ -738,7 +738,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2024',
@@ -746,7 +746,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2025',
@@ -754,7 +754,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2022',
@@ -762,7 +762,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2023',
@@ -770,7 +770,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2024',
@@ -778,7 +778,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2025',
@@ -786,7 +786,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '45',
         'year' => '2022',
@@ -794,7 +794,7 @@ return [
         'accomplished' => '2797572',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '45',
         'year' => '2023',
@@ -802,7 +802,7 @@ return [
         'accomplished' => '2756744.02 (2023-2024)',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '45',
         'year' => '2024',
@@ -811,7 +811,7 @@ return [
 2500000',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '45',
         'year' => '2025',
@@ -819,7 +819,7 @@ return [
         'accomplished' => '778944.45',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2022',
@@ -827,7 +827,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2023',
@@ -835,7 +835,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2024',
@@ -843,7 +843,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2025',
@@ -851,7 +851,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2022',
@@ -859,7 +859,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2023',
@@ -867,7 +867,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2024',
@@ -875,7 +875,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2025',
@@ -883,7 +883,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2022',
@@ -891,7 +891,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2023',
@@ -899,7 +899,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2024',
@@ -907,7 +907,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2025',
@@ -915,7 +915,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '53',
         'year' => '2022',
@@ -923,7 +923,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '53',
         'year' => '2023',
@@ -931,7 +931,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '53',
         'year' => '2024',
@@ -939,7 +939,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'kpi_id' => '7',
         'subrow_id' => '53',
         'year' => '2025',
@@ -7291,7 +7291,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '1',
         'subrow_id' => '1',
         'year' => '2022',
@@ -7299,7 +7299,7 @@ return [
         'accomplished' => '16',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '1',
         'subrow_id' => '1',
         'year' => '2023',
@@ -7307,7 +7307,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '1',
         'subrow_id' => '1',
         'year' => '2024',
@@ -7315,7 +7315,7 @@ return [
         'accomplished' => '14',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '1',
         'subrow_id' => '1',
         'year' => '2025',
@@ -7323,7 +7323,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '3',
         'year' => '2022',
@@ -7331,7 +7331,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '3',
         'year' => '2023',
@@ -7339,7 +7339,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '3',
         'year' => '2024',
@@ -7347,7 +7347,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '3',
         'year' => '2025',
@@ -7355,7 +7355,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '4',
         'year' => '2022',
@@ -7363,7 +7363,7 @@ return [
         'accomplished' => '42',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '4',
         'year' => '2023',
@@ -7371,7 +7371,7 @@ return [
         'accomplished' => '16',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '4',
         'year' => '2024',
@@ -7379,7 +7379,7 @@ return [
         'accomplished' => '46',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '4',
         'year' => '2025',
@@ -7387,7 +7387,7 @@ return [
         'accomplished' => '59',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '5',
         'year' => '2023',
@@ -7395,7 +7395,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '5',
         'year' => '2024',
@@ -7403,7 +7403,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '5',
         'year' => '2025',
@@ -7411,7 +7411,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '6',
         'year' => '2022',
@@ -7419,7 +7419,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '6',
         'year' => '2023',
@@ -7427,7 +7427,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '6',
         'year' => '2024',
@@ -7435,7 +7435,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '6',
         'year' => '2025',
@@ -7443,7 +7443,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '7',
         'year' => '2022',
@@ -7451,7 +7451,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '7',
         'year' => '2023',
@@ -7459,7 +7459,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '7',
         'year' => '2024',
@@ -7467,7 +7467,7 @@ return [
         'accomplished' => '17',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '7',
         'year' => '2025',
@@ -7475,7 +7475,7 @@ return [
         'accomplished' => '18',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '8',
         'year' => '2023',
@@ -7483,7 +7483,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '8',
         'year' => '2024',
@@ -7491,7 +7491,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '2',
         'subrow_id' => '8',
         'year' => '2025',
@@ -7499,7 +7499,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2023',
@@ -7507,7 +7507,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2024',
@@ -7515,7 +7515,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '3',
         'subrow_id' => '9',
         'year' => '2025',
@@ -7523,7 +7523,7 @@ return [
         'accomplished' => '18',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2022',
@@ -7531,7 +7531,7 @@ return [
         'accomplished' => '211',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2023',
@@ -7539,7 +7539,7 @@ return [
         'accomplished' => '140',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2024',
@@ -7547,7 +7547,7 @@ return [
         'accomplished' => '475',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '10',
         'year' => '2025',
@@ -7555,7 +7555,7 @@ return [
         'accomplished' => '409',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2022',
@@ -7563,7 +7563,7 @@ return [
         'accomplished' => '291',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2023',
@@ -7571,7 +7571,7 @@ return [
         'accomplished' => '443',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2024',
@@ -7579,7 +7579,7 @@ return [
         'accomplished' => '6325',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '12',
         'year' => '2025',
@@ -7587,7 +7587,7 @@ return [
         'accomplished' => '5899',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2022',
@@ -7595,7 +7595,7 @@ return [
         'accomplished' => '21',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2023',
@@ -7603,7 +7603,7 @@ return [
         'accomplished' => '212',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2024',
@@ -7611,7 +7611,7 @@ return [
         'accomplished' => '60',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '14',
         'year' => '2025',
@@ -7619,7 +7619,7 @@ return [
         'accomplished' => '567',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2022',
@@ -7627,7 +7627,7 @@ return [
         'accomplished' => '22957238',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2023',
@@ -7635,7 +7635,7 @@ return [
         'accomplished' => '83471023.5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2024',
@@ -7643,7 +7643,7 @@ return [
         'accomplished' => '50250854',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '15',
         'year' => '2025',
@@ -7651,7 +7651,7 @@ return [
         'accomplished' => '50489120',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2022',
@@ -7659,7 +7659,7 @@ return [
         'accomplished' => '0.2709',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2023',
@@ -7667,7 +7667,7 @@ return [
         'accomplished' => '0.2624',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '16',
         'year' => '2024',
@@ -7675,7 +7675,7 @@ return [
         'accomplished' => '-0.4342',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '17',
         'year' => '2022',
@@ -7683,7 +7683,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '17',
         'year' => '2023',
@@ -7691,7 +7691,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '17',
         'year' => '2024',
@@ -7699,7 +7699,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '17',
         'year' => '2025',
@@ -7707,7 +7707,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '18',
         'year' => '2022',
@@ -7715,7 +7715,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '18',
         'year' => '2024',
@@ -7723,7 +7723,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '18',
         'year' => '2025',
@@ -7731,7 +7731,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '19',
         'year' => '2024',
@@ -7739,7 +7739,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '19',
         'year' => '2025',
@@ -7747,7 +7747,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2022',
@@ -7755,7 +7755,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2023',
@@ -7763,7 +7763,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2024',
@@ -7771,7 +7771,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '20',
         'year' => '2025',
@@ -7779,7 +7779,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2022',
@@ -7787,7 +7787,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2023',
@@ -7795,7 +7795,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2024',
@@ -7803,7 +7803,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '21',
         'year' => '2025',
@@ -7811,7 +7811,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2022',
@@ -7819,7 +7819,7 @@ return [
         'accomplished' => '228',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2023',
@@ -7827,7 +7827,7 @@ return [
         'accomplished' => '771',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2024',
@@ -7835,7 +7835,7 @@ return [
         'accomplished' => '179',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '4',
         'subrow_id' => '22',
         'year' => '2025',
@@ -7843,7 +7843,7 @@ return [
         'accomplished' => '948',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '5',
         'subrow_id' => '25',
         'year' => '2022',
@@ -7851,7 +7851,7 @@ return [
         'accomplished' => '5492',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '5',
         'subrow_id' => '25',
         'year' => '2025',
@@ -7859,7 +7859,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '5',
         'subrow_id' => '26',
         'year' => '2022',
@@ -7867,7 +7867,7 @@ return [
         'accomplished' => '21',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '6',
         'subrow_id' => '27',
         'year' => '2025',
@@ -7875,7 +7875,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2022',
@@ -7883,7 +7883,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2023',
@@ -7891,7 +7891,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2024',
@@ -7899,7 +7899,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '29',
         'year' => '2025',
@@ -7907,7 +7907,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2022',
@@ -7915,7 +7915,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2023',
@@ -7923,7 +7923,7 @@ return [
         'accomplished' => '8',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2024',
@@ -7931,7 +7931,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '30',
         'year' => '2025',
@@ -7939,7 +7939,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2022',
@@ -7947,7 +7947,7 @@ return [
         'accomplished' => '4355000',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2023',
@@ -7955,7 +7955,7 @@ return [
         'accomplished' => '10758104',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2024',
@@ -7963,7 +7963,7 @@ return [
         'accomplished' => '11929902.75',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '31',
         'year' => '2025',
@@ -7971,7 +7971,7 @@ return [
         'accomplished' => '9492769.04',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2022',
@@ -7979,7 +7979,7 @@ return [
         'accomplished' => '52',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2023',
@@ -7987,7 +7987,7 @@ return [
         'accomplished' => '53',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2024',
@@ -7995,7 +7995,7 @@ return [
         'accomplished' => '61',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '32',
         'year' => '2025',
@@ -8003,7 +8003,7 @@ return [
         'accomplished' => '69',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '33',
         'year' => '2022',
@@ -8011,7 +8011,7 @@ return [
         'accomplished' => '52',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '33',
         'year' => '2023',
@@ -8019,7 +8019,7 @@ return [
         'accomplished' => '53',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '33',
         'year' => '2024',
@@ -8027,7 +8027,7 @@ return [
         'accomplished' => '61',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '33',
         'year' => '2025',
@@ -8035,7 +8035,7 @@ return [
         'accomplished' => '69',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '34',
         'year' => '2023',
@@ -8043,7 +8043,7 @@ return [
         'accomplished' => '2',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '34',
         'year' => '2025',
@@ -8051,7 +8051,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '35',
         'year' => '2022',
@@ -8059,7 +8059,7 @@ return [
         'accomplished' => '11',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '35',
         'year' => '2023',
@@ -8067,7 +8067,7 @@ return [
         'accomplished' => '13',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '35',
         'year' => '2024',
@@ -8075,7 +8075,7 @@ return [
         'accomplished' => '17',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '35',
         'year' => '2025',
@@ -8083,7 +8083,7 @@ return [
         'accomplished' => '21',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2023',
@@ -8091,7 +8091,7 @@ return [
         'accomplished' => '0.62',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2024',
@@ -8099,7 +8099,7 @@ return [
         'accomplished' => '0.56',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '36',
         'year' => '2025',
@@ -8107,7 +8107,7 @@ return [
         'accomplished' => '0.58',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2022',
@@ -8115,7 +8115,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2023',
@@ -8123,7 +8123,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '38',
         'year' => '2024',
@@ -8131,7 +8131,7 @@ return [
         'accomplished' => '',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '39',
         'year' => '2024',
@@ -8139,7 +8139,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '39',
         'year' => '2025',
@@ -8147,7 +8147,7 @@ return [
         'accomplished' => '7',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '40',
         'year' => '2025',
@@ -8155,7 +8155,7 @@ return [
         'accomplished' => '12149778.46',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '42',
         'year' => '2022',
@@ -8163,7 +8163,7 @@ return [
         'accomplished' => '11',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '42',
         'year' => '2023',
@@ -8171,7 +8171,7 @@ return [
         'accomplished' => '18',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '42',
         'year' => '2025',
@@ -8179,7 +8179,7 @@ return [
         'accomplished' => '25',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '43',
         'year' => '2023',
@@ -8187,7 +8187,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '43',
         'year' => '2025',
@@ -8195,7 +8195,7 @@ return [
         'accomplished' => '12',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2022',
@@ -8203,7 +8203,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2023',
@@ -8211,7 +8211,7 @@ return [
         'accomplished' => '6',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2024',
@@ -8219,7 +8219,7 @@ return [
         'accomplished' => '3',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '44',
         'year' => '2025',
@@ -8227,7 +8227,7 @@ return [
         'accomplished' => '4',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '45',
         'year' => '2025',
@@ -8235,7 +8235,7 @@ return [
         'accomplished' => '7197312.97',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2022',
@@ -8243,7 +8243,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2023',
@@ -8251,7 +8251,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2024',
@@ -8259,7 +8259,7 @@ return [
         'accomplished' => '7',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '46',
         'year' => '2025',
@@ -8267,7 +8267,7 @@ return [
         'accomplished' => '10',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2022',
@@ -8275,7 +8275,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2023',
@@ -8283,7 +8283,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2024',
@@ -8291,7 +8291,7 @@ return [
         'accomplished' => '7',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '47',
         'year' => '2025',
@@ -8299,7 +8299,7 @@ return [
         'accomplished' => '9',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2022',
@@ -8307,7 +8307,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2023',
@@ -8315,7 +8315,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2024',
@@ -8323,7 +8323,7 @@ return [
         'accomplished' => '0',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '48',
         'year' => '2025',
@@ -8331,7 +8331,7 @@ return [
         'accomplished' => '1',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '49',
         'year' => '2024',
@@ -8339,7 +8339,7 @@ return [
         'accomplished' => '5',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '50',
         'year' => '2024',
@@ -8347,7 +8347,7 @@ return [
         'accomplished' => '16',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '50',
         'year' => '2025',
@@ -8355,7 +8355,7 @@ return [
         'accomplished' => '93',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'kpi_id' => '7',
         'subrow_id' => '53',
         'year' => '2025',

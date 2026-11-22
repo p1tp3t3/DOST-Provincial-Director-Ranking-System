@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class CSTCSeeder extends Seeder
 {
-    private const CLUSTERS = ['CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'ZCIC', 'Davao City'];
+    private const CLUSTERS = ['CAMANAVA', 'PAMAMAZON', 'PAMAMARISAN', 'MUNTAPARLAS', 'Zamboanga City - Isabela City', 'Davao City Center'];
 
     public function run(): void
     {

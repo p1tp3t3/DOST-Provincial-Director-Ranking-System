@@ -91,7 +91,7 @@ class Province extends Model
         'Zamboanga del Norte'   => 'Region IX',
         'Zamboanga del Sur'     => 'Region IX',
         'Zamboanga Sibugay'     => 'Region IX',
-        'ZCIC'                  => 'Region IX',
+        'Zamboanga City - Isabela City' => 'Region IX',
         'Sulu'                  => 'Region IX',
         // Region X - Northern Mindanao
         'Bukidnon'              => 'Region X',
@@ -105,7 +105,7 @@ class Province extends Model
         'Davao del Sur'         => 'Region XI',
         'Davao Occidental'      => 'Region XI',
         'Davao Oriental'        => 'Region XI',
-        'Davao City'            => 'Region XI',
+        'Davao City Center'     => 'Region XI',
         // Region XII - SOCCSKSARGEN
         'Cotabato (North)'      => 'Region XII',
         'Sarangani'             => 'Region XII',
