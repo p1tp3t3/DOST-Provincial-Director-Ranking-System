@@ -1,12 +1,15 @@
 <template>
   <v-toolbar color="header" elevation="2">
 
-    <!-- DOST tagline - always-visible system signature.
-         Kept readable but not loud: bold brand mark + lighter descriptor. -->
-    <div class="dost-tagline d-flex align-center ml-4">
-      <span class="tagline-mark">OneDOST4U</span>
-      <span class="tagline-sep">-</span>
-      <span class="tagline-sub">Solutions and Opportunities for All</span>
+    <!-- Agency name with the OneDOST4U tagline under it - the system's
+         always-visible signature (the logo sits just left, in the sidebar). -->
+    <div class="dost-brand ml-4">
+      <div class="brand-title">Department of Science and Technology</div>
+      <div class="brand-tagline">
+        <span class="tagline-mark">One<span class="tagline-dost">DOST</span>4U</span>
+        <span class="tagline-sep">:</span>
+        <span class="tagline-sub">Solutions and Opportunities for All</span>
+      </div>
     </div>
 
     <v-spacer></v-spacer>
@@ -191,18 +194,28 @@ const toggleDrawer = () => {
 </script>
 
 <style scoped>
-.dost-tagline {
+.dost-brand {
+    min-width: 0;
     color: #ffffff;
-    font-size: 0.86rem;
-    letter-spacing: 0.01em;
-    line-height: 1;
+    line-height: 1.25;
+}
+.brand-title,
+.brand-tagline {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.tagline-mark { font-weight: 800; letter-spacing: 0.02em; }
-.tagline-sep  { margin: 0 6px; opacity: 0.55; font-weight: 400; }
-.tagline-sub  { font-weight: 500; opacity: 0.85; }
+.brand-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.brand-tagline { font-size: 0.8rem; margin-top: 2px; }
+.tagline-mark  { font-weight: 800; letter-spacing: 0.01em; }
+.tagline-dost  { color: #7dd3fc; }
+.tagline-sep   { margin: 0 5px; opacity: 0.7; font-weight: 500; }
+.tagline-sub   { font-weight: 500; opacity: 0.85; }
 
 /* Signed-in user: a soft panel on the header holding photo, name and
    position · role (the text collapses to just the photo on narrow screens). */
@@ -234,9 +247,9 @@ const toggleDrawer = () => {
 .profile-sub  { font-size: 0.75rem; font-weight: 400; color: rgba(255, 255, 255, 0.78); }
 .profile-chevron { margin-left: 6px; opacity: 0.8; }
 
-/* On narrow screens drop the descriptor and keep just the brand mark
-   so it never crowds the avatar/notification buttons. */
+/* On narrow screens keep just the OneDOST4U mark so the name never crowds
+   the buttons on the right. */
 @media (max-width: 599px) {
-    .tagline-sep, .tagline-sub { display: none; }
+    .brand-title, .tagline-sep, .tagline-sub { display: none; }
 }
 </style>
