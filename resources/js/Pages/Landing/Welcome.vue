@@ -158,7 +158,7 @@ const pillars = [
 
 const features = computed(() => [
     { icon: RiDashboard3Line, title: 'Performance Dashboard',
-      text: 'See PSTD rankings four ways - an awards podium, a sortable table, year-over-year trends, and a live map - all filterable by tier, region, island, and category.' },
+      text: 'See PSTO rankings four ways - an awards podium, a sortable table, year-over-year trends, and a live map - all filterable by tier, region, island, and category.' },
     { icon: RiMapPin2Line, title: 'Interactive Maps',
       text: 'Explore the country province-by-province. Drill into a region or island and read each area at a glance through clear color coding.' },
     { icon: RiBuilding2Line, title: 'Province Directories',
@@ -168,7 +168,7 @@ const features = computed(() => [
     { icon: RiBarChart2Line, title: 'Regional Analytics',
       text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
     { icon: RiLineChartLine, title: 'Trends Over Time',
-      text: 'Track how each province and director performs across reporting years to spot momentum, plateaus, and turnarounds.' },
+      text: 'Track how each PSTO performs across reporting years to spot momentum, plateaus, and turnarounds.' },
 ]);
 
 const year = new Date().getFullYear();
@@ -331,14 +331,17 @@ const sampleDirector = computed(() => {
                                 <span class="hero-tagline-sep">-</span>
                                 <span class="hero-tagline-sub">Solutions and Opportunities for All</span>
                             </div>
+                            <!-- PRISM is the headline; the full name below spells it out with the
+                                 five source letters (P·R·I·S·M) picked out in the accent color.
+                                 Keep each line on one source line: Vue drops whitespace-only text
+                                 between tags when it contains a newline, which would glue words. -->
                             <h1 class="hero-title">
-                                Provincial Science and Technology Office
-                                <span class="hero-title-accent">Ranking &amp; Information System for Management</span>
+                                <span class="hero-acronym">PRISM</span>
+                                <span class="hero-fullname">
+                                    <span class="hero-fullname-line"><span class="hero-initial">P</span>rovincial <span class="hero-fullname-minor">Science and Technology Office</span></span>
+                                    <span class="hero-fullname-line"><span class="hero-initial">R</span>anking <span class="hero-fullname-conn">&amp;</span> <span class="hero-initial">I</span>nformation <span class="hero-initial">S</span>ystem <span class="hero-fullname-conn">for</span> <span class="hero-initial">M</span>anagement</span>
+                                </span>
                             </h1>
-                            <p class="hero-sub">
-                                A transparent, evidence-based platform that scores and ranks Provincial Science &amp; Technology
-                                Directors across the Philippines - driving excellence in regional S&amp;T leadership.
-                            </p>
                             <div class="mt-10 flex flex-wrap gap-3">
                                 <v-btn href="#about" size="x-large" color="white" variant="flat" rounded="lg" class="hero-btn hero-btn--light">
                                     Learn More
@@ -445,8 +448,9 @@ const sampleDirector = computed(() => {
                 <div class="eyebrow">The Platform</div>
                 <h2 class="section-title">PRISM</h2>
                 <p class="section-lead mx-auto">
-                    The PRISM is DOST's centralized platform for monitoring,
-                    evaluating, and ranking Provincial Science &amp; Technology Directors across the Philippines.
+                    PRISM - the Provincial Science and Technology Office Ranking &amp; Information System
+                    for Management - is DOST's centralized platform for monitoring, evaluating, and ranking
+                    Provincial Science and Technology Offices (PSTOs) across the Philippines.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
                     Covering all 83 provinces and clusters across 17 regions, the system uses a structured
@@ -455,8 +459,8 @@ const sampleDirector = computed(() => {
                     evidence-based rankings.
                 </p>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed">
-                    Designed to promote excellence and accountability in regional S&amp;T leadership,
-                    the system empowers DOST management to identify top performers, surface areas
+                    Designed to promote excellence and accountability in provincial S&amp;T service delivery,
+                    the system empowers DOST management to identify top-performing offices, surface areas
                     for improvement, and track progress over time.
                 </p>
 
@@ -574,7 +578,7 @@ const sampleDirector = computed(() => {
                                         <!-- Rich text from Province Info, sanitized server-side on save -->
                                         <div v-if="selectedProvince.description" class="prov-desc prov-desc-html" v-html="selectedProvince.description"></div>
                                         <p v-else class="prov-desc">
-                                            {{ `${selectedProvince.name} is a province under ${selectedProvince.region}, located in the ${selectedProvince.island} island group of the Philippines. It is part of DOST's provincial S&T director network.` }}
+                                            {{ `${selectedProvince.name} is a province under ${selectedProvince.region}, located in the ${selectedProvince.island} island group of the Philippines. It is served by a DOST Provincial Science and Technology Office (PSTO).` }}
                                         </p>
 
                                         <!-- Sibling provinces -->
@@ -625,10 +629,10 @@ const sampleDirector = computed(() => {
                                         <div v-if="canLogin" class="prov-signin">
                                             <div class="prov-signin-head">
                                                 <RiLockLine class="w-3.5 h-3.5" />
-                                                <span>Rankings &amp; Director Profile</span>
+                                                <span>PSTO Rankings &amp; Profile</span>
                                             </div>
                                             <p class="prov-signin-text">
-                                                KPI scores, performance tier, and director info for
+                                                The PSTO's KPI scores, performance tier, and office profile for
                                                 <strong>{{ selectedProvince.name }}</strong> are available after sign-in.
                                             </p>
                                             <v-btn href="/login" size="small" :color="DOST" variant="flat" rounded="lg">
@@ -721,8 +725,8 @@ const sampleDirector = computed(() => {
                         </div>
                         <p class="mt-4 text-base max-w-md leading-relaxed" style="color:#9fb6d4">
                             An initiative of the Department of Science and Technology to promote excellence,
-                            transparency, and evidence-based evaluation of provincial S&amp;T leadership
-                            across the Philippines.
+                            transparency, and evidence-based evaluation of Provincial Science and Technology
+                            Offices across the Philippines.
                         </p>
                         <p class="mt-2 text-sm font-semibold" style="color:#7e97b8">Developed by Region IX</p>
                     </div>
@@ -843,7 +847,7 @@ const sampleDirector = computed(() => {
 }
 .hero-inner { position: relative; z-index: 3; flex: 1; display: flex; flex-direction: column; }
 .hero-content { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
-.hero-copy { max-width: 640px; text-align: left; }
+.hero-copy { max-width: 760px; text-align: left; }
 
 .hero-badge {
     display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px;
@@ -856,15 +860,31 @@ const sampleDirector = computed(() => {
 .hero-tagline-mark  { font-weight: 800; }
 .hero-tagline-sep   { margin: 0 6px; opacity: .55; }
 .hero-tagline-sub   { opacity: .85; font-weight: 500; }
-.hero-title {
-    font-size: clamp(2.4rem, 4.5vw, 3.4rem); font-weight: 800; line-height: 1.08;
-    color: #fff; text-shadow: 0 2px 16px rgba(2,12,30,.55);
+.hero-title { color: #fff; font-weight: 800; }
+
+/* The acronym — the headline. Gradient fill, so the shadow comes from a filter
+   (a text-shadow would paint over a background-clipped fill). */
+.hero-acronym {
+    display: inline-block;
+    font-size: clamp(4rem, 9vw, 7.25rem); line-height: .95; letter-spacing: .04em;
+    background: linear-gradient(100deg, #ffffff 0%, #d6ebff 45%, #6ec1ff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    filter: drop-shadow(0 4px 22px rgba(2,12,30,.55));
 }
-.hero-title-accent { display: block; color: #9fd0ff; margin-top: 4px; text-shadow: 0 2px 16px rgba(2,12,30,.5); }
-.hero-sub {
-    margin-top: 20px; max-width: 40rem; font-size: 1.25rem; line-height: 1.7;
-    color: rgba(255,255,255,.92); text-shadow: 0 1px 8px rgba(2,12,30,.5);
+
+/* What PRISM stands for — a caption under the acronym, tied to it by the rule on the left. */
+.hero-fullname {
+    display: block; margin-top: 18px; padding-left: 18px;
+    border-left: 3px solid rgba(110,193,255,.8);
+    font-size: clamp(1.4rem, 2.3vw, 1.85rem); font-weight: 700; line-height: 1.3;
+    color: #eaf2fb; text-shadow: 0 2px 14px rgba(2,12,30,.55);
 }
+.hero-fullname-line { display: block; text-wrap: balance; }
+.hero-fullname-line + .hero-fullname-line { margin-top: 2px; }
+.hero-fullname-minor { font-size: .64em; font-weight: 600; color: rgba(234,242,251,.72); letter-spacing: .01em; }
+.hero-fullname-conn  { font-weight: 500; color: rgba(234,242,251,.6); }
+.hero-initial        { color: #6ec1ff; font-weight: 800; }
 
 .hero-stats { position: relative; z-index: 3; border-top: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); }
 
@@ -1029,15 +1049,14 @@ const sampleDirector = computed(() => {
 .mvm-text  { margin-top: 8px; font-size: 1.02rem; line-height: 1.7; color: #e7eefb; }
 
 /* ── Hero entrance + stat cards ──────────────────────────────────────────── */
-.hero-badge, .hero-tagline, .hero-title, .hero-sub {
+.hero-badge, .hero-tagline, .hero-title {
     animation: heroIn .85s cubic-bezier(.22,1,.36,1) both;
 }
 .hero-tagline { animation-delay: .08s; }
 .hero-title   { animation-delay: .16s; }
-.hero-sub     { animation-delay: .26s; }
 @keyframes heroIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-    .hero-badge, .hero-tagline, .hero-title, .hero-sub { animation: none; }
+    .hero-badge, .hero-tagline, .hero-title { animation: none; }
 }
 .hero-stat {
     text-align: center; padding: 16px 8px; border-radius: 14px;

@@ -355,7 +355,7 @@ return [
         'work_specialization' => 'General Office Administration',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Ian C. Avenido',
         'position' => 'SRS II',
         'status' => 'Permanent',
@@ -366,7 +366,7 @@ return [
         'work_specialization' => 'Project Management, Techology Transfer, Technology Assessment, GIS, Weather Equipment Technician, Photo Video Editing',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Merly D. Alivio',
         'position' => 'PTA IV',
         'status' => 'COS',
@@ -377,7 +377,7 @@ return [
         'work_specialization' => 'Technology Assessment, Technology Transfer, Project Monitoring, and Facilitates Food Safety and Food-related Technology Trainings',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Charisa Mae Bait-it',
         'position' => 'PTA IV',
         'status' => 'COS',
@@ -388,7 +388,7 @@ return [
         'work_specialization' => 'Technology Assessment, Technology Transfer, and Project Management, Communiy Development, S&T Promotions, GIA and CEST Support Staff',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Gretchen D. Manangan',
         'position' => 'PT Aide V',
         'status' => 'COS',
@@ -399,7 +399,7 @@ return [
         'work_specialization' => 'Technology Assessment, Technology Transfer, Project Monitoring, and Facilitates Food Safety and Food-related Technology Trainings',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Ardlee R. Natividad',
         'position' => 'PT Aide V',
         'status' => 'COS',
@@ -410,7 +410,7 @@ return [
         'work_specialization' => 'Technology Assessment, Technology Transfer, and Project Management, S&T Promotions,Community Development',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'John Brett Madarang',
         'position' => 'PT Aide V',
         'status' => 'COS',
@@ -421,7 +421,7 @@ return [
         'work_specialization' => 'Technology assessment, technology transfer, project monitoring, and promotion of CSTC activities.',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Leo Jay E. Torres',
         'position' => 'PT Aide V',
         'status' => 'COS',
@@ -432,7 +432,7 @@ return [
         'work_specialization' => 'Technology Assessment, Technology Transfer, and Project Management',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Enrique M. Mariano',
         'position' => 'PAA III',
         'status' => 'COS',
@@ -443,7 +443,7 @@ return [
         'work_specialization' => 'Clerical Tasks, Liasing Activities',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Albertson T. Patenio',
         'position' => 'Driver',
         'status' => 'COS',
@@ -454,7 +454,7 @@ return [
         'work_specialization' => 'Driver',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'Richell Mae B. Ruyeras',
         'position' => 'SRS II',
         'status' => 'Permanent',
@@ -465,7 +465,7 @@ return [
         'work_specialization' => 'SETUP / Training / Consultancy',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'Nathanael David Abines',
         'position' => 'SRS I',
         'status' => 'Permanent',
@@ -476,7 +476,7 @@ return [
         'work_specialization' => 'CEST / SSCP / GRIND / Scholarship',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'Shannen Kirsten C. Vitor',
         'position' => 'Project Technical Assistant I',
         'status' => 'COS',
@@ -487,7 +487,7 @@ return [
         'work_specialization' => 'SETUP / Training / Consultancy',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'Junerichard D. Chagas',
         'position' => 'Project Technical Aide V',
         'status' => 'COS',
@@ -498,7 +498,7 @@ return [
         'work_specialization' => 'SETUP / Training / Consultancy',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'Ann Marjorie M. Buot',
         'position' => 'Project Technical Aide V',
         'status' => 'COS',
@@ -509,7 +509,7 @@ return [
         'work_specialization' => 'SSCP',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'Sittie Raizaril A. Gintawan',
         'position' => 'Project Technical Aide IV',
         'status' => 'COS',

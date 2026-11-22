@@ -34,7 +34,7 @@ return [
         'education_doctorate' => 'Not Applicable',
     ],
     [
-        'province' => 'ZCIC',
+        'province' => 'Zamboanga City - Isabela City',
         'full_name' => 'Ricardo J. Apolinario III',
         'length_of_service' => '4 Years',
         'education_bachelor' => 'B.S. in Nursing',
@@ -42,7 +42,7 @@ return [
         'education_doctorate' => '',
     ],
     [
-        'province' => 'Davao City',
+        'province' => 'Davao City Center',
         'full_name' => 'ELSIE MAE A. SOLIDUM',
         'length_of_service' => '3',
         'education_bachelor' => 'B.S. FISHERIES MAJOR IN INLAND FISHERIES',
