@@ -79,8 +79,12 @@ onBeforeUnmount(() => {
     if (spyFrame) cancelAnimationFrame(spyFrame);
 });
 import {
-    RiTrophyLine, RiMapPin2Line, RiBuilding2Line, RiBarChart2Line,
-    RiLineChartLine, RiGroupLine, RiDashboard3Line,
+    RiTrophyLine, RiBuilding2Line, RiBarChart2Line,
+    RiGroupLine, RiDashboard3Line,
+    RiHeartPulseLine, RiMap2Line, RiCalendarTodoLine, RiCheckDoubleLine,
+    RiLinksLine, RiAlarmLine, RiTaskLine, RiArrowGoBackLine, RiEyeOffLine,
+    RiFileChartLine, RiListSettingsLine, RiUserSettingsLine, RiDatabase2Line,
+    RiBarChartBoxLine, RiEditBoxLine, RiShieldCheckLine, RiSettings3Line,
     RiArrowRightLine, RiGlobalLine, RiMicroscopeLine,
     RiLeafLine, RiLightbulbLine, RiTeamLine,
     RiCalendarLine, RiArrowRightUpLine, RiCloseLine,
@@ -156,20 +160,84 @@ const pillars = [
       text: 'Nurturing the next generation of Filipino scientists, engineers, and innovators through grants and training programs.' },
 ];
 
-const features = computed(() => [
-    { icon: RiDashboard3Line, title: 'Performance Dashboard',
-      text: 'See PSTO rankings four ways - an awards podium, a sortable table, year-over-year trends, and a live map - all filterable by tier, region, island, and category.' },
-    { icon: RiMapPin2Line, title: 'Interactive Maps',
-      text: 'Explore the country province-by-province. Drill into a region or island and read each area at a glance through clear color coding.' },
-    { icon: RiBuilding2Line, title: 'Province Directories',
-      text: 'Browse every province\'s profile - its provincial S&T director, staff, classification tier, and region - in one organized place.' },
-    { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
-      text: `A transparent, weighted scoring of ${kpiCount.value} indicators across ${categoryWeightList.value} categories, with adjective ratings.` },
-    { icon: RiBarChart2Line, title: 'Regional Analytics',
-      text: 'Compare performance across regions, islands, and size tiers, with top and low performers surfaced automatically.' },
-    { icon: RiLineChartLine, title: 'Trends Over Time',
-      text: 'Track how each PSTO performs across reporting years to spot momentum, plateaus, and turnarounds.' },
+// What the system does, grouped by stage of the reporting cycle. Shown one group
+// at a time (tabs) so 16 features don't turn into a wall of cards. Each claim
+// here maps to a real module - keep it that way when features change.
+const featureGroups = computed(() => [
+    {
+        key: 'insights', label: 'Rankings & Insights', icon: RiBarChartBoxLine,
+        lead: 'See how every PSTO is performing - nationwide, by region, and within its size tier.',
+        items: [
+            { icon: RiDashboard3Line, title: 'Performance Dashboard',
+              text: 'See PSTO rankings four ways - an awards podium, a sortable table, year-over-year trends, and a map - filterable by island, region, size tier, and category.' },
+            { icon: RiTrophyLine, title: 'PRISM Ranking Matrix',
+              text: `${kpiCount.value} weighted indicators across ${categoryWeightList.value}. Each result is rated from Outstanding to Poor, and offices are ranked against others of the same size.` },
+            { icon: RiHeartPulseLine, title: 'KPI Health',
+              text: 'Spot the strongest and weakest indicators across all offices, with a rating breakdown for each KPI and the PSTOs behind every rating.' },
+            { icon: RiMap2Line, title: 'Performance Maps',
+              text: 'A color-coded map of results with region and island averages. Regional directors get a map focused on their own region.' },
+        ],
+    },
+    {
+        key: 'reporting', label: 'KPI Reporting', icon: RiEditBoxLine,
+        lead: 'How each PSTO reports its figures, quarter by quarter.',
+        items: [
+            { icon: RiCalendarTodoLine, title: 'Quarterly KPI Entry',
+              text: 'Provincial admins enter accomplishments every quarter and targets once a year. The four quarters add up to the annual figure automatically.' },
+            { icon: RiCheckDoubleLine, title: 'Director Approval',
+              text: 'The provincial director reviews and approves each quarter. A PSTO counts as submitted once all four quarters are approved.' },
+            { icon: RiLinksLine, title: 'Evidence-Based Records',
+              text: 'Linkages and Facebook posts are logged one record at a time, and their KPI counts are computed from those records - not typed in.' },
+            { icon: RiAlarmLine, title: 'Deadlines & Reminders',
+              text: 'The central office sets a deadline for each quarter. Reminders about blank figures arrive in the system and as browser notifications.' },
+        ],
+    },
+    {
+        key: 'oversight', label: 'Oversight', icon: RiShieldCheckLine,
+        lead: 'Keep reporting on schedule, fix mistakes through a clear chain of approval, and keep a record of every change.',
+        items: [
+            { icon: RiTaskLine, title: 'Submission Tracker',
+              text: 'See which PSTOs have entered and approved their figures for the year, and which ones are still behind.' },
+            { icon: RiArrowGoBackLine, title: 'Correction Requests',
+              text: 'Once a quarter locks, changes go through a request: the regional director forwards it, and the central office reopens the period for a limited time or declines it.' },
+            { icon: RiEyeOffLine, title: 'Fair Ranking Release',
+              text: 'A year\'s rankings stay hidden until every PSTO has submitted or the final deadline has passed, so no office is ranked on partial data.' },
+            { icon: RiFileChartLine, title: 'Reports & Activity Logs',
+              text: 'Download PDF reports for your level - national, regional, or provincial - and review a log of the changes made in the system.' },
+        ],
+    },
+    {
+        key: 'admin', label: 'Administration', icon: RiSettings3Line,
+        lead: 'Manage the indicators, offices, and people behind the rankings.',
+        items: [
+            { icon: RiListSettingsLine, title: 'KPI Catalog',
+              text: 'Central admins edit the indicators and their weights, import them from CSV, and save versions of the matrix they can restore later.' },
+            { icon: RiBuilding2Line, title: 'PSTO Directories',
+              text: 'Every office\'s profile - director, staff, size tier, and region. Each PSTO keeps its own public description and cover photo up to date.' },
+            { icon: RiUserSettingsLine, title: 'Accounts & Roles',
+              text: 'Create accounts one at a time or in bulk from a spreadsheet template. Staff sign in with their employee number and can switch between their roles.' },
+            { icon: RiDatabase2Line, title: 'Backups & Maintenance',
+              text: 'Back up the database, uploaded files, or the whole system, switch on maintenance mode, and clear caches and logs - all from the browser.' },
+        ],
+    },
 ]);
+
+const activeFeatureGroup = ref('insights');
+const currentFeatureGroup = computed(() =>
+    featureGroups.value.find(g => g.key === activeFeatureGroup.value) ?? featureGroups.value[0]
+);
+const featureTabEls = [];
+
+// Tablist keyboard pattern: arrows move between tabs (wrapping), Home/End jump.
+const onFeatureTabKey = (e, i) => {
+    const n = featureGroups.value.length;
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: n - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    const j = (next + n) % n;
+    activeFeatureGroup.value = featureGroups.value[j].key;
+    featureTabEls[j]?.focus();
+};
 
 const year = new Date().getFullYear();
 const mobileOpen = ref(false);
@@ -500,18 +568,51 @@ const sampleDirector = computed(() => {
                     <div class="eyebrow">What's Inside</div>
                     <h2 class="section-title">Everything the system offers</h2>
                     <p class="section-lead mx-auto">
-                        From a high-level national overview down to a single province's KPI scorecard.
+                        From quarterly KPI entry in each PSTO to national rankings at the central office -
+                        one system for the whole reporting cycle.
                     </p>
                 </div>
 
-                <div class="mt-14 grid md:grid-cols-2 gap-x-10 gap-y-6">
-                    <v-card v-for="f in features" :key="f.title" variant="flat" class="feature-row reveal">
-                        <v-avatar size="58" rounded="lg" class="feature-row-icon"><component :is="f.icon" class="w-7 h-7" /></v-avatar>
-                        <div class="feature-row-body">
-                            <h3 class="feature-row-title">{{ f.title }}</h3>
-                            <p class="feature-row-text">{{ f.text }}</p>
+                <!-- The reveal sits on this wrapper, not the cards: the scroll observer only
+                     sees elements present at mount, and the cards are swapped per tab. -->
+                <div class="reveal">
+                    <div class="feature-tabs" role="tablist" aria-label="Feature groups">
+                        <button
+                            v-for="(g, i) in featureGroups" :key="g.key"
+                            :ref="el => (featureTabEls[i] = el)"
+                            type="button" role="tab" class="feature-tab"
+                            :class="{ 'is-active': activeFeatureGroup === g.key }"
+                            :id="`feature-tab-${g.key}`"
+                            :aria-selected="activeFeatureGroup === g.key"
+                            :aria-controls="`feature-panel-${g.key}`"
+                            :tabindex="activeFeatureGroup === g.key ? 0 : -1"
+                            @click="activeFeatureGroup = g.key"
+                            @keydown="onFeatureTabKey($event, i)"
+                        >
+                            <component :is="g.icon" class="feature-tab-icon" aria-hidden="true" />
+                            <span>{{ g.label }}</span>
+                        </button>
+                    </div>
+
+                    <Transition name="feature-swap" mode="out-in">
+                        <div
+                            :key="currentFeatureGroup.key"
+                            role="tabpanel"
+                            :id="`feature-panel-${currentFeatureGroup.key}`"
+                            :aria-labelledby="`feature-tab-${currentFeatureGroup.key}`"
+                        >
+                            <p class="feature-group-lead">{{ currentFeatureGroup.lead }}</p>
+                            <div class="mt-8 grid md:grid-cols-2 gap-x-10 gap-y-6">
+                                <v-card v-for="f in currentFeatureGroup.items" :key="f.title" variant="flat" class="feature-row">
+                                    <v-avatar size="58" rounded="lg" class="feature-row-icon"><component :is="f.icon" class="w-7 h-7" /></v-avatar>
+                                    <div class="feature-row-body">
+                                        <h3 class="feature-row-title">{{ f.title }}</h3>
+                                        <p class="feature-row-text">{{ f.text }}</p>
+                                    </div>
+                                </v-card>
+                            </div>
                         </div>
-                    </v-card>
+                    </Transition>
                 </div>
             </div>
         </section>
@@ -961,6 +1062,44 @@ const sampleDirector = computed(() => {
 }
 .feature-row-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; }
 .feature-row-text  { margin-top: 7px; font-size: 1.05rem; line-height: 1.65; color: #475569; }
+
+/* Feature group tabs - a segmented control over the feature cards. */
+.feature-tabs {
+    margin: 44px auto 0; width: fit-content; max-width: 100%;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 6px;
+    background: var(--dost-tint); border: 1px solid var(--dost-line); border-radius: 18px;
+}
+.feature-tab {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 20px; border: 0; border-radius: 13px; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 15px; font-weight: 700; color: var(--dost-600); white-space: nowrap;
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.feature-tab:hover:not(.is-active) { background: rgba(11,87,168,.08); }
+.feature-tab:focus-visible { outline: 2px solid var(--dost); outline-offset: 2px; }
+.feature-tab.is-active {
+    color: #fff; background: linear-gradient(135deg, var(--dost) 0%, #2f8fe0 100%);
+    box-shadow: 0 6px 16px rgba(11,87,168,.28);
+}
+.feature-tab-icon { width: 18px; height: 18px; flex-shrink: 0; }
+.feature-group-lead {
+    margin: 22px auto 0; max-width: 40rem; text-align: center;
+    font-size: 1.1rem; line-height: 1.6; color: #64748b; text-wrap: balance;
+}
+/* Phones: a 2 x 2 grid of tabs instead of a wrapping row; icons dropped so
+   each label fits on one line. */
+@media (max-width: 639px) {
+    .feature-tabs     { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+    .feature-tab      { padding: 11px 6px; font-size: 14px; white-space: normal; text-align: center; }
+    .feature-tab-icon { display: none; }
+}
+
+.feature-swap-enter-active, .feature-swap-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.feature-swap-enter-from { opacity: 0; transform: translateY(8px); }
+.feature-swap-leave-to   { opacity: 0; transform: translateY(-4px); }
+@media (prefers-reduced-motion: reduce) {
+    .feature-swap-enter-active, .feature-swap-leave-active { transition: none; }
+}
 
 /* ── Blog cards ──────────────────────────────────────────────────────────── */
 .blog-card-img :deep(.v-img__img) { transition: transform .4s ease; }
