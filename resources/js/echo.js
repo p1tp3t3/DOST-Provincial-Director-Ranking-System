@@ -11,7 +11,7 @@ configureEcho({
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
     // Production: Reverb sits behind the /ws reverse-proxy path (VITE_REVERB_PATH="/ws").
-    wsPath: import.meta.env.VITE_REVERB_PATH ?? '',
+    wsPath: '/ws',
 });
 
 
